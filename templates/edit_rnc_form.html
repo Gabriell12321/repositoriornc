@@ -120,7 +120,7 @@
         .input-field {
             width: 100%;
             padding: 8px;
-            border: 2px solid #8b1538;
+            border: 2px solid #cccccc;
             border-radius: 5px;
             font-size: 11px;
             background: white;
@@ -162,7 +162,7 @@
         }
 
         table td {
-            border: 1px solid #8b1538;
+            border: 1px solid #cccccc;
         }
 
         /* Barra de ações moderna */
@@ -224,7 +224,7 @@
         <div class="rnc-number">
             <label style="font-weight: 600; color: #495057; margin-right: 10px;">RNC Nº.:</label>
             <input type="text" id="rnc_number" name="rnc_number" value="{{ rnc.rnc_number }}" 
-                   style="border: 2px solid #8b1538; border-radius: 5px; padding: 8px; width: 200px; font-weight: 600;">
+                   style="border: 2px solid #cccccc; border-radius: 5px; padding: 8px; width: 200px; font-weight: 600;">
         </div>
 
         <!-- Main Information Table -->
@@ -358,9 +358,9 @@
         </div>
 
         <!-- Main Content Section -->
-        <div style="border: 2px solid #8b1538; border-top: none; border-radius: 0 0 8px 8px; background: white; display: flex;">
+        <div style="border: 2px solid #cccccc; border-top: none; border-radius: 0 0 8px 8px; background: white; display: flex;">
             <!-- Left Section: Disposição do Material -->
-            <div style="width: 50%; padding: 15px; border-right: 1px solid #8b1538;">
+            <div style="width: 50%; padding: 15px; border-right: 1px solid #cccccc;">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px; font-weight: bold;">
                     <div style="display: flex; align-items: center;">
                         <input type="checkbox" id="usar" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #8b1538;" {% if rnc.disposition_usar %}checked{% endif %}>
@@ -410,10 +410,10 @@
         </div>
 
         <!-- Signature Section -->
-        <div style="margin-top: 15px; border: 2px solid #8b1538; border-radius: 4px; background: white;">
+        <div style="margin-top: 15px; border: 2px solid #cccccc; border-radius: 4px; background: white;">
             <!-- Date Row -->
-            <div style="display: flex; border-bottom: 2px solid #8b1538;">
-                <div style="width: 33.33%; padding: 8px; text-align: center; font-size: 10px; font-weight: bold; border-right: 2px solid #8b1538;">
+            <div style="display: flex; border-bottom: 2px solid #cccccc;">
+                <div style="width: 33.33%; padding: 8px; text-align: center; font-size: 10px; font-weight: bold; border-right: 2px solid #cccccc;">
                     <span>INSPEÇÃO: </span>
                     <input id="insp1_d" type="text" style="border: none; border-bottom: 1px solid #000; width: 20px; text-align: center; font-size: 10px;" placeholder="__">
                     <span>/</span>
@@ -421,7 +421,7 @@
                     <span>/</span>
                     <input id="insp1_y" type="text" style="border: none; border-bottom: 1px solid #000; width: 40px; text-align: center; font-size: 10px;" placeholder="____">
                 </div>
-                <div style="width: 33.33%; padding: 8px; text-align: center; font-size: 10px; font-weight: bold; border-right: 2px solid #8b1538;">
+                <div style="width: 33.33%; padding: 8px; text-align: center; font-size: 10px; font-weight: bold; border-right: 2px solid #cccccc;">
                     <span>INSPEÇÃO: </span>
                     <input id="eng_d" type="text" style="border: none; border-bottom: 1px solid #000; width: 20px; text-align: center; font-size: 10px;" placeholder="__">
                     <span>/</span>
@@ -441,11 +441,11 @@
 
                          <!-- Signature Row -->
              <div style="display: flex;">
-                 <div id="assinatura_coluna1" style="width: 33.33%; padding: 15px; text-align: center; font-size: 11px; font-weight: bold; border-right: 2px solid #8b1538; background: #8b1538; color: white; cursor: pointer;" onclick="preencherAssinatura(this)">
+                 <div id="assinatura_coluna1" style="width: 33.33%; padding: 15px; text-align: center; font-size: 11px; font-weight: bold; border-right: 2px solid #cccccc; background: #8b1538; color: white; cursor: pointer;" onclick="preencherAssinatura(this)">
                      <div id="nome_coluna1" style="margin-bottom: 25px;">{{ rnc.signature_inspection_name or 'NOME' }}</div>
                      <div style="border-top: 1px solid #6c757d; padding-top: 8px;">VISTO</div>
                  </div>
-                 <div id="assinatura_coluna2" style="width: 33.33%; padding: 15px; text-align: center; font-size: 11px; font-weight: bold; border-right: 2px solid #8b1538; cursor: pointer;" onclick="preencherAssinatura(this)">
+                 <div id="assinatura_coluna2" style="width: 33.33%; padding: 15px; text-align: center; font-size: 11px; font-weight: bold; border-right: 2px solid #cccccc; cursor: pointer;" onclick="preencherAssinatura(this)">
                      <div id="nome_coluna2" style="margin-bottom: 25px;">{{ rnc.signature_engineering_name or 'NOME' }}</div>
                      <div style="border-top: 1px solid #6c757d; padding-top: 8px;">VISTO</div>
                  </div>
