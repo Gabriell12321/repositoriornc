@@ -6,8 +6,6 @@
     <title>IPPEL - Sistema RNC | Login</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@300;400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <style>
         * {
             margin: 0;
@@ -22,9 +20,8 @@
             --accent: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
             --success: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
             --error: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%);
-            --warning: linear-gradient(135deg, #ffb347 0%, #ffcc33 100%);
             
-            /* Cores sólidas para fallback */
+            /* Cores sólidas */
             --primary-solid: #667eea;
             --secondary-solid: #f5576c;
             --accent-solid: #4facfe;
@@ -45,25 +42,6 @@
             --glass-border: rgba(255, 255, 255, 0.18);
             --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
             
-            /* Sombras modernas */
-            --shadow-subtle: 0 2px 8px rgba(0, 0, 0, 0.1);
-            --shadow-medium: 0 8px 30px rgba(0, 0, 0, 0.12);
-            --shadow-strong: 0 20px 60px rgba(0, 0, 0, 0.3);
-            
-            /* Novas cores para melhorias */
-            --neon-blue: #00d4ff;
-            --neon-purple: #b847ff;
-            --neon-pink: #ff4081;
-            --gold: #ffd700;
-            --silver: #c0c0c0;
-            --holographic: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57);
-            
-            /* Efeitos avançados */
-            --blur-heavy: blur(20px);
-            --blur-medium: blur(12px);
-            --blur-light: blur(6px);
-            --shadow-glow: 0 0 40px rgba(102, 126, 234, 0.3);
-            
             /* Espaçamentos */
             --space-xs: 0.25rem;
             --space-sm: 0.5rem;
@@ -78,17 +56,11 @@
             --radius-lg: 1rem;
             --radius-xl: 1.5rem;
             --radius-2xl: 2rem;
-            
-            /* Transições */
-            --transition-fast: 0.15s ease;
-            --transition-medium: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            --transition-slow: 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-            --transition-bounce: 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
         }
 
         body {
-            font-family: 'Poppins', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--dark-bg);
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--dark) 0%, var(--darker) 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -97,7 +69,7 @@
             position: relative;
         }
 
-        /* Background animado com múltiplas camadas */
+        /* Background animado */
         .animated-bg {
             position: absolute;
             top: 0;
@@ -107,71 +79,38 @@
             background: 
                 radial-gradient(ellipse 80% 50% at 20% 40%, rgba(102, 126, 234, 0.3) 0%, transparent 50%),
                 radial-gradient(ellipse 60% 80% at 80% 70%, rgba(245, 87, 108, 0.25) 0%, transparent 50%),
-                radial-gradient(ellipse 100% 70% at 50% 90%, rgba(79, 172, 254, 0.2) 0%, transparent 50%),
-                linear-gradient(135deg, var(--dark) 0%, var(--darker) 100%);
-            background-size: 100% 100%, 120% 120%, 150% 150%, 100% 100%;
+                radial-gradient(ellipse 100% 70% at 50% 90%, rgba(79, 172, 254, 0.2) 0%, transparent 50%);
+            background-size: 100% 100%, 120% 120%, 150% 150%;
             animation: backgroundFlow 25s ease infinite;
+            z-index: 1;
         }
 
         @keyframes backgroundFlow {
             0%, 100% { 
-                background-position: 20% 40%, 80% 70%, 50% 90%, 0% 0%;
-                background-size: 100% 100%, 120% 120%, 150% 150%, 100% 100%;
+                background-position: 20% 40%, 80% 70%, 50% 90%;
+                background-size: 100% 100%, 120% 120%, 150% 150%;
             }
             25% { 
-                background-position: 40% 20%, 60% 90%, 30% 70%, 0% 0%;
-                background-size: 120% 80%, 100% 140%, 130% 170%, 100% 100%;
+                background-position: 40% 20%, 60% 90%, 30% 70%;
+                background-size: 120% 80%, 100% 140%, 130% 170%;
             }
             50% { 
-                background-position: 80% 60%, 20% 30%, 70% 50%, 0% 0%;
-                background-size: 80% 120%, 140% 100%, 170% 130%, 100% 100%;
+                background-position: 80% 60%, 20% 30%, 70% 50%;
+                background-size: 80% 120%, 140% 100%, 170% 130%;
             }
             75% { 
-                background-position: 60% 80%, 40% 10%, 90% 30%, 0% 0%;
-                background-size: 110% 90%, 130% 110%, 140% 160%, 100% 100%;
+                background-position: 60% 80%, 40% 10%, 90% 30%;
+                background-size: 110% 90%, 130% 110%, 140% 160%;
             }
         }
 
-        /* Mesh gradient moderno */
-        .mesh-gradient {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: 
-                conic-gradient(from 0deg at 20% 30%, rgba(102, 126, 234, 0.1) 0deg, transparent 60deg),
-                conic-gradient(from 90deg at 70% 60%, rgba(245, 87, 108, 0.08) 0deg, transparent 90deg),
-                conic-gradient(from 180deg at 40% 80%, rgba(79, 172, 254, 0.06) 0deg, transparent 120deg);
-            animation: meshRotate 30s linear infinite;
-            z-index: 1;
-        }
-
-        @keyframes meshRotate {
-            0% { transform: rotate(0deg) scale(1); }
-            100% { transform: rotate(360deg) scale(1.1); }
-        }
-
-        /* Overlay com noise texture */
-        .noise-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
-            z-index: 2;
-            pointer-events: none;
-        }
-
-        /* Orbs flutuantes 3D modernos */
+        /* Orbs flutuantes */
         .floating-orbs {
             position: absolute;
             width: 100%;
             height: 100%;
             overflow: hidden;
-            z-index: 3;
-            pointer-events: none;
+            z-index: 2;
         }
 
         .orb {
@@ -180,21 +119,6 @@
             filter: blur(60px);
             opacity: 0.4;
             animation: floatOrb 20s infinite ease-in-out;
-            will-change: transform;
-        }
-
-        .orb::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: inherit;
-            border-radius: 50%;
-            filter: blur(30px);
-            opacity: 0.6;
-            animation: orbitSlow 40s linear infinite reverse;
         }
 
         .orb1 {
@@ -204,7 +128,6 @@
             top: -200px;
             left: -200px;
             animation-duration: 25s;
-            animation-delay: 0s;
         }
 
         .orb2 {
@@ -227,186 +150,80 @@
             animation-delay: -5s;
         }
 
-        .orb4 {
-            width: 350px;
-            height: 350px;
-            background: var(--success);
-            top: 60%;
-            left: -10%;
-            animation-duration: 28s;
-            animation-delay: -15s;
-        }
-
         @keyframes floatOrb {
             0%, 100% {
-                transform: translate(0, 0) rotate(0deg) scale(1);
+                transform: translate(0, 0) scale(1);
             }
             25% {
-                transform: translate(100px, -120px) rotate(90deg) scale(1.1);
+                transform: translate(100px, -120px) scale(1.1);
             }
             50% {
-                transform: translate(-80px, 150px) rotate(180deg) scale(0.9);
+                transform: translate(-80px, 150px) scale(0.9);
             }
             75% {
-                transform: translate(120px, 80px) rotate(270deg) scale(1.05);
+                transform: translate(120px, 80px) scale(1.05);
             }
         }
 
-        @keyframes orbitSlow {
-            0% { transform: rotate(0deg) scale(1); }
-            100% { transform: rotate(360deg) scale(1.2); }
-        }
-
-        /* Grid de pontos animados mais sutil */
-        .dot-grid {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            background-image: 
-                radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.08) 1px, transparent 1px),
-                radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-            background-size: 60px 60px, 40px 40px;
-            opacity: 0.3;
-            animation: dotFlow 60s linear infinite;
-            z-index: 2;
-        }
-
-        @keyframes dotFlow {
-            0% { transform: translate(0, 0) rotate(0deg); }
-            100% { transform: translate(60px, 60px) rotate(360deg); }
-        }
-
-        /* Container principal melhorado */
+        /* Container principal */
         .login-container {
             background: var(--glass-bg-strong);
-            backdrop-filter: blur(24px) saturate(200%);
-            -webkit-backdrop-filter: blur(24px) saturate(200%);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
             border-radius: var(--radius-2xl);
             padding: var(--space-2xl);
             box-shadow: 
                 var(--glass-shadow),
-                inset 0 0 0 1px var(--glass-border),
-                0 0 100px rgba(102, 126, 234, 0.15);
+                inset 0 0 0 1px var(--glass-border);
             width: 440px;
             max-width: calc(100vw - 2rem);
             position: relative;
             z-index: 10;
-            animation: containerEnter 1s cubic-bezier(0.16, 1, 0.3, 1);
             border: 1px solid var(--glass-border);
             overflow: hidden;
-            will-change: transform;
-        }
-
-        /* Efeito de brilho holográfico */
-        .login-container::before {
-            content: '';
-            position: absolute;
-            top: -2px;
-            left: -2px;
-            right: -2px;
-            bottom: -2px;
-            background: linear-gradient(
-                45deg,
-                transparent 30%,
-                rgba(102, 126, 234, 0.1) 50%,
-                rgba(245, 87, 108, 0.1) 70%,
-                transparent 90%
-            );
-            border-radius: var(--radius-2xl);
-            z-index: -1;
-            animation: holographicShine 8s ease-in-out infinite;
-        }
-
-        .login-container::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(
-                90deg,
-                transparent,
-                rgba(255, 255, 255, 0.08),
-                transparent
-            );
-            transform: skewX(-25deg);
-            transition: left var(--transition-slow);
-            pointer-events: none;
-        }
-
-        .login-container:hover::after {
-            left: 100%;
+            animation: containerEnter 1s ease-out;
         }
 
         @keyframes containerEnter {
             from {
                 opacity: 0;
-                transform: translateY(50px) scale(0.9) rotateX(10deg);
-                filter: blur(20px);
+                transform: translateY(50px) scale(0.9);
             }
             to {
                 opacity: 1;
-                transform: translateY(0) scale(1) rotateX(0deg);
-                filter: blur(0);
+                transform: translateY(0) scale(1);
             }
         }
 
-        @keyframes holographicShine {
-            0%, 100% { opacity: 0.3; }
-            50% { opacity: 0.7; }
-        }
-
-        /* Seção do logo aprimorada */
+        /* Seção do logo */
         .logo-section {
             text-align: center;
             margin-bottom: var(--space-2xl);
-            position: relative;
         }
 
-        /* Container do logo com múltiplos efeitos */
         .logo-wrapper {
             position: relative;
-            width: 100px;
-            height: 100px;
+            width: 120px;
+            height: 120px;
             margin: 0 auto var(--space-xl);
             display: flex;
             align-items: center;
             justify-content: center;
-            isolation: isolate;
         }
 
-        /* Círculos orbitais animados */
-        .logo-wrapper::before,
-        .logo-wrapper::after {
-            content: '';
+        .logo-orbit {
             position: absolute;
-            border-radius: 50%;
+            width: 160px;
+            height: 160px;
             border: 2px solid transparent;
-            animation: logoOrbit 6s linear infinite;
+            border-top: 2px solid var(--primary-solid);
+            border-radius: 50%;
+            animation: orbit 15s linear infinite;
         }
 
-        .logo-wrapper::before {
-            width: 120px;
-            height: 120px;
-            border-top-color: var(--primary-solid);
-            border-right-color: transparent;
-            animation-duration: 6s;
-        }
-
-        .logo-wrapper::after {
-            width: 140px;
-            height: 140px;
-            border-bottom-color: var(--accent-solid);
-            border-left-color: transparent;
-            animation-duration: 8s;
-            animation-direction: reverse;
-        }
-
-        @keyframes logoOrbit {
-            0% { transform: rotate(0deg) scale(1); }
-            50% { transform: rotate(180deg) scale(1.05); }
-            100% { transform: rotate(360deg) scale(1); }
+        @keyframes orbit {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
 
         .logo {
@@ -414,37 +231,26 @@
             height: 100%;
             border-radius: var(--radius-lg);
             background: var(--glass-bg-strong);
-            backdrop-filter: blur(12px);
-            padding: var(--space-lg);
+            padding: var(--space-md);
             border: 1px solid var(--glass-border);
-            position: relative;
             z-index: 2;
-            transition: all var(--transition-slow);
-            animation: logoFloat 4s ease-in-out infinite;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo img {
+            max-width: 100%;
+            max-height: 100%;
             object-fit: contain;
-            box-shadow: 
-                var(--shadow-medium),
-                0 0 50px rgba(102, 126, 234, 0.2);
         }
 
         .logo:hover {
-            transform: scale(1.1) translateY(-8px) rotateY(15deg);
-            box-shadow: 
-                var(--shadow-strong),
-                0 0 80px rgba(102, 126, 234, 0.4),
-                inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(102, 126, 234, 0.3);
         }
 
-        @keyframes logoFloat {
-            0%, 100% { 
-                transform: translateY(0px) scale(1) rotateZ(0deg); 
-            }
-            50% { 
-                transform: translateY(-12px) scale(1.02) rotateZ(2deg); 
-            }
-        }
-
-        /* Título com efeito gradiente dinâmico */
         .title {
             font-size: 2.5rem;
             font-weight: 900;
@@ -454,38 +260,6 @@
             background-clip: text;
             margin-bottom: var(--space-sm);
             letter-spacing: -1px;
-            position: relative;
-            animation: titleGlow 4s ease-in-out infinite;
-            text-shadow: 0 0 30px rgba(102, 126, 234, 0.5);
-        }
-
-        .title::after {
-            content: '';
-            position: absolute;
-            bottom: -8px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 60px;
-            height: 3px;
-            background: var(--accent);
-            border-radius: 2px;
-            animation: titleUnderline 3s ease-in-out infinite;
-        }
-
-        @keyframes titleGlow {
-            0%, 100% { 
-                filter: brightness(1) contrast(1);
-                transform: scale(1);
-            }
-            50% { 
-                filter: brightness(1.3) contrast(1.1);
-                transform: scale(1.02);
-            }
-        }
-
-        @keyframes titleUnderline {
-            0%, 100% { width: 60px; opacity: 0.7; }
-            50% { width: 80px; opacity: 1; }
         }
 
         .subtitle {
@@ -493,20 +267,11 @@
             font-size: 1rem;
             margin-bottom: var(--space-2xl);
             font-weight: 400;
-            letter-spacing: 0.5px;
-            opacity: 0.9;
-            animation: subtitleFade 2s ease-in-out infinite;
         }
 
-        @keyframes subtitleFade {
-            0%, 100% { opacity: 0.7; }
-            50% { opacity: 1; }
-        }
-
-        /* Formulários modernos */
+        /* Formulários */
         .form-group {
             margin-bottom: var(--space-xl);
-            position: relative;
         }
 
         .form-group label {
@@ -517,70 +282,29 @@
             font-size: 0.875rem;
             text-transform: uppercase;
             letter-spacing: 1px;
-            opacity: 0.9;
-            transition: all var(--transition-medium);
         }
 
         .input-container {
             position: relative;
-            transition: all var(--transition-slow);
-            transform-style: preserve-3d;
         }
 
-        /* Input avançado com múltiplos estados */
         .form-input {
             width: 100%;
             padding: var(--space-lg) var(--space-lg) var(--space-lg) 3.5rem;
             border: 2px solid var(--glass-border);
             border-radius: var(--radius-lg);
             font-size: 1rem;
-            font-weight: 500;
-            transition: all var(--transition-slow);
             background: var(--glass-bg);
-            backdrop-filter: blur(12px);
             color: var(--text-light);
-            position: relative;
-            z-index: 1;
+            transition: all 0.3s ease;
         }
 
-        .form-input::placeholder {
-            color: var(--text-subtle);
-            font-weight: 400;
-            transition: all var(--transition-medium);
-        }
-
-        /* Estados avançados do input */
         .form-input:focus {
             outline: none;
             border-color: var(--primary-solid);
-            background: var(--glass-bg-strong);
-            box-shadow: 
-                0 0 0 4px rgba(102, 126, 234, 0.2),
-                0 0 30px rgba(102, 126, 234, 0.15),
-                inset 0 0 0 1px rgba(255, 255, 255, 0.1);
-            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2);
         }
 
-        .form-input:focus::placeholder {
-            transform: translateY(-20px);
-            opacity: 0;
-        }
-
-        .form-input:valid {
-            border-color: var(--success-solid);
-            box-shadow: 
-                0 0 0 2px rgba(56, 239, 125, 0.2),
-                0 0 20px rgba(56, 239, 125, 0.1);
-        }
-
-        .form-input:invalid:not(:placeholder-shown) {
-            border-color: var(--error-solid);
-            box-shadow: 
-                0 0 0 2px rgba(238, 9, 121, 0.2),
-                0 0 20px rgba(238, 9, 121, 0.1);
-        }
-
-        /* Ícones dos inputs com animações */
         .input-icon {
             position: absolute;
             left: var(--space-lg);
@@ -588,450 +312,9 @@
             transform: translateY(-50%);
             font-size: 1.125rem;
             color: var(--text-subtle);
-            transition: all var(--transition-slow);
-            z-index: 2;
             pointer-events: none;
         }
 
-        .form-input:focus ~ .input-icon {
-            color: var(--primary-solid);
-            transform: translateY(-50%) scale(1.2) rotate(10deg);
-            filter: drop-shadow(0 0 8px rgba(102, 126, 234, 0.5));
-        }
-
-        .form-input:valid ~ .input-icon {
-            color: var(--success-solid);
-            transform: translateY(-50%) scale(1.1);
-        }
-
-        /* Novos elementos do logo */
-        .orbital-ring {
-            position: absolute;
-            width: 180px;
-            height: 180px;
-            border: 1px solid transparent;
-            border-top: 1px solid var(--gold);
-            border-bottom: 1px solid var(--neon-purple);
-            border-radius: 50%;
-            animation: orbit 16s linear infinite;
-            z-index: 1;
-        }
-
-        .logo-particles {
-            position: absolute;
-            width: 200px;
-            height: 200px;
-            border-radius: 50%;
-            background: 
-                radial-gradient(circle at 20% 20%, var(--neon-blue) 2px, transparent 2px),
-                radial-gradient(circle at 80% 80%, var(--neon-pink) 1px, transparent 1px),
-                radial-gradient(circle at 60% 30%, var(--gold) 1.5px, transparent 1.5px),
-                radial-gradient(circle at 30% 70%, var(--neon-purple) 1px, transparent 1px);
-            background-size: 40px 40px, 60px 60px, 50px 50px, 45px 45px;
-            animation: logoParticleRotate 20s linear infinite;
-            opacity: 0.6;
-        }
-
-        .holographic-glow {
-            position: absolute;
-            width: 140px;
-            height: 140px;
-            border-radius: 50%;
-            background: var(--holographic);
-            opacity: 0.3;
-            filter: blur(20px);
-            animation: holographicPulse 4s ease-in-out infinite;
-            z-index: 0;
-        }
-
-        @keyframes logoParticleRotate {
-            from { transform: rotate(0deg) scale(1); }
-            to { transform: rotate(360deg) scale(1.1); }
-        }
-
-        @keyframes holographicPulse {
-            0%, 100% { 
-                transform: scale(1); 
-                opacity: 0.3; 
-            }
-            50% { 
-                transform: scale(1.2); 
-                opacity: 0.6; 
-            }
-        }
-
-        /* Efeito de estrelas piscantes */
-        .stars {
-            position: fixed;
-            width: 100%;
-            height: 100%;
-            background-image: 
-                radial-gradient(2px 2px at 20px 30px, #fff, transparent),
-                radial-gradient(2px 2px at 40px 70px, rgba(255,255,255,0.8), transparent),
-                radial-gradient(1px 1px at 90px 40px, #fff, transparent),
-                radial-gradient(1px 1px at 130px 80px, rgba(255,255,255,0.9), transparent),
-                radial-gradient(2px 2px at 160px 30px, #fff, transparent);
-            background-repeat: repeat;
-            background-size: 200px 100px;
-            animation: twinkle 8s linear infinite;
-            opacity: 0.6;
-            z-index: 2;
-        }
-
-        @keyframes twinkle {
-            0%, 100% { opacity: 0.6; }
-            50% { opacity: 1; }
-        }
-
-        /* Linhas de código holográficas flutuantes */
-        .code-lines {
-            position: fixed;
-            width: 100%;
-            height: 100%;
-            opacity: 0.1;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-            color: var(--neon-blue);
-            pointer-events: none;
-            z-index: 2;
-        }
-
-        .code-line {
-            position: absolute;
-            white-space: nowrap;
-            animation: codeFloat 15s linear infinite;
-        }
-
-        @keyframes codeFloat {
-            0% {
-                transform: translateX(-100%) translateY(0) rotate(0deg);
-                opacity: 0;
-            }
-            10% {
-                opacity: 1;
-            }
-            90% {
-                opacity: 1;
-            }
-            100% {
-                transform: translateX(100vw) translateY(-20px) rotate(5deg);
-                opacity: 0;
-            }
-        }
-
-        /* Chuva digital estilo Matrix */
-        .digital-rain {
-            position: fixed;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 2;
-            opacity: 0.3;
-        }
-
-        .rain-column {
-            position: absolute;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            color: var(--neon-blue);
-            animation: rainFall 3s linear infinite;
-        }
-
-        @keyframes rainFall {
-            0% {
-                transform: translateY(-100vh);
-                opacity: 1;
-            }
-            100% {
-                transform: translateY(100vh);
-                opacity: 0;
-            }
-        }
-
-        /* Linha de scan futurista */
-        .scan-line {
-            position: fixed;
-            width: 100%;
-            height: 2px;
-            background: linear-gradient(90deg, 
-                transparent 0%, 
-                var(--neon-blue) 20%, 
-                white 50%, 
-                var(--neon-blue) 80%, 
-                transparent 100%);
-            box-shadow: 0 0 20px var(--neon-blue);
-            animation: scanMove 4s linear infinite;
-            z-index: 10;
-            opacity: 0.7;
-        }
-
-        @keyframes scanMove {
-            0% {
-                top: -2px;
-                opacity: 0;
-            }
-            10% {
-                opacity: 0.7;
-            }
-            90% {
-                opacity: 0.7;
-            }
-            100% {
-                top: 100vh;
-                opacity: 0;
-            }
-        }
-
-        .form-input:invalid:not(:placeholder-shown) ~ .input-icon {
-            color: var(--error-solid);
-            transform: translateY(-50%) scale(1.1) rotate(-5deg);
-            animation: iconShake 0.5s ease-in-out;
-        }
-
-        @keyframes iconShake {
-            0%, 100% { transform: translateY(-50%) scale(1.1) rotate(-5deg); }
-            25% { transform: translateY(-50%) scale(1.1) rotate(5deg); }
-            75% { transform: translateY(-50%) scale(1.1) rotate(-2deg); }
-        }
-
-        /* Botão de login ultra moderno */
-        .login-btn {
-            width: 100%;
-            padding: var(--space-lg) var(--space-xl);
-            background: var(--primary);
-            color: white;
-            border: none;
-            border-radius: var(--radius-lg);
-            font-size: 1.1rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all var(--transition-slow);
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            position: relative;
-            overflow: hidden;
-            margin-top: var(--space-lg);
-            box-shadow: 
-                var(--shadow-medium),
-                0 0 40px rgba(102, 126, 234, 0.3);
-            transform-style: preserve-3d;
-            border: 2px solid transparent;
-        }
-
-        /* Efeito de onda no clique */
-        .login-btn::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 0;
-            height: 0;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.4);
-            transform: translate(-50%, -50%);
-            transition: width 0.8s ease, height 0.8s ease;
-            z-index: 1;
-        }
-
-        .login-btn:active::before {
-            width: 400px;
-            height: 400px;
-        }
-
-        /* Brilho holográfico */
-        .login-btn::after {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -100%;
-            width: 200%;
-            height: 200%;
-            background: linear-gradient(
-                45deg,
-                transparent 20%,
-                rgba(255, 255, 255, 0.15) 40%,
-                rgba(255, 255, 255, 0.3) 50%,
-                rgba(255, 255, 255, 0.15) 60%,
-                transparent 80%
-            );
-            transform: rotate(45deg);
-            transition: all var(--transition-slow);
-            opacity: 0;
-            z-index: 2;
-        }
-
-        .login-btn:hover::after {
-            animation: holographicSweep 1s ease-out;
-        }
-
-        @keyframes holographicSweep {
-            0% {
-                left: -100%;
-                opacity: 0;
-            }
-            50% {
-                opacity: 1;
-            }
-            100% {
-                left: 100%;
-                opacity: 0;
-            }
-        }
-
-        .login-btn:hover {
-            transform: translateY(-4px) scale(1.02) rotateX(5deg);
-            box-shadow: 
-                var(--shadow-strong),
-                0 0 60px rgba(102, 126, 234, 0.5),
-                inset 0 0 0 2px rgba(255, 255, 255, 0.2);
-            background: var(--secondary);
-            border-color: rgba(255, 255, 255, 0.3);
-        }
-
-        .login-btn:active {
-            transform: translateY(-2px) scale(1) rotateX(2deg);
-            transition: all 0.1s ease;
-        }
-
-        .login-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: var(--shadow-subtle);
-        }
-
-        /* Ícone do botão com animação */
-        .login-btn i {
-            margin-right: var(--space-sm);
-            transition: all var(--transition-medium);
-            position: relative;
-            z-index: 3;
-        }
-
-        .login-btn:hover i {
-            transform: translateX(4px) scale(1.1);
-            filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.5));
-        }
-
-        .login-btn span {
-            position: relative;
-            z-index: 3;
-        }image.png00 
-
-        /* Loading moderno */
-        .loading {
-            display: none;
-            text-align: center;
-            margin-top: 24px;
-        }
-
-        .loading p {
-            color: var(--text-light);
-            font-size: 14px;
-            margin-top: 16px;
-            opacity: 0.8;
-        }
-
-        /* Spinner moderno com múltiplas órbitas */
-        .spinner-container {
-            width: 60px;
-            height: 60px;
-            margin: 0 auto;
-            position: relative;
-        }
-
-        .spinner {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            border: 2px solid transparent;
-            border-radius: 50%;
-            animation: spin 1.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
-        }
-
-        .spinner:nth-child(1) {
-            border-top-color: var(--primary-color);
-            animation-delay: 0s;
-        }
-
-        .spinner:nth-child(2) {
-            border-right-color: var(--secondary-color);
-            animation-delay: 0.15s;
-            width: 80%;
-            height: 80%;
-            top: 10%;
-            left: 10%;
-        }
-
-        .spinner:nth-child(3) {
-            border-bottom-color: var(--accent-color);
-            animation-delay: 0.3s;
-            width: 60%;
-            height: 60%;
-            top: 20%;
-            left: 20%;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* Mensagens modernas */
-        .message {
-            margin-top: 20px;
-            padding: 16px 20px;
-            border-radius: 12px;
-            text-align: center;
-            font-weight: 500;
-            font-size: 14px;
-            animation: messageSlide 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-            position: relative;
-            overflow: hidden;
-            backdrop-filter: blur(10px);
-        }
-
-        .message::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            animation: messageShine 1s ease-out;
-        }
-
-        @keyframes messageShine {
-            to { left: 100%; }
-        }
-
-        .message.success {
-            background: rgba(0, 210, 211, 0.2);
-            color: var(--accent-color);
-            border: 1px solid rgba(0, 210, 211, 0.3);
-            box-shadow: 0 4px 20px rgba(0, 210, 211, 0.2);
-        }
-
-        .message.error {
-            background: rgba(255, 71, 87, 0.2);
-            color: var(--primary-color);
-            border: 1px solid rgba(255, 71, 87, 0.3);
-            box-shadow: 0 4px 20px rgba(255, 71, 87, 0.2);
-        }
-
-        @keyframes messageSlide {
-            from {
-                opacity: 0;
-                transform: translateY(-20px) scale(0.9);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-
-        /* Botão mostrar/ocultar senha moderno */
         .toggle-password {
             position: absolute;
             right: 16px;
@@ -1042,22 +325,16 @@
             color: rgba(255, 255, 255, 0.5);
             cursor: pointer;
             font-size: 16px;
-            transition: all 0.3s ease;
             padding: 4px;
             border-radius: 4px;
         }
         
         .toggle-password:hover { 
-            color: var(--primary-color);
-            background: rgba(255, 71, 87, 0.1);
+            color: var(--primary-solid);
+            background: rgba(102, 126, 234, 0.1);
         }
 
-        .toggle-password:focus {
-            outline: none;
-            box-shadow: 0 0 0 2px rgba(255, 71, 87, 0.3);
-        }
-
-        /* Checkbox e links modernos */
+        /* Form extras */
         .form-extras {
             display: flex;
             justify-content: space-between;
@@ -1071,44 +348,108 @@
             align-items: center;
             gap: 8px;
             color: var(--text-light);
-            opacity: 0.8;
         }
 
-        .remember-me input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            accent-color: var(--primary-color);
-            cursor: pointer;
+        .remember-me input {
+            accent-color: var(--primary-solid);
         }
 
         .forgot-link {
-            color: var(--primary-color);
+            color: var(--primary-solid);
             text-decoration: none;
             font-weight: 500;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .forgot-link::after {
-            content: '';
-            position: absolute;
-            bottom: -2px;
-            left: 0;
-            width: 0;
-            height: 2px;
-            background: var(--primary-color);
-            transition: width 0.3s ease;
-        }
-
-        .forgot-link:hover::after {
-            width: 100%;
         }
 
         .forgot-link:hover {
-            color: var(--accent-color);
+            text-decoration: underline;
         }
 
-        /* Rodapé moderno */
+        /* Botão de login */
+        .login-btn {
+            width: 100%;
+            padding: var(--space-lg) var(--space-xl);
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius-lg);
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-top: var(--space-lg);
+            box-shadow: 0 8px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5);
+            background: var(--secondary);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+        .login-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Loading */
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 24px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            margin: 0 auto;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading p {
+            color: var(--text-light);
+            font-size: 14px;
+            margin-top: 16px;
+        }
+
+        /* Mensagens */
+        .message {
+            margin-top: 20px;
+            padding: 16px 20px;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: 500;
+            font-size: 14px;
+            display: none;
+        }
+
+        .message.success {
+            background: rgba(56, 239, 125, 0.2);
+            color: var(--success-solid);
+            border: 1px solid rgba(56, 239, 125, 0.3);
+        }
+
+        .message.error {
+            background: rgba(238, 9, 121, 0.2);
+            color: var(--error-solid);
+            border: 1px solid rgba(238, 9, 121, 0.3);
+        }
+
+        /* Rodapé */
         .footer {
             margin-top: 32px;
             text-align: center;
@@ -1118,17 +459,16 @@
         }
 
         .footer span {
-            color: var(--primary-color);
+            color: var(--primary-solid);
             font-weight: 500;
         }
 
-        /* Responsividade aprimorada */
+        /* Responsividade */
         @media (max-width: 768px) {
             .login-container {
                 width: 90%;
                 max-width: 400px;
                 padding: 36px 28px;
-                margin: 20px;
             }
 
             .logo-wrapper {
@@ -1138,10 +478,6 @@
 
             .title {
                 font-size: 28px;
-            }
-
-            .subtitle {
-                font-size: 14px;
             }
 
             .form-input {
@@ -1158,10 +494,6 @@
                 padding: 16px;
                 font-size: 15px;
             }
-
-            .orb1, .orb2, .orb3 {
-                filter: blur(60px);
-            }
         }
 
         @media (max-width: 480px) {
@@ -1173,11 +505,6 @@
             .logo-wrapper {
                 width: 80px;
                 height: 80px;
-            }
-
-            .logo-wrapper::before {
-                width: 100px;
-                height: 100px;
             }
 
             .title {
@@ -1194,109 +521,26 @@
                 align-items: flex-start;
             }
         }
-
-        /* Partículas luminosas */
-        .particles {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            z-index: 3;
-            pointer-events: none;
-        }
-
-        .particle {
-            position: absolute;
-            background: radial-gradient(circle, rgba(255, 255, 255, 0.8) 0%, transparent 70%);
-            border-radius: 50%;
-            filter: blur(1px);
-            opacity: 0;
-            animation: particleFloat 15s linear infinite;
-        }
-
-        @keyframes particleFloat {
-            0% {
-                transform: translateY(100vh) translateX(0) scale(0);
-                opacity: 0;
-            }
-            10% {
-                opacity: 0.8;
-                transform: translateY(90vh) translateX(10px) scale(1);
-            }
-            90% {
-                opacity: 0.8;
-                transform: translateY(10vh) translateX(-10px) scale(1);
-            }
-            100% {
-                transform: translateY(-10vh) translateX(0) scale(0);
-                opacity: 0;
-            }
-        }
-
-        /* Modo de alto contraste para acessibilidade */
-        @media (prefers-contrast: high) {
-            :root {
-                --glass-bg: rgba(0, 0, 0, 0.8);
-                --glass-border: rgba(255, 255, 255, 0.5);
-            }
-        }
-
-        /* Animações reduzidas para acessibilidade */
-        @media (prefers-reduced-motion: reduce) {
-            * {
-                animation-duration: 0.01ms !important;
-                animation-iteration-count: 1 !important;
-                transition-duration: 0.01ms !important;
-            }
-        }
     </style>
-    <script src="{{ url_for('static', filename='js/app.js') }}?v=2" defer></script>
 </head>
 <body>
-    <!-- Preloader moderno -->
-    <div class="preloader" id="preloader">
-        <div class="preloader-content">
-            <div class="preloader-logo">
-                <i class="fas fa-bolt"></i>
-            </div>
-            <div class="preloader-text">Carregando Sistema RNC</div>
-        </div>
-    </div>
-
     <!-- Background animado -->
     <div class="animated-bg"></div>
-    <div class="mesh-gradient"></div>
-    <div class="noise-overlay"></div>
-    
-    <!-- Efeitos visuais avançados -->
-    <div class="stars"></div>
-    <div class="code-lines" id="codeLines"></div>
-    <div class="digital-rain" id="digitalRain"></div>
-    <div class="scan-line"></div>
-    
-    <!-- Grid de pontos -->
-    <div class="dot-grid"></div>
     
     <!-- Orbs flutuantes -->
     <div class="floating-orbs">
         <div class="orb orb1"></div>
         <div class="orb orb2"></div>
         <div class="orb orb3"></div>
-        <div class="orb orb4"></div>
     </div>
-
-    <!-- Partículas -->
-    <div class="particles" id="particles"></div>
 
     <div class="login-container">
         <div class="logo-section">
             <div class="logo-wrapper">
-                <div class="orbital-ring"></div>
-                <div class="logo-particles"></div>
-                <div class="holographic-glow"></div>
-                <img src="{{ url_for('static', filename='LOGOSQI.jpg') }}" alt="IPPEL Logo" class="logo">
+                <div class="logo-orbit"></div>
+                <div class="logo">
+                    <img src="{{ url_for('static', filename='LOGOSQI.jpg') }}" alt="IPPEL Logo">
+                </div>
             </div>
             <h1 class="title">Sistema RNC</h1>
             <p class="subtitle">Relatório de Não Conformidades</p>
@@ -1316,328 +560,99 @@
                 <div class="input-container">
                     <input type="password" id="password" name="password" class="form-input" placeholder="••••••••" required autocomplete="current-password">
                     <i class="fas fa-lock input-icon"></i>
-                    <button type="button" class="toggle-password" tabindex="-1" aria-label="Mostrar senha" onclick="togglePassword()">
+                    <button type="button" class="toggle-password" id="togglePassword" aria-label="Mostrar senha">
                         <i class="far fa-eye" id="toggleEye"></i>
                     </button>
                 </div>
                 <div class="form-extras">
                     <label class="remember-me">
-                        <input id="rememberMe" type="checkbox"> 
+                        <input type="checkbox" id="rememberMe"> 
                         <span>Lembrar-me</span>
                     </label>
-                    <a href="#" class="forgot-link" onclick="forgotPassword()">Esqueci minha senha</a>
+                    <a href="#" class="forgot-link" id="forgotLink">Esqueci minha senha</a>
                 </div>
             </div>
 
             <button type="submit" class="login-btn" id="loginButton">
-                <i class="fas fa-rocket"></i>
-                <span>Entrar no Sistema</span>
+                <i class="fas fa-sign-in-alt"></i> Entrar no Sistema
             </button>
         </form>
 
         <div class="loading">
-            <div class="spinner-container">
-                <div class="spinner"></div>
-                <div class="spinner"></div>
             <div class="spinner"></div>
-            </div>
             <p>Entrando no sistema...</p>
         </div>
 
-        <div id="message" class="message" style="display: none;"></div>
+        <div id="message" class="message"></div>
 
-        <!-- Rodapé moderno -->
         <div class="footer">
             © <span id="year"></span> <span>IPPEL</span> • Todos os direitos reservados
         </div>
     </div>
 
     <script>
-        // Configurações globais
-        const CONFIG = {
-            particles: {
-                count: 50,
-                speed: { min: 10, max: 30 },
-                size: { min: 1, max: 4 },
-                opacity: { min: 0.3, max: 0.8 }
-            },
-            typewriter: {
-                speed: 100,
-                deleteSpeed: 50,
-                delay: 2000
-            },
-            animations: {
-                enabled: !window.matchMedia('(prefers-reduced-motion: reduce)').matches
-            }
-        };
+        // Ano no rodapé
+        document.getElementById('year').textContent = new Date().getFullYear();
 
-        // Preloader moderno
-        function hidePreloader() {
-            const preloader = document.getElementById('preloader');
-            setTimeout(() => {
-                preloader.classList.add('hidden');
-                setTimeout(() => {
-                    preloader.remove();
-                }, 500);
-            }, 1500);
-        }
-
-        // Partículas avançadas
-        function createAdvancedParticles() {
-            const particlesContainer = document.getElementById('particles');
-            const { count, speed, size, opacity } = CONFIG.particles;
-
-            for (let i = 0; i < count; i++) {
-                const particle = document.createElement('div');
-                particle.className = 'particle';
-                
-                // Propriedades aleatórias
-                const particleSize = Math.random() * (size.max - size.min) + size.min;
-                const left = Math.random() * 100;
-                const animationDuration = Math.random() * (speed.max - speed.min) + speed.min;
-                const animationDelay = Math.random() * 15;
-                const particleOpacity = Math.random() * (opacity.max - opacity.min) + opacity.min;
-                const hue = Math.random() * 360;
-
-                particle.style.cssText = `
-                    width: ${particleSize}px;
-                    height: ${particleSize}px;
-                    left: ${left}%;
-                    animation-duration: ${animationDuration}s;
-                    animation-delay: ${animationDelay}s;
-                    background: radial-gradient(circle, hsla(${hue}, 70%, 70%, ${particleOpacity}) 0%, transparent 70%);
-                    filter: blur(${particleSize * 0.3}px);
-                `;
-
-                particlesContainer.appendChild(particle);
-            }
-        }
-
-        // Efeito de digitação aprimorado
-        function advancedTypewriterEffect() {
-            const emailInput = document.getElementById('email');
-            const placeholders = [
-                'admin@ippel.com.br',
-                'usuario@sistema.com',
-                'seu.email@empresa.com',
-                'operador@ippel.com.br'
-            ];
-            
-            let currentIndex = 0;
-            let charIndex = 0;
-            let isDeleting = false;
-            let isPaused = false;
-            
-            function type() {
-                if (emailInput.value) return; // Para se usuário começou a digitar
-                
-                const current = placeholders[currentIndex];
-                const { speed, deleteSpeed, delay } = CONFIG.typewriter;
-                
-                if (!isDeleting) {
-                    emailInput.placeholder = current.substring(0, charIndex + 1);
-                    charIndex++;
-                    
-                    if (charIndex === current.length) {
-                        isPaused = true;
-                        setTimeout(() => {
-                            isPaused = false;
-                            isDeleting = true;
-                            type();
-                        }, delay);
-                        return;
-                    }
-                } else {
-                    emailInput.placeholder = current.substring(0, charIndex - 1);
-                    charIndex--;
-                    
-                    if (charIndex === 0) {
-                        isDeleting = false;
-                        currentIndex = (currentIndex + 1) % placeholders.length;
-                    }
-                }
-                
-                if (!isPaused) {
-                    setTimeout(type, isDeleting ? deleteSpeed : speed);
-                }
-            }
-            
-            setTimeout(type, 1000);
-        }
-
-        // Mostrar/ocultar senha com animação avançada
-        function togglePassword() {
-            const input = document.getElementById('password');
-            const eye = document.getElementById('toggleEye');
-            const button = eye.parentElement;
-            
-            // Animação de rotação 3D
-            button.style.transform = 'translateY(-50%) rotateY(180deg) scale(0.8)';
-            
-            setTimeout(() => {
-                if (input.type === 'password') {
-                    input.type = 'text';
-                    eye.classList.remove('fa-eye');
-                    eye.classList.add('fa-eye-slash');
-                    button.setAttribute('aria-label', 'Ocultar senha');
-                } else {
-                    input.type = 'password';
-                    eye.classList.remove('fa-eye-slash');
-                    eye.classList.add('fa-eye');
-                    button.setAttribute('aria-label', 'Mostrar senha');
-                }
-                
-                button.style.transform = 'translateY(-50%) rotateY(0deg) scale(1)';
-            }, 150);
-        }
-
-        // Sistema de mensagens aprimorado
-        function showAdvancedMessage(text, type = 'info', duration = 4000) {
-            const messageDiv = document.getElementById('message');
-            const icons = {
-                success: 'fa-check-circle',
-                error: 'fa-exclamation-triangle',
-                warning: 'fa-exclamation-circle',
-                info: 'fa-info-circle'
-            };
-            
-            messageDiv.innerHTML = `
-                <i class="fas ${icons[type]}"></i> 
-                <span>${text}</span>
-            `;
-            messageDiv.className = `message ${type}`;
-            messageDiv.style.display = 'block';
-
-            // Efeito de vibração para erros
-            if (type === 'error') {
-                const container = document.querySelector('.login-container');
-                container.style.animation = 'shake 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97)';
-                
-                // Som de erro (se disponível)
-                if ('AudioContext' in window) {
-                    playErrorSound();
-                }
-                
-                setTimeout(() => {
-                    container.style.animation = '';
-                }, 600);
-            }
-
-            // Auto-hide
-            setTimeout(() => {
-                messageDiv.style.opacity = '0';
-                messageDiv.style.transform = 'translateY(-20px) scale(0.95)';
-                setTimeout(() => {
-                    messageDiv.style.display = 'none';
-                    messageDiv.style.opacity = '1';
-                    messageDiv.style.transform = 'translateY(0) scale(1)';
-                }, 300);
-            }, duration);
-        }
-
-        // Som de erro sintético
-        function playErrorSound() {
-            try {
-                const audioContext = new AudioContext();
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-                
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                
-                oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-                oscillator.frequency.setValueAtTime(400, audioContext.currentTime + 0.1);
-                
-                gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-                gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.01);
-                gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.2);
-                
-                oscillator.start(audioContext.currentTime);
-                oscillator.stop(audioContext.currentTime + 0.2);
-            } catch (e) {
-                // Fallback silencioso se audio não estiver disponível
-            }
-        }
-
-        // Validação em tempo real aprimorada
-        function setupAdvancedValidation() {
-            const emailInput = document.getElementById('email');
+        // Mostrar/ocultar senha
+        document.getElementById('togglePassword').addEventListener('click', function() {
             const passwordInput = document.getElementById('password');
+            const eyeIcon = document.getElementById('toggleEye');
             
-            emailInput.addEventListener('input', function() {
-                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                const isValid = emailRegex.test(this.value);
-                
-                this.style.borderColor = this.value ? 
-                    (isValid ? 'var(--success-solid)' : 'var(--error-solid)') : 
-                    'var(--glass-border)';
-                    
-                // Feedback visual no ícone
-                const icon = this.nextElementSibling;
-                if (this.value) {
-                    icon.style.color = isValid ? 'var(--success-solid)' : 'var(--error-solid)';
-                }
-            });
-            
-            passwordInput.addEventListener('input', function() {
-                const strength = calculatePasswordStrength(this.value);
-                updatePasswordStrengthIndicator(strength);
-            });
-        }
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                eyeIcon.classList.remove('fa-eye');
+                eyeIcon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                eyeIcon.classList.remove('fa-eye-slash');
+                eyeIcon.classList.add('fa-eye');
+            }
+        });
 
-        // Calculadora de força da senha
-        function calculatePasswordStrength(password) {
-            let strength = 0;
-            if (password.length >= 8) strength += 25;
-            if (/[a-z]/.test(password)) strength += 25;
-            if (/[A-Z]/.test(password)) strength += 25;
-            if (/[0-9]/.test(password)) strength += 25;
-            return Math.min(strength, 100);
-        }
-
-        // Indicador de força da senha
-        function updatePasswordStrengthIndicator(strength) {
-            const passwordInput = document.getElementById('password');
-            let color;
-            
-            if (strength < 50) color = 'var(--error-solid)';
-            else if (strength < 75) color = 'var(--warning-solid)';
-            else color = 'var(--success-solid)';
-            
-            passwordInput.style.borderColor = color;
-        }
-
-        // Login aprimorado com feedback visual
-        async function handleAdvancedLogin(e) {
+        // Recuperar senha
+        document.getElementById('forgotLink').addEventListener('click', function(e) {
             e.preventDefault();
+            showMessage('Entre em contato com o administrador para redefinir sua senha', 'info');
+        });
 
+        // Mensagens
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = text;
+            messageDiv.className = `message ${type === 'info' ? 'error' : type}`;
+            messageDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        // Login
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const loginBtn = document.getElementById('loginButton');
             const loading = document.querySelector('.loading');
-
-            // Validação client-side
+            
+            // Validação simples
             if (!email || !password) {
-                showAdvancedMessage('Por favor, preencha todos os campos', 'error');
+                showMessage('Por favor, preencha todos os campos', 'error');
                 return;
             }
-
-            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                showAdvancedMessage('Por favor, insira um email válido', 'error');
-                return;
-            }
-
-            // Estado de loading
+            
+            // Mostrar loading
             const originalText = loginBtn.innerHTML;
             loginBtn.disabled = true;
-            loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Verificando...</span>';
+            loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
             
-            // Animação de loading
             setTimeout(() => {
                 loginBtn.style.display = 'none';
                 loading.style.display = 'block';
             }, 500);
-
+            
             try {
                 const base = window.location.origin.replace(/^https:/, 'http:');
                 const response = await fetch(base + '/api/login', {
@@ -1646,198 +661,32 @@
                     credentials: 'include',
                     body: JSON.stringify({ email, password })
                 });
-
+                
                 const data = await response.json();
-
+                
                 if (response.ok) {
-                    showAdvancedMessage('✨ Login realizado com sucesso! Redirecionando...', 'success');
-                    
-                    // Efeito de sucesso
-                    const container = document.querySelector('.login-container');
-                    container.style.transform = 'scale(0.95)';
-                    container.style.opacity = '0.8';
-                    container.style.filter = 'brightness(1.2)';
-                    
+                    showMessage('Login realizado com sucesso!', 'success');
                     setTimeout(() => {
                         window.location.href = base + '/dashboard';
                     }, 1500);
                 } else {
-                    throw new Error(data.error || 'Erro no login. Verifique suas credenciais');
+                    throw new Error(data.error || 'Erro no login');
                 }
             } catch (error) {
-                showAdvancedMessage(error.message || 'Erro de conexão. Verifique sua internet', 'error');
-                
-                // Restaurar botão
+                showMessage(error.message || 'Erro de conexão', 'error');
                 loginBtn.disabled = false;
                 loginBtn.innerHTML = originalText;
                 loginBtn.style.display = 'block';
                 loading.style.display = 'none';
             }
-        }
+        });
 
-        // Recuperar senha
-        function forgotPassword() {
-            showAdvancedMessage('💬 Entre em contato com o administrador para redefinir sua senha', 'info', 6000);
-        }
-
-        // Efeitos de entrada suaves
-        function initializeEntranceEffects() {
-            const elements = document.querySelectorAll('.login-container, .logo-wrapper, .title, .subtitle');
-            elements.forEach((el, index) => {
-                el.style.opacity = '0';
-                el.style.transform = 'translateY(30px)';
-                
-                setTimeout(() => {
-                    el.style.transition = 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1)';
-                    el.style.opacity = '1';
-                    el.style.transform = 'translateY(0)';
-                }, index * 200);
-            });
-        }
-
-        // Sistema de temas (preparação para futuro)
-        function initializeThemeSystem() {
-            // Detectar preferência de tema
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'dark'); // Sempre dark por agora
-        }
-
-        // Criar linhas de código flutuantes
-        function createCodeLines() {
-            if (!CONFIG.animations.enabled) return;
-            
-            const codeContainer = document.getElementById('codeLines');
-            if (!codeContainer) return;
-            
-            const codeSnippets = [
-                'function authenticate(user) {',
-                'if (password.isValid()) {',
-                'console.log("Login successful");',
-                'return user.permissions;',
-                '// IPPEL System v2.0',
-                'const security = new Auth();',
-                'database.connect();',
-                'user.lastLogin = Date.now();'
-            ];
-
-            function createCodeLine() {
-                const line = document.createElement('div');
-                line.className = 'code-line';
-                line.textContent = codeSnippets[Math.floor(Math.random() * codeSnippets.length)];
-                line.style.top = Math.random() * window.innerHeight + 'px';
-                line.style.color = `hsl(${180 + Math.random() * 60}, 70%, 70%)`;
-                line.style.animationDelay = Math.random() * 5 + 's';
-                
-                codeContainer.appendChild(line);
-                
-                setTimeout(() => {
-                    if (line.parentNode) {
-                        line.parentNode.removeChild(line);
-                    }
-                }, 15000);
-            }
-
-            for (let i = 0; i < 3; i++) {
-                setTimeout(createCodeLine, i * 2000);
-            }
-
-            setInterval(createCodeLine, 5000);
-        }
-
-        // Criar chuva digital Matrix
-        function createDigitalRain() {
-            if (!CONFIG.animations.enabled) return;
-            
-            const rainContainer = document.getElementById('digitalRain');
-            if (!rainContainer) return;
-            
-            const characters = '01アカサタナハマヤラワンABCDEFGHIJKLMNOPQRSTUVWXYZ';
-
-            function createRainColumn() {
-                const column = document.createElement('div');
-                column.className = 'rain-column';
-                
-                let text = '';
-                for (let i = 0; i < 20; i++) {
-                    text += characters.charAt(Math.floor(Math.random() * characters.length)) + '<br>';
-                }
-                
-                column.innerHTML = text;
-                column.style.left = Math.random() * window.innerWidth + 'px';
-                column.style.animationDuration = (Math.random() * 2 + 3) + 's';
-                column.style.animationDelay = Math.random() * 2 + 's';
-                
-                rainContainer.appendChild(column);
-                
-                setTimeout(() => {
-                    if (column.parentNode) {
-                        column.parentNode.removeChild(column);
-                    }
-                }, 5000);
-            }
-
-            for (let i = 0; i < 8; i++) {
-                setTimeout(createRainColumn, i * 1000);
-            }
-
-            setInterval(createRainColumn, 3000);
-        }
-
-        // Inicialização principal
-        window.addEventListener('load', () => {
-            // Esconder preloader
-            hidePreloader();
-            
-            // Inicializar efeitos
-            if (CONFIG.animations.enabled) {
-                createAdvancedParticles();
-                createCodeLines();
-                createDigitalRain();
-                advancedTypewriterEffect();
-                initializeEntranceEffects();
-            }
-            
-            // Configurar validação
-            setupAdvancedValidation();
-            
-            // Sistema de temas
-            initializeThemeSystem();
-            
-            // Event listeners
-            document.getElementById('loginForm').addEventListener('submit', handleAdvancedLogin);
-            
-            // Foco suave no primeiro campo
+        // Foco no campo de email ao carregar
+        window.addEventListener('load', function() {
             setTimeout(() => {
                 document.getElementById('email').focus();
-            }, 1000);
-            
-            // Ano no rodapé
-            document.getElementById('year').textContent = new Date().getFullYear();
-        });
-
-        // Otimizações de performance
-        window.addEventListener('beforeunload', () => {
-            // Limpar animações para evitar memory leaks
-            document.querySelectorAll('*').forEach(el => {
-                el.style.animation = 'none';
-            });
-        });
-
-        // Prevenir zoom em dispositivos móveis
-        document.addEventListener('touchstart', function(e) {
-            if (e.touches.length > 1) {
-                e.preventDefault();
-            }
-        });
-
-        // Atalhos de teclado
-        document.addEventListener('keydown', function(e) {
-            // Enter no campo de email move para senha
-            if (e.target.id === 'email' && e.key === 'Enter') {
-                e.preventDefault();
-                document.getElementById('password').focus();
-            }
+            }, 500);
         });
     </script>
 </body>
-</html> 
+</html>
