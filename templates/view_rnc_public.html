@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RNC {{ rnc.main[1] }} - Sistema IPPEL</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #dc3545 0%, #b21f35 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .access-form {
+            background: #f8f9fa;
+            padding: 30px;
+            text-align: center;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .access-form h3 {
+            color: #495057;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+
+        .access-input {
+            display: inline-block;
+            padding: 15px 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            text-align: center;
+            letter-spacing: 2px;
+            font-weight: 600;
+            width: 200px;
+            margin-right: 15px;
+        }
+
+        .access-input:focus {
+            outline: none;
+            border-color: #dc3545;
+            box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+        }
+
+        .access-btn {
+            background: linear-gradient(135deg, #dc3545 0%, #b21f35 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .access-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(220, 53, 69, 0.3);
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .info-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .info-section h3 {
+            color: #dc3545;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .info-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #dc3545;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            color: #212529;
+            font-size: 1rem;
+        }
+
+        .description-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #e9ecef;
+        }
+
+        .description-section h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .description-text {
+            line-height: 1.6;
+            color: #495057;
+            text-align: justify;
+        }
+
+        .details-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #e9ecef;
+        }
+
+        .details-section h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .details-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .details-table th,
+        .details-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .details-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .signatures-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+        }
+
+        .signatures-section h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .signatures-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .signature-item {
+            text-align: center;
+            padding: 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            background: #f8f9fa;
+        }
+
+        .signature-name {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 10px;
+        }
+
+        .signature-date {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .security-notice {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border: 1px solid #2196f3;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: center;
+            color: #1565c0;
+        }
+
+        .error-message {
+            background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+            border: 1px solid #f44336;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: center;
+            color: #c62828;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+
+            .header {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .access-input {
+                width: 100%;
+                margin-right: 0;
+                margin-bottom: 15px;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .signatures-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>📋 Relatório de Não Conformidade</h1>
+            <p>RNC {{ rnc.main[1] }} - Sistema IPPEL</p>
+        </div>
+
+        <!-- Formulário de Acesso (se necessário) -->
+        {% if not access_granted %}
+        <div class="access-form">
+            <h3>🔐 Código de Acesso</h3>
+            <p style="color: #6c757d; margin-bottom: 20px;">
+                Digite o código de acesso fornecido no email para visualizar o relatório completo.
+            </p>
+            <form method="POST" action="{{ url_for('access_rnc_with_code', token=link_data.link_token) }}">
+                <input type="text" name="access_code" class="access-input" 
+                       placeholder="Ex: ABC123" maxlength="6" required>
+                <button type="submit" class="access-btn">🔓 Acessar</button>
+            </form>
+        </div>
+        {% endif %}
+
+        <!-- Conteúdo do RNC -->
+        {% if access_granted or not link_data.access_code %}
+        <div class="content">
+            <!-- Informações Principais -->
+            <div class="info-section">
+                <h3>📊 Informações do RNC</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">Número do RNC</div>
+                        <div class="info-value">{{ rnc.main[1] }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Título</div>
+                        <div class="info-value">{{ rnc.main[2] }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Status</div>
+                        <div class="info-value">{{ rnc.main[14] }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Prioridade</div>
+                        <div class="info-value">{{ rnc.main[15] }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Equipamento</div>
+                        <div class="info-value">{{ rnc.main[4] or 'N/A' }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Cliente</div>
+                        <div class="info-value">{{ rnc.main[9] or 'N/A' }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Data de Criação</div>
+                        <div class="info-value">{{ rnc.main[16][:10] }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Área Responsável</div>
+                        <div class="info-value">{{ rnc.main[14] or 'N/A' }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Descrição -->
+            <div class="description-section">
+                <h3>📝 Descrição da Não Conformidade</h3>
+                <div class="description-text">
+                    {{ rnc.main[3] }}
+                </div>
+            </div>
+
+            <!-- Detalhes Técnicos -->
+            {% if rnc.details %}
+            <div class="details-section">
+                <h3>🔧 Detalhes Técnicos</h3>
+                <table class="details-table">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Descrição</th>
+                            <th>Instrução</th>
+                            <th>Causa</th>
+                            <th>Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for detail in rnc.details %}
+                        <tr>
+                            <td>{{ detail[2] }}</td>
+                            <td>{{ detail[3] }}</td>
+                            <td>{{ detail[4] or 'N/A' }}</td>
+                            <td>{{ detail[5] or 'N/A' }}</td>
+                            <td>{{ detail[6] or 'N/A' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+
+            <!-- Assinaturas -->
+            {% if rnc.signatures %}
+            <div class="signatures-section">
+                <h3>✍️ Assinaturas e Aprovações</h3>
+                <div class="signatures-grid">
+                    {% for signature in rnc.signatures %}
+                    <div class="signature-item">
+                        <div class="signature-name">{{ signature[5] }}</div>
+                        <div class="signature-date">{{ signature[4][:10] }}</div>
+                        <div style="color: #6c757d; font-size: 0.9rem; margin-top: 5px;">
+                            {{ signature[3] }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Aviso de Segurança -->
+            <div class="security-notice">
+                <strong>🔒 Segurança:</strong> Este relatório é confidencial e foi compartilhado através de um link seguro. 
+                Não compartilhe este link com terceiros não autorizados.
+            </div>
+            
+            <!-- Botões de Ação -->
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 20px; justify-content: center;">
+                <button onclick="window.print()" class="access-btn" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                    🖨️ Imprimir Relatório
+                </button>
+                <button onclick="window.close()" class="access-btn" style="background: linear-gradient(135deg, #6c757d 0%, #495057 100%);">
+                    ❌ Fechar
+                </button>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>Sistema IPPEL - Relatórios de Não Conformidades</p>
+            <p>Acessado em: {{ moment().format('DD/MM/YYYY HH:mm') }}</p>
+        </div>
+    </div>
+
+    <script>
+        // Focar no campo de código de acesso
+        document.addEventListener('DOMContentLoaded', function() {
+            const accessInput = document.querySelector('.access-input');
+            if (accessInput) {
+                accessInput.focus();
+            }
+        });
+
+        // Formatar código de acesso (maiúsculas)
+        const accessInput = document.querySelector('.access-input');
+        if (accessInput) {
+            accessInput.addEventListener('input', function() {
+                this.value = this.value.toUpperCase();
+            });
+        }
+    </script>
+</body>
+</html> 

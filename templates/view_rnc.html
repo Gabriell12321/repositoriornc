@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RNC {{ rnc.rnc_number }}</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Poppins','Inter', system-ui, sans-serif; 
+            margin: 0;
+            background: #f7f7fb; 
+            color: #333; 
+        }
+        .container {
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 24px; 
+        }
+        .header {
+            display:flex; 
+            align-items:center; 
+            justify-content:space-between; 
+            margin-bottom: 20px; 
+        }
+        .logo {
+            display:flex; 
+            align-items:center; 
+            gap:12px; 
+        }
+        .logo img {
+            width:60px; 
+            height:60px; 
+            border-radius:12px; 
+            object-fit:contain; 
+            box-shadow:0 4px 14px rgba(0,0,0,.1); 
+        }
+        .title {
+            font-weight:800; 
+            letter-spacing:.5px; 
+            font-size:18px; 
+            color:#8b1538; 
+        }
+        .rnc-number {
+            font-weight:700; 
+            font-size:14px; 
+            color:#495057; 
+        }
+
+        .actions {
+            display:flex; 
+            gap:10px; 
+        }
+        .btn {
+            padding:10px 14px; 
+            border:none; 
+            border-radius:10px; 
+            font-weight:600; 
+            cursor:pointer; 
+            color:#fff; 
+            display:inline-flex; 
+            align-items:center; 
+            gap:8px; 
+            box-shadow:0 8px 20px rgba(0,0,0,.12); 
+        }
+        .btn-secondary { background:#6c757d; }
+        .btn-primary { background:#0d6efd; }
+        .btn-info { background:#17a2b8; }
+        .btn-warning { background:#ffc107; color:#333; }
+
+        .card {
+            background:#fff; 
+            border-radius:14px; 
+            box-shadow:0 10px 30px rgba(0,0,0,.08); 
+            margin-bottom:16px; 
+            overflow:hidden; 
+            border:1px solid #eee; 
+        }
+        .card-header {
+            background:#8b1538; 
+            color:#fff; 
+            padding:10px 14px; 
+            font-weight:700; 
+            font-size:12px; 
+            letter-spacing:.4px; 
+        }
+        .card-body {
+            padding:16px; 
+        }
+
+        .grid {
+            display:grid; 
+            gap:12px; 
+        }
+        .grid-2 {
+            grid-template-columns: 1fr 1fr; 
+        }
+        .grid-3 {
+            grid-template-columns: 1fr 1fr 1fr; 
+        }
+
+        .field {
+            display:flex; 
+            flex-direction:column; 
+            gap:6px; 
+        }
+        .label {
+            font-size:11px; 
+            color:#8b1538; 
+            font-weight:700; 
+        }
+        .value {
+            padding:10px 12px; 
+            border:2px solid #8b1538; 
+            border-radius:8px; 
+            background:#fff; 
+            font-size:13px; 
+            min-height:38px; 
+            display:flex; 
+            align-items:center; 
+        }
+        .muted {
+            color:#6c757d; 
+        }
+
+        .dispo-grid {
+            display:grid; 
+            grid-template-columns: 1fr 1fr; 
+        }
+        .section-split {
+            display:grid; 
+            grid-template-columns: 1fr 1fr; 
+            border:2px solid #8b1538; 
+            border-top:none; 
+            border-radius:0 0 10px 10px; 
+        }
+        .split-left {
+            border-right:1px solid #8b1538; 
+            padding:12px; 
+        }
+        .split-right {
+            padding:12px; 
+        }
+        .checkbox {
+            display:flex; 
+            align-items:center; 
+            gap:8px; 
+            font-weight:600; 
+            font-size:12px; 
+            margin:6px 0; 
+        }
+        .checkbox input {
+            width:16px; 
+            height:16px; 
+            accent-color:#8b1538; 
+        }
+
+        .sign-row {
+            display:flex; 
+            border-top:1px solid #8b1538; 
+        }
+        .sign-col {
+            width:33.33%; 
+            padding:14px; 
+            text-align:center; 
+            border-right:1px solid #8b1538; 
+        }
+        .sign-col:last-child {
+            border-right:none; 
+        }
+        .sign-name {
+            font-weight:700; 
+            margin-bottom:18px; 
+            min-height:20px; 
+        }
+        .sign-line {
+            margin-top:8px; 
+            padding-top:8px; 
+            border-top:1px solid #dee2e6; 
+            color:#6c757d; 
+            font-weight:600; 
+        }
+
+        @media (max-width: 900px) {
+            .grid-2 { grid-template-columns: 1fr; }
+            .grid-3 { grid-template-columns: 1fr; }
+            .section-split { grid-template-columns: 1fr; }
+            .split-left { border-right:none; border-bottom:1px solid #8b1538; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                <img src="/LOGOSQI.jpg" alt="Logo">
+                <div>
+                    <div class="title">Relatório de Não Conformidades Internas – RNC</div>
+                    <div class="rnc-number">Nº: {{ rnc.rnc_number }}</div>
+            </div>
+            </div>
+            <div class="actions">
+                <button class="btn btn-secondary" onclick="window.location.href='/dashboard'">← Voltar</button>
+                <button class="btn btn-info" onclick="window.location.href='/rnc/{{ rnc.id }}/reply'">↩️ Responder</button>
+                <button class="btn btn-primary" onclick="window.location.href='/rnc/{{ rnc.id }}/edit'">✏️ Editar</button>
+                <button class="btn btn-warning" onclick="window.open('/rnc/{{ rnc.id }}/print','_blank')">📄 Modelo IPPEL</button>
+            </div>
+        </div>
+
+        <!-- Informações principais -->
+        <div class="card">
+            <div class="card-header">INFORMAÇÕES</div>
+            <div class="card-body grid grid-3">
+                <div class="field">
+                    <div class="label">📋 Título</div>
+                    <div class="value">{{ rnc.title or 'Sem título' }}</div>
+                </div>
+                <div class="field">
+                    <div class="label">🔧 Equipamento</div>
+                    <div class="value">
+                        {% if rnc.equipment %}
+                            {{ rnc.equipment }}
+                        {% else %}
+                            <span style="color: #6c757d; font-style: italic;">Não especificado</span>
+                        {% endif %}
+                </div>
+            </div>
+                <div class="field">
+                    <div class="label">🏢 Cliente</div>
+                    <div class="value">
+                        {% if rnc.client %}
+                            {{ rnc.client }}
+                        {% else %}
+                            <span style="color: #6c757d; font-style: italic;">Não especificado</span>
+                        {% endif %}
+                </div>
+                </div>
+                <div class="field">
+                    <div class="label">💰 Preço (R$)</div>
+                    <div class="value">
+                        {% if rnc.price and rnc.price > 0 %}
+                            {{ '%.2f'|format(rnc.price) }}
+                        {% else %}
+                            <span style="color: #6c757d; font-style: italic;">Não informado</span>
+                        {% endif %}
+                </div>
+            </div>
+                <div class="field">
+                    <div class="label">⚡ Prioridade</div>
+                    <div class="value">
+                        {% if rnc.priority == 'Crítica' %}
+                            <span style="color: #dc3545; font-weight: bold;">{{ rnc.priority }}</span>
+                        {% elif rnc.priority == 'Alta' %}
+                            <span style="color: #fd7e14; font-weight: bold;">{{ rnc.priority }}</span>
+                        {% elif rnc.priority == 'Média' %}
+                            <span style="color: #ffc107; font-weight: bold;">{{ rnc.priority }}</span>
+                        {% elif rnc.priority == 'Baixa' %}
+                            <span style="color: #28a745; font-weight: bold;">{{ rnc.priority }}</span>
+                        {% else %}
+                            {{ rnc.priority or 'Média' }}
+                        {% endif %}
+            </div>
+                </div>
+                <div class="field">
+                    <div class="label">📊 Status Atual</div>
+                    <div class="value">
+                        {% if rnc.status == 'Finalizado' %}
+                            <span style="color: #28a745; font-weight: bold;">✅ {{ rnc.status }}</span>
+                        {% elif rnc.status == 'Pendente' %}
+                            <span style="color: #ffc107; font-weight: bold;">⏳ {{ rnc.status }}</span>
+                        {% elif rnc.status == 'Em andamento' %}
+                            <span style="color: #17a2b8; font-weight: bold;">🔄 {{ rnc.status }}</span>
+                        {% else %}
+                            {{ rnc.status or 'Pendente' }}
+                {% endif %}
+                    </div>
+                </div>
+                <div class="field">
+                    <div class="label">👤 Responsável</div>
+                    <div class="value">{{ rnc.user_name or 'Não definido' }}</div>
+                </div>
+                {% if rnc.department %}
+                <div class="field">
+                    <div class="label">🏢 Departamento</div>
+                    <div class="value">{{ rnc.department }}</div>
+                </div>
+                {% endif %}
+                {% if rnc.created_at %}
+                <div class="field">
+                    <div class="label">📅 Data de Criação</div>
+                    <div class="value">{{ rnc.created_at[:10] if rnc.created_at else 'N/A' }}</div>
+            </div>
+            {% endif %}
+            </div>
+        </div>
+
+        <!-- Descrição -->
+        <div class="card">
+            <div class="card-header">DESCRIÇÃO DA NÃO CONFORMIDADE</div>
+            <div class="card-body">
+                <!-- Informações técnicas organizadas -->
+                {% if txt_fields %}
+                    {% if txt_fields.get('Desenho') or txt_fields.get('DESENHO') or txt_fields.get('MP') or txt_fields.get('mp') %}
+                    <div class="grid grid-3" style="margin-bottom: 20px;">
+                        {% if txt_fields.get('Desenho') or txt_fields.get('DESENHO') %}
+                        <div class="field">
+                            <div class="label">📐 Desenho</div>
+                            <div class="value">{{ txt_fields.get('Desenho') or txt_fields.get('DESENHO') or '-' }}</div>
+                </div>
+                {% endif %}
+                        {% if txt_fields.get('MP') or txt_fields.get('mp') %}
+                        <div class="field">
+                            <div class="label">🔧 MP</div>
+                            <div class="value">{{ txt_fields.get('MP') or txt_fields.get('mp') or '-' }}</div>
+                </div>
+                {% endif %}
+                        {% if txt_fields.get('Revisão') or txt_fields.get('REVISAO') or txt_fields.get('REV') %}
+                        <div class="field">
+                            <div class="label">📝 Revisão</div>
+                            <div class="value">{{ txt_fields.get('Revisão') or txt_fields.get('REVISAO') or txt_fields.get('REV') or '-' }}</div>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+                    
+                    {% if txt_fields.get('CV') or txt_fields.get('cv') or txt_fields.get('POS') or txt_fields.get('Pos') %}
+                    <div class="grid grid-3" style="margin-bottom: 20px;">
+                        {% if txt_fields.get('CV') or txt_fields.get('cv') %}
+                        <div class="field">
+                            <div class="label">📊 CV</div>
+                            <div class="value">{{ txt_fields.get('CV') or txt_fields.get('cv') or '-' }}</div>
+                </div>
+                {% endif %}
+                        {% if txt_fields.get('POS') or txt_fields.get('Pos') %}
+                        <div class="field">
+                            <div class="label">📍 POS</div>
+                            <div class="value">{{ txt_fields.get('POS') or txt_fields.get('Pos') or '-' }}</div>
+                </div>
+                {% endif %}
+                        {% if txt_fields.get('Conjunto') or txt_fields.get('CONJUNTO') %}
+                        <div class="field">
+                            <div class="label">🔗 Conjunto</div>
+                            <div class="value">{{ txt_fields.get('Conjunto') or txt_fields.get('CONJUNTO') or '-' }}</div>
+                </div>
+                {% endif %}
+            </div>
+                    {% endif %}
+                    
+                    {% if txt_fields.get('Modelo') or txt_fields.get('MODELO') or txt_fields.get('Quantidade') or txt_fields.get('QUANTIDADE') %}
+                    <div class="grid grid-3" style="margin-bottom: 20px;">
+                        {% if txt_fields.get('Modelo') or txt_fields.get('MODELO') %}
+                        <div class="field">
+                            <div class="label">🏷️ Modelo</div>
+                            <div class="value">{{ txt_fields.get('Modelo') or txt_fields.get('MODELO') or '-' }}</div>
+                </div>
+                        {% endif %}
+                        {% if txt_fields.get('Quantidade') or txt_fields.get('QUANTIDADE') %}
+                        <div class="field">
+                            <div class="label">🔢 Quantidade</div>
+                            <div class="value">{{ txt_fields.get('Quantidade') or txt_fields.get('QUANTIDADE') or '-' }}</div>
+                </div>
+                        {% endif %}
+                        {% if txt_fields.get('Área responsável') or txt_fields.get('AREA RESPONSAVEL') or txt_fields.get('Area responsavel') %}
+                        <div class="field">
+                            <div class="label">👥 Área Responsável</div>
+                            <div class="value">{{ txt_fields.get('Área responsável') or txt_fields.get('AREA RESPONSAVEL') or txt_fields.get('Area responsavel') or '-' }}</div>
+            </div>
+                        {% endif %}
+        </div>
+                    {% endif %}
+                {% endif %}
+                
+                <!-- Instrução para retrabalho -->
+                {% if txt_fields.get('Instrução para retrabalho') or txt_fields.get('INSTRUÇÃO PARA RETRABALHO') or txt_fields.get('Instrucao para retrabalho') or txt_fields.get('INSTRUCAO PARA RETRABALHO') %}
+                <div class="field" style="margin-top: 20px;">
+                    <div class="label">⚙️ Instrução para Retrabalho</div>
+                    <div class="value" style="min-height: 60px; white-space: pre-wrap;">{{ txt_fields.get('Instrução para retrabalho') or txt_fields.get('INSTRUÇÃO PARA RETRABALHO') or txt_fields.get('Instrucao para retrabalho') or txt_fields.get('INSTRUCAO PARA RETRABALHO') or '-' }}</div>
+                </div>
+                {% endif %}
+                
+                <!-- Valor -->
+                {% if txt_fields.get('Valor') or txt_fields.get('VALOR') %}
+                <div class="field" style="margin-top: 20px;">
+                    <div class="label">💰 Valor</div>
+                    <div class="value">{{ txt_fields.get('Valor') or txt_fields.get('VALOR') or '-' }}</div>
+            </div>
+                {% endif %}
+                
+                <!-- Descrição da RNC -->
+                {% if txt_fields.get('Descrição da RNC') or txt_fields.get('DESCRIÇÃO DA RNC') or txt_fields.get('Descricao da RNC') or txt_fields.get('DESCRICAO DA RNC') %}
+                <div class="field" style="margin-top: 20px;">
+                    <div class="label">📋 Descrição da RNC</div>
+                    <div class="value" style="min-height: 60px; white-space: pre-wrap;">{{ txt_fields.get('Descrição da RNC') or txt_fields.get('DESCRIÇÃO DA RNC') or txt_fields.get('Descricao da RNC') or txt_fields.get('DESCRICAO DA RNC') }}</div>
+                        </div>
+                {% elif rnc.description %}
+                <div class="field" style="margin-top: 20px;">
+                    <div class="label">📄 Descrição</div>
+                    <div class="value" style="min-height: 60px; white-space: pre-wrap;">{{ rnc.description }}</div>
+                        </div>
+                {% else %}
+                <div class="field" style="margin-top: 20px;">
+                    <div class="label">📄 Descrição</div>
+                    <div class="value" style="min-height: 60px; white-space: pre-wrap; color: #6c757d; font-style: italic;">
+                        📝 Descrição da não conformidade a ser preenchida
+                        </div>
+                        </div>
+                {% endif %}
+                        </div>
+        </div>
+
+        <!-- Instrução para Retrabalho -->
+        <div class="card">
+            <div class="card-header">⚙️ INSTRUÇÃO PARA RETRABALHO</div>
+            <div class="card-body">
+                <div class="value" style="min-height:60px; white-space: pre-wrap;">
+                    {% if txt_fields.get('Instrução para retrabalho') or txt_fields.get('INSTRUÇÃO PARA RETRABALHO') or txt_fields.get('Instrucao para retrabalho') or txt_fields.get('INSTRUCAO PARA RETRABALHO') %}
+                        {{ txt_fields.get('Instrução para retrabalho') or txt_fields.get('INSTRUÇÃO PARA RETRABALHO') or txt_fields.get('Instrucao para retrabalho') or txt_fields.get('INSTRUCAO PARA RETRABALHO') }}
+                    {% elif rnc.instruction_retrabalho and rnc.instruction_retrabalho != 'Aguardando instruções de retrabalho' %}
+                        {{ rnc.instruction_retrabalho }}
+                    {% else %}
+                        <span style="color: #6c757d; font-style: italic;">📝 Aguardando instruções de retrabalho</span>
+                    {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+        <!-- Causa da RNC -->
+        <div class="card">
+            <div class="card-header">🔍 CAUSA DA RNC</div>
+            <div class="card-body">
+                <div class="value" style="min-height:60px; white-space: pre-wrap;">
+                    {% if txt_fields.get('Causa da RNC') or txt_fields.get('CAUSA DA RNC') or txt_fields.get('Causa da rnc') or txt_fields.get('causa da rnc') %}
+                        {{ txt_fields.get('Causa da RNC') or txt_fields.get('CAUSA DA RNC') or txt_fields.get('Causa da rnc') or txt_fields.get('causa da rnc') }}
+                    {% elif rnc.cause_rnc and rnc.cause_rnc != 'Causa a ser investigada' %}
+                        {{ rnc.cause_rnc }}
+                    {% else %}
+                        <span style="color: #6c757d; font-style: italic;">🔍 Causa a ser investigada</span>
+                    {% endif %}
+                        </div>
+                        </div>
+                        </div>
+
+        <!-- Ação a ser Tomada -->
+        <div class="card">
+            <div class="card-header">✅ AÇÃO A SER TOMADA</div>
+            <div class="card-body">
+                <div class="value" style="min-height:60px; white-space: pre-wrap;">
+                    {% if txt_fields.get('Ação a ser tomada') or txt_fields.get('AÇÃO A SER TOMADA') or txt_fields.get('Acao a ser tomada') or txt_fields.get('ACAO A SER TOMADA') %}
+                        {{ txt_fields.get('Ação a ser tomada') or txt_fields.get('AÇÃO A SER TOMADA') or txt_fields.get('Acao a ser tomada') or txt_fields.get('ACAO A SER TOMADA') }}
+                    {% elif rnc.action_rnc and rnc.action_rnc != 'Ações a serem definidas' %}
+                        {{ rnc.action_rnc }}
+                    {% else %}
+                        <span style="color: #6c757d; font-style: italic;">✅ Ações a serem definidas</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Disposição e Inspeção -->
+        <div class="card">
+            <div class="card-header" style="display:flex; justify-content:space-between;">
+                <div>DISPOSIÇÃO DO MATERIAL NÃO-CONFORME</div>
+                <div>INSPEÇÃO DO RETRABALHO</div>
+                </div>
+            <div class="section-split">
+                <div class="split-left">
+                    <div class="checkbox">
+                        <input type="checkbox" disabled {% if rnc.disposition_usar %}checked{% endif %}> 
+                        <span style="{% if rnc.disposition_usar %}color: #28a745; font-weight: bold;{% endif %}">USAR COMO ESTÁ</span>
+                </div>
+                    <div class="checkbox">
+                        <input type="checkbox" disabled {% if rnc.disposition_retrabalhar %}checked{% endif %}> 
+                        <span style="{% if rnc.disposition_retrabalhar %}color: #17a2b8; font-weight: bold;{% endif %}">RETRABALHAR</span>
+                </div>
+                    <div class="checkbox">
+                        <input type="checkbox" disabled {% if rnc.disposition_rejeitar %}checked{% endif %}> 
+                        <span style="{% if rnc.disposition_rejeitar %}color: #dc3545; font-weight: bold;{% endif %}">REJEITAR</span>
+            </div>
+                    <div class="checkbox">
+                        <input type="checkbox" disabled {% if rnc.disposition_sucata %}checked{% endif %}> 
+                        <span style="color: #6c757d; font-weight: bold;">SUCATA</span>
+                </div>
+                    <div class="checkbox">
+                        <input type="checkbox" disabled {% if rnc.disposition_devolver_estoque %}checked{% endif %}> 
+                        <span style="color: #fd7e14; font-weight: bold;">DEVOLVER AO ESTOQUE</span>
+                </div>
+                    <div class="checkbox">
+                        <input type="checkbox" disabled {% if rnc.disposition_devolver_fornecedor %}checked{% endif %}> 
+                        <span style="color: #6f42c1; font-weight: bold;">DEVOLVER AO FORNECEDOR</span>
+                </div>
+            </div>
+                <div class="split-right">
+                    <div class="checkbox">
+                        <input type="checkbox" disabled {% if rnc.inspection_aprovado %}checked{% endif %}> 
+                        <span style="{% if rnc.inspection_aprovado %}color: #28a745; font-weight: bold;{% endif %}">APROVADO</span>
+                </div>
+                    <div class="checkbox">
+                        <input type="checkbox" disabled {% if rnc.inspection_reprovado %}checked{% endif %}> 
+                        <span style="{% if rnc.inspection_reprovado %}color: #dc3545; font-weight: bold;{% endif %}">REPROVADO</span>
+                </div>
+                    <div class="checkbox" style="gap:12px;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <input type="checkbox" disabled {% if rnc.inspection_ver_rnc %}checked{% endif %}> 
+                            <span style="{% if rnc.inspection_ver_rnc %}color: #ffc107; font-weight: bold;{% endif %}">VER RNC Nº:</span>
+                            <div class="value" style="border:none; padding:0; min-height:auto;">
+                                {% if rnc.inspection_ver_rnc %}
+                                    {{ rnc.inspection_ver_rnc }}
+                                {% else %}
+                                    <span style="color: #6c757d; font-style: italic;">N/A</span>
+                                {% endif %}
+                </div>
+            </div>
+            </div>
+        </div>
+            </div>
+    </div>
+
+        <!-- Assinaturas -->
+        <div class="card">
+            <div class="card-header">ASSINATURAS</div>
+            <div class="card-body" style="padding:0; border:2px solid #8b1538; border-radius:8px; overflow:hidden;">
+                <div class="sign-row" style="border-bottom:1px solid #8b1538;">
+                    <div class="sign-col" style="font-size:11px; font-weight:bold;">
+                        INSPEÇÃO: {{ rnc.signature_inspection_date or 'Aguardando' }}
+            </div>
+                    <div class="sign-col" style="font-size:11px; font-weight:bold;">
+                        ENGENHARIA: {{ rnc.signature_engineering_date or 'Aguardando' }}
+                </div>
+                    <div class="sign-col" style="font-size:11px; font-weight:bold;">
+                        INSPEÇÃO 2: {{ rnc.signature_inspection2_date or 'Aguardando' }}
+                </div>
+                </div>
+                <div class="sign-row">
+                    <div class="sign-col">
+                        <div class="sign-name">
+                            {% if rnc.signature_inspection_name and rnc.signature_inspection_name != 'NOME' %}
+                                {{ rnc.signature_inspection_name }}
+                            {% else %}
+                                <span style="color: #6c757d; font-style: italic;">Aguardando assinatura</span>
+                            {% endif %}
+            </div>
+                        <div class="sign-line">VISTO</div>
+            </div>
+                    <div class="sign-col">
+                        <div class="sign-name">
+                            {% if rnc.signature_engineering_name and rnc.signature_engineering_name != 'NOME' %}
+                                {{ rnc.signature_engineering_name }}
+                            {% else %}
+                                <span style="color: #6c757d; font-style: italic;">Aguardando assinatura</span>
+                            {% endif %}
+        </div>
+                        <div class="sign-line">VISTO</div>
+    </div>
+                    <div class="sign-col">
+                        <div class="sign-name">
+                            {% if rnc.signature_inspection2_name and rnc.signature_inspection2_name != 'NOME' %}
+                                {{ rnc.signature_inspection2_name }}
+                            {% else %}
+                                <span style="color: #6c757d; font-style: italic;">Aguardando assinatura</span>
+                            {% endif %}
+                        </div>
+                        <div class="sign-line">VISTO</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

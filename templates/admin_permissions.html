@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciar Permissões - Sistema RNC</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', 'Inter', system-ui, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #8b1538 0%, #a52a2a 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .tab {
+            background: none;
+            border: none;
+            padding: 15px 25px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #6c757d;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            color: #8b1538;
+            border-bottom-color: #8b1538;
+        }
+
+        .tab:hover {
+            color: #8b1538;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .section {
+            margin-bottom: 40px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            border: 1px solid #e9ecef;
+        }
+
+        .section h2 {
+            color: #8b1538;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .group-selector {
+            margin-bottom: 30px;
+        }
+
+        .group-selector select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1rem;
+            background: white;
+        }
+
+        .permissions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .permission-category {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid #e9ecef;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .category-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #8b1538;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .permission-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #f8f9fa;
+        }
+
+        .permission-item:last-child {
+            border-bottom: none;
+        }
+
+        .permission-name {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .permission-description {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-top: 2px;
+        }
+
+        .permission-toggle {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .permission-toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #28a745;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #8b1538 0%, #a52a2a 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(139, 21, 56, 0.3);
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            z-index: 1001;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background: #28a745;
+        }
+
+        .notification.error {
+            background: #dc3545;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        .bulk-actions {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #e3f2fd;
+            border-radius: 8px;
+            border: 1px solid #bbdefb;
+        }
+
+        .group-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #8b1538;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            font-weight: 600;
+            margin-top: 5px;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .comparison-table th {
+            background: #f8f9fa;
+            font-weight: 700;
+            color: #495057;
+        }
+
+        .permission-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .permission-status.granted {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .permission-status.denied {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="back-btn" onclick="window.location.href='/admin/groups'">← Voltar para Grupos</button>
+            <h1>🔐 Gerenciar Permissões</h1>
+            <p>Configure permissões detalhadas para cada grupo de usuários</p>
+        </div>
+
+        <div class="content">
+            <!-- Tabs de navegação -->
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('group-permissions')">👥 Permissões por Grupo</button>
+                <button class="tab" onclick="switchTab('comparison')">📊 Comparar Grupos</button>
+                <button class="tab" onclick="switchTab('bulk-actions')">⚡ Ações em Lote</button>
+            </div>
+
+            <!-- Tab: Permissões por Grupo -->
+            <div id="group-permissions" class="tab-content active">
+                <div class="section">
+                    <h2>👥 Configurar Permissões do Grupo</h2>
+                    
+                    <div class="group-selector">
+                        <label for="groupSelect">Selecionar Grupo:</label>
+                        <select id="groupSelect">
+                            <option value="">Selecione um grupo...</option>
+                        </select>
+                    </div>
+
+                    <div id="groupStats" class="group-stats" style="display: none;">
+                        <div class="stat-card">
+                            <div class="stat-number" id="totalPermissions">0</div>
+                            <div class="stat-label">Total de Permissões</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="grantedPermissions">0</div>
+                            <div class="stat-label">Permissões Ativas</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="groupUsers">0</div>
+                            <div class="stat-label">Usuários no Grupo</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="coveragePercent">0%</div>
+                            <div class="stat-label">Cobertura</div>
+                        </div>
+                    </div>
+
+                    <div id="permissionsContainer">
+                        <div class="empty-state">
+                            <h3>Selecione um grupo para configurar suas permissões</h3>
+                            <p>Escolha um grupo da lista acima para visualizar e editar suas permissões</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab: Comparação entre Grupos -->
+            <div id="comparison" class="tab-content">
+                <div class="section">
+                    <h2>📊 Comparar Permissões entre Grupos</h2>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                        <div>
+                            <label for="compareGroup1">Primeiro Grupo:</label>
+                            <select id="compareGroup1">
+                                <option value="">Selecione um grupo...</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="compareGroup2">Segundo Grupo:</label>
+                            <select id="compareGroup2">
+                                <option value="">Selecione um grupo...</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button class="btn" onclick="compareGroups()">🔍 Comparar Grupos</button>
+
+                    <div id="comparisonResult"></div>
+                </div>
+            </div>
+
+            <!-- Tab: Ações em Lote -->
+            <div id="bulk-actions" class="tab-content">
+                <div class="section">
+                    <h2>⚡ Ações em Lote</h2>
+                    
+                    <div class="bulk-actions">
+                        <h3>🎯 Aplicar Template de Permissões</h3>
+                        <p>Aplique rapidamente um conjunto predefinido de permissões a um grupo</p>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 15px 0;">
+                            <div>
+                                <label for="targetGroup">Grupo de Destino:</label>
+                                <select id="targetGroup">
+                                    <option value="">Selecione um grupo...</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="templateGroup">Copiar Permissões de:</label>
+                                <select id="templateGroup">
+                                    <option value="">Selecione um template...</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <button class="btn btn-warning" onclick="copyPermissions()">📋 Copiar Permissões</button>
+                    </div>
+
+                    <div class="bulk-actions">
+                        <h3>🧹 Operações de Limpeza</h3>
+                        <p>Operações avançadas para gerenciar permissões</p>
+                        
+                        <button class="btn" onclick="resetGroupPermissions()">🔄 Resetar Todas as Permissões</button>
+                        <button class="btn btn-warning" onclick="applyDefaultPermissions()">⚙️ Aplicar Permissões Padrão</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allGroups = [];
+        let allPermissions = [];
+        let currentGroupPermissions = [];
+
+        // Função para mostrar notificação
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => notification.classList.add('show'), 100);
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => document.body.removeChild(notification), 300);
+            }, 3000);
+        }
+
+        // Função para alternar entre tabs
+        function switchTab(tabName, event) {
+            // Remover classe active de todas as tabs
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            // Adicionar classe active na tab selecionada
+            if (event && event.target) {
+                event.target.classList.add('active');
+            }
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        // Função para carregar dados iniciais
+        async function loadInitialData() {
+            try {
+                console.log('🚀 Iniciando carregamento de dados...');
+                
+                // Carregar grupos
+                console.log('📋 Carregando grupos...');
+                const groupsResponse = await fetch('/api/admin/groups');
+                const groupsData = await groupsResponse.json();
+                console.log('📋 Resposta grupos:', groupsData);
+                
+                if (groupsData.success) {
+                    allGroups = groupsData.groups;
+                    console.log(`✅ ${allGroups.length} grupos carregados`);
+                    populateGroupSelects();
+                } else {
+                    console.error('❌ Erro ao carregar grupos:', groupsData);
+                    showNotification('Erro ao carregar grupos: ' + (groupsData.error || groupsData.message || 'erro desconhecido'), 'error');
+                }
+
+                // Carregar todas as permissões
+                console.log('🔐 Carregando permissões...');
+                const permissionsResponse = await fetch('/api/admin/permissions/list');
+                const permissionsData = await permissionsResponse.json();
+                console.log('🔐 Resposta permissions/list:', permissionsData);
+                
+                if (permissionsData.success) {
+                    allPermissions = permissionsData.permissions;
+                    console.log(`✅ ${allPermissions.length} permissões carregadas`);
+                } else {
+                    console.error('❌ Erro ao carregar permissões:', permissionsData);
+                    showNotification('Erro ao carregar permissões: ' + (permissionsData.error || permissionsData.message || 'erro desconhecido'), 'error');
+                }
+                
+                console.log('✅ Carregamento de dados concluído!');
+            } catch (error) {
+                console.error('❌ Erro ao carregar dados:', error);
+                showNotification('Erro ao carregar dados iniciais', 'error');
+            }
+        }
+
+        // Função para popular selects de grupos
+        function populateGroupSelects() {
+            console.log('🔧 Populando selects de grupos...');
+            const selects = ['groupSelect', 'compareGroup1', 'compareGroup2', 'targetGroup', 'templateGroup'];
+            
+            selects.forEach(selectId => {
+                const select = document.getElementById(selectId);
+                if (select) {
+                    console.log(`✅ Select ${selectId} encontrado`);
+                    select.innerHTML = '<option value="">Selecione um grupo...</option>';
+                    
+                    allGroups.forEach(group => {
+                        const option = document.createElement('option');
+                        option.value = group.id;
+                        option.textContent = `${group.name} (${group.user_count} usuários)`;
+                        select.appendChild(option);
+                    });
+                    console.log(`✅ Select ${selectId} populado com ${allGroups.length} grupos`);
+                } else {
+                    console.error(`❌ Select ${selectId} NÃO encontrado!`);
+                }
+            });
+        }
+
+        // Função para carregar permissões de um grupo
+        async function loadGroupPermissions(groupId) {
+            console.log(`🔍 Carregando permissões do grupo ${groupId}...`);
+            
+            if (!groupId) {
+                console.log('⚠️ Nenhum grupo selecionado');
+                const container = document.getElementById('permissionsContainer');
+                const stats = document.getElementById('groupStats');
+                
+                if (container) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <h3>Selecione um grupo para configurar suas permissões</h3>
+                            <p>Escolha um grupo da lista acima para visualizar e editar suas permissões</p>
+                        </div>
+                    `;
+                } else {
+                    console.error('❌ Elemento permissionsContainer não encontrado!');
+                }
+                
+                if (stats) {
+                    stats.style.display = 'none';
+                } else {
+                    console.error('❌ Elemento groupStats não encontrado!');
+                }
+                return;
+            }
+
+            try {
+                console.log(`📡 Fazendo requisição para /api/admin/groups/${groupId}/permissions`);
+                const response = await fetch(`/api/admin/groups/${groupId}/permissions`);
+                const data = await response.json();
+                console.log(`📡 Resposta da API:`, data);
+                
+                if (data.success) {
+                    currentGroupPermissions = data.permissions;
+                    console.log(`✅ ${currentGroupPermissions.length} permissões carregadas para o grupo ${groupId}`);
+                    displayGroupPermissions(groupId);
+                    updateGroupStats(groupId);
+                } else {
+                    console.error('❌ Falha ao obter permissões do grupo:', data);
+                    showNotification('Erro ao carregar permissões: ' + (data.error || data.message || 'erro desconhecido'), 'error');
+                }
+            } catch (error) {
+                console.error('❌ Erro ao carregar permissões:', error);
+                showNotification('Erro ao carregar permissões', 'error');
+            }
+        }
+
+        // Função para exibir permissões do grupo
+        function displayGroupPermissions(groupId) {
+            const categories = groupPermissionsByCategory();
+            
+            let html = '<div class="permissions-grid">';
+            
+            Object.entries(categories).forEach(([categoryName, permissions]) => {
+                html += `
+                    <div class="permission-category">
+                        <div class="category-title">${categoryName}</div>
+                `;
+                
+                permissions.forEach(permission => {
+                    const isGranted = currentGroupPermissions.includes(permission.name);
+                    html += `
+                        <div class="permission-item">
+                            <div>
+                                <div class="permission-name">${permission.display_name}</div>
+                                <div class="permission-description">${permission.description}</div>
+                            </div>
+                            <label class="permission-toggle">
+                                <input type="checkbox" ${isGranted ? 'checked' : ''} 
+                                       onchange="togglePermission(${groupId}, '${permission.name}', this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+            });
+            
+            html += '</div>';
+            
+            html += `
+                <div style="margin-top: 30px; text-align: center;">
+                    <button class="btn btn-success" onclick="saveAllPermissions(${groupId})">💾 Salvar Todas as Alterações</button>
+                </div>
+            `;
+            
+            document.getElementById('permissionsContainer').innerHTML = html;
+        }
+
+        // Função para agrupar permissões por categoria
+        function groupPermissionsByCategory() {
+            const categories = {
+                'Administração': [],
+                'RNCs': [],
+                'Usuários': [],
+                'Relatórios': [],
+                'Sistema': []
+            };
+
+            allPermissions.forEach(permission => {
+                const name = permission.name.toLowerCase();
+                
+                if (name.includes('admin') || name.includes('manage')) {
+                    categories['Administração'].push(permission);
+                } else if (name.includes('rnc') || name.includes('edit') || name.includes('view')) {
+                    categories['RNCs'].push(permission);
+                } else if (name.includes('user') || name.includes('group')) {
+                    categories['Usuários'].push(permission);
+                } else if (name.includes('report') || name.includes('dashboard')) {
+                    categories['Relatórios'].push(permission);
+                } else {
+                    categories['Sistema'].push(permission);
+                }
+            });
+
+            // Remover categorias vazias
+            Object.keys(categories).forEach(key => {
+                if (categories[key].length === 0) {
+                    delete categories[key];
+                }
+            });
+
+            return categories;
+        }
+
+        // Função para atualizar estatísticas do grupo
+        function updateGroupStats(groupId) {
+            const group = allGroups.find(g => g.id == groupId);
+            const totalPermissions = allPermissions.length;
+            const grantedPermissions = currentGroupPermissions.length;
+            const coverage = Math.round((grantedPermissions / totalPermissions) * 100);
+
+            document.getElementById('totalPermissions').textContent = totalPermissions;
+            document.getElementById('grantedPermissions').textContent = grantedPermissions;
+            document.getElementById('groupUsers').textContent = group ? group.user_count : 0;
+            document.getElementById('coveragePercent').textContent = coverage + '%';
+            
+            document.getElementById('groupStats').style.display = 'grid';
+        }
+
+        // Função para alternar permissão
+        async function togglePermission(groupId, permissionName, grant) {
+            if (grant) {
+                if (!currentGroupPermissions.includes(permissionName)) {
+                    currentGroupPermissions.push(permissionName);
+                }
+            } else {
+                currentGroupPermissions = currentGroupPermissions.filter(p => p !== permissionName);
+            }
+            
+            updateGroupStats(groupId);
+        }
+
+        // Função para salvar todas as permissões
+        async function saveAllPermissions(groupId) {
+            try {
+                console.log('➡️ Enviando permissões para salvar:', currentGroupPermissions);
+                const response = await fetch(`/api/admin/groups/${groupId}/permissions`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        permissions: currentGroupPermissions
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showNotification('Permissões salvas com sucesso!', 'success');
+                } else {
+                    console.error('❌ Falha ao salvar permissões:', data);
+                    showNotification('Erro ao salvar permissões: ' + (data.error || data.message || 'erro desconhecido'), 'error');
+                }
+            } catch (error) {
+                console.error('Erro ao salvar permissões:', error);
+                showNotification('Erro ao salvar permissões', 'error');
+            }
+        }
+
+        // Função para comparar grupos
+        async function compareGroups() {
+            const group1Id = document.getElementById('compareGroup1').value;
+            const group2Id = document.getElementById('compareGroup2').value;
+            
+            if (!group1Id || !group2Id) {
+                showNotification('Selecione dois grupos para comparar', 'error');
+                return;
+            }
+
+            try {
+                const [response1, response2] = await Promise.all([
+                    fetch(`/api/admin/groups/${group1Id}/permissions`),
+                    fetch(`/api/admin/groups/${group2Id}/permissions`)
+                ]);
+                
+                const [data1, data2] = await Promise.all([
+                    response1.json(),
+                    response2.json()
+                ]);
+                
+                if (data1.success && data2.success) {
+                    displayComparison(group1Id, group2Id, data1.permissions, data2.permissions);
+                } else {
+                    showNotification('Erro ao carregar permissões para comparação', 'error');
+                }
+            } catch (error) {
+                console.error('Erro na comparação:', error);
+                showNotification('Erro na comparação', 'error');
+            }
+        }
+
+        // Função para exibir comparação
+        function displayComparison(group1Id, group2Id, permissions1, permissions2) {
+            const group1 = allGroups.find(g => g.id == group1Id);
+            const group2 = allGroups.find(g => g.id == group2Id);
+            
+            let html = `
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Permissão</th>
+                            <th>${group1.name}</th>
+                            <th>${group2.name}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            allPermissions.forEach(permission => {
+                const hasGroup1 = permissions1.includes(permission.name);
+                const hasGroup2 = permissions2.includes(permission.name);
+                
+                html += `
+                    <tr>
+                        <td><strong>${permission.display_name}</strong><br><small>${permission.description}</small></td>
+                        <td><span class="permission-status ${hasGroup1 ? 'granted' : 'denied'}">${hasGroup1 ? 'Concedida' : 'Negada'}</span></td>
+                        <td><span class="permission-status ${hasGroup2 ? 'granted' : 'denied'}">${hasGroup2 ? 'Concedida' : 'Negada'}</span></td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table>';
+            
+            document.getElementById('comparisonResult').innerHTML = html;
+        }
+
+        // Função para copiar permissões
+        async function copyPermissions() {
+            const targetGroupId = document.getElementById('targetGroup').value;
+            const templateGroupId = document.getElementById('templateGroup').value;
+            
+            if (!targetGroupId || !templateGroupId) {
+                showNotification('Selecione o grupo de destino e o template', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/admin/groups/${templateGroupId}/permissions`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const updateResponse = await fetch(`/api/admin/groups/${targetGroupId}/permissions`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            permissions: data.permissions
+                        })
+                    });
+                    
+                    const updateData = await updateResponse.json();
+                    
+                    if (updateData.success) {
+                        showNotification('Permissões copiadas com sucesso!', 'success');
+                    } else {
+                        showNotification('Erro ao copiar permissões: ' + (updateData.error || updateData.message || 'erro desconhecido'), 'error');
+                    }
+                } else {
+                    showNotification('Erro ao carregar template de permissões', 'error');
+                }
+            } catch (error) {
+                console.error('Erro ao copiar permissões:', error);
+                showNotification('Erro ao copiar permissões', 'error');
+            }
+        }
+
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            loadInitialData();
+
+            // Select de grupos
+            document.getElementById('groupSelect').addEventListener('change', function(e) {
+                loadGroupPermissions(e.target.value);
+            });
+        });
+    </script>
+</body>
+</html>

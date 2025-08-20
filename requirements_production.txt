@@ -1,0 +1,28 @@
+# Dependências para Produção - Sistema IPPEL Otimizado
+
+# Core Flask
+Flask==2.3.3
+Flask-SocketIO==5.3.6
+
+# WebSocket e Performance
+eventlet==0.33.3
+python-socketio==5.8.0
+
+# Servidor WSGI para Produção
+gunicorn==21.2.0
+
+# Monitoramento e Performance
+psutil==5.9.6
+
+# Segurança
+Werkzeug==2.3.7
+
+# Banco de Dados (SQLite já incluído no Python)
+# sqlite3 - built-in
+
+# Utilitários
+python-dateutil==2.8.2
+
+# Opcional: Para monitoramento avançado
+# prometheus-client==0.17.1
+# flask-monitoring-dashboard==3.1.1 

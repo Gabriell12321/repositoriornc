@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat RNC - {{ rnc.rnc_number }}</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .chat-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            overflow: hidden;
+            height: calc(100vh - 40px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .back-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-1px);
+        }
+
+        .rnc-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .rnc-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .rnc-number {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .online-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+        }
+
+        .online-dot {
+            width: 8px;
+            height: 8px;
+            background: #28a745;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .message.own {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .message-content {
+            max-width: 70%;
+            background: white;
+            padding: 12px 16px;
+            border-radius: 18px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        .message.own .message-content {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+        }
+
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 5px;
+        }
+
+        .message-author {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .message-department {
+            font-size: 11px;
+            opacity: 0.7;
+            background: rgba(0,0,0,0.1);
+            padding: 2px 6px;
+            border-radius: 8px;
+        }
+
+        .message.own .message-department {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .message-time {
+            font-size: 11px;
+            opacity: 0.6;
+            margin-left: auto;
+        }
+
+        .message-text {
+            font-size: 14px;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+
+        /* Ações da mensagem (apagar, etc.) */
+        .message-actions {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            display: none;
+            gap: 6px;
+            z-index: 2;
+        }
+
+        .message-content:hover .message-actions {
+            display: flex;
+        }
+
+        .icon-btn {
+            background: rgba(0,0,0,0.06);
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            backdrop-filter: blur(4px);
+        }
+
+        .icon-btn:hover {
+            transform: translateY(-1px) scale(1.05);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+        }
+
+        .delete-btn {
+            background: rgba(220, 53, 69, 0.12);
+            color: #dc3545;
+        }
+
+        .delete-btn:hover {
+            background: linear-gradient(135deg, #dc3545 0%, #b21f35 100%);
+            color: #fff;
+        }
+
+        .message.own .delete-btn {
+            background: rgba(255,255,255,0.2);
+            color: #ffdde1;
+        }
+
+        .message.own .delete-btn:hover {
+            background: linear-gradient(135deg, #ff6b6b 0%, #dc3545 100%);
+            color: #fff;
+        }
+
+        .chat-input-container {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+            background: #f8f9fa;
+            border-radius: 25px;
+            padding: 10px;
+            margin: 10px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            color: #666;
+        }
+
+        .action-btn:hover {
+            background: rgba(0,123,255,0.1);
+            color: #007bff;
+            transform: scale(1.1);
+        }
+
+        .text-area-container {
+            flex: 1;
+            position: relative;
+        }
+
+        .char-counter {
+            position: absolute;
+            bottom: 5px;
+            right: 10px;
+            font-size: 11px;
+            color: #999;
+            background: rgba(255,255,255,0.8);
+            padding: 2px 6px;
+            border-radius: 10px;
+        }
+
+        .file-preview {
+            margin: 10px;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            border: 2px dashed #007bff;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #007bff;
+        }
+
+        .clear-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .clear-btn:hover {
+            background: #c82333;
+        }
+
+        .message-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 0;
+            font-size: 14px;
+            resize: none;
+            max-height: 100px;
+            min-height: 45px;
+            transition: all 0.3s ease;
+            background: transparent;
+            outline: none;
+        }
+
+        .message-input:focus {
+            outline: none;
+            border-color: transparent;
+        }
+
+        .send-btn {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .send-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,123,255,0.3);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .typing-indicator {
+            padding: 10px 20px;
+            font-size: 12px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+            opacity: 0.7;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.fade-in {
+            animation: messageSlideIn 0.3s ease-out;
+        }
+
+        @keyframes messageSlideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 768px) {
+            .chat-container {
+                margin: 10px;
+                height: calc(100vh - 20px);
+                border-radius: 15px;
+            }
+
+            .chat-header {
+                padding: 15px;
+            }
+
+            .header-left {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .message-content {
+                max-width: 85%;
+            }
+
+            .input-group {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .send-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container fade-in">
+        <!-- Cabeçalho do Chat -->
+        <div class="chat-header">
+            <div class="header-left">
+                <button class="back-btn" onclick="window.location.href='/rnc/{{ rnc.id }}'">
+                    ← Voltar
+                </button>
+                <div class="rnc-info">
+                    <div class="rnc-title">{{ rnc.title or 'RNC sem título' }}</div>
+                    <div class="rnc-number">{{ rnc.rnc_number }}</div>
+                </div>
+            </div>
+            <div class="online-indicator">
+                <div class="online-dot"></div>
+                <span id="onlineCount">1 online</span>
+            </div>
+        </div>
+
+        <!-- Área de Mensagens -->
+        <div class="chat-messages" id="chatMessages">
+            {% if messages %}
+                {% for message in messages %}
+                <div class="message {% if message[2] == current_user[0] %}own{% endif %} fade-in" data-message-id="{{ message[0] }}" data-user-id="{{ message[2] }}">
+                    <div class="message-avatar">
+                        {{ message[6][0].upper() if message[6] else 'U' }}
+                    </div>
+                    <div class="message-content">
+                        <div class="message-header">
+                            <span class="message-author">{{ message[6] or 'Usuário' }}</span>
+                            {% if message[7] %}
+                            <span class="message-department">{{ message[7] }}</span>
+                            {% endif %}
+                            <span class="message-time">{{ message[5].split(' ')[1][:5] if message[5] else '' }}</span>
+                        </div>
+                        <div class="message-text">{{ message[3] }}</div>
+                        {% set can_delete = (message[2] == current_user[0]) or (current_user[5] == 'admin') %}
+                        {% if can_delete %}
+                        <div class="message-actions">
+                            <button class="icon-btn delete-btn" onclick="deleteMessage({{ message[0] }})" title="Apagar mensagem" aria-label="Apagar mensagem">
+                                🗑️
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">💬</div>
+                    <h3>Nenhuma mensagem ainda</h3>
+                    <p>Seja o primeiro a comentar sobre este RNC!</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Indicador de Digitação -->
+        <div class="typing-indicator" id="typingIndicator" style="display: none;">
+            <span id="typingText">Alguém está digitando...</span>
+        </div>
+
+        <!-- Área de Input -->
+        <div class="chat-input-container">
+            <div class="input-group">
+                <!-- Botões de Ação -->
+                <div class="action-buttons">
+                    <button class="action-btn" onclick="document.getElementById('fileInput').click()" title="Enviar arquivo">
+                        📎
+                    </button>
+                    <button class="action-btn" onclick="document.getElementById('imageInput').click()" title="Enviar imagem">
+                        🖼️
+                    </button>
+                    <button class="action-btn" onclick="insertEmoji()" title="Inserir emoji">
+                        😊
+                    </button>
+                    <button class="action-btn" onclick="toggleVoiceMessage()" title="Mensagem de voz">
+                        🎤
+                    </button>
+                </div>
+                
+                <!-- Área de Texto -->
+                <div class="text-area-container">
+                    <textarea 
+                        id="messageInput" 
+                        class="message-input" 
+                        placeholder="Digite sua mensagem..."
+                        rows="1"
+                        maxlength="1000"
+                    ></textarea>
+                    
+                    <!-- Contador de caracteres -->
+                    <div class="char-counter" id="charCounter">0/1000</div>
+                </div>
+                
+                <!-- Botão de Enviar -->
+                <button id="sendBtn" class="send-btn" onclick="sendMessage()">
+                    📤 Enviar
+                </button>
+            </div>
+            
+            <!-- Inputs ocultos para arquivos -->
+            <input type="file" id="fileInput" style="display: none;" accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx" onchange="handleFileUpload(this)">
+            <input type="file" id="imageInput" style="display: none;" accept="image/*" onchange="handleImageUpload(this)">
+            
+            <!-- Preview de arquivos -->
+            <div id="filePreview" class="file-preview" style="display: none;">
+                <div class="preview-header">
+                    <span>📎 Arquivo selecionado</span>
+                    <button onclick="clearFilePreview()" class="clear-btn">✕</button>
+                </div>
+                <div id="previewContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuração do Socket.IO
+        const socket = io();
+        const rncId = {{ rnc.id }};
+        const currentUserId = {{ current_user[0] }};
+        const currentUserName = '{{ current_user[1] }}';
+        const currentUserDept = '{{ current_user[4] or "" }}';
+        
+        let isTyping = false;
+        let typingTimeout;
+
+        // Conectar à sala do RNC
+        socket.emit('join_room', { room: `rnc_${rncId}` });
+
+        // Elementos do DOM
+        const chatMessages = document.getElementById('chatMessages');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const typingIndicator = document.getElementById('typingIndicator');
+        const typingText = document.getElementById('typingText');
+        const csrfHeader = { 'Content-Type': 'application/json' };
+
+        // Variáveis globais
+        let selectedFile = null;
+        let selectedImage = null;
+        let isRecording = false;
+        let mediaRecorder = null;
+        let audioChunks = [];
+
+        // Função para enviar mensagem
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message && !selectedFile && !selectedImage) return;
+
+            // Desabilitar botão durante envio
+            sendBtn.disabled = true;
+            sendBtn.innerHTML = '📤 Enviando...';
+
+            // Preparar dados da mensagem
+            const messageData = {
+                rnc_id: rncId,
+                message: message,
+                file: selectedFile,
+                image: selectedImage
+            };
+
+            // Enviar mensagem via WebSocket
+            socket.emit('send_message', messageData);
+
+            // Limpar inputs
+            messageInput.value = '';
+            messageInput.style.height = 'auto';
+            clearFilePreview();
+            updateCharCounter();
+
+            // Reabilitar botão
+            setTimeout(() => {
+                sendBtn.disabled = false;
+                sendBtn.innerHTML = '📤 Enviar';
+            }, 1000);
+        }
+
+        // Função para lidar com upload de arquivo
+        function handleFileUpload(input) {
+            const file = input.files[0];
+            if (file) {
+                if (file.size > 10 * 1024 * 1024) { // 10MB limit
+                    alert('Arquivo muito grande. Máximo 10MB.');
+                    return;
+                }
+                
+                selectedFile = file;
+                showFilePreview(file, 'file');
+                input.value = '';
+            }
+        }
+
+        // Função para lidar com upload de imagem
+        function handleImageUpload(input) {
+            const file = input.files[0];
+            if (file) {
+                if (file.size > 5 * 1024 * 1024) { // 5MB limit
+                    alert('Imagem muito grande. Máximo 5MB.');
+                    return;
+                }
+                
+                selectedImage = file;
+                showFilePreview(file, 'image');
+                input.value = '';
+            }
+        }
+
+        // Função para mostrar preview de arquivo
+        function showFilePreview(file, type) {
+            const preview = document.getElementById('filePreview');
+            const content = document.getElementById('previewContent');
+            
+            if (type === 'image') {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    content.innerHTML = `
+                        <img src="${e.target.result}" style="max-width: 200px; max-height: 150px; border-radius: 8px;">
+                        <div style="margin-top: 8px; font-size: 12px; color: #666;">
+                            ${file.name} (${(file.size / 1024).toFixed(1)} KB)
+                        </div>
+                    `;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                content.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="font-size: 24px;">📎</div>
+                        <div>
+                            <div style="font-weight: 600;">${file.name}</div>
+                            <div style="font-size: 12px; color: #666;">
+                                ${(file.size / 1024).toFixed(1)} KB
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            preview.style.display = 'block';
+        }
+
+        // Função para limpar preview
+        function clearFilePreview() {
+            selectedFile = null;
+            selectedImage = null;
+            document.getElementById('filePreview').style.display = 'none';
+            document.getElementById('fileInput').value = '';
+            document.getElementById('imageInput').value = '';
+        }
+
+        // Função para inserir emoji
+        function insertEmoji() {
+            const emojis = ['😊', '👍', '❤️', '🎉', '🔥', '💯', '👏', '🙏', '😎', '🤔'];
+            const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+            const cursorPos = messageInput.selectionStart;
+            const textBefore = messageInput.value.substring(0, cursorPos);
+            const textAfter = messageInput.value.substring(cursorPos);
+            
+            messageInput.value = textBefore + emoji + textAfter;
+            messageInput.focus();
+            messageInput.setSelectionRange(cursorPos + emoji.length, cursorPos + emoji.length);
+            updateCharCounter();
+        }
+
+        // Função para alternar mensagem de voz
+        function toggleVoiceMessage() {
+            if (!isRecording) {
+                startVoiceRecording();
+            } else {
+                stopVoiceRecording();
+            }
+        }
+
+        // Função para iniciar gravação de voz
+        function startVoiceRecording() {
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(stream => {
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+                    
+                    mediaRecorder.ondataavailable = event => {
+                        audioChunks.push(event.data);
+                    };
+                    
+                    mediaRecorder.onstop = () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                        // Aqui você pode enviar o áudio
+                        console.log('Áudio gravado:', audioBlob);
+                    };
+                    
+                    mediaRecorder.start();
+                    isRecording = true;
+                    
+                    // Atualizar botão
+                    const voiceBtn = document.querySelector('[onclick="toggleVoiceMessage()"]');
+                    voiceBtn.innerHTML = '⏹️';
+                    voiceBtn.style.background = 'rgba(220,53,69,0.1)';
+                    voiceBtn.style.color = '#dc3545';
+                })
+                .catch(err => {
+                    console.error('Erro ao acessar microfone:', err);
+                    alert('Erro ao acessar microfone. Verifique as permissões.');
+                });
+        }
+
+        // Função para parar gravação de voz
+        function stopVoiceRecording() {
+            if (mediaRecorder && isRecording) {
+                mediaRecorder.stop();
+                isRecording = false;
+                
+                // Atualizar botão
+                const voiceBtn = document.querySelector('[onclick="toggleVoiceMessage()"]');
+                voiceBtn.innerHTML = '🎤';
+                voiceBtn.style.background = '';
+                voiceBtn.style.color = '';
+            }
+        }
+
+        // Função para atualizar contador de caracteres
+        function updateCharCounter() {
+            const counter = document.getElementById('charCounter');
+            const length = messageInput.value.length;
+            counter.textContent = `${length}/1000`;
+            
+            if (length > 900) {
+                counter.style.color = '#dc3545';
+            } else if (length > 700) {
+                counter.style.color = '#ffc107';
+            } else {
+                counter.style.color = '#999';
+            }
+        }
+
+        // Função para adicionar mensagem na interface
+        function addMessage(messageData) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${messageData.user_id == currentUserId ? 'own' : ''} fade-in`;
+            messageDiv.dataset.messageId = messageData.id;
+            messageDiv.dataset.userId = messageData.user_id;
+            
+            const avatar = messageData.user_name ? messageData.user_name[0].toUpperCase() : 'U';
+            
+            messageDiv.innerHTML = `
+                <div class="message-avatar">${avatar}</div>
+                <div class="message-content">
+                    <div class="message-header">
+                        <span class="message-author">${messageData.user_name || 'Usuário'}</span>
+                        ${messageData.department ? `<span class=\"message-department\">${messageData.department}</span>` : ''}
+                        <span class="message-time">${new Date(messageData.created_at).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}</span>
+                    </div>
+                    <div class="message-text">${messageData.message}</div>
+                    ${(messageData.user_id == currentUserId || '${current_user[5]}' === 'admin') ? `
+                    <div class=\"message-actions\">
+                        <button class=\"icon-btn delete-btn\" onclick=\"deleteMessage(${messageData.id})\" title=\"Apagar mensagem\" aria-label=\"Apagar mensagem\">🗑️</button>
+                    </div>` : ''}
+                </div>
+            `;
+
+            // Remover estado vazio se existir
+            const emptyState = chatMessages.querySelector('.empty-state');
+            if (emptyState) {
+                emptyState.remove();
+            }
+
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Event listeners
+        messageInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        messageInput.addEventListener('input', function() {
+            // Auto-resize do textarea
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+            
+            // Atualizar contador de caracteres
+            updateCharCounter();
+            
+            // Indicador de digitação
+            if (!isTyping) {
+                isTyping = true;
+                socket.emit('typing', { rnc_id: rncId, is_typing: true });
+            }
+            
+            clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => {
+                isTyping = false;
+                socket.emit('typing', { rnc_id: rncId, is_typing: false });
+            }, 1000);
+        });
+
+        // Função para mostrar notificação de nova mensagem
+        function showMessageNotification(messageData) {
+            // Notificação do navegador
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification(`💬 Nova mensagem no ${rncNumber}`, {
+                    body: `${messageData.user_name}: ${messageData.message.substring(0, 50)}${messageData.message.length > 50 ? '...' : ''}`,
+                    icon: '/LOGOSQI.jpg',
+                    tag: `chat-${rncId}-${messageData.id}`
+                });
+            }
+            
+            // Notificação toast
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #007bff, #0056b3);
+                color: white;
+                padding: 15px 20px;
+                border-radius: 10px;
+                box-shadow: 0 4px 15px rgba(0,123,255,0.3);
+                z-index: 3000;
+                animation: slideInRight 0.3s ease-out;
+                max-width: 300px;
+                cursor: pointer;
+            `;
+            
+            toast.innerHTML = `
+                <div style="font-weight: 600; margin-bottom: 5px;">💬 Nova mensagem</div>
+                <div style="font-size: 0.9rem;">${messageData.user_name}: ${messageData.message.substring(0, 50)}${messageData.message.length > 50 ? '...' : ''}</div>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            // Remover após 5 segundos
+            setTimeout(() => {
+                toast.style.animation = 'slideOutRight 0.3s ease-in';
+                setTimeout(() => {
+                    if (document.body.contains(toast)) {
+                        document.body.removeChild(toast);
+                    }
+                }, 300);
+            }, 5000);
+        }
+        
+        // Solicitar permissão para notificações
+        function requestNotificationPermission() {
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+        }
+        
+        // Eventos do Socket.IO
+        socket.on('new_message', function(messageData) {
+            addMessage(messageData);
+            
+            // Mostrar notificação se a janela não estiver focada
+            if (!document.hasFocus()) {
+                showMessageNotification(messageData);
+            }
+        });
+
+        socket.on('user_typing', function(data) {
+            if (data.user_id !== currentUserId) {
+                typingText.textContent = `${data.user_name} está digitando...`;
+                typingIndicator.style.display = 'block';
+                
+                setTimeout(() => {
+                    typingIndicator.style.display = 'none';
+                }, 3000);
+            }
+        });
+
+        socket.on('error', function(data) {
+            alert('Erro: ' + data.message);
+        });
+
+        // Remoção em tempo real
+        socket.on('message_deleted', function(data) {
+            if (data && data.id) {
+                const selector = `.message[data-message-id="${data.id}"]`;
+                const node = chatMessages.querySelector(selector);
+                if (node) {
+                    node.remove();
+                }
+            }
+        });
+
+        // Deletar mensagem via API
+        async function deleteMessage(messageId) {
+            if (!confirm('Deseja realmente apagar esta mensagem?')) return;
+            try {
+                const res = await fetch(`/api/chat/${rncId}/messages/${messageId}`, { method: 'DELETE', headers: csrfHeader });
+                const data = await res.json();
+                if (!res.ok || !data.success) {
+                    alert(data.message || 'Erro ao apagar a mensagem');
+                    return;
+                }
+                // Removida via evento socket; fallback local:
+                const el = chatMessages.querySelector(`.message[data-message-id="${messageId}"]`);
+                if (el) el.remove();
+            } catch (err) {
+                alert('Erro de rede ao apagar a mensagem');
+            }
+        }
+
+        // Focar no input ao carregar
+        document.addEventListener('DOMContentLoaded', function() {
+            messageInput.focus();
+            requestNotificationPermission();
+            updateCharCounter(); // Inicializar contador de caracteres
+        });
+
+        // Auto-scroll para baixo
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    </script>
+</body>
+</html> 

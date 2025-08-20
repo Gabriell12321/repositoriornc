@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block title %}Cadastro de Setores - Sistema IPPEL{% endblock %}
+
+{% block extra_css %}
+<style>
+  :root{ --brand-start:#5b21b6; --brand-end:#4c1d95; --ring:rgba(91,33,182,.18) }
+  .wrap{ max-width:1180px; margin:14px auto; display:grid; gap:20px }
+  .glass{ background:rgba(255,255,255,.86); backdrop-filter: blur(14px) saturate(140%) }
+  .hero{ background: linear-gradient(135deg,var(--brand-start),var(--brand-end)); color:#fff; border-radius:16px; padding:22px 24px; display:flex; align-items:center; justify-content:space-between; box-shadow:0 16px 40px rgba(76,29,149,.25); position:sticky; top:8px; z-index:5 }
+  .hero .title{ font-size:22px; font-weight:800; letter-spacing:.3px; display:flex; align-items:center; gap:10px }
+  .hero .subtitle{ opacity:.92; font-weight:500; font-size:13px; margin-top:6px }
+  .card{ background:#fff; border-radius:16px; box-shadow:0 14px 28px rgba(0,0,0,.08); padding:18px }
+  .grid{ display:grid; grid-template-columns: 380px 1fr; gap:20px }
+  .field{ display:flex; flex-direction:column; gap:8px }
+  .input, .textarea{ border:2px solid #eef0f4; border-radius:12px; padding:12px 14px; font-size:14px; transition: box-shadow .2s ease, border-color .2s ease }
+  .input:focus, .textarea:focus{ outline:none; border-color: var(--brand-start); box-shadow:0 0 0 6px var(--ring) }
+  .textarea{ min-height:110px; resize: vertical }
+  .btn{ border:none; border-radius:12px; padding:12px 16px; cursor:pointer; font-weight:800; letter-spacing:.2px; position:relative; overflow:hidden }
+  .btn-primary{ background:linear-gradient(135deg,var(--brand-start),var(--brand-end)); color:#fff; box-shadow:0 12px 24px rgba(76,29,149,.25) }
+  .btn-primary::after{ content:""; position:absolute; inset:0; background:linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent); transform:translateX(-100%) }
+  .btn-primary:hover::after{ animation:shimmer 1.2s linear both }
+  .btn-ghost{ background:transparent; color:#4c1d95; border:2px solid rgba(76,29,149,.25) }
+  .list{ display:grid; gap:12px }
+  .item{ display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border:1px solid #eef0f4; border-radius:14px; transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease }
+  .item:hover{ transform: translateY(-2px); box-shadow:0 12px 26px rgba(0,0,0,.07); border-color:#e5e7eb }
+  .left{ display:flex; align-items:center; gap:12px }
+  .dot{ width:10px; height:10px; border-radius:50%; box-shadow:0 0 0 3px rgba(0,0,0,.04) inset }
+  .status{ padding:6px 10px; border-radius:999px; font-size:12px; font-weight:800 }
+  .status.active{ background:linear-gradient(135deg,#20c997,#28a745); color:#fff }
+  .status.inactive{ background:linear-gradient(135deg,#cfd4da,#aeb4bb); color:#fff }
+  .empty{ text-align:center; color:#8a8f98; font-style:italic; padding:18px }
+  .fade-in{ animation: fadeIn .35s ease both }
+  @keyframes fadeIn{ from{ opacity:0; transform: translateY(6px) } to{ opacity:1; transform:none } }
+  @keyframes shimmer{ from{ transform: translateX(-100%) } to{ transform: translateX(100%) } }
+  @media (max-width:1100px){ .grid{ grid-template-columns:1fr } }
+  .search-wrap{position:relative; width:260px}
+  .search{border:2px solid #eef0f4; border-radius:12px; padding:10px 14px 10px 36px; width:100%}
+  .search-icon{position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#9aa1ad}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wrap">
+  <div class="hero fade-in">
+    <div>
+      <div class="title">🏗️ Cadastro de Setores</div>
+      <div class="subtitle">Organize os setores para uso em todo o sistema</div>
+    </div>
+    <div>
+      <button class="btn btn-ghost" onclick="window.location.href='/dashboard'">← Voltar ao Dashboard</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card fade-in" style="animation-delay:.02s">
+      <h3 style="margin-bottom:12px">Novo Setor</h3>
+      <div class="field">
+        <label>Nome do Setor</label>
+        <input id="sectorName" class="input" placeholder="Ex.: Montagem, Acabamento" />
+      </div>
+      <div class="field">
+        <label>Cor</label>
+        <input id="sectorColor" class="input" type="color" value="#5b21b6" />
+      </div>
+      <div class="field">
+        <label>Descrição</label>
+        <textarea id="sectorDesc" class="textarea" placeholder="Breve descrição do setor"></textarea>
+      </div>
+      <div style="display:flex; gap:10px; margin-top:10px">
+        <button class="btn btn-primary" onclick="saveSector()">➕ Adicionar Setor</button>
+        <button class="btn btn-ghost" onclick="clearForm()">✖ Limpar</button>
+      </div>
+    </div>
+
+    <div class="card glass fade-in" style="animation-delay:.04s">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px">
+        <h3 style="display:flex; align-items:center; gap:8px">Setores Cadastrados <span id="sectorsCount" style="font-size:12px; color:#6b7280"></span></h3>
+        <div class="search-wrap">
+          <input id="search" class="search" placeholder="Pesquisar setor..." oninput="renderSectors()" />
+          <span class="search-icon">🔎</span>
+        </div>
+      </div>
+      <div id="sectorList" class="list"></div>
+      <div id="emptyState" class="empty" style="display:none">Nenhum setor cadastrado</div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const API = {
+    list: '/api/admin/sectors',
+    create: '/api/admin/sectors',
+    update: id => `/api/admin/sectors/${id}`,
+    remove: id => `/api/admin/sectors/${id}`,
+  };
+
+  let sectors = [];
+
+  document.addEventListener('DOMContentLoaded', () => { loadSectors(); });
+
+  async function loadSectors(){
+    try{
+      const res = await fetch(API.list);
+      const data = await res.json();
+      sectors = data.success ? (data.sectors || []) : [];
+      renderSectors();
+    }catch(e){ console.error('Erro ao carregar setores', e); }
+  }
+
+  function renderSectors(){
+    const list = document.getElementById('sectorList');
+    const empty = document.getElementById('emptyState');
+    const q = (document.getElementById('search').value||'').toLowerCase();
+    list.innerHTML = '';
+    const filtered = sectors.filter(s => !q || s.name.toLowerCase().includes(q) || (s.description||'').toLowerCase().includes(q));
+    document.getElementById('sectorsCount').textContent = filtered.length ? `(${filtered.length})` : '';
+    if(!filtered.length){ empty.style.display='block'; return; } else { empty.style.display='none'; }
+    filtered.forEach((s, idx)=>{
+      const row = document.createElement('div');
+      row.className='item';
+      row.style.borderLeft = `6px solid ${s.color || '#5b21b6'}`;
+      row.style.animationDelay = `${Math.min(idx*0.02,.18)}s`;
+      row.classList.add('fade-in');
+      row.innerHTML = `
+        <div class="left">
+          <span class="dot" style="background:${s.color || '#5b21b6'}"></span>
+          <div>
+            <div style="font-weight:900">${s.name}</div>
+            <div style="color:#6b7280; font-size:12px">${s.description || ''}</div>
+          </div>
+          <span class="status ${s.is_active ? 'active' : 'inactive'}">${s.is_active ? 'ATIVO' : 'INATIVO'}</span>
+        </div>
+        <div style="display:flex; gap:8px">
+          <button class="btn btn-ghost" onclick="editSector(${s.id})">✏️ Editar</button>
+          <button class="btn btn-ghost" onclick="toggleSector(${s.id}, ${s.is_active ? 1 : 0})">${s.is_active ? '🧩 Desativar' : '✅ Ativar'}</button>
+          <button class="btn btn-ghost" onclick="removeSector(${s.id})">🗑️ Remover</button>
+        </div>`;
+      list.appendChild(row);
+    });
+  }
+
+  async function saveSector(){
+    const name = document.getElementById('sectorName').value.trim();
+    const color = document.getElementById('sectorColor').value;
+    const description = document.getElementById('sectorDesc').value.trim();
+    if(!name){ alert('Informe o nome do setor'); return; }
+    try{
+      const res = await fetch(API.create,{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name, description, color })});
+      const data = await res.json();
+      if(data.success){ sectors.push(data.sector); clearForm(); renderSectors(); }
+      else{ alert(data.message || 'Erro ao salvar'); }
+    }catch(e){ console.error(e); alert('Erro ao salvar'); }
+  }
+
+  function clearForm(){
+    document.getElementById('sectorName').value='';
+    document.getElementById('sectorColor').value='#5b21b6';
+    document.getElementById('sectorDesc').value='';
+  }
+
+  function editSector(id){
+    const s = sectors.find(x=>x.id===id); if(!s) return;
+    document.getElementById('sectorName').value=s.name;
+    document.getElementById('sectorColor').value=s.color||'#5b21b6';
+    document.getElementById('sectorDesc').value=s.description||'';
+    saveUpdate(id);
+  }
+
+  async function saveUpdate(id){
+    const name = document.getElementById('sectorName').value.trim();
+    const color = document.getElementById('sectorColor').value;
+    const description = document.getElementById('sectorDesc').value.trim();
+    if(!name){ alert('Informe o nome do setor'); return; }
+    try{
+      const res = await fetch(API.update(id),{ method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name, description, color })});
+      const data = await res.json();
+      if(data.success){ const i = sectors.findIndex(x=>x.id===id); if(i>-1){ sectors[i].name=name; sectors[i].color=color; sectors[i].description=description; } renderSectors(); }
+      else{ alert(data.message || 'Erro ao atualizar'); }
+    }catch(e){ console.error(e); alert('Erro ao atualizar'); }
+  }
+
+  async function toggleSector(id,isActive){
+    try{
+      const res = await fetch(API.update(id),{ method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ is_active: !isActive })});
+      const data = await res.json();
+      if(data.success){ const s = sectors.find(x=>x.id===id); if(s){ s.is_active=!isActive; } renderSectors(); }
+    }catch(e){ console.error(e); }
+  }
+
+  async function removeSector(id){
+    if(!confirm('Confirma remover o setor?')) return;
+    try{
+      const res = await fetch(API.remove(id),{ method:'DELETE' });
+      const data = await res.json();
+      if(data.success){ sectors = sectors.filter(x=>x.id!==id); renderSectors(); }
+    }catch(e){ console.error(e); }
+  }
+</script>
+{% endblock %}
+
+
