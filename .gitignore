@@ -18,6 +18,18 @@ Thumbs.db
 # Logs
 *.log
 email_system.log
+logs/
+backups/
+*.db-shm
+*.db-wal
+.venv*/
+
+# Local secrets and configs
+ippel_secret.key
+config_local.py
+
+# Local databases folder
+db/
 
 # SQLite databases and artifacts
 *.db

@@ -986,12 +986,14 @@ def api_charts_enhanced_data():
     try:
         period = request.args.get('period', '30')
         department = request.args.get('department', 'all')
-        
         # Tentar carregar dados reais da planilha de indicadores
         import json
         import os
-        
-        api_data_file = 'api_chart_data.json'
+        from pathlib import Path
+        # Prefer JSON files under data/ quando presente para manter a raiz limpa
+        _ROOT = Path(__file__).resolve().parent
+        _DATA_DIR = _ROOT / 'data'
+        api_data_file = str((_DATA_DIR / 'api_chart_data.json') if (_DATA_DIR / 'api_chart_data.json').exists() else (_ROOT / 'api_chart_data.json'))
         if os.path.exists(api_data_file):
             try:
                 with open(api_data_file, 'r', encoding='utf-8') as f:

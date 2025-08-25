@@ -5,6 +5,22 @@ import sqlite3
 import hashlib
 from flask import Flask, request, jsonify, send_from_directory, session, redirect, url_for, render_template, abort, make_response
 import socket
+from services.db import DB_PATH, get_db_connection, return_db_connection, warm_pool
+from services.cache import cache_query, get_cached_query, clear_expired_cache, clear_rnc_cache
+from services.permissions import has_permission, has_department_permission, get_user_department
+from services.groups import (
+    get_all_groups,
+    get_group_by_id,
+    create_group,
+    update_group,
+    delete_group,
+    get_users_by_group,
+)
+from services.rnc import (
+    share_rnc_with_user,
+    get_rnc_shared_users,
+    can_user_access_rnc,
+)
 
 # Importações opcionais com fallback
 try:
@@ -44,6 +60,8 @@ import os
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime, timedelta
 from routes.api import api as api_bp
+from routes.auth import auth as auth_bp
+from routes.rnc import rnc as rnc_bp
 
 try:
     from flask_socketio import SocketIO, emit, join_room, leave_room  # type: ignore
@@ -107,405 +125,95 @@ else:
                 f.write(_new_secret)
             app.secret_key = _new_secret
     except Exception:
-        # Fallback (não persiste): ainda assim não quebra
         app.secret_key = secrets.token_hex(32)
 
-# Configurações de performance para produção
-app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 31536000  # Cache estático por 1 ano
-app.config['TEMPLATES_AUTO_RELOAD'] = False  # Desabilitar auto-reload em produção
-app.config['JSON_SORT_KEYS'] = False  # Manter ordem das chaves JSON
-app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False  # Respostas JSON compactas
-app.config['COMPRESS_ALGORITHM'] = 'gzip'
-app.config['COMPRESS_LEVEL'] = 6
-app.config['COMPRESS_MIMETYPES'] = [
-    'text/html', 'text/css', 'text/plain',
-    'application/javascript', 'application/json',
-    'application/octet-stream'
-]
+# Configurações essenciais
+app.config['JSON_SORT_KEYS'] = False
+app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['SESSION_COOKIE_SECURE'] = False  # HTTP em rede local
+app.config['SESSION_COOKIE_SECURE'] = False
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['REMEMBER_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_NAME'] = 'ippel_session'
-app.config['PERMANENT_SESSION_LIFETIME'] = 60 * 60 * 8  # 8 horas
-app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10MB por requisição
 
-# Registrar blueprints
-app.register_blueprint(api_bp)
+# SocketIO (com fallback já preparado acima)
+# Força modo 'threading' para evitar dependências como eventlet/gevent em ambientes Windows/Python 3.13
+socketio = SocketIO(app, async_mode='threading')
 
-# Configurar rate limiter (desabilitado para evitar problemas)
-class _LimiterDummy:
-    def limit(self, *args, **kwargs):
-        def _noop_decorator(*args, **kwargs):
-            def _wrapper(f):
-                return f
-            return _wrapper
-        return _noop_decorator
-
-limiter = _LimiterDummy()
-
-@app.route('/static/<path:filename>')
-def static_files(filename):
-    try:
-        return send_from_directory('static', filename)
-    except Exception:
-        return abort(404)
-
-@app.route('/logo.png')
-def root_logo():
-    try:
-        return send_from_directory('static', 'logo.png')
-    except Exception:
-        return abort(404)
-
-# Políticas de cache por tipo de conteúdo e rota
-@app.after_request
-def add_cache_headers(response):
-    try:
-        path_lower = request.path.lower()
-        mime = (response.mimetype or '').lower()
-
-        # Assets estáticos: 1 ano
-        if path_lower.startswith('/static/') or path_lower.endswith(('.js', '.css', '.png', '.jpg', '.jpeg', '.gif', '.svg')):
-            response.cache_control.public = True
-            response.cache_control.max_age = 31536000
-            response.headers['Expires'] = 'Thu, 31 Dec 2099 23:59:59 GMT'
-
-        # HTML dinâmico: não cachear
-        elif 'text/html' in mime:
-            response.cache_control.no_cache = True
-            response.cache_control.no_store = True
-            response.cache_control.must_revalidate = True
-
-        # APIs JSON: para endpoints pesados, permitir cache curto no cliente
-        elif 'application/json' in mime or path_lower.startswith('/api/'):
-            # Lista de endpoints que podem ser cacheados brevemente
-            cacheable = (
-                path_lower.startswith('/api/rnc/list') or
-                path_lower.startswith('/api/charts/data') or
-                path_lower.startswith('/api/notifications/unread')
-            )
-            if cacheable:
-                response.cache_control.public = True
-                response.cache_control.max_age = 15  # 15s para sensação de rapidez
-            else:
-                response.cache_control.no_cache = True
-                response.cache_control.no_store = True
-                response.cache_control.must_revalidate = True
-
-    except Exception:
-        pass
-    return response
-
-# Forçar modo 'threading' para estabilidade no Windows/Python 3.13
-# (evita erros do eventlet como WinError 10053 ao encerrar websockets)
-_async_mode = 'threading'
-
-# Se HTTPS estiver habilitado via ambiente e não houver CERT/KEY definidos,
-# forçar 'threading' para permitir ssl_context='adhoc' (eventlet não suporta adhoc).
-# OBS: Permitir FORÇAR HTTP via variável IPPEL_FORCE_HTTP (padrão ativo) para evitar habilitar HTTPS por engano.
-try:
-    _force_http_env = os.environ.get('IPPEL_FORCE_HTTP', '1').strip() in ('1', 'true', 'TRUE', 'yes', 'on')
-    _enable_https_env = os.environ.get('IPPEL_ENABLE_HTTPS', '').strip() in ('1', 'true', 'TRUE', 'yes', 'on')
-    if _force_http_env:
-        _enable_https_env = False
-    _has_cert = bool(os.environ.get('SSL_CERTFILE') and os.environ.get('SSL_KEYFILE'))
-    if _enable_https_env and not _has_cert:
-        _async_mode = 'threading'
-except Exception:
-    pass
-
-# Configurar SocketIO com fallback seguro (sem exigir eventlet)
-socketio = SocketIO(
-    app,
-    cors_allowed_origins="*",
-    async_mode=_async_mode,
-    ping_timeout=120,
-    ping_interval=30,
-    max_http_buffer_size=200000000,
-    logger=False,
-    engineio_logger=False,
-    transports=['websocket', 'polling']
-)
-
-DB_PATH = 'ippel_system.db'
-# Diretório de backup no mesmo local do projeto
-BACKUP_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backup')
-
-def ensure_backup_dir_exists() -> None:
-    try:
-        os.makedirs(BACKUP_DIR, exist_ok=True)
-    except Exception as e:
-        try:
-            logger.error(f"Erro ao criar diretório de backup '{BACKUP_DIR}': {e}")
-        except Exception:
-            print(f"Erro ao criar diretório de backup '{BACKUP_DIR}': {e}")
-
-def backup_database_now() -> None:
-    """Cria um backup consistente do SQLite usando a API nativa de backup."""
-    ensure_backup_dir_exists()
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    dest_path = os.path.join(BACKUP_DIR, f"ippel_system_{timestamp}.db")
-    try:
-        # Usar API de backup do SQLite para snapshot consistente
-        src = sqlite3.connect(DB_PATH, timeout=30.0)
-        dst = sqlite3.connect(dest_path, timeout=30.0)
-        with dst:
-            src.backup(dst)
-        src.close()
-        dst.close()
-        try:
-            logger.info(f"✅ Backup criado: {dest_path}")
-        except Exception:
-            print(f"✅ Backup criado: {dest_path}")
-    except Exception as e:
-        try:
-            logger.error(f"⚠️ Erro ao criar backup: {e}")
-        except Exception:
-            print(f"⚠️ Erro ao criar backup: {e}")
-
-def start_backup_scheduler(interval_seconds: int = 43200) -> None:
-    """Inicia uma thread em background para fazer backup periódico.
-    Faz um backup IMEDIATO ao iniciar e depois repete a cada 'interval_seconds'
-    (padrão: 12 horas).
-    """
-    def _worker():
-        # Backup imediato ao iniciar o agendador
-        try:
-            backup_database_now()
-        except Exception as e:
-            try:
-                logger.error(f"Erro no backup inicial: {e}")
-            except Exception:
-                print(f"Erro no backup inicial: {e}")
-        # Periódico
-        while True:
-            try:
-                time.sleep(interval_seconds)
-                backup_database_now()
-            except Exception as e:
-                try:
-                    logger.error(f"Erro no agendador de backup: {e}")
-                except Exception:
-                    print(f"Erro no agendador de backup: {e}")
-    t = threading.Thread(target=_worker, name='BackupScheduler', daemon=True)
-    t.start()
-
-# Configurar logging
+# Logging básico
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Armazenamento temporário de usuários online
+# Pool e cache agora são providos por services/*
+
+# Registrar Blueprints
+app.register_blueprint(api_bp)
+app.register_blueprint(auth_bp)
+app.register_blueprint(rnc_bp)
+
+# Rota de debug de sessão
+@app.route('/api/debug/session')
+def api_debug_session():
+    data = {k: session.get(k) for k in ['user_id','user_name','user_email','user_department','user_role']}
+    data['has_session'] = 'user_id' in session
+    return jsonify({'success': True, 'session': data})
+
+# Usuários online (para eventos WebSocket)
 online_users = {}
 
-# Pool de conexões para banco de dados - Otimizado para i5-7500 + 16GB RAM
-db_pool = queue.Queue(maxsize=150)  # Pool de 150 conexões para 200+ usuários
-executor = ThreadPoolExecutor(max_workers=75)  # Pool de 75 threads para alta concorrência
-
-# Cache de consultas frequentes
-query_cache = {}
-cache_lock = threading.Lock()
-
-# Métricas de performance
-performance_metrics = {
-    'requests_per_second': 0,
-    'active_connections': 0,
-    'db_connections': 0,
-    'memory_usage': 0
-}
-
 def get_local_ip():
-    """Obter IP local da máquina"""
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(("8.8.8.8", 80))
         local_ip = s.getsockname()[0]
         s.close()
         return local_ip
-    except:
+    except Exception:
         return "127.0.0.1"
 
-def get_available_port(start_port=5001):
-    """Encontrar porta disponível"""
-    import socket
-    port = start_port
-    while port < start_port + 100:
-        try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.bind(('localhost', port))
-            sock.close()
-            return port
-        except OSError:
-            port += 1
-    return start_port
-
-def get_db_connection():
-    """Obter conexão do pool de banco de dados"""
-    try:
-        conn = db_pool.get_nowait()
-        performance_metrics['db_connections'] += 1
-        return conn
-    except queue.Empty:
-        # Criar nova conexão se pool estiver vazio
-        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-        conn.execute('PRAGMA journal_mode=WAL')  # Modo WAL para melhor performance
-        conn.execute('PRAGMA synchronous=NORMAL')  # Sincronização mais rápida
-        conn.execute('PRAGMA cache_size=10000')  # Cache maior
-        conn.execute('PRAGMA temp_store=MEMORY')  # Temp tables em memória
-        conn.execute('PRAGMA mmap_size=268435456')  # 256MB mmap
-        performance_metrics['db_connections'] += 1
-        return conn
-
-def return_db_connection(conn):
-    """Retornar conexão ao pool"""
-    try:
-        if conn:
-            conn.rollback()  # Rollback para limpar transações
-            db_pool.put_nowait(conn)
-            performance_metrics['db_connections'] -= 1
-    except queue.Full:
-        conn.close()
-
-def cache_query(key, data, ttl=300):
-    """Cache de consultas com TTL de 5 minutos - Otimizado para 200 usuários"""
-    with cache_lock:
-        # Limitar cache a 1000 entradas para evitar uso excessivo de memória
-        if len(query_cache) > 1000:
-            # Remover entradas mais antigas
-            oldest_key = min(query_cache.keys(), key=lambda k: query_cache[k]['timestamp'])
-            del query_cache[oldest_key]
-        
-        query_cache[key] = {
-            'data': data,
-            'timestamp': time.time(),
-            'ttl': ttl
-        }
-
-def get_cached_query(key):
-    """Obter dados do cache"""
-    with cache_lock:
-        if key in query_cache:
-            cache_entry = query_cache[key]
-            if time.time() - cache_entry['timestamp'] < cache_entry['ttl']:
-                return cache_entry['data']
-            else:
-                del query_cache[key]
-    return None
-
-def clear_expired_cache():
-    """Limpar cache expirado"""
-    with cache_lock:
-        current_time = time.time()
-        expired_keys = [
-            key for key, entry in query_cache.items()
-            if current_time - entry['timestamp'] > entry['ttl']
-        ]
-        for key in expired_keys:
-            del query_cache[key]
-
-def clear_rnc_cache(user_id=None):
-    """Limpar cache de RNCs para um usuário específico ou todos"""
-    with cache_lock:
-        if user_id:
-            # Limpar cache específico do usuário
-            keys_to_remove = [
-                key for key in query_cache.keys()
-                if key.startswith(f"rncs_list_{user_id}_")
-            ]
-        else:
-            # Limpar todo o cache de RNCs
-            keys_to_remove = [
-                key for key in query_cache.keys()
-                if key.startswith("rncs_list_")
-            ]
-        
-        for key in keys_to_remove:
-            del query_cache[key]
-
-def get_rnc_data_safe(rnc_id):
-    """Buscar dados do RNC de forma segura"""
-    try:
-        conn = sqlite3.connect(DB_PATH, timeout=10, isolation_level=None)
-        cursor = conn.cursor()
-        cursor.execute('PRAGMA journal_mode=WAL')
-        cursor.execute('PRAGMA busy_timeout=10000')
-        
-        # Primeiro, verificar se o RNC existe
-        cursor.execute('SELECT id FROM rncs WHERE id = ?', (rnc_id,))
-        rnc_exists = cursor.fetchone()
-        
-        if not rnc_exists:
-            conn.close()
-            return None, "RNC não encontrado"
-        
-        # Buscar RNC com informações do usuário
-        cursor.execute('''
-            SELECT r.*, u.name as user_name, au.name as assigned_user_name
-            FROM rncs r 
-            LEFT JOIN users u ON r.user_id = u.id 
-            LEFT JOIN users au ON r.assigned_user_id = au.id
-            WHERE r.id = ?
-        ''', (rnc_id,))
-        
-        rnc_data = cursor.fetchone()
-        conn.close()
-        
-        if not rnc_data:
-            return None, "RNC não encontrado na consulta completa"
-        
-        # Verificar se rnc_data é uma tupla/lista
-        if not isinstance(rnc_data, (tuple, list)):
-            return None, f"Dados inválidos: {type(rnc_data)} - {rnc_data}"
-        
-        return rnc_data, None
-        
-    except Exception as e:
-        return None, f"Erro ao buscar RNC: {str(e)}"
+def start_backup_scheduler(interval_seconds: int = 43200) -> None:
+    """Thread simples para backups periódicos do SQLite usando API de backup."""
+    def _worker():
+        while True:
+            try:
+                # Snapshot para arquivo com timestamp
+                ts = datetime.now().strftime('%Y%m%d_%H%M%S')
+                dest = os.path.join(os.path.dirname(os.path.abspath(__file__)), f"ippel_system_backup_{ts}.db")
+                src = sqlite3.connect(DB_PATH, timeout=30.0)
+                dst = sqlite3.connect(dest, timeout=30.0)
+                with dst:
+                    src.backup(dst)
+                src.close(); dst.close()
+                logger.info(f"Backup criado: {dest}")
+            except Exception as e:
+                try:
+                    logger.error(f"Erro no backup: {e}")
+                except Exception:
+                    pass
+            time.sleep(interval_seconds)
+    threading.Thread(target=_worker, name='BackupScheduler', daemon=True).start()
 
 def performance_monitor():
-    """Monitor de performance em background otimizado para 200 usuários"""
+    """Monitor leve de performance (placeholder)."""
     while True:
         try:
-            # Atualizar métricas
-            if HAS_PSUTIL and psutil is not None:
-                performance_metrics['memory_usage'] = psutil.Process().memory_info().rss / 1024 / 1024  # MB
-            else:
-                try:
-                    current, _ = tracemalloc.get_traced_memory()
-                    performance_metrics['memory_usage'] = current / 1024 / 1024
-                except Exception:
-                    performance_metrics['memory_usage'] = 0
-            performance_metrics['active_connections'] = len(online_users)
-            
-            # Limpar cache expirado
             clear_expired_cache()
-            
-            # Garbage collection mais agressivo para 200 usuários
-            if performance_metrics['memory_usage'] > 1000:  # Se usar mais de 1GB
-                gc.collect()
-                logger.info(f"Garbage collection executado. Memória: {performance_metrics['memory_usage']:.1f}MB")
-            
-            # Log de performance a cada 5 minutos
-            if int(time.time()) % 300 == 0:  # A cada 5 minutos
-                logger.info(f"Performance - Usuários: {len(online_users)}, Memória: {performance_metrics['memory_usage']:.1f}MB, Conexões DB: {performance_metrics['db_connections']}")
-            
-            time.sleep(15)  # Verificar a cada 15 segundos para 200 usuários
-        except Exception as e:
-            logger.error(f"Erro no monitor de performance: {e}")
-            time.sleep(30)
+        except Exception:
+            pass
+        time.sleep(60)
+
 def init_database():
-    """Inicializar banco de dados com tabelas de usuários e permissões"""
+    """Inicializa o banco de dados: tabelas, colunas e usuário admin padrão."""
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    
-    # Otimizações do SQLite para melhor performance
+    # PRAGMAs de performance
     cursor.execute('PRAGMA journal_mode=WAL')
     cursor.execute('PRAGMA synchronous=NORMAL')
     cursor.execute('PRAGMA cache_size=10000')
     cursor.execute('PRAGMA temp_store=MEMORY')
     cursor.execute('PRAGMA mmap_size=268435456')
     cursor.execute('PRAGMA optimize')
-    
+
     # Tabela de grupos
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS groups (
@@ -515,8 +223,7 @@ def init_database():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
-    
-    # Tabela de permissões de grupos
+    # Tabela de permissões por grupo
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS group_permissions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -528,73 +235,7 @@ def init_database():
             UNIQUE(group_id, permission_name)
         )
     ''')
-    
-    # Inserir grupos padrão se não existirem
-    cursor.execute('SELECT COUNT(*) FROM groups')
-    if cursor.fetchone()[0] == 0:
-        default_groups = [
-            ('Produção', 'Departamento de Produção'),
-            ('Engenharia', 'Departamento de Engenharia'),
-            ('Terceiros', 'Departamento de Terceiros'),
-            ('Compras', 'Departamento de Compras'),
-            ('Comercial', 'Departamento Comercial'),
-            ('PCP', 'Planejamento e Controle de Produção'),
-            ('Expedição', 'Departamento de Expedição'),
-            ('Qualidade', 'Departamento de Qualidade')
-        ]
-        cursor.executemany('INSERT INTO groups (name, description) VALUES (?, ?)', default_groups)
-        
-        # Obter IDs dos grupos criados
-        cursor.execute('SELECT id, name FROM groups')
-        groups = cursor.fetchall()
-        
-        # Definir permissões para cada grupo
-        group_permissions = {
-            'Produção': [
-                'create_rnc', 'edit_own_rnc', 'view_own_rnc', 'delete_own_rnc',
-                'view_all_rncs', 'finalize_rnc', 'assign_rnc', 'chat_access'
-            ],
-            'Engenharia': [
-                'create_rnc', 'edit_own_rnc', 'view_own_rnc', 'delete_own_rnc',
-                'view_all_rncs', 'edit_all_rncs', 'finalize_rnc', 'assign_rnc',
-                'chat_access', 'technical_analysis'
-            ],
-            'Terceiros': [
-                'view_own_rnc', 'chat_access', 'limited_access'
-            ],
-            'Compras': [
-                'create_rnc', 'edit_own_rnc', 'view_own_rnc', 'view_all_rncs',
-                'chat_access', 'purchase_analysis'
-            ],
-            'Comercial': [
-                'create_rnc', 'edit_own_rnc', 'view_own_rnc', 'view_all_rncs',
-                'chat_access', 'commercial_analysis'
-            ],
-            'PCP': [
-                'create_rnc', 'edit_own_rnc', 'view_own_rnc', 'view_all_rncs',
-                'edit_all_rncs', 'finalize_rnc', 'assign_rnc', 'chat_access',
-                'planning_control'
-            ],
-            'Expedição': [
-                'view_own_rnc', 'view_all_rncs', 'chat_access', 'shipping_access'
-            ],
-            'Qualidade': [
-                'create_rnc', 'edit_own_rnc', 'view_own_rnc', 'delete_own_rnc',
-                'view_all_rncs', 'edit_all_rncs', 'finalize_rnc', 'assign_rnc',
-                'chat_access', 'quality_control', 'admin_access', 'view_levantamento_14_15'
-            ]
-        }
-        
-        # Inserir permissões para cada grupo
-        for group_id, group_name in groups:
-            if group_name in group_permissions:
-                permissions = group_permissions[group_name]
-                for permission in permissions:
-                    cursor.execute('''
-                        INSERT INTO group_permissions (group_id, permission_name, permission_value)
-                        VALUES (?, ?, ?)
-                    ''', (group_id, permission, 1))
-    
+
     # Tabela de usuários
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
@@ -613,28 +254,16 @@ def init_database():
             FOREIGN KEY (group_id) REFERENCES groups (id)
         )
     ''')
-    
-    # Adicionar coluna group_id se não existir
-    try:
-        cursor.execute('ALTER TABLE users ADD COLUMN group_id INTEGER')
-    except sqlite3.OperationalError:
-        # Coluna já existe
-        pass
+    # Garantir colunas novas (idempotente)
+    for col_sql in [
+        'ALTER TABLE users ADD COLUMN group_id INTEGER',
+        'ALTER TABLE users ADD COLUMN avatar_key TEXT',
+        'ALTER TABLE users ADD COLUMN avatar_prefs TEXT']:
+        try:
+            cursor.execute(col_sql)
+        except sqlite3.OperationalError:
+            pass
 
-    # Adicionar coluna avatar_key se não existir
-    try:
-        cursor.execute('ALTER TABLE users ADD COLUMN avatar_key TEXT')
-    except sqlite3.OperationalError:
-        # Coluna já existe
-        pass
-
-    # Adicionar coluna avatar_prefs se não existir
-    try:
-        cursor.execute('ALTER TABLE users ADD COLUMN avatar_prefs TEXT')
-    except sqlite3.OperationalError:
-        # Coluna já existe
-        pass
-    
     # Tabela de RNCs
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS rncs (
@@ -657,73 +286,41 @@ def init_database():
             FOREIGN KEY (assigned_user_id) REFERENCES users (id)
         )
     ''')
-    
-    # Adicionar coluna assigned_user_id se não existir
-    try:
-        cursor.execute('ALTER TABLE rncs ADD COLUMN assigned_user_id INTEGER')
-    except sqlite3.OperationalError:
-        # Coluna já existe
-        pass
-    
-    # Adicionar colunas para sistema de lixeira se não existirem
-    try:
-        cursor.execute('ALTER TABLE rncs ADD COLUMN is_deleted BOOLEAN DEFAULT 0')
-    except sqlite3.OperationalError:
-        # Coluna já existe
-        pass
-    
-    try:
-        cursor.execute('ALTER TABLE rncs ADD COLUMN deleted_at TIMESTAMP')
-    except sqlite3.OperationalError:
-        # Coluna já existe
-        pass
-    
-    try:
-        cursor.execute('ALTER TABLE rncs ADD COLUMN finalized_at TIMESTAMP')
-    except sqlite3.OperationalError:
-        # Coluna já existe
-        pass
-    
-    # Adicionar coluna de preço se não existir
-    try:
-        cursor.execute('ALTER TABLE rncs ADD COLUMN price REAL DEFAULT 0')
-    except sqlite3.OperationalError:
-        # Coluna já existe
-        pass
-    
-    # Adicionar colunas para disposição e inspeção
-    try:
-        cursor.execute('ALTER TABLE rncs ADD COLUMN disposition_usar BOOLEAN DEFAULT 0')
-    except sqlite3.OperationalError:
-        # Coluna já existe
-        pass
-    
-    try:
-        cursor.execute('ALTER TABLE rncs ADD COLUMN disposition_retrabalhar BOOLEAN DEFAULT 0')
-    except sqlite3.OperationalError:
-        # Coluna já existe
-        pass
-    
-    try:
-        cursor.execute('ALTER TABLE rncs ADD COLUMN disposition_rejeitar BOOLEAN DEFAULT 0')
-    except sqlite3.OperationalError:
-        # Coluna já existe
-        pass
-    
-    try:
-        cursor.execute('ALTER TABLE rncs ADD COLUMN disposition_sucata BOOLEAN DEFAULT 0')
-    except sqlite3.OperationalError:
-        # Coluna já existe
-        pass
+    # Colunas adicionais em rncs
+    for col_sql in [
+        'ALTER TABLE rncs ADD COLUMN assigned_user_id INTEGER',
+        'ALTER TABLE rncs ADD COLUMN is_deleted BOOLEAN DEFAULT 0',
+        'ALTER TABLE rncs ADD COLUMN deleted_at TIMESTAMP',
+        'ALTER TABLE rncs ADD COLUMN finalized_at TIMESTAMP',
+        'ALTER TABLE rncs ADD COLUMN price REAL DEFAULT 0',
+        'ALTER TABLE rncs ADD COLUMN disposition_usar BOOLEAN DEFAULT 0',
+        'ALTER TABLE rncs ADD COLUMN disposition_retrabalhar BOOLEAN DEFAULT 0',
+        'ALTER TABLE rncs ADD COLUMN disposition_rejeitar BOOLEAN DEFAULT 0',
+        'ALTER TABLE rncs ADD COLUMN disposition_sucata BOOLEAN DEFAULT 0',
+        'ALTER TABLE rncs ADD COLUMN disposition_devolver_estoque BOOLEAN DEFAULT 0',
+        'ALTER TABLE rncs ADD COLUMN disposition_devolver_fornecedor BOOLEAN DEFAULT 0',
+        'ALTER TABLE rncs ADD COLUMN inspection_aprovado BOOLEAN DEFAULT 0',
+        'ALTER TABLE rncs ADD COLUMN inspection_reprovado BOOLEAN DEFAULT 0',
+        'ALTER TABLE rncs ADD COLUMN inspection_ver_rnc TEXT',
+        'ALTER TABLE rncs ADD COLUMN signature_inspection_date TEXT',
+        'ALTER TABLE rncs ADD COLUMN signature_engineering_date TEXT',
+        'ALTER TABLE rncs ADD COLUMN signature_inspection2_date TEXT',
+        'ALTER TABLE rncs ADD COLUMN signature_inspection_name TEXT',
+        'ALTER TABLE rncs ADD COLUMN signature_engineering_name TEXT',
+        'ALTER TABLE rncs ADD COLUMN signature_inspection2_name TEXT']:
+        try:
+            cursor.execute(col_sql)
+        except sqlite3.OperationalError:
+            pass
 
-    # Tabela de compartilhamento de RNCs
+    # Compartilhamento de RNCs
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS rnc_shares (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             rnc_id INTEGER NOT NULL,
             shared_by_user_id INTEGER NOT NULL,
             shared_with_user_id INTEGER NOT NULL,
-            permission_level TEXT DEFAULT 'view', -- 'view', 'edit', 'comment'
+            permission_level TEXT DEFAULT 'view',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (rnc_id) REFERENCES rncs (id) ON DELETE CASCADE,
             FOREIGN KEY (shared_by_user_id) REFERENCES users (id),
@@ -731,74 +328,8 @@ def init_database():
             UNIQUE(rnc_id, shared_with_user_id)
         )
     ''')
-    
-    try:
-        cursor.execute('ALTER TABLE rncs ADD COLUMN disposition_devolver_estoque BOOLEAN DEFAULT 0')
-    except sqlite3.OperationalError:
-        # Coluna já existe
-        pass
-    
-    try:
-        cursor.execute('ALTER TABLE rncs ADD COLUMN disposition_devolver_fornecedor BOOLEAN DEFAULT 0')
-    except sqlite3.OperationalError:
-        # Coluna já existe
-        pass
-    
-    try:
-        cursor.execute('ALTER TABLE rncs ADD COLUMN inspection_aprovado BOOLEAN DEFAULT 0')
-    except sqlite3.OperationalError:
-        # Coluna já existe
-        pass
-    
-    try:
-        cursor.execute('ALTER TABLE rncs ADD COLUMN inspection_reprovado BOOLEAN DEFAULT 0')
-    except sqlite3.OperationalError:
-        # Coluna já existe
-        pass
-    
-    try:
-        cursor.execute('ALTER TABLE rncs ADD COLUMN inspection_ver_rnc TEXT')
-    except sqlite3.OperationalError:
-        # Coluna já existe
-        pass
-    
-    try:
-        cursor.execute('ALTER TABLE rncs ADD COLUMN signature_inspection_date TEXT')
-    except sqlite3.OperationalError:
-        # Coluna já existe
-        pass
-    
-    try:
-        cursor.execute('ALTER TABLE rncs ADD COLUMN signature_engineering_date TEXT')
-    except sqlite3.OperationalError:
-        # Coluna já existe
-        pass
-    
-    try:
-        cursor.execute('ALTER TABLE rncs ADD COLUMN signature_inspection2_date TEXT')
-    except sqlite3.OperationalError:
-        # Coluna já existe
-        pass
-    
-    try:
-        cursor.execute('ALTER TABLE rncs ADD COLUMN signature_inspection_name TEXT')
-    except sqlite3.OperationalError:
-        # Coluna já existe
-        pass
-    
-    try:
-        cursor.execute('ALTER TABLE rncs ADD COLUMN signature_engineering_name TEXT')
-    except sqlite3.OperationalError:
-        # Coluna já existe
-        pass
-    
-    try:
-        cursor.execute('ALTER TABLE rncs ADD COLUMN signature_inspection2_name TEXT')
-    except sqlite3.OperationalError:
-        # Coluna já existe
-        pass
-    
-    # Tabela de mensagens do chat
+
+    # Tabelas auxiliares
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS chat_messages (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -811,8 +342,6 @@ def init_database():
             FOREIGN KEY (user_id) REFERENCES users (id)
         )
     ''')
-    
-    # Tabela de notificações
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS notifications (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -827,8 +356,6 @@ def init_database():
             FOREIGN KEY (rnc_id) REFERENCES rncs (id)
         )
     ''')
-    
-    # Tabela de mensagens privadas
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS private_messages (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -842,49 +369,22 @@ def init_database():
             FOREIGN KEY (recipient_id) REFERENCES users (id)
         )
     ''')
-    
-    # Verificar se existe usuário admin
-    cursor.execute('SELECT * FROM users WHERE role = "admin" LIMIT 1')
-    admin_exists = cursor.fetchone()
-    
-    if not admin_exists:
-        # Criar usuário admin padrão
+
+    # Usuário admin padrão
+    cursor.execute('SELECT 1 FROM users WHERE role = "admin" LIMIT 1')
+    if not cursor.fetchone():
         admin_password = generate_password_hash('admin123')
         cursor.execute('''
             INSERT INTO users (name, email, password_hash, department, role, permissions)
             VALUES (?, ?, ?, ?, ?, ?)
         ''', ('Administrador', 'admin@ippel.com.br', admin_password, 'TI', 'admin', '["all"]'))
-        
-        print("✅ Usuário admin criado:")
-        print("   Email: admin@ippel.com.br")
-        print("   Senha: admin123")
-        print("   Permissões: Todas")
-        
-        # Criar usuários de teste
-        test_users = [
-            ('Elvio Silva', 'elvio@ippel.com.br', 'elvio123', 'Produção', 'user', '["create_rnc"]'),
-            ('Maria Santos', 'maria@ippel.com.br', 'maria123', 'Qualidade', 'user', '["create_rnc"]'),
-            ('João Costa', 'joao@ippel.com.br', 'joao123', 'Manutenção', 'user', '["create_rnc"]'),
-            ('Ana Oliveira', 'ana@ippel.com.br', 'ana123', 'Logística', 'user', '["create_rnc"]')
-        ]
-        
-        for user_data in test_users:
-            try:
-                user_password = generate_password_hash(user_data[2])
-                cursor.execute('''
-                    INSERT INTO users (name, email, password_hash, department, role, permissions)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                ''', (user_data[0], user_data[1], user_password, user_data[3], user_data[4], user_data[5]))
-                print(f"✅ Usuário criado: {user_data[0]} ({user_data[1]})")
-            except sqlite3.IntegrityError:
-                # Usuário já existe
-                pass
-    
+
     conn.commit()
     conn.close()
-
-    # Garantir colunas extras nos RNCs para modo responder/visualização completa
-    ensure_rnc_extra_columns()
+    try:
+        ensure_rnc_extra_columns()
+    except Exception:
+        pass
 
 def ensure_rnc_extra_columns():
     """Garante que a tabela rncs possua colunas extras usadas no modo Responder/Visualização.
@@ -1502,13 +1002,11 @@ def get_user_group_permissions(user_id):
 
 def clear_permissions_cache():
     """Limpar cache de permissões"""
+    from services.cache import cache_lock, query_cache
     with cache_lock:
-        keys_to_remove = [
-            key for key in query_cache.keys()
-            if 'permissions' in key
-        ]
+        keys_to_remove = [key for key in list(query_cache.keys()) if 'permissions' in key]
         for key in keys_to_remove:
-            del query_cache[key]
+            query_cache.pop(key, None)
     logger.info("Cache de permissões limpo")
 
 def get_all_permissions():
@@ -1991,73 +1489,7 @@ def form():
     
     return send_from_directory('.', 'index.html')
 
-@app.route('/api/login', methods=['POST'])
-def login():
-    """API de login"""
-    try:
-        data = request.get_json()
-        email = data.get('email')
-        password = data.get('password')
-        
-        user_data = get_user_by_email(email)
-        
-        if user_data and check_password_hash(user_data[3], password):
-            session['user_id'] = user_data[0]
-            session['user_name'] = user_data[1]
-            session['user_email'] = user_data[2]
-            session['user_department'] = user_data[4]
-            session['user_role'] = user_data[5]
-            session.permanent = True
-
-            # Cookie auxiliar para reidratar sessão em caso de perda (navegadores ou extensões)
-            resp = jsonify({
-                'success': True,
-                'message': 'Login realizado com sucesso!',
-                'redirect': '/dashboard',
-                'user': {
-                    'name': user_data[1],
-                    'email': user_data[2],
-                    'department': user_data[4]
-                }
-            })
-            try:
-                resp.set_cookie('IPPEL_UID', str(user_data[0]),
-                                max_age=60*60*8, path='/', httponly=False, samesite='Lax')
-            except Exception:
-                pass
-            return resp
-        else:
-            return jsonify({
-                'success': False,
-                'message': 'Email ou senha incorretos'
-            }), 401
-            
-    except Exception as e:
-        logger.error(f"Erro no login: {e}")
-        return jsonify({
-            'success': False,
-            'message': 'Erro interno do sistema'
-        }), 500
-
-@app.route('/api/logout')
-def logout():
-    """API de logout"""
-    try:
-        session_keys = ['user_id','user_name','user_email','user_department','user_role']
-        for k in session_keys:
-            try:
-                session.pop(k, None)
-            except Exception:
-                pass
-        session.clear()
-        resp = jsonify({'success': True, 'message': 'Logout realizado com sucesso!'})
-        try:
-            resp.delete_cookie('IPPEL_UID', path='/')
-        except Exception:
-            pass
-        return resp
-    except Exception:
-        return jsonify({'success': True})
+    # rotas /api/login e /api/logout movidas para routes/auth.py (Blueprint)
 
 @app.route('/api/employee-performance')
 def get_employee_performance():
@@ -2438,254 +1870,9 @@ def get_user_info():
 
     # rota /api/user/avatar movida para routes/api.py (Blueprint)
 
-@app.route('/api/rnc/create', methods=['POST'])
-def create_rnc():
-    """API para criar RNC (robusta a diferenças de schema)."""
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
+## Rota movida: /api/rnc/create agora está em routes/rnc.py (Blueprint)
 
-    # Verificar permissão apropriada para criação de RNC
-    if not has_permission(session['user_id'], 'create_rnc'):
-        return jsonify({'success': False, 'message': 'Usuário sem permissão para criar RNCs'}), 403
-
-    try:
-        data = request.get_json() or {}
-
-        # Abrir conexão e detectar colunas disponíveis
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-        cursor.execute("PRAGMA table_info(rncs)")
-        cols = {row[1] for row in cursor.fetchall()}  # set com nomes das colunas
-
-        # Gerar número único do RNC
-        import datetime
-        now = datetime.datetime.now()
-        rnc_number = f"RNC-{now.year}-{now.month:02d}-{now.day:02d}-{now.hour:02d}{now.minute:02d}{now.second:02d}"
-
-        # Se o schema possuir colunas de assinatura, exigir ao menos uma; caso contrário, não bloquear
-        signature_columns = {
-            'signature_inspection_name',
-            'signature_engineering_name',
-            'signature_inspection2_name'
-        }
-        if signature_columns & cols:
-            assinaturas = [
-                data.get('signature_inspection_name', data.get('assinatura1', '')), 
-                data.get('signature_engineering_name', data.get('assinatura2', '')), 
-                data.get('signature_inspection2_name', data.get('assinatura3', ''))
-            ]
-            if not any(a and a != 'NOME' for a in assinaturas):
-                return jsonify({'success': False, 'message': 'É obrigatório preencher pelo menos uma assinatura!'}), 400
-
-        # Obter departamento do usuário atual
-        cursor.execute('SELECT department FROM users WHERE id = ?', (session['user_id'],))
-        user_dept_row = cursor.fetchone()
-        user_department = user_dept_row[0] if user_dept_row else 'N/A'
-
-        # Montar insert dinamicamente com base nas colunas do banco
-        values_by_col = {
-            'rnc_number': rnc_number,
-            'title': data.get('title', 'RNC sem título'),
-            'description': data.get('description', ''),
-            'equipment': data.get('equipment', ''),
-            'client': data.get('client', ''),
-            'priority': data.get('priority', 'Média'),
-            'status': 'Pendente',
-            'user_id': session['user_id'],
-            'assigned_user_id': data.get('assigned_user_id'),
-            'department': user_department,  # Adicionar departamento do usuário
-            # opcionais
-            'signature_inspection_name': data.get('signature_inspection_name', data.get('assinatura1', '')),
-            'signature_engineering_name': data.get('signature_engineering_name', data.get('assinatura2', '')),
-            'signature_inspection2_name': data.get('signature_inspection2_name', data.get('assinatura3', '')),
-            'price': float(data.get('price') or 0),
-            # Campos de disposição (checkboxes)
-            'disposition_usar': int(data.get('disposition_usar', False)),
-            'disposition_retrabalhar': int(data.get('disposition_retrabalhar', False)),
-            'disposition_rejeitar': int(data.get('disposition_rejeitar', False)),
-            'disposition_sucata': int(data.get('disposition_sucata', False)),
-            'disposition_devolver_estoque': int(data.get('disposition_devolver_estoque', False)),
-            'disposition_devolver_fornecedor': int(data.get('disposition_devolver_fornecedor', False)),
-            # Campos de inspeção (checkboxes)
-            'inspection_aprovado': int(data.get('inspection_aprovado', False)),
-            'inspection_reprovado': int(data.get('inspection_reprovado', False)),
-            'inspection_ver_rnc': data.get('inspection_ver_rnc', ''),
-        }
-
-        insert_cols = [c for c in values_by_col.keys() if c in cols]
-        insert_vals = [values_by_col[c] for c in insert_cols]
-
-        if not insert_cols:
-            conn.close()
-            return jsonify({'success': False, 'message': 'Schema da tabela rncs inválido'}), 500
-
-        placeholders = ", ".join(["?"] * len(insert_cols))
-        sql = f"INSERT INTO rncs ({', '.join(insert_cols)}) VALUES ({placeholders})"
-        cursor.execute('BEGIN IMMEDIATE')
-        cursor.execute(sql, insert_vals)
-        rnc_id = cursor.lastrowid
-
-        # Compartilhamento com grupos (opcional)
-        shared_group_ids = data.get('shared_group_ids', []) or []
-        shared_user_count = 0
-        # Compartilhamento é melhor como tarefa em background para não atrasar o retorno
-        try:
-            import threading
-            def _share_task(rid, owner_id, group_ids):
-                for gid in group_ids or []:
-                    if not gid:
-                        continue
-                    users = get_users_by_group(gid)
-                    for u in users:
-                        uid = u[0]
-                        if uid != owner_id:
-                            share_rnc_with_user(rid, owner_id, uid, 'view')
-            threading.Thread(target=_share_task, args=(rnc_id, session['user_id'], shared_group_ids), daemon=True).start()
-        except Exception as e:
-            logger.warning(f"Agendamento de compartilhamento falhou: {e}")
-
-        try:
-            conn.commit()
-        finally:
-            conn.close()
-
-        # Limpar cache de RNCs
-        try:
-            clear_rnc_cache()
-        except Exception:
-            pass
-
-        return jsonify({
-            'success': True,
-            'message': f'RNC criado com sucesso! Compartilhado com {shared_user_count} usuário(s).',
-            'rnc_id': rnc_id,
-            'rnc_number': rnc_number
-        })
-    except Exception as e:
-        logger.error(f"Erro ao criar RNC: {e}")
-        try:
-            conn.rollback()
-        except Exception:
-            pass
-        try:
-            conn.close()
-        except Exception:
-            pass
-        return jsonify({'success': False, 'message': 'Erro interno ao criar RNC'}), 500
-
-@app.route('/api/rnc/<int:rnc_id>/update', methods=['PUT'])
-def update_rnc(rnc_id: int):
-    """Atualiza uma RNC existente de forma dinâmica conforme as colunas disponíveis.
-    Permite edição por administradores, criador da RNC ou usuário atribuído."""
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
-
-    try:
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-
-        # Verificar existência e permissões básicas
-        cursor.execute('SELECT user_id, assigned_user_id, COALESCE(is_deleted, 0) FROM rncs WHERE id = ?', (rnc_id,))
-        row = cursor.fetchone()
-        if not row:
-            conn.close()
-            return jsonify({'success': False, 'message': 'RNC não encontrada'}), 404
-
-        owner_id, assigned_id, is_deleted = row
-        if is_deleted:
-            conn.close()
-            return jsonify({'success': False, 'message': 'RNC removida'}), 400
-
-        is_admin = has_permission(session['user_id'], 'admin_access')
-        if not (is_admin or session['user_id'] in (owner_id, assigned_id)):
-            conn.close()
-            return jsonify({'success': False, 'message': 'Acesso negado'}), 403
-
-        data = request.get_json() or {}
-
-        # Descobrir colunas da tabela
-        cursor.execute('PRAGMA table_info(rncs)')
-        cols = {row[1] for row in cursor.fetchall()}
-
-        # Se o schema possuir colunas de assinatura, exigir ao menos uma quando enviados nomes
-        signature_columns = {
-            'signature_inspection_name',
-            'signature_engineering_name',
-            'signature_inspection2_name'
-        }
-        if signature_columns & cols:
-            assinaturas = [
-                data.get('signature_inspection_name', ''),
-                data.get('signature_engineering_name', ''),
-                data.get('signature_inspection2_name', '')
-            ]
-            # Só validar se pelo menos um dos campos de assinatura veio no payload, senão mantém atual
-            if any(x is not None for x in assinaturas):
-                if not any(a and a != 'NOME' for a in assinaturas):
-                    return jsonify({'success': False, 'message': 'É obrigatório preencher pelo menos uma assinatura!'}), 400
-
-        # Mapeia possíveis campos recebidos -> colunas reais
-        candidate_values = {
-            'title': data.get('title'),
-            'description': data.get('description'),
-            'equipment': data.get('equipment'),
-            'client': data.get('client'),
-            'rnc_number': data.get('rnc_number'),
-            'priority': data.get('priority'),
-            'status': data.get('status'),
-            'signature_inspection_name': data.get('signature_inspection_name'),
-            'signature_engineering_name': data.get('signature_engineering_name'),
-            'signature_inspection2_name': data.get('signature_inspection2_name'),
-            'signature_inspection_date': data.get('signature_inspection_date'),
-            'signature_engineering_date': data.get('signature_engineering_date'),
-            'signature_inspection2_date': data.get('signature_inspection2_date'),
-            'instruction_retrabalho': data.get('instruction_retrabalho'),
-            'cause_rnc': data.get('cause_rnc'),
-            'action_rnc': data.get('action_rnc'),
-            'inspection_aprovado': int(data.get('inspection_aprovado')) if 'inspection_aprovado' in data else None,
-            'inspection_reprovado': int(data.get('inspection_reprovado')) if 'inspection_reprovado' in data else None,
-            'inspection_ver_rnc': data.get('inspection_ver_rnc'),
-            'disposition_usar': int(data.get('disposition_usar')) if 'disposition_usar' in data else None,
-            'disposition_retrabalhar': int(data.get('disposition_retrabalhar')) if 'disposition_retrabalhar' in data else None,
-            'disposition_rejeitar': int(data.get('disposition_rejeitar')) if 'disposition_rejeitar' in data else None,
-            'disposition_sucata': int(data.get('disposition_sucata')) if 'disposition_sucata' in data else None,
-            'disposition_devolver_estoque': int(data.get('disposition_devolver_estoque')) if 'disposition_devolver_estoque' in data else None,
-            'disposition_devolver_fornecedor': int(data.get('disposition_devolver_fornecedor')) if 'disposition_devolver_fornecedor' in data else None,
-        }
-
-        update_cols = []
-        update_vals = []
-        for col, val in candidate_values.items():
-            if col in cols and val is not None:
-                update_cols.append(f"{col} = ?")
-                update_vals.append(val)
-
-        if not update_cols:
-            conn.close()
-            return jsonify({'success': False, 'message': 'Nada para atualizar'}), 400
-
-        update_sql = f"UPDATE rncs SET {', '.join(update_cols)}, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
-        update_vals.append(rnc_id)
-
-        cursor.execute('BEGIN IMMEDIATE')
-        cursor.execute(update_sql, update_vals)
-        conn.commit()
-        conn.close()
-
-        try:
-            clear_rnc_cache()
-        except Exception:
-            pass
-
-        return jsonify({'success': True})
-
-    except Exception as e:
-        try:
-            conn.close()
-        except Exception:
-            pass
-        logger.error(f"Erro ao atualizar RNC {rnc_id}: {e}")
-        return jsonify({'success': False, 'message': 'Erro interno ao atualizar RNC'}), 500
+## Rota movida: /api/rnc/<id>/update (variante 1) agora está em routes/rnc.py
 
     except Exception as e:
         logger.error(f"Erro ao criar RNC: {e}")
@@ -2694,8 +1881,7 @@ def update_rnc(rnc_id: int):
         except Exception:
             # fallback caso jsonify falhe
             return ('{"success": false, "message": "Erro interno"}', 500, {'Content-Type': 'application/json'})
-@app.route('/api/rnc/list')
-def list_rncs():
+## Rota movida: /api/rnc/list agora está em routes/rnc.py
     """API para listar RNCs por abas ('active' e 'finalized').
 
     Observação: o sistema de lixeira foi removido; não há mais aba 'deleted'.
@@ -2894,8 +2080,7 @@ def list_rncs():
         if conn:
             return_db_connection(conn)
 
-@app.route('/api/rnc/get/<int:rnc_id>', methods=['GET'])
-def api_get_rnc(rnc_id):
+## Rota movida: /api/rnc/get/<id> agora está em routes/rnc.py
     """Retorna os dados completos de uma RNC para visualização/edição."""
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
@@ -2919,8 +2104,7 @@ def api_get_rnc(rnc_id):
     except Exception as e:
         return jsonify({'success': False, 'message': f'Erro interno: {str(e)}'}), 500
 
-@app.route('/rnc/<int:rnc_id>')
-def view_rnc(rnc_id):
+## Rota movida: /rnc/<id> agora está em routes/rnc.py
     """Visualizar RNC específico"""
     if 'user_id' not in session:
         return redirect('/')
@@ -3038,8 +2222,7 @@ def view_rnc(rnc_id):
         logger.error(f"Erro ao visualizar RNC {rnc_id}: {e}")
         return render_template('error.html', message='Erro interno do sistema')
 
-@app.route('/rnc/<int:rnc_id>/reply', methods=['GET'])
-def reply_rnc(rnc_id):
+## Rota movida: /rnc/<id>/reply agora está em routes/rnc.py
     """Abrir modo Responder (edição simplificada) para a RNC.
 
     - Permite criador, admin ou quem tenha 'reply_rncs'
@@ -3100,8 +2283,7 @@ def reply_rnc(rnc_id):
         logger.error(f"Erro ao abrir modo Responder para RNC {rnc_id}: {e}")
         return render_template('error.html', message='Erro interno do sistema')
 
-@app.route('/rnc/<int:rnc_id>/print')
-def print_rnc(rnc_id):
+## Rota movida: /rnc/<id>/print agora está em routes/rnc.py
     """Página de impressão do RNC com template idêntico à visualização"""
     if 'user_id' not in session:
         return redirect('/')
@@ -3191,8 +2373,7 @@ def print_rnc(rnc_id):
         logger.error(f"Erro ao gerar página de impressão para RNC {rnc_id}: {e}")
         return render_template('error.html', message='Erro interno do sistema')
 
-@app.route('/rnc/<int:rnc_id>/pdf-generator')
-def pdf_generator(rnc_id):
+## Rota movida: /rnc/<id>/pdf-generator agora está em routes/rnc.py
     """Gerador de PDF com múltiplas opções"""
     if 'user_id' not in session:
         return redirect('/')
@@ -3274,8 +2455,7 @@ def pdf_generator(rnc_id):
         logger.error(f"Traceback: {traceback.format_exc()}")
         return render_template('error.html', message='Erro interno do sistema')
 
-@app.route('/rnc/<int:rnc_id>/edit', methods=['GET', 'POST'])
-def edit_rnc(rnc_id):
+## Rota movida: /rnc/<id>/edit agora está em routes/rnc.py
     """Editar RNC existente - Usa o mesmo template de criação"""
     if 'user_id' not in session:
         return redirect('/')
@@ -3342,8 +2522,7 @@ def edit_rnc(rnc_id):
     except Exception as e:
         logger.error(f"Erro ao editar RNC {rnc_id}: {e}")
         return render_template('error.html', message='Erro interno do sistema')
-@app.route('/api/rnc/<int:rnc_id>/update', methods=['PUT'])
-def update_rnc_api(rnc_id):
+## Rota movida: /api/rnc/<id>/update (variante 2) agora está em routes/rnc.py
     """API para atualizar RNC"""
     logger.info(f"Iniciando atualização da RNC {rnc_id}")
     
@@ -3545,8 +2724,7 @@ def update_rnc_api(rnc_id):
 
 
 
-@app.route('/api/rnc/<int:rnc_id>/finalize', methods=['POST'])
-def finalize_rnc(rnc_id):
+## Rota movida: /api/rnc/<id>/finalize agora está em routes/rnc.py
     """API para finalizar RNC"""
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
@@ -3613,8 +2791,7 @@ def finalize_rnc(rnc_id):
         logger.error(f"Erro ao finalizar RNC: {e}")
         return jsonify({'success': False, 'message': f'Erro interno: {str(e)}'}), 500
 
-@app.route('/api/rnc/<int:rnc_id>/reply', methods=['POST'])
-def reply_rnc_api(rnc_id):
+## Rota movida: /api/rnc/<id>/reply agora está em routes/rnc.py
     """Reabrir/reenviar uma RNC para tratamento (status volta para 'Pendente').
 
     Regras:
@@ -3674,11 +2851,7 @@ def reply_rnc_api(rnc_id):
             pass
         return jsonify({'success': False, 'message': f'Erro interno: {str(e)}'}), 500
 
-@app.route('/api/debug/session')
-def api_debug_session():
-    data = {k: session.get(k) for k in ['user_id','user_name','user_email','user_department','user_role']}
-    data['has_session'] = 'user_id' in session
-    return jsonify({'success': True, 'session': data})
+## Mantido: /api/debug/session permanece neste módulo
 
 @app.route('/api/private-chat/messages/<int:contact_id>')
 def get_private_messages(contact_id):
@@ -3774,9 +2947,10 @@ def clear_cache_api():
         is_admin = has_permission(user_id, 'admin_access')
         
         # Limpar TODOS os caches independentemente de permissão
+        from services.cache import cache_lock, query_cache
         with cache_lock:
             cache_count = len(query_cache)
-            query_cache.clear()  # Limpar TUDO
+            query_cache.clear()
             logger.info(f"🗑️ LIMPEZA FORÇADA: {cache_count} entradas de cache removidas")
         
         # Também limpar usando a função específica
@@ -4041,8 +3215,7 @@ def debug_rnc_signatures(rnc_id):
         logger.error(f"Erro no debug de assinaturas: {e}")
         return jsonify({'success': False, 'message': f'Erro: {str(e)}'}), 500
 
-@app.route('/api/rnc/<int:rnc_id>/delete', methods=['DELETE'])
-def delete_rnc(rnc_id):
+## Rota movida: /api/rnc/<id>/delete agora está em routes/rnc.py
     """API para deletar RNC definitivamente (lixeira removida)"""
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
@@ -4091,8 +3264,7 @@ def delete_rnc(rnc_id):
         logger.error(f"Erro ao deletar RNC: {e}")
         return jsonify({'success': False, 'message': f'Erro interno: {str(e)}'}), 500
 
-@app.route('/api/rnc/<int:rnc_id>/share', methods=['POST'])
-def share_rnc(rnc_id):
+## Rota movida: /api/rnc/<id>/share agora está em routes/rnc.py
     """Compartilhar RNC com usuários"""
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
@@ -4142,8 +3314,7 @@ def share_rnc(rnc_id):
             'message': 'Erro interno do sistema'
         }), 500
 
-@app.route('/api/rnc/<int:rnc_id>/shared-users', methods=['GET'])
-def get_shared_users(rnc_id):
+## Rota movida: /api/rnc/<id>/shared-users agora está em routes/rnc.py
     """Obter usuários com quem a RNC foi compartilhada"""
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
@@ -5412,58 +4583,6 @@ def general_chat():
     
     return render_template('general_chat.html')
 
-@app.route('/rnc/<int:rnc_id>/chat')
-def rnc_chat(rnc_id):
-    if 'user_id' not in session:
-        return redirect('/')
-    
-    try:
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-        
-        # Buscar informações do RNC
-        cursor.execute('''
-            SELECT r.*, u.name as user_name, au.name as assigned_user_name
-            FROM rncs r
-            LEFT JOIN users u ON r.user_id = u.id
-            LEFT JOIN users au ON r.assigned_user_id = au.id
-            WHERE r.id = ?
-        ''', (rnc_id,))
-        rnc = cursor.fetchone()
-        
-        if not rnc:
-            conn.close()
-            return render_template('error.html', message='RNC não encontrado'), 404
-        
-        # Buscar usuário atual
-        cursor.execute('SELECT * FROM users WHERE id = ?', (session['user_id'],))
-        current_user = cursor.fetchone()
-        
-        # Buscar mensagens do chat
-        cursor.execute('''
-            SELECT cm.*, u.name as user_name, u.department
-            FROM chat_messages cm
-            LEFT JOIN users u ON cm.user_id = u.id
-            WHERE cm.rnc_id = ?
-            ORDER BY cm.created_at ASC
-        ''', (rnc_id,))
-        messages = cursor.fetchall()
-        
-        conn.close()
-        
-        rnc_data = {
-            'id': rnc[0], 'rnc_number': rnc[1], 'title': rnc[2], 'description': rnc[3],
-            'equipment': rnc[4], 'client': rnc[5], 'priority': rnc[6], 'status': rnc[7],
-            'user_id': rnc[8], 'assigned_user_id': rnc[9], 'created_at': rnc[10],
-            'updated_at': rnc[11], 'user_name': rnc[12], 'assigned_user_name': rnc[13]
-        }
-        
-        return render_template('rnc_chat.html', rnc=rnc_data, messages=messages, current_user=current_user)
-        
-    except Exception as e:
-        logger.error(f"Erro ao carregar chat do RNC: {e}")
-        return render_template('error.html', message='Erro ao carregar chat'), 500
-
 @app.route('/api/chat/<int:rnc_id>/messages')
 def get_chat_messages(rnc_id):
     if 'user_id' not in session:
@@ -6369,17 +5488,14 @@ if __name__ == '__main__':
     # Inicializar banco de dados
     init_database()
     
-    # Inicializar pool de conexões otimizado para i5-7500 + 16GB RAM
-    for _ in range(150):  # 150 conexões para 200+ usuários
-        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-        conn.execute('PRAGMA journal_mode=WAL')
-        conn.execute('PRAGMA synchronous=NORMAL')
-        conn.execute('PRAGMA cache_size=100000')  # Cache aumentado para i5-7500 + 16GB RAM
-        conn.execute('PRAGMA temp_store=MEMORY')
-        conn.execute('PRAGMA mmap_size=1073741824')  # 1GB mmap para i5-7500 + 16GB RAM
-        conn.execute('PRAGMA page_size=4096')
-        conn.execute('PRAGMA auto_vacuum=INCREMENTAL')
-        db_pool.put(conn)
+    # Inicializar pool de conexões otimizado
+    try:
+        warm_pool(150)
+    except Exception as _e:
+        try:
+            logger.warning(f"Falha ao pré-aquecer pool: {_e}")
+        except Exception:
+            pass
     
     # Iniciar backup automático (a cada 12 horas, sem backup imediato)
     try:

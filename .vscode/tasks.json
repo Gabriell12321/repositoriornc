@@ -1,0 +1,91 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Git: Commit and Push (master)",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        {
+          "version": "2.0.0",
+          "tasks": [
+            {
+              "label": "Git: Commit e Push - oranização de pasta",
+              "type": "shell",
+              "command": "cmd",
+              "args": ["/d", "/c", ".vscode\\commit_and_push_oranizacao_pasta.bat"],
+              "options": {
+                "cwd": "${workspaceFolder}"
+              },
+              {
+                "version": "2.0.0",
+                "tasks": [
+                  {
+                    "label": "Git: Commit e Push - oranização de pasta",
+                    "type": "shell",
+                    "command": "cmd",
+                    "args": ["/d", "/c", ".vscode\\commit_and_push_oranizacao_pasta.bat"],
+                    "options": { "cwd": "${workspaceFolder}" },
+                    "problemMatcher": []
+                  },
+                  {
+                    "label": "Organizar - Dry Run",
+                    "type": "shell",
+                    "command": "python",
+                    "args": ["organize_root.py", "--dry-run"],
+                    "options": { "cwd": "${workspaceFolder}" },
+                    "problemMatcher": []
+                  },
+                  {
+                    "label": "Organizar - Aplicar (sem JSON)",
+                    "type": "shell",
+                    "command": "python",
+                    "args": ["organize_root.py"],
+                    "options": { "cwd": "${workspaceFolder}" },
+                    "problemMatcher": []
+                  },
+                  {
+                    "label": "Organizar - Aplicar (inclusive JSON)",
+                    "type": "shell",
+                    "command": "python",
+                    "args": ["organize_root.py", "--move-json"],
+                    "options": { "cwd": "${workspaceFolder}" },
+                    {
+                      "version": "2.0.0",
+                      "tasks": [
+                        {
+                          "label": "Git: Commit e Push - oranização de pasta",
+                          "type": "shell",
+                          "command": "cmd",
+                          "args": ["/d", "/c", ".vscode\\commit_and_push_oranizacao_pasta.bat"],
+                          "options": { "cwd": "${workspaceFolder}" },
+                          "problemMatcher": []
+                        },
+                        {
+                          "label": "Organizar - Dry Run",
+                          "type": "shell",
+                          "command": "python",
+                          "args": ["organize_root.py", "--dry-run"],
+                          "options": { "cwd": "${workspaceFolder}" },
+                          "problemMatcher": []
+                        },
+                        {
+                          "label": "Organizar - Aplicar (sem JSON)",
+                          "type": "shell",
+                          "command": "python",
+                          "args": ["organize_root.py"],
+                          "options": { "cwd": "${workspaceFolder}" },
+                          "problemMatcher": []
+                        },
+                        {
+                          "label": "Organizar - Aplicar (inclusive JSON)",
+                          "type": "shell",
+                          "command": "python",
+                          "args": ["organize_root.py", "--move-json"],
+                          "options": { "cwd": "${workspaceFolder}" },
+                          "problemMatcher": []
+                        }
+                      ]
+                    }
