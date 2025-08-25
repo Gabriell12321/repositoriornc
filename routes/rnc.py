@@ -325,17 +325,17 @@ def list_rncs():
                 'is_assigned': (current_user_id == rnc[8])
             }
             for rnc in rncs
-    ]
+        ]
 
-    result = {'success': True, 'rncs': formatted_rncs, 'tab': tab}
-    # Cache the result (Redis-backed with in-memory fallback)
-    from services.cache import cache_query  # local service
-    cache_query(cache_key, result, ttl=120)
+        result = {'success': True, 'rncs': formatted_rncs, 'tab': tab}
+        # Cache the result (Redis-backed with in-memory fallback)
+        from services.cache import cache_query  # local service
+        cache_query(cache_key, result, ttl=120)
 
-    response = jsonify(result)
-    response.headers['Cache-Control'] = 'public, max-age=120' if not force_refresh else 'no-cache'
-    response.headers['X-Content-Type-Options'] = 'nosniff'
-    return response
+        response = jsonify(result)
+        response.headers['Cache-Control'] = 'public, max-age=120' if not force_refresh else 'no-cache'
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        return response
     except Exception as e:
         logger.error(f"Erro ao listar RNCs: {e}")
         return jsonify({'success': False, 'message': f'Erro interno: {str(e)}'}), 500
