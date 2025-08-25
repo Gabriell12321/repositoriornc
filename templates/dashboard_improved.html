@@ -12,6 +12,8 @@
     <script src="{{ url_for('static', filename='js/charts-advanced.js') }}" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js" defer crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="{{ url_for('static', filename='js/app.js') }}?v=2" defer></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/avatar.css') }}">
+    <script src="{{ url_for('static', filename='js/avatar.js') }}" defer></script>
     <!-- Permissões do usuário são usadas diretamente via Jinja nas seções abaixo -->
     <script>
       // Utilidades de cache para carregamento imediato
@@ -1338,7 +1340,7 @@
                     </div>
                     
                     <div class="user-info">
-                        <div class="user-avatar" id="userAvatar">U</div>
+                        <div class="user-avatar ava ava-ippel" id="userAvatar" title="Clique para trocar seu avatar" data-initial="1">U</div>
                         <div class="user-details">
                             <h3 id="userName">Carregando...</h3>
                             <p id="userDepartment">Departamento</p>
@@ -2088,7 +2090,18 @@
                     
                     if (userNameElement) userNameElement.textContent = data.user.name;
                     if (userDepartmentElement) userDepartmentElement.textContent = data.user.department;
-                    if (userAvatarElement) userAvatarElement.textContent = data.user.name.charAt(0).toUpperCase();
+                    if (userAvatarElement) {
+                        window.__USER_NAME__ = data.user.name || '';
+                        const avKey = (data.user.avatar || 'ava-ippel');
+                        // Aplicar avatar animado se o helper estiver disponível
+                        if (window.IPPELAvatar && typeof IPPELAvatar.applyToHeader === 'function') {
+                            IPPELAvatar.applyToHeader(avKey);
+                        } else {
+                            // Fallback: ajustar classes manualmente
+                            userAvatarElement.className = 'user-avatar ava ' + avKey;
+                            userAvatarElement.textContent = (window.__USER_NAME__||'U').charAt(0).toUpperCase();
+                        }
+                    }
                     
                     // Verificar permissões para mostrar botões específicos
                     const role = (data.user.role || '').toLowerCase();

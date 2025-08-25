@@ -602,6 +602,7 @@ def init_database():
             role TEXT NOT NULL DEFAULT 'user',
             permissions TEXT DEFAULT '[]',
             group_id INTEGER,
+            avatar_key TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             is_active BOOLEAN DEFAULT 1,
             FOREIGN KEY (group_id) REFERENCES groups (id)
@@ -611,6 +612,13 @@ def init_database():
     # Adicionar coluna group_id se não existir
     try:
         cursor.execute('ALTER TABLE users ADD COLUMN group_id INTEGER')
+    except sqlite3.OperationalError:
+        # Coluna já existe
+        pass
+
+    # Adicionar coluna avatar_key se não existir
+    try:
+        cursor.execute('ALTER TABLE users ADD COLUMN avatar_key TEXT')
     except sqlite3.OperationalError:
         # Coluna já existe
         pass
@@ -2333,7 +2341,7 @@ def get_user_info():
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         cursor.execute('''
-            SELECT u.permissions, g.name as group_name
+            SELECT u.permissions, g.name as group_name, u.avatar_key
             FROM users u
             LEFT JOIN groups g ON u.group_id = g.id
             WHERE u.id = ?
@@ -2391,7 +2399,8 @@ def get_user_info():
             'role': session['user_role'],
             'permissions': permissions,
             'groupPermissions': group_perms_list,
-            'departmentPermissions': department_permissions
+            'departmentPermissions': department_permissions,
+            'avatar': (user_data[2] if user_data and len(user_data) > 2 else None)
         }
         
         logger.info(f"Informações do usuário: {user_info}")
@@ -2405,6 +2414,40 @@ def get_user_info():
             'success': False,
             'message': 'Erro ao buscar informações do usuário'
         }), 500
+
+@app.route('/api/user/avatar', methods=['POST'])
+def api_update_avatar():
+    """Atualiza o avatar animado escolhido pelo usuário.
+
+    Espera JSON: { "avatar": "ava-galaxy" }
+    """
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
+
+    try:
+        data = request.get_json() or {}
+        avatar = str(data.get('avatar', '')).strip()[:64]
+
+        # Opcional: validar contra um conjunto conhecido de chaves.
+        allowed = {
+            'ava-ippel', 'ava-galaxy', 'ava-ocean', 'ava-rainbow', 'ava-neon', 'ava-sunset', 'ava-wave', 'ava-pulse'
+        }
+        if avatar and avatar not in allowed:
+            return jsonify({'success': False, 'message': 'Avatar inválido'}), 400
+
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute('UPDATE users SET avatar_key = ? WHERE id = ?', (avatar or None, session['user_id']))
+        conn.commit()
+        conn.close()
+
+        return jsonify({'success': True, 'avatar': avatar})
+    except Exception as e:
+        try:
+            logger.error(f"Erro ao atualizar avatar do usuário {session.get('user_id')}: {e}")
+        except Exception:
+            pass
+        return jsonify({'success': False, 'message': 'Erro ao atualizar avatar'}), 500
 
 @app.route('/api/rnc/create', methods=['POST'])
 def create_rnc():

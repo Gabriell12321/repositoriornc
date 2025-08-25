@@ -99,7 +99,9 @@
         {% block extra_css %}{% endblock %}
     </style>
     {% block head %}{% endblock %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/avatar.css') }}">
     <script src="{{ url_for('static', filename='js/app.js') }}?v=2" defer></script>
+    <script src="{{ url_for('static', filename='js/avatar.js') }}" defer></script>
 </head>
 <body>
     <div class="header">
@@ -115,6 +117,7 @@
                 <div class="logo-text">IPPEL</div>
             </div>
             <div class="user-info">
+                <div id="userAvatar" class="user-avatar initial ava ava-ippel" title="Clique para trocar seu avatar" data-initial="1">U</div>
                 <span class="user-name" id="userName">Sistema IPPEL</span>
                 <button class="logout-btn" onclick="(function(){ try { const base = window.location.origin.replace(/^https:/,'http:'); fetch(base + '/api/logout', { credentials: 'include' }).finally(() => { window.location.href = '/'; }); } catch(e){ window.location.href = '/'; } })()">🚪 Sair</button>
             </div>
@@ -125,6 +128,30 @@
         {% block content %}{% endblock %}
     </div>
 
+    <div id="avatarModal"></div>
+
+    <script>
+      // Quando carregar informações do usuário, aplicar avatar
+      (function(){
+        const orig = (window.IPPELApp && IPPELApp.loadUserInfo) ? IPPELApp.loadUserInfo : null;
+        window.__USER_NAME__ = null;
+        async function patched(){
+          try{
+            const resp = await fetch('/api/user/info', { credentials: 'include' });
+            if(!resp.ok) return; const js = await resp.json();
+            if(js && js.success && js.user){
+              __USER_NAME__ = js.user.name;
+              const av = js.user.avatar || 'ava-ippel';
+              if(window.IPPELAvatar){ IPPELAvatar.applyToHeader(av); }
+              const nameEl = document.getElementById('userName');
+              if(nameEl) nameEl.textContent = js.user.name;
+            }
+          }catch(e){}
+        }
+        document.addEventListener('DOMContentLoaded', patched);
+      })();
+    </script>
+
     {% block scripts %}{% endblock %}
 </body>
-</html> 
+</html>
