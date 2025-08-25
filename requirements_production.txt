@@ -22,6 +22,7 @@ Werkzeug==2.3.7
 
 # Utilitários
 python-dateutil==2.8.2
+redis==5.0.8
 
 # Opcional: Para monitoramento avançado
 # prometheus-client==0.17.1
