@@ -12,8 +12,8 @@
     <script src="{{ url_for('static', filename='js/charts-advanced.js') }}" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js" defer crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="{{ url_for('static', filename='js/app.js') }}?v=2" defer></script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/avatar.css') }}">
-    <script src="{{ url_for('static', filename='js/avatar.js') }}" defer></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/avatar.css') }}?v=4">
+    <script src="{{ url_for('static', filename='js/avatar.js') }}?v=4" defer></script>
     <!-- Permissões do usuário são usadas diretamente via Jinja nas seções abaixo -->
     <script>
       // Utilidades de cache para carregamento imediato
@@ -1340,7 +1340,7 @@
                     </div>
                     
                     <div class="user-info">
-                        <div class="user-avatar ava ava-ippel" id="userAvatar" title="Clique para trocar seu avatar" data-initial="1">U</div>
+                        <div class="user-avatar ava ava-ippel" id="userAvatar" title="Clique para trocar seu avatar" data-initial="1" role="button" tabindex="0" onclick="if(window.IPPELAvatar){ IPPELAvatar.show(); } else { window.__OPEN_AVATAR_ON_READY__=true; }" onkeydown="if(event.key==='Enter'||event.key===' '){ event.preventDefault(); if(window.IPPELAvatar){ IPPELAvatar.show(); } else { window.__OPEN_AVATAR_ON_READY__=true; }}">U</div>
                         <div class="user-details">
                             <h3 id="userName">Carregando...</h3>
                             <p id="userDepartment">Departamento</p>
@@ -1351,6 +1351,7 @@
                     </div>
                 </div>
             </div>
+            <div id="avatarModal"></div>
             
             <!-- Sistema de Abas -->
             <div class="tabs-container">
@@ -2093,9 +2094,10 @@
                     if (userAvatarElement) {
                         window.__USER_NAME__ = data.user.name || '';
                         const avKey = (data.user.avatar || 'ava-ippel');
+                        const avPrefs = (data.user.avatarPrefs || null);
                         // Aplicar avatar animado se o helper estiver disponível
                         if (window.IPPELAvatar && typeof IPPELAvatar.applyToHeader === 'function') {
-                            IPPELAvatar.applyToHeader(avKey);
+                            IPPELAvatar.applyToHeader(avKey, avPrefs);
                         } else {
                             // Fallback: ajustar classes manualmente
                             userAvatarElement.className = 'user-avatar ava ' + avKey;

@@ -603,6 +603,7 @@ def init_database():
             permissions TEXT DEFAULT '[]',
             group_id INTEGER,
             avatar_key TEXT,
+            avatar_prefs TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             is_active BOOLEAN DEFAULT 1,
             FOREIGN KEY (group_id) REFERENCES groups (id)
@@ -619,6 +620,13 @@ def init_database():
     # Adicionar coluna avatar_key se não existir
     try:
         cursor.execute('ALTER TABLE users ADD COLUMN avatar_key TEXT')
+    except sqlite3.OperationalError:
+        # Coluna já existe
+        pass
+
+    # Adicionar coluna avatar_prefs se não existir
+    try:
+        cursor.execute('ALTER TABLE users ADD COLUMN avatar_prefs TEXT')
     except sqlite3.OperationalError:
         # Coluna já existe
         pass
@@ -2341,7 +2349,7 @@ def get_user_info():
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         cursor.execute('''
-            SELECT u.permissions, g.name as group_name, u.avatar_key
+            SELECT u.permissions, g.name as group_name, u.avatar_key, u.avatar_prefs
             FROM users u
             LEFT JOIN groups g ON u.group_id = g.id
             WHERE u.id = ?
@@ -2390,6 +2398,14 @@ def get_user_info():
             'canViewUsersForAssignment': True    # Todos podem ver usuários para atribuição
         }
         
+        # Preparar preferências de avatar
+        avatar_prefs = None
+        try:
+            if user_data and len(user_data) > 3 and user_data[3]:
+                avatar_prefs = json.loads(user_data[3])
+        except Exception:
+            avatar_prefs = None
+
         user_info = {
             'id': session['user_id'],
             'name': session['user_name'],
@@ -2400,7 +2416,8 @@ def get_user_info():
             'permissions': permissions,
             'groupPermissions': group_perms_list,
             'departmentPermissions': department_permissions,
-            'avatar': (user_data[2] if user_data and len(user_data) > 2 else None)
+            'avatar': (user_data[2] if user_data and len(user_data) > 2 else None),
+            'avatarPrefs': avatar_prefs
         }
         
         logger.info(f"Informações do usuário: {user_info}")
@@ -2417,31 +2434,55 @@ def get_user_info():
 
 @app.route('/api/user/avatar', methods=['POST'])
 def api_update_avatar():
-    """Atualiza o avatar animado escolhido pelo usuário.
+    """Atualiza o avatar escolhido pelo usuário.
 
-    Espera JSON: { "avatar": "ava-galaxy" }
+    Espera JSON: { "avatar": "ava-galaxy|ava-image|...", "prefs": { ... } }
     """
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
 
     try:
-        data = request.get_json() or {}
+        data = request.get_json(silent=True) or {}
         avatar = str(data.get('avatar', '')).strip()[:64]
+        prefs = data.get('prefs') if isinstance(data.get('prefs'), dict) else None
 
-        # Opcional: validar contra um conjunto conhecido de chaves.
+        # Validar contra um conjunto conhecido de chaves
         allowed = {
-            'ava-ippel', 'ava-galaxy', 'ava-ocean', 'ava-rainbow', 'ava-neon', 'ava-sunset', 'ava-wave', 'ava-pulse'
+            'ava-ippel', 'ava-galaxy', 'ava-ocean', 'ava-rainbow', 'ava-neon', 'ava-sunset', 'ava-wave', 'ava-pulse',
+            'ava-forest', 'ava-lava', 'ava-mint', 'ava-sky', 'ava-rose', 'ava-candy', 'ava-silver', 'ava-carbon',
+            'ava-custom', 'ava-image',
+            # corporate set
+            'ava-corp-blue','ava-corp-slate','ava-corp-navy','ava-corp-teal','ava-corp-gray','ava-corp-indigo','ava-initials'
         }
         if avatar and avatar not in allowed:
             return jsonify({'success': False, 'message': 'Avatar inválido'}), 400
 
+        # Validação extra para imagens
+        if avatar == 'ava-image':
+            if not prefs or not isinstance(prefs.get('image'), str):
+                return jsonify({'success': False, 'message': 'Imagem do avatar inválida'}), 400
+            img = prefs.get('image', '')
+            if len(img) > 512:
+                return jsonify({'success': False, 'message': 'URL de imagem muito longa'}), 400
+            allowed_prefixes = (
+                '/static/avatars/',
+                'https://api.dicebear.com/',
+                'http://api.dicebear.com/'
+            )
+            if not img.startswith(allowed_prefixes):
+                return jsonify({'success': False, 'message': 'Origem de imagem não permitida'}), 400
+
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
-        cursor.execute('UPDATE users SET avatar_key = ? WHERE id = ?', (avatar or None, session['user_id']))
+        prefs_json = json.dumps(prefs, ensure_ascii=False) if prefs else None
+        cursor.execute(
+            'UPDATE users SET avatar_key = ?, avatar_prefs = ? WHERE id = ?',
+            (avatar or None, prefs_json, session['user_id'])
+        )
         conn.commit()
         conn.close()
 
-        return jsonify({'success': True, 'avatar': avatar})
+        return jsonify({'success': True, 'avatar': avatar, 'prefs': prefs})
     except Exception as e:
         try:
             logger.error(f"Erro ao atualizar avatar do usuário {session.get('user_id')}: {e}")
