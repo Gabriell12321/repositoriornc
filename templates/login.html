@@ -539,7 +539,12 @@
             <div class="logo-wrapper">
                 <div class="logo-orbit"></div>
                 <div class="logo">
-                    <img src="{{ url_for('static', filename='LOGOSQI.jpg') }}" alt="IPPEL Logo">
+                    <img src="/LOGOIPPEL.JPEG"
+                         alt="IPPEL Logo"
+                         data-logo-primary="/LOGOIPPEL.JPEG"
+                         data-logo-fallback1="/IPPELLOGO.jpg"
+                         data-logo-fallback2="{{ url_for('static', filename='LOGOSQI.jpg') }}"
+                         onerror="if(this.dataset.try1!=='1'){this.dataset.try1='1'; this.src=this.dataset.logoFallback1;} else if(this.dataset.try2!=='1'){this.dataset.try2='1'; this.src=this.dataset.logoFallback2;} else {this.style.display='none';}">
                 </div>
             </div>
             <h1 class="title">Sistema RNC</h1>

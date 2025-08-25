@@ -193,7 +193,11 @@
     <div class="container">
         <div class="header">
             <div class="logo">
-                <img src="/LOGOSQI.jpg" alt="Logo">
+             <img src="/LOGOIPPEL.JPEG" alt="IPPEL Logo"
+                 data-logo-primary="/LOGOIPPEL.JPEG"
+                 data-logo-fallback1="/IPPELLOGO.jpg"
+                 data-logo-fallback2="/LOGOSQI.jpg"
+                 onerror="if(this.dataset.try1!=='1'){this.dataset.try1='1'; this.src=this.dataset.logoFallback1;} else if(this.dataset.try2!=='1'){this.dataset.try2='1'; this.src=this.dataset.logoFallback2;} else {this.style.display='none';}">
                 <div>
                     <div class="title">Relatório de Não Conformidades Internas – RNC</div>
                     <div class="rnc-number">Nº: {{ rnc.rnc_number }}</div>

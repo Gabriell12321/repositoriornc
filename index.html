@@ -659,7 +659,12 @@
         <div class="header">
             <div class="logos">
                 <div class="logo-ippel">
-                    <img src="/LOGOSQI.jpg" alt="SQI Logo" style="width: 120px; height: 120px; border-radius: 15px; object-fit: contain; background: transparent; padding: 0; border: none;">
+                <img src="/LOGOIPPEL.JPEG" alt="IPPEL Logo"
+                    style="width: 120px; height: 120px; border-radius: 15px; object-fit: contain; background: transparent; padding: 0; border: none;"
+                    data-logo-primary="/LOGOIPPEL.JPEG"
+                    data-logo-fallback1="/IPPELLOGO.jpg"
+                    data-logo-fallback2="/LOGOSQI.jpg"
+                    onerror="if(this.dataset.try1!=='1'){this.dataset.try1='1'; this.src=this.dataset.logoFallback1;} else if(this.dataset.try2!=='1'){this.dataset.try2='1'; this.src=this.dataset.logoFallback2;} else {this.style.display='none';}">
                     </div>
                 </div>
             <div style="position: absolute; top: 20px; right: 30px; font-size: 12px; color: #6c757d; font-weight: 500; z-index: 10;"></div>

@@ -66,7 +66,7 @@
         };
       })();
     </script>
-    <link rel="preload" as="image" href="/LOGOSQI.jpg" imagesrcset="/LOGOSQI.jpg 1x" imagesizes="100vw">
+    <link rel="preload" as="image" href="/LOGOIPPEL.JPEG" imagesrcset="/LOGOIPPEL.JPEG 1x" imagesizes="100vw">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
@@ -1278,15 +1278,44 @@
     </style>
 </head>
 <body>
-    <!-- jsPDF para exportação de relatórios -->
+        <!-- jsPDF para exportação de relatórios -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+        <script>
+            // Logo safety: ensure preferred IPPEL logo is used everywhere
+            (function(){
+                function applyLogo(img){
+                    if(!img) return;
+                    if(!img.dataset.logoPrimary){
+                        img.dataset.logoPrimary = '/LOGOIPPEL.JPEG';
+                        img.dataset.logoFallback1 = '/IPPELLOGO.jpg';
+                        img.dataset.logoFallback2 = (typeof flaskUrlForStatic !== 'undefined') ? flaskUrlForStatic('LOGOSQI.jpg') : '/static/LOGOSQI.jpg';
+                    }
+                    if(!/LOGOIPPEL\.JPEG$/i.test(img.src)){
+                        img.src = img.dataset.logoPrimary;
+                    }
+                    img.onerror = function(){
+                        if(this.dataset.try1!=='1'){ this.dataset.try1='1'; this.src=this.dataset.logoFallback1; }
+                        else if(this.dataset.try2!=='1'){ this.dataset.try2='1'; this.src=this.dataset.logoFallback2; }
+                        else { this.style.display='none'; }
+                    };
+                }
+                window.addEventListener('DOMContentLoaded', function(){
+                    document.querySelectorAll('img[alt*="Logo" i], img.logo, .logo img').forEach(applyLogo);
+                });
+            })();
+        </script>
 
     <div class="main-container">
         <div class="left-section">
             <!-- Header -->
             <div class="header">
                 <div class="logo">
-                    <img src="/LOGOSQI.jpg" alt="IPPEL Logo">
+                <img src="/LOGOIPPEL.JPEG"
+                    alt="IPPEL Logo"
+                    data-logo-primary="/LOGOIPPEL.JPEG"
+                    data-logo-fallback1="/IPPELLOGO.jpg"
+                    data-logo-fallback2="{{ url_for('static', filename='LOGOSQI.jpg') }}"
+                    onerror="if(this.dataset.try1!=='1'){this.dataset.try1='1'; this.src=this.dataset.logoFallback1;} else if(this.dataset.try2!=='1'){this.dataset.try2='1'; this.src=this.dataset.logoFallback2;} else {this.style.display='none';}">
                     <h1>IPPEL RNC System</h1>
                 </div>
                 <div style="display: flex; align-items: center; gap: 15px;">
@@ -3030,7 +3059,7 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
             if ('Notification' in window && Notification.permission === 'granted') {
                 new Notification(notification.title, {
                     body: notification.message,
-                    icon: '/LOGOSQI.jpg',
+                    icon: '/LOGOIPPEL.JPEG',
                     tag: `notification-${notification.id}`
                 });
             }

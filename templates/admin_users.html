@@ -415,7 +415,11 @@
     <div class="container">
         <div class="header">
             <div style="display: flex; align-items: center; gap: 15px;">
-                <img src="/LOGOSQI.jpg" alt="SQI Logo" class="logo" onerror="this.style.display='none'">
+             <img src="/LOGOIPPEL.JPEG" alt="IPPEL Logo" class="logo"
+                 data-logo-primary="/LOGOIPPEL.JPEG"
+                 data-logo-fallback1="/IPPELLOGO.jpg"
+                 data-logo-fallback2="/LOGOSQI.jpg"
+                 onerror="if(this.dataset.try1!=='1'){this.dataset.try1='1'; this.src=this.dataset.logoFallback1;} else if(this.dataset.try2!=='1'){this.dataset.try2='1'; this.src=this.dataset.logoFallback2;} else {this.style.display='none';}">
                 <h1>👥 Gerenciamento de Usuários</h1>
             </div>
             <div style="display:flex; gap:10px; align-items:center;">
