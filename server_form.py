@@ -43,6 +43,7 @@ import logging
 import os
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime, timedelta
+from routes.api import api as api_bp
 
 try:
     from flask_socketio import SocketIO, emit, join_room, leave_room  # type: ignore
@@ -128,6 +129,9 @@ app.config['REMEMBER_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_NAME'] = 'ippel_session'
 app.config['PERMANENT_SESSION_LIFETIME'] = 60 * 60 * 8  # 8 horas
 app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10MB por requisição
+
+# Registrar blueprints
+app.register_blueprint(api_bp)
 
 # Configurar rate limiter (desabilitado para evitar problemas)
 class _LimiterDummy:
@@ -2432,63 +2436,7 @@ def get_user_info():
             'message': 'Erro ao buscar informações do usuário'
         }), 500
 
-@app.route('/api/user/avatar', methods=['POST'])
-def api_update_avatar():
-    """Atualiza o avatar escolhido pelo usuário.
-
-    Espera JSON: { "avatar": "ava-galaxy|ava-image|...", "prefs": { ... } }
-    """
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
-
-    try:
-        data = request.get_json(silent=True) or {}
-        avatar = str(data.get('avatar', '')).strip()[:64]
-        prefs = data.get('prefs') if isinstance(data.get('prefs'), dict) else None
-
-        # Validar contra um conjunto conhecido de chaves
-        allowed = {
-            'ava-ippel', 'ava-galaxy', 'ava-ocean', 'ava-rainbow', 'ava-neon', 'ava-sunset', 'ava-wave', 'ava-pulse',
-            'ava-forest', 'ava-lava', 'ava-mint', 'ava-sky', 'ava-rose', 'ava-candy', 'ava-silver', 'ava-carbon',
-            'ava-custom', 'ava-image',
-            # corporate set
-            'ava-corp-blue','ava-corp-slate','ava-corp-navy','ava-corp-teal','ava-corp-gray','ava-corp-indigo','ava-initials'
-        }
-        if avatar and avatar not in allowed:
-            return jsonify({'success': False, 'message': 'Avatar inválido'}), 400
-
-        # Validação extra para imagens
-        if avatar == 'ava-image':
-            if not prefs or not isinstance(prefs.get('image'), str):
-                return jsonify({'success': False, 'message': 'Imagem do avatar inválida'}), 400
-            img = prefs.get('image', '')
-            if len(img) > 512:
-                return jsonify({'success': False, 'message': 'URL de imagem muito longa'}), 400
-            allowed_prefixes = (
-                '/static/avatars/',
-                'https://api.dicebear.com/',
-                'http://api.dicebear.com/'
-            )
-            if not img.startswith(allowed_prefixes):
-                return jsonify({'success': False, 'message': 'Origem de imagem não permitida'}), 400
-
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-        prefs_json = json.dumps(prefs, ensure_ascii=False) if prefs else None
-        cursor.execute(
-            'UPDATE users SET avatar_key = ?, avatar_prefs = ? WHERE id = ?',
-            (avatar or None, prefs_json, session['user_id'])
-        )
-        conn.commit()
-        conn.close()
-
-        return jsonify({'success': True, 'avatar': avatar, 'prefs': prefs})
-    except Exception as e:
-        try:
-            logger.error(f"Erro ao atualizar avatar do usuário {session.get('user_id')}: {e}")
-        except Exception:
-            pass
-        return jsonify({'success': False, 'message': 'Erro ao atualizar avatar'}), 500
+    # rota /api/user/avatar movida para routes/api.py (Blueprint)
 
 @app.route('/api/rnc/create', methods=['POST'])
 def create_rnc():
