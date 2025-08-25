@@ -1607,8 +1607,9 @@ def dashboard():
         'canViewFinalizedRncs': has_permission(session['user_id'], 'view_finalized_rncs'),
         'canViewCharts': has_permission(session['user_id'], 'view_charts'),
         'canViewReports': has_permission(session['user_id'], 'view_reports'),
-        'hasAdminAccess': has_permission(session['user_id'], 'admin_access'),
-        'canCreateRnc': has_permission(session['user_id'], 'admin_access'),  # Apenas administradores podem criar RNCs
+    'hasAdminAccess': has_permission(session['user_id'], 'admin_access'),
+    # Permissão correta: qualquer usuário com 'create_rnc' pode criar RNCs
+    'canCreateRnc': has_permission(session['user_id'], 'create_rnc'),
         'canViewLevantamento1415': has_permission(session['user_id'], 'view_levantamento_14_15'),
         'canViewGroupsForAssignment': has_permission(session['user_id'], 'view_groups_for_assignment'),
         'canViewUsersForAssignment': has_permission(session['user_id'], 'view_users_for_assignment'),
@@ -1962,11 +1963,11 @@ def form():
     if 'user_id' not in session:
         return redirect('/')
     
-    # Verificar se o usuário tem permissão de administração para criar RNCs
-    if not has_permission(session['user_id'], 'admin_access'):
+    # Verificar permissão correta para criar RNCs
+    if not has_permission(session['user_id'], 'create_rnc'):
         return render_template('error.html', 
                              error_title='Acesso Negado', 
-                             error_message='Apenas administradores podem criar RNCs.'), 403
+                             error_message='Você não tem permissão para criar RNCs.'), 403
     
     return send_from_directory('.', 'index.html')
 
@@ -2411,9 +2412,9 @@ def create_rnc():
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
 
-    # Verificar se o usuário tem permissão de administração para criar RNCs
-    if not has_permission(session['user_id'], 'admin_access'):
-        return jsonify({'success': False, 'message': 'Apenas administradores podem criar RNCs'}), 403
+    # Verificar permissão apropriada para criação de RNC
+    if not has_permission(session['user_id'], 'create_rnc'):
+        return jsonify({'success': False, 'message': 'Usuário sem permissão para criar RNCs'}), 403
 
     try:
         data = request.get_json() or {}
