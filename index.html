@@ -267,7 +267,7 @@
         }
 
     /* Campos específicos do formulário */
-    #title, #equipment, #client, #priority, #share_groups, #rnc_number {
+    #title, #equipment, #client, #priority, #share_groups, #assigned_user_single, #rnc_number {
             background: white !important;
             color: #333 !important;
             border: 2px solid #dc3545 !important;
@@ -319,6 +319,134 @@
             color: #333 !important;
             border: 2px solid #dc3545 !important;
         }
+
+        /* --- Nice cards & chips for assignee/share sections --- */
+        .section-card {
+            background: #fff;
+            border: 1px solid rgba(139, 21, 56, 0.25);
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(139, 21, 56, 0.08);
+            padding: 14px 16px;
+        }
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .section-header--bar {
+            background: linear-gradient(180deg, #6c757d 0%, #5f6770 100%);
+            color: #fff;
+            border-radius: 8px;
+            padding: 8px 12px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.25);
+        }
+        .section-title {
+            font-weight: 700;
+            color: #8b1538;
+            font-size: 0.98rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .section-header--bar .section-title {
+            color: #fff;
+            letter-spacing: .3px;
+            text-transform: uppercase;
+        }
+        .help-hint {
+            margin-top: 8px;
+            font-size: 0.85rem;
+            color: #495057;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+            border-left: 4px solid #8b1538;
+        }
+        .fancy-select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #8b1538;
+            border-radius: 8px;
+            background: #fff;
+            font-size: 14px;
+            transition: box-shadow .15s ease, border-color .15s ease;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="%238b1538" d="M7 10l5 5 5-5z"/></svg>');
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 18px;
+            padding-right: 40px;
+        }
+        .fancy-select:focus {
+            outline: none;
+            border-color: #a41b45;
+            box-shadow: 0 0 0 3px rgba(164, 27, 69, 0.15);
+        }
+        .preview-card {
+            margin-top: 8px;
+            background: #fff;
+            border: 1px solid rgba(139, 21, 56, 0.35);
+            border-radius: 10px;
+            padding: 10px 12px;
+        }
+        .preview-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 6px;
+        }
+        .chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(139, 21, 56, 0.45);
+            color: #6b0f2a;
+            line-height: 1.2;
+            font-size: 0.86rem;
+            background: rgba(139, 21, 56, 0.20);
+            transition: transform .1s ease, background .2s ease;
+        }
+        .chip:hover { transform: translateY(-1px); background: rgba(139, 21, 56, 0.28); }
+        .chip--muted {
+            background: rgba(139, 21, 56, 0.14);
+            color: #5a0c24;
+        }
+        .chip--danger {
+            background: rgba(139, 21, 56, 0.40);
+            border-color: rgba(139, 21, 56, 0.60);
+            color: #4d091b;
+        }
+        .chip-remove,
+        .chip-remove-group {
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            color: #8b1538;
+            font-weight: 700;
+            padding: 0 2px;
+            width: 18px; height: 18px;
+            display: inline-flex;
+            align-items: center; justify-content: center;
+            border-radius: 50%;
+        }
+        .chip-remove:hover,
+        .chip-remove-group:hover {
+            color: #fff;
+            background: #6b0f2a;
+        }
+        .chip-remove:active, .chip-remove-group:active { transform: scale(0.92); }
 
         /* Campos específicos */
         #assinatura_gerente, #nome_responsavel, #data_emissao, #area_responsavel {
@@ -417,9 +545,32 @@
             background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
             color: white;
             vertical-align: middle;
-            border-right: 2px solid #dee2e6;
+            /* Remove a borda interna para unir com a célula de título e formar uma barra única */
+            border-right: none !important;
             border: 2px solid #dc3545;
             text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+
+        /* Garante que as células de título da linha (as que acompanham o ITEM) tenham a mesma barra contínua */
+        td.section-title {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%) !important;
+            color: #fff !important;
+            /* Remove a borda esquerda para unir visualmente com a coluna ITEM */
+            border-left: none !important;
+            position: relative; /* necessário para o pseudo-elemento abaixo */
+        }
+
+        /* Cobre a junção entre ITEM e TÍTULO para não aparecer faixa branca */
+        table td.section-title::before {
+            content: '';
+            display: block !important; /* sobrepõe o display:none de regras anteriores */
+            position: absolute;
+            left: -2px; /* mesma espessura da borda (2px) */
+            top: -2px;
+            bottom: -2px;
+            width: 2px;
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+            z-index: 1;
         }
 
         /* Barra de ações moderna (fixa no canto inferior direito) */
@@ -624,18 +775,27 @@
                     </div>
                 </div>
 
-                <!-- Compartilhamento por grupos -->
+                <!-- Atribuição e compartilhamento -->
                 <div style="grid-column: 1 / -1; margin-top: 20px; display: grid; grid-template-columns: 1fr; gap: 20px;">
-                    <div>
-                        <label style="font-weight: 600; color: #8b1538; font-size: 0.95rem; display: block; margin-bottom: 8px;">👥 Compartilhar com Grupos *</label>
-                        <select id="share_groups" name="share_groups" multiple
-                                style="width: 100%; padding: 12px; border: 2px solid #8b1538; border-radius: 6px; min-height: 100px; background: white; font-size: 14px;">
+                    <!-- Atribuir a um usuário (opcional) -->
+                    <div class="section-card">
+                        <div class="section-header section-header--bar">
+                            <div class="section-title">👤 Atribuir a um Usuário</div>
+                        </div>
+                        <select id="assigned_user_single" name="assigned_user_single" class="fancy-select" style="min-height: 44px;">
+                            <option value="">Carregando usuários...</option>
+                        </select>
+                        <div class="help-hint">💡 Dica: ao selecionar grupos abaixo, a lista será filtrada para mostrar apenas os usuários desses grupos.</div>
+                    </div>
+                    <!-- Compartilhar com grupos -->
+                    <div class="section-card">
+                        <div class="section-header section-header--bar">
+                            <div class="section-title">👥 Compartilhar com Grupos *</div>
+                        </div>
+                        <select id="share_groups" name="share_groups" multiple class="fancy-select" style="min-height: 120px;">
                             <option value="">Carregando grupos...</option>
                         </select>
-                        <div style="margin-top: 8px; font-size: 0.85rem; color: #6c757d; background: #f8f9fa; padding: 10px; border-radius: 5px; border-left: 4px solid #8b1538;">
-                            💡 <strong>Importante:</strong> Selecione os grupos que devem ter acesso a esta RNC. 
-                            Eles receberão notificações e poderão acompanhar o progresso da resolução.
-                        </div>
+                        <div class="help-hint">💡 <strong>Importante:</strong> Selecione os grupos que devem ter acesso a esta RNC. Eles receberão notificações e poderão acompanhar o progresso da resolução.</div>
                     </div>
                 </div>
 
@@ -1258,10 +1418,33 @@
             }
         }
         
+        
+        // Carregar todos os usuários para o select de atribuição
+        async function loadUsers() {
+            try {
+                const userSelect = document.getElementById('assigned_user_single');
+                if (!userSelect) return;
+                const resp = await fetch('/api/users/list', { credentials: 'include' });
+                const data = await resp.json();
+                if (!data.success) throw new Error(data.message || 'Falha ao listar usuários');
+
+                const users = (data.users || []).filter(u => !EXCLUDED_ASSIGNEE_IDS.has(String(u.id)));
+                userSelect.innerHTML = '<option value="">— Não atribuir —</option>' +
+                    users.map(u => `<option value="${u.id}">👤 ${u.name}${u.department ? ' (' + u.department + ')' : ''}</option>`).join('');
+                userSelect.value = '';
+
+                // Sem grupos selecionados, não mostrar preview de usuários
+                clearGroupUsersPreview();
+            } catch (err) {
+                console.error('Erro ao carregar usuários:', err);
+                const userSelect = document.getElementById('assigned_user_single');
+                if (userSelect) userSelect.innerHTML = '<option value="">Erro ao carregar usuários</option>';
+            }
+        }
 
         // Atualiza usuários com base nos grupos selecionados
         async function updateAssigneeOptionsForGroups() {
-            const userSelect = null;
+            const userSelect = document.getElementById('assigned_user_single');
             const groupsEl = document.getElementById('share_groups');
             if (!userSelect || !groupsEl) return;
 
@@ -1279,8 +1462,7 @@
                 }
                 const usersAll = Array.from(byId.values()).sort((a,b)=>a.name.localeCompare(b.name,'pt-BR'));
                 const users = usersAll.filter(u => !EXCLUDED_ASSIGNEE_IDS.has(String(u.id)));
-                userSelect.innerHTML = '<option value="">Todos os usuários</option>' +
-                    '<option value="">— Não atribuir —</option>' +
+                userSelect.innerHTML = '<option value="">— Não atribuir —</option>' +
                     users.map(u=>`<option value="${u.id}">👤 ${u.name} ${u.department? '('+u.department+')':''}</option>`).join('');
                 userSelect.value = '';
 
@@ -1296,28 +1478,21 @@
             clearGroupUsersPreview();
             const container = document.createElement('div');
             container.id = 'group-users-preview';
-            container.style.cssText = `
-                margin-top: 8px;
-                padding: 8px 12px;
-                background: #f8f9fa;
-                border: 1px solid rgba(139, 21, 56, 0.3);
-                border-radius: 5px;
-                font-size: 0.85rem;
-                color: #495057;
-            `;
-            const header = `<div style="margin-bottom: 6px; font-weight: 600; display:flex; align-items:center; justify-content:space-between;">
+            container.className = 'preview-card';
+            const header = `<div class="preview-header">
                 <span>👤 Usuários dos grupos selecionados (${users.length}):</span>
-                <a href="#" id="clear-exclusions" style="font-size:0.8rem; color:#8b1538; text-decoration:underline; ${EXCLUDED_ASSIGNEE_IDS.size? '':'display:none;'}">Limpar exclusões</a>
+                <a href="#" id="clear-exclusions" style="font-size:0.85rem; color:#8b1538; text-decoration:underline; ${EXCLUDED_ASSIGNEE_IDS.size? '':'display:none;'}">Limpar exclusões</a>
             </div>`;
             const chips = users.length
-                ? users.map(u => {
+                ? `<div class="chips">` + users.map(u => {
                     const excluded = EXCLUDED_ASSIGNEE_IDS.has(String(u.id));
-                    return `<span data-user-id="${u.id}" style="display:inline-flex; align-items:center; gap:6px; background:${excluded? 'rgba(139,21,56,0.15)':'rgba(139,21,56,0.08)'}; border:1px solid rgba(139,21,56,0.25); color:#8b1538; padding:2px 8px; border-radius:12px; margin:2px;">
+                    const chipClass = excluded ? 'chip chip--danger' : 'chip';
+                    return `<span class="${chipClass}" data-user-id="${u.id}">
                         <span>${u.name}${u.department? ' • '+u.department:''}</span>
-                        <button type="button" class="chip-remove" data-user-id="${u.id}" aria-label="Remover" title="Remover" style="cursor:pointer; border:none; background:transparent; color:#8b1538; font-weight:bold;">×</button>
+                        <button type="button" class="chip-remove" data-user-id="${u.id}" aria-label="Remover" title="Remover">×</button>
                     </span>`;
-                }).join('')
-                : '<em>Nenhum usuário encontrado nos grupos selecionados.</em>';
+                }).join('') + `</div>`
+                : '<em style="color:#6c757d;">Nenhum usuário encontrado nos grupos selecionados.</em>';
             container.innerHTML = header + chips;
 
             const select = document.getElementById('share_groups');
@@ -1338,7 +1513,13 @@
             container.addEventListener('click', function(e){
                 const btn = e.target.closest('.chip-remove');
                 if (btn && btn.dataset.userId) {
-                    excludeAssignee(btn.dataset.userId);
+                    // feedback visual rápido
+                    const chip = btn.closest('.chip');
+                    if (chip) {
+                        chip.classList.add('chip--danger');
+                        chip.style.opacity = '0.85';
+                    }
+                    setTimeout(() => excludeAssignee(btn.dataset.userId), 120);
                 }
             });
         }
@@ -1375,6 +1556,7 @@
                 emergency_contact: document.getElementById('emergency_contact').value || '',
                 detection_date: document.getElementById('detection_date').value || new Date().toISOString().split('T')[0],
                 shared_group_ids: selectedGroupIds,
+                assigned_user_id: (document.getElementById('assigned_user_single') && document.getElementById('assigned_user_single').value) || null,
                 assinatura1: document.getElementById('nome_coluna1').textContent,
                 assinatura2: document.getElementById('nome_coluna2').textContent,
                 assinatura3: document.getElementById('nome_coluna3').textContent
@@ -1521,27 +1703,19 @@
             
             const preview = document.createElement('div');
             preview.id = 'groups-preview';
-            preview.style.cssText = `
-                margin-top: 8px;
-                padding: 8px 12px;
-                background: rgba(139, 21, 56, 0.1);
-                border: 1px solid rgba(139, 21, 56, 0.3);
-                border-radius: 5px;
-                font-size: 0.8rem;
-                color: #f8f9fa;
-            `;
+            preview.className = 'preview-card';
             const groupsList = selectedOptions.map(opt => {
                 const groupName = opt.textContent.replace('📋 ', '');
                 const groupId = opt.value;
-                return `<span style="display:inline-flex;align-items:center; gap:6px; background: rgba(139, 21, 56, 0.2); padding: 2px 6px; border-radius: 12px; margin:2px;">
+                return `<span class="chip chip--muted">
                     <span>${groupName}</span>
-                    <button type="button" class="chip-remove-group" data-group-id="${groupId}" aria-label="Remover grupo" title="Remover grupo" style="cursor:pointer; border:none; background:transparent; color:#fff; font-weight:bold;">×</button>
+                    <button type="button" class="chip-remove-group" data-group-id="${groupId}" aria-label="Remover grupo" title="Remover grupo">×</button>
                 </span>`;
             }).join('');
             
             preview.innerHTML = `
-                <div style="margin-bottom: 3px; font-weight: 600;">👥 Grupos selecionados:</div>
-                ${groupsList}
+                <div class="preview-header">👥 Grupos selecionados:</div>
+                <div class="chips">${groupsList}</div>
             `;
             
             // Inserir após o select
@@ -1552,7 +1726,12 @@
             preview.addEventListener('click', function(e){
                 const btn = e.target.closest('.chip-remove-group');
                 if (btn && btn.dataset.groupId) {
-                    deselectGroup(btn.dataset.groupId);
+                    const chip = btn.closest('.chip');
+                    if (chip) {
+                        chip.classList.add('chip--danger');
+                        chip.style.opacity = '0.85';
+                    }
+                    setTimeout(() => deselectGroup(btn.dataset.groupId), 120);
                 }
             });
         }
@@ -1588,8 +1767,9 @@
                 }
             });
             
-            // Esconder preview dos grupos
+            // Esconder previews
             hideSelectedGroupsPreview();
+            clearGroupUsersPreview();
         }
 
         // Função para carregar informações do usuário
@@ -1659,6 +1839,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             loadUserInfo();
             loadGroups(); // Carregar lista de grupos
+            loadUsers();  // Carregar lista de usuários (assignee)
             
             // Configurar campo RNC Number
             const rncNumberInput = document.getElementById('rnc_number');

@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual envs
+.env
+*.env
+venv/
+.venv/
+ENV/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+email_system.log
+
+# SQLite databases and artifacts
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+
+# Backups
+backup/
+
+# Node
+node_modules/
