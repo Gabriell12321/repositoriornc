@@ -4,6 +4,7 @@
 import sqlite3
 import hashlib
 from flask import Flask, request, jsonify, send_from_directory, session, redirect, url_for, render_template, abort, make_response
+import socket
 
 # Importações opcionais com fallback
 try:
@@ -2527,6 +2528,131 @@ def create_rnc():
             'rnc_id': rnc_id,
             'rnc_number': rnc_number
         })
+    except Exception as e:
+        logger.error(f"Erro ao criar RNC: {e}")
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        try:
+            conn.close()
+        except Exception:
+            pass
+        return jsonify({'success': False, 'message': 'Erro interno ao criar RNC'}), 500
+
+@app.route('/api/rnc/<int:rnc_id>/update', methods=['PUT'])
+def update_rnc(rnc_id: int):
+    """Atualiza uma RNC existente de forma dinâmica conforme as colunas disponíveis.
+    Permite edição por administradores, criador da RNC ou usuário atribuído."""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
+
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+
+        # Verificar existência e permissões básicas
+        cursor.execute('SELECT user_id, assigned_user_id, COALESCE(is_deleted, 0) FROM rncs WHERE id = ?', (rnc_id,))
+        row = cursor.fetchone()
+        if not row:
+            conn.close()
+            return jsonify({'success': False, 'message': 'RNC não encontrada'}), 404
+
+        owner_id, assigned_id, is_deleted = row
+        if is_deleted:
+            conn.close()
+            return jsonify({'success': False, 'message': 'RNC removida'}), 400
+
+        is_admin = has_permission(session['user_id'], 'admin_access')
+        if not (is_admin or session['user_id'] in (owner_id, assigned_id)):
+            conn.close()
+            return jsonify({'success': False, 'message': 'Acesso negado'}), 403
+
+        data = request.get_json() or {}
+
+        # Descobrir colunas da tabela
+        cursor.execute('PRAGMA table_info(rncs)')
+        cols = {row[1] for row in cursor.fetchall()}
+
+        # Se o schema possuir colunas de assinatura, exigir ao menos uma quando enviados nomes
+        signature_columns = {
+            'signature_inspection_name',
+            'signature_engineering_name',
+            'signature_inspection2_name'
+        }
+        if signature_columns & cols:
+            assinaturas = [
+                data.get('signature_inspection_name', ''),
+                data.get('signature_engineering_name', ''),
+                data.get('signature_inspection2_name', '')
+            ]
+            # Só validar se pelo menos um dos campos de assinatura veio no payload, senão mantém atual
+            if any(x is not None for x in assinaturas):
+                if not any(a and a != 'NOME' for a in assinaturas):
+                    return jsonify({'success': False, 'message': 'É obrigatório preencher pelo menos uma assinatura!'}), 400
+
+        # Mapeia possíveis campos recebidos -> colunas reais
+        candidate_values = {
+            'title': data.get('title'),
+            'description': data.get('description'),
+            'equipment': data.get('equipment'),
+            'client': data.get('client'),
+            'rnc_number': data.get('rnc_number'),
+            'priority': data.get('priority'),
+            'status': data.get('status'),
+            'signature_inspection_name': data.get('signature_inspection_name'),
+            'signature_engineering_name': data.get('signature_engineering_name'),
+            'signature_inspection2_name': data.get('signature_inspection2_name'),
+            'signature_inspection_date': data.get('signature_inspection_date'),
+            'signature_engineering_date': data.get('signature_engineering_date'),
+            'signature_inspection2_date': data.get('signature_inspection2_date'),
+            'instruction_retrabalho': data.get('instruction_retrabalho'),
+            'cause_rnc': data.get('cause_rnc'),
+            'action_rnc': data.get('action_rnc'),
+            'inspection_aprovado': int(data.get('inspection_aprovado')) if 'inspection_aprovado' in data else None,
+            'inspection_reprovado': int(data.get('inspection_reprovado')) if 'inspection_reprovado' in data else None,
+            'inspection_ver_rnc': data.get('inspection_ver_rnc'),
+            'disposition_usar': int(data.get('disposition_usar')) if 'disposition_usar' in data else None,
+            'disposition_retrabalhar': int(data.get('disposition_retrabalhar')) if 'disposition_retrabalhar' in data else None,
+            'disposition_rejeitar': int(data.get('disposition_rejeitar')) if 'disposition_rejeitar' in data else None,
+            'disposition_sucata': int(data.get('disposition_sucata')) if 'disposition_sucata' in data else None,
+            'disposition_devolver_estoque': int(data.get('disposition_devolver_estoque')) if 'disposition_devolver_estoque' in data else None,
+            'disposition_devolver_fornecedor': int(data.get('disposition_devolver_fornecedor')) if 'disposition_devolver_fornecedor' in data else None,
+        }
+
+        update_cols = []
+        update_vals = []
+        for col, val in candidate_values.items():
+            if col in cols and val is not None:
+                update_cols.append(f"{col} = ?")
+                update_vals.append(val)
+
+        if not update_cols:
+            conn.close()
+            return jsonify({'success': False, 'message': 'Nada para atualizar'}), 400
+
+        update_sql = f"UPDATE rncs SET {', '.join(update_cols)}, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
+        update_vals.append(rnc_id)
+
+        cursor.execute('BEGIN IMMEDIATE')
+        cursor.execute(update_sql, update_vals)
+        conn.commit()
+        conn.close()
+
+        try:
+            clear_rnc_cache()
+        except Exception:
+            pass
+
+        return jsonify({'success': True})
+
+    except Exception as e:
+        try:
+            conn.close()
+        except Exception:
+            pass
+        logger.error(f"Erro ao atualizar RNC {rnc_id}: {e}")
+        return jsonify({'success': False, 'message': 'Erro interno ao atualizar RNC'}), 500
 
     except Exception as e:
         logger.error(f"Erro ao criar RNC: {e}")

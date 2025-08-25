@@ -266,8 +266,8 @@
             color: #333 !important;
         }
 
-        /* Campos específicos do formulário */
-        #title, #equipment, #client, #priority, #assigned_user, #rnc_number {
+    /* Campos específicos do formulário */
+    #title, #equipment, #client, #priority, #share_groups, #rnc_number {
             background: white !important;
             color: #333 !important;
             border: 2px solid #dc3545 !important;
@@ -624,11 +624,11 @@
                     </div>
                 </div>
 
-                <!-- Quarta linha - Compartilhamento -->
-                <div style="grid-column: 1 / -1; margin-top: 20px;">
-                    <label style="font-weight: 600; color: #8b1538; font-size: 0.95rem; display: block; margin-bottom: 8px;">👥 Compartilhar com Grupos *</label>
-                    <div style="margin-top: 5px;">
-                        <select id="assigned_user" name="assigned_user" multiple
+                <!-- Compartilhamento por grupos -->
+                <div style="grid-column: 1 / -1; margin-top: 20px; display: grid; grid-template-columns: 1fr; gap: 20px;">
+                    <div>
+                        <label style="font-weight: 600; color: #8b1538; font-size: 0.95rem; display: block; margin-bottom: 8px;">👥 Compartilhar com Grupos *</label>
+                        <select id="share_groups" name="share_groups" multiple
                                 style="width: 100%; padding: 12px; border: 2px solid #8b1538; border-radius: 6px; min-height: 100px; background: white; font-size: 14px;">
                             <option value="">Carregando grupos...</option>
                         </select>
@@ -909,6 +909,8 @@
     </div>
 
     <script>
+    // Conjunto de usuários excluídos da lista de responsáveis (assignee)
+    let EXCLUDED_ASSIGNEE_IDS = new Set();
         // Auto-resize textareas
         document.querySelectorAll('textarea').forEach(textarea => {
             textarea.addEventListener('input', function() {
@@ -1212,7 +1214,7 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    const select = document.getElementById('assigned_user');
+                    const select = document.getElementById('share_groups');
                     select.innerHTML = '<option value="">Selecione grupos para compartilhar...</option>';
                     
                     if (data.groups.length === 0) {
@@ -1229,7 +1231,7 @@
                     });
                     
                                          // Adicionar evento para mostrar grupos selecionados
-                     select.addEventListener('change', function() {
+             select.addEventListener('change', function() {
                          const selectedOptions = Array.from(this.selectedOptions);
                          if (selectedOptions.length > 0) {
                              const selectedText = selectedOptions.map(opt => opt.textContent.replace('📋 ', '')).join(', ');
@@ -1237,26 +1239,127 @@
                              
                              // Mostrar preview dos grupos selecionados
                              showSelectedGroupsPreview(selectedOptions);
+                 // Filtrar usuários do responsável conforme os grupos
+                 updateAssigneeOptionsForGroups();
                          } else {
                              hideSelectedGroupsPreview();
+                 // Sem grupos selecionados, volta para a lista completa de usuários
+                 loadUsers();
                          }
                      });
                     
                 } else {
                     console.error('Erro na resposta:', data.message);
-                    document.getElementById('assigned_user').innerHTML = '<option value="">Erro ao carregar grupos</option>';
+                    document.getElementById('share_groups').innerHTML = '<option value="">Erro ao carregar grupos</option>';
                 }
             } catch (error) {
                 console.error('Erro ao carregar grupos:', error);
-                document.getElementById('assigned_user').innerHTML = '<option value="">Erro ao carregar grupos</option>';
+                document.getElementById('share_groups').innerHTML = '<option value="">Erro ao carregar grupos</option>';
             }
+        }
+        
+
+        // Atualiza usuários com base nos grupos selecionados
+        async function updateAssigneeOptionsForGroups() {
+            const userSelect = null;
+            const groupsEl = document.getElementById('share_groups');
+            if (!userSelect || !groupsEl) return;
+
+            const selectedGroupIds = Array.from(groupsEl.selectedOptions).map(o => o.value).filter(v => v);
+            if (selectedGroupIds.length === 0) { await loadUsers(); return; }
+
+            try {
+                const promises = selectedGroupIds.map(id => fetch(`/api/admin/groups/${id}/users`, { credentials: 'include' }).then(r => r.json()).catch(()=>({success:false, users:[]})));
+                const results = await Promise.all(promises);
+                const byId = new Map();
+                for (const res of results) {
+                    if (res && res.success && Array.isArray(res.users)) {
+                        res.users.forEach(u => { if (!byId.has(u.id)) byId.set(u.id, u); });
+                    }
+                }
+                const usersAll = Array.from(byId.values()).sort((a,b)=>a.name.localeCompare(b.name,'pt-BR'));
+                const users = usersAll.filter(u => !EXCLUDED_ASSIGNEE_IDS.has(String(u.id)));
+                userSelect.innerHTML = '<option value="">Todos os usuários</option>' +
+                    '<option value="">— Não atribuir —</option>' +
+                    users.map(u=>`<option value="${u.id}">👤 ${u.name} ${u.department? '('+u.department+')':''}</option>`).join('');
+                userSelect.value = '';
+
+                // Renderiza preview de usuários dos grupos selecionados
+                renderGroupUsersPreview(usersAll);
+            } catch (err) {
+                console.error('Erro ao filtrar usuários por grupos:', err);
+            }
+        }
+
+        // Mostra/atualiza preview de usuários dos grupos selecionados
+        function renderGroupUsersPreview(users) {
+            clearGroupUsersPreview();
+            const container = document.createElement('div');
+            container.id = 'group-users-preview';
+            container.style.cssText = `
+                margin-top: 8px;
+                padding: 8px 12px;
+                background: #f8f9fa;
+                border: 1px solid rgba(139, 21, 56, 0.3);
+                border-radius: 5px;
+                font-size: 0.85rem;
+                color: #495057;
+            `;
+            const header = `<div style="margin-bottom: 6px; font-weight: 600; display:flex; align-items:center; justify-content:space-between;">
+                <span>👤 Usuários dos grupos selecionados (${users.length}):</span>
+                <a href="#" id="clear-exclusions" style="font-size:0.8rem; color:#8b1538; text-decoration:underline; ${EXCLUDED_ASSIGNEE_IDS.size? '':'display:none;'}">Limpar exclusões</a>
+            </div>`;
+            const chips = users.length
+                ? users.map(u => {
+                    const excluded = EXCLUDED_ASSIGNEE_IDS.has(String(u.id));
+                    return `<span data-user-id="${u.id}" style="display:inline-flex; align-items:center; gap:6px; background:${excluded? 'rgba(139,21,56,0.15)':'rgba(139,21,56,0.08)'}; border:1px solid rgba(139,21,56,0.25); color:#8b1538; padding:2px 8px; border-radius:12px; margin:2px;">
+                        <span>${u.name}${u.department? ' • '+u.department:''}</span>
+                        <button type="button" class="chip-remove" data-user-id="${u.id}" aria-label="Remover" title="Remover" style="cursor:pointer; border:none; background:transparent; color:#8b1538; font-weight:bold;">×</button>
+                    </span>`;
+                }).join('')
+                : '<em>Nenhum usuário encontrado nos grupos selecionados.</em>';
+            container.innerHTML = header + chips;
+
+            const select = document.getElementById('share_groups');
+            if (select && select.parentNode) {
+                // Insere após o select (ou substitui se já existir)
+                select.parentNode.insertBefore(container, select.nextSibling);
+            }
+
+            const clearLink = container.querySelector('#clear-exclusions');
+            if (clearLink) {
+                clearLink.addEventListener('click', function(e){
+                    e.preventDefault();
+                    EXCLUDED_ASSIGNEE_IDS.clear();
+                    updateAssigneeOptionsForGroups();
+                });
+            }
+            // Delegação: remover usuário (X)
+            container.addEventListener('click', function(e){
+                const btn = e.target.closest('.chip-remove');
+                if (btn && btn.dataset.userId) {
+                    excludeAssignee(btn.dataset.userId);
+                }
+            });
+        }
+
+        function clearGroupUsersPreview() {
+            const existing = document.getElementById('group-users-preview');
+            if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
+        }
+
+        // Exclui um usuário específico da lista de possíveis responsáveis (assignee)
+        function excludeAssignee(userId) {
+            if (!userId) return;
+            EXCLUDED_ASSIGNEE_IDS.add(String(userId));
+            updateAssigneeOptionsForGroups();
         }
 
         // Função para salvar RNC no sistema
         function saveRNCToSystem() {
             // Coletar dados do formulário
-            const assignedUserSelect = document.getElementById('assigned_user');
-            const selectedUserIds = Array.from(assignedUserSelect.selectedOptions)
+            const shareGroupsSelect = document.getElementById('share_groups');
+            const selectedGroupIds = Array.from(shareGroupsSelect.selectedOptions)
                 .map(option => option.value)
                 .filter(value => value !== '');
 
@@ -1271,8 +1374,7 @@
                 detected_by: document.getElementById('detected_by').value || '',
                 emergency_contact: document.getElementById('emergency_contact').value || '',
                 detection_date: document.getElementById('detection_date').value || new Date().toISOString().split('T')[0],
-                assigned_user_id: selectedUserIds.length > 0 ? selectedUserIds[0] : null, // Manter compatibilidade
-                shared_group_ids: selectedUserIds, // Grupos compartilhados
+                shared_group_ids: selectedGroupIds,
                 assinatura1: document.getElementById('nome_coluna1').textContent,
                 assinatura2: document.getElementById('nome_coluna2').textContent,
                 assinatura3: document.getElementById('nome_coluna3').textContent
@@ -1386,7 +1488,7 @@
             `;
             
             // Obter informações sobre grupos compartilhados
-            const selectedGroups = Array.from(document.getElementById('assigned_user').selectedOptions)
+            const selectedGroups = Array.from(document.getElementById('share_groups').selectedOptions)
                 .map(option => option.textContent.replace('📋 ', ''))
                 .join(', ');
             
@@ -1428,10 +1530,13 @@
                 font-size: 0.8rem;
                 color: #f8f9fa;
             `;
-            
             const groupsList = selectedOptions.map(opt => {
                 const groupName = opt.textContent.replace('📋 ', '');
-                return `<span style="background: rgba(139, 21, 56, 0.2); padding: 2px 6px; border-radius: 3px; margin-right: 5px;">${groupName}</span>`;
+                const groupId = opt.value;
+                return `<span style="display:inline-flex;align-items:center; gap:6px; background: rgba(139, 21, 56, 0.2); padding: 2px 6px; border-radius: 12px; margin:2px;">
+                    <span>${groupName}</span>
+                    <button type="button" class="chip-remove-group" data-group-id="${groupId}" aria-label="Remover grupo" title="Remover grupo" style="cursor:pointer; border:none; background:transparent; color:#fff; font-weight:bold;">×</button>
+                </span>`;
             }).join('');
             
             preview.innerHTML = `
@@ -1440,8 +1545,16 @@
             `;
             
             // Inserir após o select
-            const select = document.getElementById('assigned_user');
+            const select = document.getElementById('share_groups');
             select.parentNode.insertBefore(preview, select.nextSibling);
+
+            // Delegação: remover grupo (X)
+            preview.addEventListener('click', function(e){
+                const btn = e.target.closest('.chip-remove-group');
+                if (btn && btn.dataset.groupId) {
+                    deselectGroup(btn.dataset.groupId);
+                }
+            });
         }
         
         // Função para esconder preview dos grupos
@@ -1449,6 +1562,19 @@
             const existingPreview = document.getElementById('groups-preview');
             if (existingPreview) {
                 existingPreview.remove();
+            }
+        }
+
+        // Desmarca um grupo a partir do chip (preview)
+        function deselectGroup(groupId) {
+            const select = document.getElementById('share_groups');
+            if (!select) return;
+            const opt = Array.from(select.options).find(o => o.value === String(groupId));
+            if (opt) {
+                opt.selected = false;
+                // Dispara o change para atualizar previews e listas
+                const event = new Event('change', { bubbles: true });
+                select.dispatchEvent(event);
             }
         }
 
