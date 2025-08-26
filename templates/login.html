@@ -182,6 +182,47 @@
             border: 1px solid var(--glass-border);
             overflow: hidden;
             animation: containerEnter 1s ease-out;
+            transform: perspective(1000px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+            transition: transform 120ms ease;
+            will-change: transform;
+        }
+
+        /* Borda gradiente animada ao redor do card */
+        .login-container::before {
+            content: "";
+            position: absolute;
+            inset: -1px;
+            border-radius: inherit;
+            padding: 1px;
+            background: conic-gradient(from 180deg at 50% 50%,
+                rgba(102,126,234,0.0) 0deg,
+                rgba(102,126,234,0.6) 60deg,
+                rgba(117,75,162,0.6) 120deg,
+                rgba(245,87,108,0.6) 180deg,
+                rgba(79,172,254,0.6) 240deg,
+                rgba(0,242,254,0.6) 300deg,
+                rgba(102,126,234,0.0) 360deg);
+        -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+        -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            animation: spinBorder 8s linear infinite;
+            pointer-events: none;
+        }
+
+        .login-container::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            background: radial-gradient(120% 60% at 10% 0%, rgba(255,255,255,0.08), transparent 50%),
+                        radial-gradient(120% 60% at 90% 100%, rgba(102,126,234,0.08), transparent 50%),
+                        radial-gradient(160px 100px at var(--mx, -100px) var(--my, -100px), rgba(102,126,234,0.18), transparent 60%);
+            pointer-events: none;
+        }
+
+        @keyframes spinBorder {
+            to { transform: rotate(360deg); }
         }
 
         @keyframes containerEnter {
@@ -203,7 +244,7 @@
 
         .logo-wrapper {
             position: relative;
-            width: 120px;
+            width: 220px; /* espaço suficiente para duas logos lado a lado */
             height: 120px;
             margin: 0 auto var(--space-xl);
             display: flex;
@@ -213,12 +254,29 @@
 
         .logo-orbit {
             position: absolute;
-            width: 160px;
-            height: 160px;
+            width: 260px; /* maior que o container de logos */
+            height: 260px;
             border: 2px solid transparent;
             border-top: 2px solid var(--primary-solid);
             border-radius: 50%;
             animation: orbit 15s linear infinite;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1; /* atrás do bloco de logos */
+        }
+
+        /* Segundo anel sutil para brilho e profundidade */
+        .logo-orbit::after {
+            content: "";
+            position: absolute;
+            inset: -8px;
+            border: 2px solid transparent;
+            border-right: 2px solid var(--accent-solid);
+            border-radius: 50%;
+            animation: orbit 22s linear infinite reverse;
+            opacity: 0.65;
+            filter: drop-shadow(0 0 6px rgba(79, 172, 254, 0.35));
         }
 
         @keyframes orbit {
@@ -239,6 +297,22 @@
             align-items: center;
             justify-content: center;
         }
+
+        /* container específico das duas logos na tela de login */
+        .logo-duo {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--glass-bg-strong);
+            border: 1px solid var(--glass-border);
+            padding: 12px;
+            border-radius: 16px;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.22), inset 0 0 0 1px var(--glass-border), 0 0 35px rgba(102,126,234,0.15);
+        }
+
+        .logo-duo img { width: 72px; height: 72px; object-fit: contain; border-radius: 12px; }
 
         .logo img {
             max-width: 100%;
@@ -269,34 +343,65 @@
             font-weight: 400;
         }
 
+        .tagline {
+            color: var(--text-subtle);
+            font-size: 0.9rem;
+            margin-top: -12px;
+            margin-bottom: var(--space-2xl);
+            letter-spacing: 0.3px;
+        }
+
         /* Formulários */
         .form-group {
             margin-bottom: var(--space-xl);
         }
 
-        .form-group label {
-            display: block;
-            margin-bottom: var(--space-sm);
-            color: var(--text-light);
-            font-weight: 600;
-            font-size: 0.875rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
+        /* Floating labels */
+        .form-group label { display: none; }
 
         .input-container {
             position: relative;
         }
 
+        .field { position: relative; }
+
         .form-input {
             width: 100%;
-            padding: var(--space-lg) var(--space-lg) var(--space-lg) 3.5rem;
+            padding: 20px 3rem 20px 3rem; /* espaço para ícones à esquerda e btn à direita */
             border: 2px solid var(--glass-border);
             border-radius: var(--radius-lg);
             font-size: 1rem;
             background: var(--glass-bg);
             color: var(--text-light);
             transition: all 0.3s ease;
+        }
+
+        .field label.floating {
+            position: absolute;
+            left: 3rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-subtle);
+            font-size: 0.95rem;
+            transition: 0.2s ease;
+            background: linear-gradient(180deg, rgba(15,15,35,0.9), rgba(15,15,35,0.6));
+            padding: 0 6px;
+            border-radius: 6px;
+            pointer-events: none;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-solid);
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2);
+        }
+
+        .form-input:focus + label.floating,
+        .form-input:not(:placeholder-shown) + label.floating {
+            top: 6px;
+            font-size: 0.75rem;
+            color: var(--primary-solid);
+            transform: translateY(0);
         }
 
         .form-input:focus {
@@ -315,7 +420,10 @@
             pointer-events: none;
         }
 
-        .toggle-password {
+    .field:focus-within .input-icon { color: var(--primary-solid); }
+    .field:focus-within .form-input { border-color: var(--primary-solid); box-shadow: 0 0 0 4px rgba(102,126,234,0.2); }
+
+    .toggle-password {
             position: absolute;
             right: 16px;
             top: 50%;
@@ -351,8 +459,36 @@
         }
 
         .remember-me input {
-            accent-color: var(--primary-solid);
+            /* toggle switch style */
+            appearance: none;
+            width: 38px;
+            height: 22px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid var(--glass-border);
+            position: relative;
+            outline: none;
+            transition: all .25s ease;
+            box-shadow: inset 0 2px 6px rgba(0,0,0,0.2);
         }
+        .remember-me input::after {
+            content: "";
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: white;
+            top: 2px; left: 2px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+            transition: transform .25s ease;
+        }
+        .remember-me input:checked {
+            background: linear-gradient(90deg, var(--primary-solid), var(--accent-solid));
+            border-color: rgba(102,126,234,0.6);
+            box-shadow: 0 0 12px rgba(102,126,234,0.35) inset;
+        }
+        .remember-me input:checked::after { transform: translateX(16px); }
+
 
         .forgot-link {
             color: var(--primary-solid);
@@ -362,6 +498,18 @@
 
         .forgot-link:hover {
             text-decoration: underline;
+        }
+
+        /* Caps Lock indicator */
+        .caps-indicator {
+            display: none;
+            margin-top: 8px;
+            font-size: 12px;
+            color: #ffcc66;
+            background: rgba(255, 204, 102, 0.12);
+            border: 1px solid rgba(255, 204, 102, 0.25);
+            padding: 6px 10px;
+            border-radius: 8px;
         }
 
         /* Botão de login */
@@ -380,6 +528,8 @@
             letter-spacing: 1.5px;
             margin-top: var(--space-lg);
             box-shadow: 0 8px 30px rgba(102, 126, 234, 0.3);
+            position: relative;
+            overflow: hidden;
         }
 
         .login-btn:hover {
@@ -387,6 +537,18 @@
             box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5);
             background: var(--secondary);
         }
+
+        /* brilho passando */
+        .login-btn::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(120deg, transparent, rgba(255,255,255,0.25), transparent);
+            transform: translateX(-100%);
+        }
+        .login-btn:hover::after { animation: shine 1.2s ease; }
+
+        @keyframes shine { to { transform: translateX(100%); } }
 
         .login-btn:active {
             transform: translateY(0);
@@ -396,6 +558,25 @@
             opacity: 0.6;
             cursor: not-allowed;
             transform: none;
+        }
+
+        /* Ready state indicator */
+        .login-btn.ready {
+            box-shadow: 0 10px 40px rgba(56,239,125,0.25), 0 0 0 1px rgba(56,239,125,0.35) inset;
+            background: linear-gradient(135deg, #5ee3a2 0%, #38ef7d 100%);
+        }
+        .login-btn.ready::before {
+            content: "ENTER";
+            position: absolute;
+            top: 8px;
+            right: 10px;
+            font-size: 11px;
+            color: rgba(255,255,255,0.85);
+            background: rgba(0,0,0,0.25);
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 2px 6px;
+            border-radius: 6px;
+            letter-spacing: 1px;
         }
 
         /* Loading */
@@ -471,17 +652,16 @@
                 padding: 36px 28px;
             }
 
-            .logo-wrapper {
-                width: 100px;
-                height: 100px;
-            }
+            .logo-wrapper { width: 200px; height: 110px; }
+            .logo-orbit { width: 230px; height: 230px; }
+            .logo-duo img { width: 64px; height: 64px; }
 
             .title {
                 font-size: 28px;
             }
 
             .form-input {
-                padding: 14px 16px 14px 42px;
+                padding: 16px 44px;
                 font-size: 14px;
             }
 
@@ -502,10 +682,9 @@
                 padding: 28px 20px;
             }
 
-            .logo-wrapper {
-                width: 80px;
-                height: 80px;
-            }
+            .logo-wrapper { width: 170px; height: 100px; }
+            .logo-orbit { width: 200px; height: 200px; }
+            .logo-duo img { width: 56px; height: 56px; }
 
             .title {
                 font-size: 24px;
@@ -536,39 +715,44 @@
 
     <div class="login-container">
         <div class="logo-section">
-            <div class="logo-wrapper">
+            <div class="logo-wrapper" style="display:flex;align-items:center;justify-content:center;">
                 <div class="logo-orbit"></div>
-                <div class="logo">
-                    <img src="/LOGOIPPEL.JPEG"
-                         alt="IPPEL Logo"
-                         data-logo-primary="/LOGOIPPEL.JPEG"
+                <!-- Container das duas logos com tamanho controlado para evitar sobreposição -->
+                <div style="position:relative; z-index:2; display:flex; align-items:center; gap:12px; background: var(--glass-bg-strong); border:1px solid var(--glass-border); padding:12px; border-radius:16px;">
+                    <img src="{{ url_for('static', filename='LOGOSQI.jpg') }}" alt="SQI Logo"
+                         style="width:72px;height:72px;object-fit:contain;border-radius:12px;">
+                    <img src="/IPPELLOGO.jpg" alt="IPPEL Logo" class="apply-logo"
+                         data-logo-primary="/IPPELLOGO.jpg"
                          data-logo-fallback1="/IPPELLOGO.jpg"
                          data-logo-fallback2="{{ url_for('static', filename='LOGOSQI.jpg') }}"
-                         onerror="if(this.dataset.try1!=='1'){this.dataset.try1='1'; this.src=this.dataset.logoFallback1;} else if(this.dataset.try2!=='1'){this.dataset.try2='1'; this.src=this.dataset.logoFallback2;} else {this.style.display='none';}">
+                         onerror="if(this.dataset.try1!=='1'){this.dataset.try1='1'; this.src=this.dataset.logoFallback1;} else if(this.dataset.try2!=='1'){this.dataset.try2='1'; this.src=this.dataset.logoFallback2;} else {this.style.display='none';}"
+                         style="width:72px;height:72px;object-fit:contain;border-radius:12px;">
                 </div>
             </div>
             <h1 class="title">Sistema RNC</h1>
             <p class="subtitle">Relatório de Não Conformidades</p>
+            <p class="tagline">Qualidade e Conformidade com SQI • IPPEL</p>
         </div>
 
         <form id="loginForm">
             <div class="form-group">
-                <label for="email">Email</label>
-                <div class="input-container">
-                    <input type="email" id="email" name="email" class="form-input" placeholder="seu@email.com" required autocomplete="email">
+                <div class="input-container field">
                     <i class="fas fa-envelope input-icon"></i>
+                    <input type="email" id="email" name="email" class="form-input" placeholder=" " required autocomplete="email">
+                    <label for="email" class="floating">Email</label>
                 </div>
             </div>
 
             <div class="form-group">
-                <label for="password">Senha</label>
-                <div class="input-container">
-                    <input type="password" id="password" name="password" class="form-input" placeholder="••••••••" required autocomplete="current-password">
+                <div class="input-container field">
                     <i class="fas fa-lock input-icon"></i>
+                    <input type="password" id="password" name="password" class="form-input" placeholder=" " required autocomplete="current-password">
+                    <label for="password" class="floating">Senha</label>
                     <button type="button" class="toggle-password" id="togglePassword" aria-label="Mostrar senha">
                         <i class="far fa-eye" id="toggleEye"></i>
                     </button>
                 </div>
+                <div id="capsIndicator" class="caps-indicator">Caps Lock está ativado</div>
                 <div class="form-extras">
                     <label class="remember-me">
                         <input type="checkbox" id="rememberMe"> 
@@ -614,6 +798,16 @@
                 eyeIcon.classList.add('fa-eye');
             }
         });
+
+        // Caps Lock indicator
+        const passwordEl = document.getElementById('password');
+        const capsEl = document.getElementById('capsIndicator');
+        passwordEl.addEventListener('keydown', (e) => {
+            // some browsers expose getModifierState
+            const on = e.getModifierState && e.getModifierState('CapsLock');
+            capsEl.style.display = on ? 'block' : 'none';
+        });
+        passwordEl.addEventListener('blur', () => { capsEl.style.display = 'none'; });
 
         // Recuperar senha
         document.getElementById('forgotLink').addEventListener('click', function(e) {
@@ -692,6 +886,46 @@
                 document.getElementById('email').focus();
             }, 500);
         });
+
+        // Toggle ready state when fields are filled
+        (function(){
+            const email = document.getElementById('email');
+            const pwd = document.getElementById('password');
+            const btn = document.getElementById('loginButton');
+            const isFilled = () => email.value.trim() && pwd.value.trim();
+            const update = () => {
+                btn.classList.toggle('ready', !!isFilled());
+            };
+            email.addEventListener('input', update);
+            pwd.addEventListener('input', update);
+            update();
+        })();
+
+        // 3D tilt + mouse light on login card
+        (function(){
+            const card = document.querySelector('.login-container');
+            function onMove(e){
+                const rect = card.getBoundingClientRect();
+                const cx = rect.left + rect.width/2;
+                const cy = rect.top + rect.height/2;
+                const dx = (e.clientX - cx) / rect.width;
+                const dy = (e.clientY - cy) / rect.height;
+                const rx = (dy * -8).toFixed(2) + 'deg';
+                const ry = (dx * 10).toFixed(2) + 'deg';
+                card.style.setProperty('--rx', rx);
+                card.style.setProperty('--ry', ry);
+                card.style.setProperty('--mx', (e.clientX - rect.left) + 'px');
+                card.style.setProperty('--my', (e.clientY - rect.top) + 'px');
+            }
+            function reset(){
+                card.style.setProperty('--rx', '0deg');
+                card.style.setProperty('--ry', '0deg');
+                card.style.setProperty('--mx', '-100px');
+                card.style.setProperty('--my', '-100px');
+            }
+            card.addEventListener('mousemove', onMove);
+            card.addEventListener('mouseleave', reset);
+        })();
     </script>
 </body>
 </html>

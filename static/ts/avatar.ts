@@ -42,7 +42,7 @@ export async function uploadAvatar(file: File): Promise<string | null> {
   return (data && (data['url'] as string)) || null;
 }
 
-// Small helper to wire an input[type=file]
+// Small helper function to wire an input[type=file]
 export function wireAvatarFileInput(input: HTMLInputElement, imgPreview?: HTMLImageElement) {
   input.addEventListener('change', async () => {
     const file = input.files?.[0];

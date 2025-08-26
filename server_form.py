@@ -818,7 +818,14 @@ def start_backup_scheduler(interval_seconds: int = 43200) -> None:
             try:
                 # Snapshot para arquivo com timestamp
                 ts = datetime.now().strftime('%Y%m%d_%H%M%S')
-                dest = os.path.join(os.path.dirname(os.path.abspath(__file__)), f"ippel_system_backup_{ts}.db")
+                # Diretório de backup: variável de ambiente IPPEL_BACKUP_DIR (se definida) ou caminho padrão solicitado
+                dest_dir = os.environ.get('IPPEL_BACKUP_DIR', r"G:\My Drive\BACKUP BANCO DE DADOS IPPEL")
+                try:
+                    os.makedirs(dest_dir, exist_ok=True)
+                except Exception:
+                    # Fallback: se não conseguir criar o diretório desejado, usar a pasta do projeto
+                    dest_dir = os.path.dirname(os.path.abspath(__file__))
+                dest = os.path.join(dest_dir, f"ippel_system_backup_{ts}.db")
                 src = sqlite3.connect(DB_PATH, timeout=30.0)
                 dst = sqlite3.connect(dest, timeout=30.0)
                 with dst:

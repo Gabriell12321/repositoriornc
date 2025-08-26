@@ -36,7 +36,8 @@ async fn sanitize(mut payload: Multipart) -> actix_web::Result<HttpResponse> {
         return Ok(HttpResponse::BadRequest().json(ErrorResponse{ success: false, message: "Arquivo ausente" }));
     }
 
-    let reader = Cursor::new(&data);
+    // Keep a reader if needed for future extensions; silence unused warning
+    let _reader = Cursor::new(&data);
     let img = match image::load_from_memory(&data) {
         Ok(i) => i,
         Err(e) => {
@@ -52,26 +53,25 @@ async fn sanitize(mut payload: Multipart) -> actix_web::Result<HttpResponse> {
 
     let resized: DynamicImage = img.resize(256, 256, FilterType::Lanczos3);
 
-    // Prefer WEBP output, fallback to PNG
-    let mut out = Vec::new();
-    let mut cursor = Cursor::new(&mut out);
-    let mut ok_webp = true;
-    if let Err(e) = resized.write_to(&mut cursor, ImageFormat::WebP) {
-        ok_webp = false;
-        error!(?e, "erro ao escrever webp; tentando png");
-    }
-    if !ok_webp {
-        out.clear();
-        cursor.set_position(0);
-        if let Err(e) = resized.write_to(&mut cursor, ImageFormat::Png) {
-            error!(?e, "erro ao escrever png");
-            return Ok(HttpResponse::InternalServerError().json(ErrorResponse{ success: false, message: "Falha no processamento" }));
+    // Prefer WEBP output, fallback to PNG (use separate buffers to avoid E0499)
+    let (out, content_type) = {
+        let mut out_webp: Vec<u8> = Vec::new();
+        match resized.write_to(&mut Cursor::new(&mut out_webp), ImageFormat::WebP) {
+            Ok(_) => (out_webp, "image/webp"),
+            Err(e) => {
+                error!(?e, "erro ao escrever webp; tentando png");
+                let mut out_png: Vec<u8> = Vec::new();
+                if let Err(e2) = resized.write_to(&mut Cursor::new(&mut out_png), ImageFormat::Png) {
+                    error!(?e2, "erro ao escrever png");
+                    return Ok(HttpResponse::InternalServerError()
+                        .json(ErrorResponse{ success: false, message: "Falha no processamento" }));
+                }
+                (out_png, "image/png")
+            }
         }
-    }
+    };
 
-    Ok(HttpResponse::Ok()
-        .content_type(if ok_webp { "image/webp" } else { "image/png" })
-        .body(out))
+    Ok(HttpResponse::Ok().content_type(content_type).body(out))
 }
 
 #[actix_web::main]
@@ -80,15 +80,24 @@ async fn main() -> std::io::Result<()> {
         .with_env_filter("info")
         .init();
 
-    let addr = std::env::var("RUST_IMAGES_ADDR").unwrap_or_else(|_| "127.0.0.1:8081".to_string());
-    info!(%addr, "rust image service starting");
+    let addr_raw = std::env::var("RUST_IMAGES_ADDR").unwrap_or_else(|_| "127.0.0.1:8081".to_string());
+    let addr_trim = addr_raw.trim();
+    // Parse "host:port" robustly and fallback to defaults if needed
+    let (host, port): (String, u16) = match addr_trim.rsplit_once(':') {
+        Some((h, p_str)) => match p_str.trim().parse::<u16>() {
+            Ok(p) if p > 0 => (h.trim().to_string(), p),
+            _ => ("127.0.0.1".to_string(), 8081),
+        },
+        None => (addr_trim.to_string(), 8081),
+    };
+    info!(host=%host, port=%port, "rust image service starting");
 
     HttpServer::new(|| {
         App::new()
             .route("/health", web::get().to(health))
             .route("/sanitize", web::post().to(sanitize))
     })
-    .bind(addr)?
+    .bind((host, port))?
     .run()
     .await
 }

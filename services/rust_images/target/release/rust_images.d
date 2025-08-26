@@ -1,0 +1,1 @@
+G:\My\ Drive\Trabalhos\ pendentes\rncs\RELATORIO\ DE\ NÃO\ CONFORMIDADE\ IPPEL\services\rust_images\target\release\rust_images.exe: G:\My\ Drive\Trabalhos\ pendentes\rncs\RELATORIO\ DE\ NÃO\ CONFORMIDADE\ IPPEL\services\rust_images\src\main.rs

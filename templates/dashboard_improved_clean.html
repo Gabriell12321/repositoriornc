@@ -1077,8 +1077,13 @@
         <div class="left-section">
             <!-- Header -->
             <div class="header">
-                <div class="logo">
-                    <img src="/LOGOSQI.jpg" alt="IPPEL Logo">
+                <div class="logo" style="gap:12px;">
+                    <img src="{{ url_for('static', filename='LOGOSQI.jpg') }}" alt="SQI Logo">
+                    <img src="/IPPELLOGO.jpg" alt="IPPEL Logo" class="apply-logo"
+                         data-logo-primary="/IPPELLOGO.jpg"
+                         data-logo-fallback1="/IPPELLOGO.jpg"
+                         data-logo-fallback2="{{ url_for('static', filename='LOGOSQI.jpg') }}"
+                         onerror="if(this.dataset.try1!=='1'){this.dataset.try1='1'; this.src=this.dataset.logoFallback1;} else if(this.dataset.try2!=='1'){this.dataset.try2='1'; this.src=this.dataset.logoFallback2;} else {this.style.display='none';}">
                     <h1>IPPEL RNC System</h1>
                 </div>
                 <div style="display: flex; align-items: center; gap: 15px;">

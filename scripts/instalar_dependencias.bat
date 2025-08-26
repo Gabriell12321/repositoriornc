@@ -1,113 +1,124 @@
+title IPPEL - Instalador de Dependências
 @echo off
 chcp 65001 >nul
+setlocal EnableExtensions EnableDelayedExpansion
 title IPPEL - Instalador de Dependências
-cd /d "%~dp0"
+
+rem Detectar raiz (pasta pai de \scripts)
+for %%I in ("%~dp0..") do set "ROOT=%%~fI"
+if "%ROOT:~-1%"=="\" set "ROOT=%ROOT:~0,-1%"
+pushd "%ROOT%" >nul 2>&1 || ( echo [ERRO] Nao consegui acessar a raiz: "%ROOT%" & pause & exit /b 1 )
 
 echo.
 echo ========================================
-echo    📦 IPPEL - Instalador de Dependências
+echo    IPPEL - Instalador de Dependencias
 echo ========================================
+echo Raiz: %ROOT%
 echo.
 
-:: Verificar se Python está instalado
-echo 🔍 Verificando Python...
-python --version >nul 2>&1
-if %errorlevel% neq 0 (
-    echo ❌ Python não encontrado!
-    echo.
-    echo 📥 Baixe e instale o Python em: https://www.python.org/downloads/
-    echo ⚠️  Certifique-se de marcar "Add Python to PATH" durante a instalação
-    echo.
-    pause
-    exit /b 1
+rem === Python / venv ===
+echo [1/5] Verificando/CRIANDO ambiente Python (.venv)...
+if not exist "%ROOT%\.venv\Scripts\python.exe" (
+    where py >nul 2>&1 && (
+        echo  - Criando venv com py -3...
+        py -3 -m venv "%ROOT%\.venv"
+    ) || (
+        echo [ERRO] py.exe nao encontrado. Instale Python 3 e tente novamente: https://www.python.org/downloads/
+        pause & exit /b 1
+    )
+)
+set "PY=%ROOT%\.venv\Scripts\python.exe"
+set "PIP=%ROOT%\.venv\Scripts\pip.exe"
+
+echo  - Atualizando pip/setuptools/wheel...
+"%PY%" -m pip install --upgrade pip setuptools wheel
+if errorlevel 1 echo  - [AVISO] Falha ao atualizar pip; continuando...
+
+echo  - Instalando dependencias de requirements.txt...
+"%PIP%" install -r "%ROOT%\requirements.txt"
+if errorlevel 1 (
+    echo [ERRO] Falha ao instalar requirements.txt
+    pause & exit /b 1
 )
 
-:: Verificar se pip está disponível
-echo 🔍 Verificando pip...
-pip --version >nul 2>&1
-if %errorlevel% neq 0 (
-    echo ❌ pip não encontrado!
-    echo.
-    echo 📥 Reinstale o Python marcando "Add Python to PATH"
-    echo.
-    pause
-    exit /b 1
+if exist "%ROOT%\requirements_production.txt" (
+    echo  - Instalando extras de producao (opcional)...
+    "%PIP%" install -r "%ROOT%\requirements_production.txt" || echo  - [AVISO] Alguns pacotes de producao falharam (ok no Windows)
 )
 
-echo ✅ Python e pip encontrados!
-echo.
-
-:: Atualizar pip, setuptools e wheel
-echo 🔄 Atualizando pip, setuptools e wheel...
-python -m pip install --upgrade pip setuptools wheel
-if %errorlevel% neq 0 (
-    echo ⚠️  Erro ao atualizar pip, continuando...
-    echo.
+echo  - Verificando pacotes principais...
+"%PY%" -c "import flask,requests,PIL,flask_socketio,flask_compress; print('OK')" >nul 2>&1 || (
+    echo [ERRO] Falta pacote Python essencial. Veja erros acima.
+    pause & exit /b 1
 )
 
-:: Corrigir conflito do psutil (limpeza e reinstalação)
-echo 🧹 Corrigindo possíveis conflitos do psutil...
-pip uninstall -y psutil >nul 2>&1
-pip uninstall -y psutil >nul 2>&1
-python -c "import site,glob,os,shutil;paths=set(site.getsitepackages()+[site.getusersitepackages()]);
-import itertools; 
-files=list(itertools.chain.from_iterable([glob.glob(p+'\\\
-psutil*') for p in paths]));
-[
-    (shutil.rmtree(f, True) if os.path.isdir(f) else (os.remove(f) if os.path.exists(f) else None))
-    for f in files
-]" >nul 2>&1
-pip install --no-cache-dir --force-reinstall psutil
-if %errorlevel% neq 0 (
-    echo ❌ Falha ao reinstalar psutil
-    echo Tente executar este instalador como Administrador.
-    pause
-    exit /b 1
+rem === Kotlin / Gradle ===
+echo.
+echo [2/5] Preparando servico Kotlin (se Java instalado)...
+java -version >nul 2>&1
+if errorlevel 1 (
+    echo  - Java nao encontrado. Pulando build Kotlin.
+) else (
+    if exist "%ROOT%\services\kotlin_utils\gradlew.bat" (
+        pushd "%ROOT%\services\kotlin_utils" >nul
+        echo  - Baixando dependencias Gradle (primeira vez pode demorar)...
+        cmd /d /c gradlew.bat -v >nul 2>&1
+        cmd /d /c gradlew.bat build -x test
+        if errorlevel 1 (
+            echo  - [AVISO] build Kotlin falhou (o servico pode ainda iniciar com gradlew run); verifique logs ao iniciar.
+        ) else (
+            echo  - Kotlin pronto.
+        )
+        popd >nul
+    ) else (
+        echo  - Servico Kotlin nao encontrado. Pulando.
+    )
 )
 
-:: Instalar dependências principais e utilitários de rede/compressão
-echo 📦 Instalando dependências principais...
-pip install --upgrade flask Flask-SocketIO python-socketio python-engineio flask-compress requests
-if %errorlevel% neq 0 (
-    echo ❌ Erro ao instalar Flask!
-    echo.
-    pause
-    exit /b 1
+rem === Rust ===
+echo.
+echo [3/5] Preparando servico Rust...
+cargo --version >nul 2>&1
+if errorlevel 1 (
+    echo  - Cargo nao encontrado. Pulando build Rust (sera compilado ao rodar).
+) else (
+    if exist "%ROOT%\services\rust_images\Cargo.toml" (
+        pushd "%ROOT%\services\rust_images" >nul
+        echo  - Compilando release (pode demorar apenas na primeira vez)...
+        cmd /d /c cargo build --release
+        if errorlevel 1 (
+            echo  - [AVISO] build Rust falhou; sera tentado compilar na hora do start.
+        ) else (
+            echo  - Rust pronto.
+        )
+        popd >nul
+    ) else (
+        echo  - Servico Rust nao encontrado. Pulando.
+    )
 )
 
-:: Instalar dependências de produção (opcionais em Windows)
-echo 📦 Instalando dependências de produção...
-pip install --upgrade gunicorn eventlet python-dateutil
-if %errorlevel% neq 0 (
-    echo ⚠️  Erro ao instalar algumas dependências de produção!
-    echo.
-    echo 💡 O servidor funcionará em modo desenvolvimento
-    echo.
-)
+rem === Checagem rapida ===
+echo.
+echo [4/5] Checando imports Python...
+"%PY%" - <<PY
+import sys
+mods = [
+    'flask','flask_socketio','python_socketio','python_engineio','flask_compress',
+    'requests','PIL','cssmin','rjsmin','jwt','psutil']
+missing=[]
+for m in mods:
+    try:
+        __import__(m)
+    except Exception as e:
+        missing.append((m,str(e)))
+print('OK' if not missing else 'MISSING:'+str(missing))
+PY
 
-:: Verificar instalação
-echo 🔍 Verificando instalação...
-python -c "import flask; print('✅ Flask instalado')" 2>nul || echo ❌ Flask não instalado
-python -c "import flask_socketio; print('✅ Flask-SocketIO instalado')" 2>nul || echo ❌ Flask-SocketIO não instalado
-python -c "import socketio; print('✅ python-socketio instalado')" 2>nul || echo ❌ python-socketio não instalado
-python -c "import engineio; print('✅ python-engineio instalado')" 2>nul || echo ❌ python-engineio não instalado
-python -c "import flask_compress; print('✅ Flask-Compress instalado')" 2>nul || echo ❌ Flask-Compress não instalado
-python -c "import psutil,sys; print('✅ psutil instalado, versão:', psutil.__version__)" 2>nul || echo ❌ psutil não instalado
-python -c "import eventlet; print('✅ Eventlet instalado')" 2>nul || echo ⚠️ Eventlet não instalado (opcional em Windows)
-python -c "import gunicorn; print('✅ Gunicorn instalado')" 2>nul || echo ⚠️ Gunicorn não instalado (opcional em Windows)
+rem === Final ===
 echo.
-echo 🎉 Verificação concluída!
-
+echo [5/5] Concluido.
+echo  - Venv: %PY%
+echo  - Para iniciar tudo: iniciar_todos_definitivo.bat
+echo  - Para iniciar apenas backend: scripts\run_backend_only.bat
 echo.
-echo ========================================
-echo    ✅ Instalação Concluída!
-echo ========================================
-echo.
-echo 🚀 Agora você pode executar:
-echo    - iniciar_servidor_ippel.bat (recomendado)
-echo    - iniciar_servidor_simples.bat
-echo.
-echo 📱 O servidor estará disponível em: http://localhost:5001
-echo 🌐 Para acesso em rede, use o IP da máquina: http://SEU_IP:5001
-echo.
-pause 
+pause

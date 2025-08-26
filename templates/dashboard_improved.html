@@ -1302,7 +1302,9 @@
                     };
                 }
                 window.addEventListener('DOMContentLoaded', function(){
-                    document.querySelectorAll('img[alt*="Logo" i], img.logo, .logo img').forEach(applyLogo);
+                    // Apply the auto-swap logic ONLY to explicitly marked images,
+                    // so we can show multiple logos (e.g., IPPEL + SQI) side by side without overriding.
+                    document.querySelectorAll('img.apply-logo, img[data-apply-logo="1"]').forEach(applyLogo);
                 });
             })();
         </script>
@@ -1312,12 +1314,15 @@
             <!-- Header -->
             <div class="header">
                 <div class="logo">
-                <img src="/LOGOIPPEL.JPEG"
-                    alt="IPPEL Logo"
-                    data-logo-primary="/LOGOIPPEL.JPEG"
-                    data-logo-fallback1="/IPPELLOGO.jpg"
-                    data-logo-fallback2="{{ url_for('static', filename='LOGOSQI.jpg') }}"
-                    onerror="if(this.dataset.try1!=='1'){this.dataset.try1='1'; this.src=this.dataset.logoFallback1;} else if(this.dataset.try2!=='1'){this.dataset.try2='1'; this.src=this.dataset.logoFallback2;} else {this.style.display='none';}">
+                    <!-- SQI logo (à esquerda) -->
+                    <img src="{{ url_for('static', filename='LOGOSQI.jpg') }}" alt="SQI Logo">
+                    <!-- IPPEL logo (à direita da SQI) -->
+                    <img class="apply-logo" src="/IPPELLOGO.jpg"
+                        alt="IPPEL Logo"
+                        data-logo-primary="/IPPELLOGO.jpg"
+                        data-logo-fallback1="/IPPELLOGO.jpg"
+                        data-logo-fallback2="{{ url_for('static', filename='LOGOSQI.jpg') }}"
+                        onerror="if(this.dataset.try1!=='1'){this.dataset.try1='1'; this.src=this.dataset.logoFallback1;} else if(this.dataset.try2!=='1'){this.dataset.try2='1'; this.src=this.dataset.logoFallback2;} else {this.style.display='none';}">
                     <h1>IPPEL RNC System</h1>
                 </div>
                 <div style="display: flex; align-items: center; gap: 15px;">

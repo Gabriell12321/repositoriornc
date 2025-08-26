@@ -696,12 +696,13 @@ document.addEventListener('DOMContentLoaded', () => {
     <div class="main-container">
         <div class="left-section">
             <div class="header fade-in">
-                <div class="logo">
-                <img src="/LOGOIPPEL.JPEG" alt="IPPEL Logo"
-                    data-logo-primary="/LOGOIPPEL.JPEG"
-                    data-logo-fallback1="/IPPELLOGO.jpg"
-                    data-logo-fallback2="/LOGOSQI.jpg"
-                    onerror="if(this.dataset.try1!=='1'){this.dataset.try1='1'; this.src=this.dataset.logoFallback1;} else if(this.dataset.try2!=='1'){this.dataset.try2='1'; this.src=this.dataset.logoFallback2;} else {this.style.display='none';}">
+                <div class="logo" style="gap:12px;">
+                    <img src="{{ url_for('static', filename='LOGOSQI.jpg') }}" alt="SQI Logo">
+                    <img src="/IPPELLOGO.jpg" alt="IPPEL Logo" class="apply-logo"
+                         data-logo-primary="/IPPELLOGO.jpg"
+                         data-logo-fallback1="/IPPELLOGO.jpg"
+                         data-logo-fallback2="{{ url_for('static', filename='LOGOSQI.jpg') }}"
+                         onerror="if(this.dataset.try1!=='1'){this.dataset.try1='1'; this.src=this.dataset.logoFallback1;} else if(this.dataset.try2!=='1'){this.dataset.try2='1'; this.src=this.dataset.logoFallback2;} else {this.style.display='none';}">
                     <h1>IPPEL</h1>
                 </div>
                 <div class="group-selector">
