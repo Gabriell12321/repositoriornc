@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 setlocal EnableExtensions EnableDelayedExpansion
 
 REM Detecta a raiz do repositório com base na pasta deste script (.. de scripts)
@@ -21,6 +22,17 @@ if errorlevel 1 (
   popd >nul 2>&1
   exit /b 1
 )
+
+REM Limpar locks problemáticos
+if exist ".git\index.lock" (
+  echo Removendo index.lock...
+  del /f /q ".git\index.lock" 2>nul
+)
+
+REM Abortar operações pendentes
+if exist ".git\MERGE_HEAD" git merge --abort 2>nul
+if exist ".git\REVERT_HEAD" git revert --abort 2>nul
+if exist ".git\CHERRY_PICK_HEAD" git cherry-pick --abort 2>nul
 
 REM Mensagem do commit: aceita parametro ou pergunta ao usuario
 set "MSG="
