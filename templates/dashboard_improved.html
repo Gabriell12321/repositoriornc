@@ -2159,17 +2159,23 @@
         
 
         
-        // Carregar RNCs
-        async function loadRNCs(tab = 'active', forceRefresh = false) {
+    // Estado de paginação do dashboard melhorado
+    let __nextCursor = null;
+    let __hasMore = false;
+    let __isLoading = false;
+    const __PAGE_LIMIT = 500;
+
+    // Carregar RNCs
+    async function loadRNCs(tab = 'active', forceRefresh = false) {
             console.log(`🔄 Carregando RNCs para aba: ${tab} ${forceRefresh ? '(FORCE REFRESH)' : ''}`);
             currentTab = tab;
             
             try {
                 // Para a aba Engenharia, carregamos dados da aba finalized e filtramos
                 const apiTab = tab === 'engenharia' ? 'finalized' : tab;
-                console.log(`📡 Fazendo requisição para: /api/rnc/list?tab=${apiTab}`);
+                console.log(`📡 Fazendo requisição para: /api/rnc/list?tab=${apiTab}&limit=${__PAGE_LIMIT}`);
                 // Usar URL relativa para evitar problemas de mixed content/HTTPS
-                const url = `/api/rnc/list?tab=${encodeURIComponent(apiTab)}${forceRefresh ? '&_t=' + Date.now() : ''}`;
+                const url = `/api/rnc/list?tab=${encodeURIComponent(apiTab)}&limit=${__PAGE_LIMIT}${forceRefresh ? '&_t=' + Date.now() : ''}`;
                 const response = await fetch(url, { 
                     credentials: 'include',
                     cache: forceRefresh ? 'no-cache' : 'default',
@@ -2185,6 +2191,8 @@
                 console.log(`📋 Dados recebidos:`, data);
                 
                 if (data.success) {
+                    __nextCursor = data.next_cursor || null;
+                    __hasMore = !!data.has_more;
                     // Se for aba Engenharia, filtrar apenas RNCs de Engenharia
                     if (tab === 'engenharia') {
                         rncsData[tab] = data.rncs.filter(rnc => 
@@ -2212,6 +2220,7 @@
                     } else {
                         console.log(`🎨 Renderizando RNCs para aba ${tab}`);
                         renderRNCs(tab);
+                        renderImprovedLoadMore();
                     }
                     updateCounts();
                 } else {
@@ -2220,6 +2229,7 @@
                     if (!rncsData[tab] || rncsData[tab].length === 0) {
                         try { renderRNCs(tab, []); } catch (_) {}
                     }
+                    renderImprovedLoadMore();
                 }
             } catch (error) {
                 console.error('❌ Erro ao carregar RNCs:', error);
@@ -2227,11 +2237,47 @@
                 if (!rncsData[tab] || rncsData[tab].length === 0) {
                     try { renderRNCs(tab, []); } catch (_) {}
                 }
+                renderImprovedLoadMore();
             }
         }
         
         // Expor loadRNCs globalmente
         window.loadRNCs = loadRNCs;
+
+        async function loadMoreImproved() {
+            if (!__hasMore || __isLoading) return;
+            __isLoading = true;
+            renderImprovedLoadMore();
+            const apiTab = currentTab === 'engenharia' ? 'finalized' : currentTab;
+            const url = `/api/rnc/list?tab=${encodeURIComponent(apiTab)}&limit=${__PAGE_LIMIT}${__nextCursor ? `&cursor=${encodeURIComponent(__nextCursor)}` : ''}`;
+            try {
+                const resp = await fetch(url, { credentials: 'include' });
+                const data = await resp.json();
+                if (data && data.success) {
+                    __nextCursor = data.next_cursor || null;
+                    __hasMore = !!data.has_more;
+                    const chunk = currentTab === 'engenharia'
+                        ? (data.rncs || []).filter(r => r.user_department && r.user_department.toLowerCase().includes('engenharia'))
+                        : (data.rncs || []);
+                    rncsData[currentTab] = (rncsData[currentTab] || []).concat(chunk);
+                    renderRNCs(currentTab);
+                    updateCounts();
+                }
+            } catch (e) {
+                console.error('Falha no load more', e);
+            } finally {
+                __isLoading = false;
+                renderImprovedLoadMore();
+            }
+        }
+
+        function renderImprovedLoadMore() {
+            const el = document.getElementById('improvedLoadMore');
+            if (!el) return;
+            if (__isLoading) { el.innerHTML = '<div class="load-more-info">Carregando...</div>'; return; }
+            if (!__hasMore) { el.innerHTML = ''; return; }
+            el.innerHTML = '<div class="load-more-wrap"><button class="btn btn-primary" onclick="loadMoreImproved()">Carregar mais</button></div>';
+        }
 
         // Função para forçar refresh completo
         async function forceRefreshDashboard() {
