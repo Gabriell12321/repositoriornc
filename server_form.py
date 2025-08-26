@@ -413,6 +413,29 @@ def _jwt_before_request():
     except Exception:
         pass
 
+# =============== Optional Julia Analytics proxy ===============
+try:
+    from services.analytics_client import get_summary as _get_analytics_summary  # type: ignore
+except Exception:
+    _get_analytics_summary = None  # type: ignore
+
+
+@app.get('/api/analytics/summary')
+def api_analytics_summary_proxy():
+    try:
+        if not _get_analytics_summary:
+            return jsonify({'success': False, 'message': 'Analytics client indisponível'}), 404
+        data = _get_analytics_summary()  # may be None if not configured
+        if not data:
+            return jsonify({'success': False, 'message': 'Serviço Analytics não configurado'}), 404
+        return jsonify({'success': True, 'summary': data})
+    except Exception as e:
+        try:
+            logger.error(f"Erro ao obter resumo analytics: {e}")
+        except Exception:
+            pass
+        return jsonify({'success': False, 'message': 'Falha ao consultar analytics'}), 500
+
 # Rota de debug de sessão
 @app.route('/api/debug/session')
 def api_debug_session():

@@ -8,6 +8,7 @@ Dependencies: Pillow
 from __future__ import annotations
 
 import io
+import os
 from typing import Tuple, Optional
 
 try:
@@ -18,6 +19,14 @@ except Exception:  # pragma: no cover - Pillow missing
     ImageOps = None  # type: ignore
     ImageFile = None  # type: ignore
     HAS_PILLOW = False
+
+# Optional Rust service integration
+try:
+    import requests  # type: ignore
+    _HAS_REQUESTS = True
+except Exception:  # pragma: no cover
+    requests = None  # type: ignore
+    _HAS_REQUESTS = False
 
 
 # Guard against decompression bombs
@@ -50,8 +59,22 @@ def sanitize_image(
 
     Returns: (bytes_data, extension_without_dot, (width, height))
     """
+    # Try Rust microservice first if configured
+    rust_url = os.environ.get("RUST_IMAGES_URL")
+    if rust_url and _HAS_REQUESTS:
+        try:
+            resp = requests.post(rust_url.rstrip('/') + '/sanitize', files={"file": ("upload", file_bytes) }, timeout=10)
+            if resp.ok and resp.content:
+                ct = (resp.headers.get('Content-Type') or '').lower()
+                ext = 'webp' if 'webp' in ct else ('png' if 'png' in ct else 'webp')
+                # No dimension data from service; return (0,0) as placeholder
+                return resp.content, ext, (0, 0)
+        except Exception:
+            # fall back to Pillow
+            pass
+
     if not HAS_PILLOW:
-        raise ImageSanitizationError("Pillow not installed")
+        raise ImageSanitizationError("Pillow not installed and Rust service unavailable")
 
     if not file_bytes or len(file_bytes) == 0:
         raise ImageSanitizationError("Empty file")

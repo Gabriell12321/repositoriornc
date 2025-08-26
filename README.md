@@ -205,3 +205,23 @@ transporter.verify(function(error, success) {
 ## 📄 Licença
 
 MIT License - IPPEL 2024 
+
+## Desenvolvimento
+
+- TypeScript
+    - Código-fonte em `static/ts`, saída em `static/compiled`.
+    - Scripts:
+        - `npm run build:ts` — compila uma vez
+        - `npm run watch:ts` — compila em modo watch
+    - Inclua os arquivos gerados no HTML com `asset_url('compiled/arquivo.js')`.
+
+- Julia Analytics (opcional)
+    - Serviço em `services/julia_analytics`
+    - Rodar local:
+        - Instale Julia, então:
+            - `julia --project=. -e "using Pkg; Pkg.instantiate();"`
+            - `julia --project=. src/server.jl`
+    - Endpoints: `GET /health`, `GET /summary`
+    - Variáveis de ambiente no Flask:
+        - `JULIA_ANALYTICS_URL=http://127.0.0.1:8082`
+    - API proxy no Flask: `GET /api/analytics/summary`
