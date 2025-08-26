@@ -225,3 +225,15 @@ MIT License - IPPEL 2024
     - Variáveis de ambiente no Flask:
         - `JULIA_ANALYTICS_URL=http://127.0.0.1:8082`
     - API proxy no Flask: `GET /api/analytics/summary`
+
+    - Go Reports (opcional)
+        - Serviço em `services/go_reports`
+        - Requisitos: Go 1.21+
+        - Rodar local:
+            - `go mod tidy`
+            - `go run .`
+            - Endereço configurável: `GO_REPORTS_ADDR=:8083`
+        - Endpoints: `GET /health`, `GET /reports/rnc/:id.pdf`
+        - Variáveis de ambiente no Flask:
+            - `GO_REPORTS_URL=http://127.0.0.1:8083`
+        - API proxy no Flask: `GET /api/reports/rnc/<id>.pdf`

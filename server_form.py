@@ -436,6 +436,32 @@ def api_analytics_summary_proxy():
             pass
         return jsonify({'success': False, 'message': 'Falha ao consultar analytics'}), 500
 
+# =============== Optional Go Reports proxy ===============
+try:
+    from services.reports_client import get_rnc_pdf as _get_rnc_pdf  # type: ignore
+except Exception:
+    _get_rnc_pdf = None  # type: ignore
+
+
+@app.get('/api/reports/rnc/<int:rnc_id>.pdf')
+def api_reports_rnc_pdf(rnc_id: int):
+    try:
+        if not _get_rnc_pdf:
+            return jsonify({'success': False, 'message': 'Reports client indisponível'}), 404
+        content = _get_rnc_pdf(rnc_id)
+        if not content:
+            return jsonify({'success': False, 'message': 'Serviço de relatórios não configurado'}), 404
+        resp = make_response(content)
+        resp.headers['Content-Type'] = 'application/pdf'
+        resp.headers['Cache-Control'] = 'no-store'
+        return resp
+    except Exception as e:
+        try:
+            logger.error(f"Erro ao obter PDF RNC {rnc_id}: {e}")
+        except Exception:
+            pass
+        return jsonify({'success': False, 'message': 'Falha ao gerar relatório'}), 500
+
 # Rota de debug de sessão
 @app.route('/api/debug/session')
 def api_debug_session():
