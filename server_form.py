@@ -224,11 +224,13 @@ try:
             'connect-src': ["'self'"],
             'manifest-src': ["'self'"],
         }
+        # Importante: não usar nonces enquanto ainda existem event handlers inline,
+        # pois a presença de nonce invalida 'unsafe-inline' para handlers (CSP spec)
         Talisman(
             app,
             force_https=False,
             content_security_policy=csp,
-            content_security_policy_nonce_in=['script-src'],
+            # content_security_policy_nonce_in=['script-src'],  # desabilitado temporariamente
             session_cookie_secure=False,
             frame_options='SAMEORIGIN',
             referrer_policy='no-referrer',
@@ -245,9 +247,10 @@ try:
                     'object-src': "'none'",
                     'form-action': "'self'",
                     'img-src': "'self' data: blob: https://api.dicebear.com",
-                    'style-src': "'self'",  # sem inline
+                    # temporário: permitir inline no report-only para reduzir ruído enquanto migramos
+                    'style-src': "'self' 'unsafe-inline'",
                     'font-src': "'self' data:",
-                    'script-src': "'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com",  # sem inline
+                    'script-src': "'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com",
                     'connect-src': "'self'",
                     'manifest-src': "'self'",
                     'report-uri': "/csp-report",
