@@ -468,9 +468,8 @@ def view_rnc(rnc_id):
             return mapping
         txt_fields = parse_label_map(rnc_dict.get('description') or '')
         is_creator = (session['user_id'] == rnc_data[8])
-        # Para garantir que visualização seja idêntica ao modelo de impressão,
-        # reutilizamos o mesmo template da impressão com um modo de exibição.
-        return render_template('view_rnc_print.html', rnc=rnc_dict, is_creator=is_creator, txt_fields=txt_fields, mode='view')
+        # Visualização passa a usar o novo modelo (modelo.html) com todos os dados
+        return render_template('modelo.html', rnc=rnc_dict, is_creator=is_creator, txt_fields=txt_fields)
     except Exception as e:
         logger.error(f"Erro ao visualizar RNC {rnc_id}: {e}")
         return render_template('error.html', message='Erro interno do sistema')
@@ -624,6 +623,97 @@ def print_rnc(rnc_id):
         return render_template('view_rnc_print.html', rnc=rnc_dict, txt_fields=txt_fields, mode='print')
     except Exception as e:
         logger.error(f"Erro ao gerar página de impressão para RNC {rnc_id}: {e}")
+        return render_template('error.html', message='Erro interno do sistema')
+
+
+@rnc.route('/rnc/<int:rnc_id>/print-modelo')
+def print_rnc_modelo(rnc_id):
+    """Renderiza o novo modelo de impressão (templates/modelo.html) com todos os dados da RNC."""
+    if 'user_id' not in session:
+        return redirect('/')
+    try:
+        # Carregar linha completa com joins para nomes
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT r.*, u.name as user_name, au.name as assigned_user_name
+            FROM rncs r 
+            LEFT JOIN users u ON r.user_id = u.id 
+            LEFT JOIN users au ON r.assigned_user_id = au.id
+            WHERE r.id = ?
+        ''', (rnc_id,))
+        row = cursor.fetchone()
+        columns = [d[0] for d in cursor.description] if cursor.description else []
+        conn.close()
+        if not row:
+            return render_template('error.html', message='RNC não encontrado')
+
+        rnc_dict = dict(zip(columns, row))
+        # Normalizar booleans
+        for key in list(rnc_dict.keys()):
+            if key.startswith('disposition_') or key.startswith('inspection_'):
+                try:
+                    rnc_dict[key] = bool(rnc_dict[key])
+                except Exception:
+                    pass
+
+        # Extrair campos rotulados do description
+        def parse_label_map(text: str):
+            if not text:
+                return {}
+            mapping = {}
+            lines = [ln.strip() for ln in str(text).split('\n') if ln.strip()]
+            for ln in lines:
+                if ':' in ln:
+                    parts = ln.split(':', 1)
+                    if len(parts) == 2:
+                        label = parts[0].strip()
+                        val = parts[1].strip()
+                        normalized_label = label.lower().replace(' ', '').replace('ã', 'a').replace('ç', 'c')
+                        if 'desenho' in normalized_label:
+                            mapping['Desenho'] = val
+                        elif 'mp' in normalized_label:
+                            mapping['MP'] = val
+                        elif 'revisao' in normalized_label or 'revisão' in normalized_label:
+                            mapping['Revisão'] = val
+                        elif 'cv' in normalized_label:
+                            mapping['CV'] = val
+                        elif 'pos' in normalized_label:
+                            mapping['POS'] = val
+                        elif 'conjunto' in normalized_label:
+                            mapping['Conjunto'] = val
+                        elif 'modelo' in normalized_label:
+                            mapping['Modelo'] = val
+                        elif 'quantidade' in normalized_label:
+                            mapping['Quantidade'] = val
+                        elif 'material' in normalized_label:
+                            mapping['Material'] = val
+                        elif 'ordem' in normalized_label and 'compra' in normalized_label:
+                            mapping['OC'] = val
+                        elif 'area' in normalized_label and 'responsavel' in normalized_label:
+                            mapping['Área responsavel'] = val
+                        elif 'descricao' in normalized_label and 'rnc' in normalized_label:
+                            mapping['Descrição da RNC'] = val
+                        elif 'instrucao' in normalized_label and 'retrabalho' in normalized_label:
+                            mapping['Instrução para retrabalho'] = val
+                        elif 'valor' in normalized_label:
+                            mapping['Valor'] = val
+                        elif 'causa' in normalized_label:
+                            mapping['Causa'] = val
+                        elif 'acao' in normalized_label or 'ação' in normalized_label:
+                            mapping['Ação'] = val
+                        else:
+                            mapping[label] = val
+            return mapping
+
+        txt_fields = parse_label_map(rnc_dict.get('description') or '')
+        # Compatibilidade de nomes de depto
+        if 'department' not in rnc_dict or not rnc_dict.get('department'):
+            rnc_dict['department'] = rnc_dict.get('user_department')
+
+        return render_template('modelo.html', rnc=rnc_dict, txt_fields=txt_fields)
+    except Exception as e:
+        logger.error(f"Erro ao renderizar modelo de impressão da RNC {rnc_id}: {e}")
         return render_template('error.html', message='Erro interno do sistema')
 
 

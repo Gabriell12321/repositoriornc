@@ -40,5 +40,8 @@ db/
 # Backups
 backup/
 
+# Local data not meant for VCS
+ARQUIVOS PARA PUXAR INFORMAÇÕES PARA O PAINEL/
+
 # Node
 node_modules/

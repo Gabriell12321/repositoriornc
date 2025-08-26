@@ -5985,7 +5985,7 @@ def get_chart_data():
             JOIN users u ON r.user_id = u.id
             WHERE r.created_at >= ? AND r.is_deleted = 0 AND u.department IS NOT NULL
             GROUP BY u.department
-            ORDER BY count DESC
+            ORDER BY count DESC 
         ''', (limit_date_str,))
         department_data = cursor.fetchall()
         
