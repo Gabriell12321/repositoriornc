@@ -1,3 +1,5 @@
+5caea67 teste2
+01080ee chore: update modelo logos and view fix
 5c9d480 teste
 34c1ffb Versão funcionando
 da9d208 melhorado o docs
@@ -16,5 +18,3 @@ d00ba5c Versão definitiva
 39fcde5 feat(kotlin): add Kotlin Ktor utils service (QR code) with Flask proxy and Python client; docs: README instructions
 63901ca docs(readme): document Go reports microservice and Flask proxy; chore: add Go reports client and proxy route
 081b177 feat(analytics): add Julia analytics microservice with Flask proxy; optional Rust image service integration; docs and deps
-047ac54 chore(ts): add TypeScript setup (tsconfig, sample avatar.ts), scripts, README notes
-733dd0e feat(auth): introduce JWT access/refresh with rotation; middleware to read Bearer; hybrid login returns tokens\n\n- Add services/jwt_auth.py backed by SQLite for refresh revocation\n- Add /api/token/refresh and enhanced /api/login response\n- before_request parses Authorization and sets g.user_id\n- require_permission accepts JWT identity\n- Add PyJWT to requirements
