@@ -154,7 +154,7 @@
             <tbody>
                 <tr>
                     <td>2</td>
-                    <td colspan="3"><div class="text-block">{{ txt_fields.get('Instrução para retrabalho') or '-' }}</div></td>
+                    <td colspan="3"><div class="text-block">{{ rnc.instruction_retrabalho or txt_fields.get('Instrução para retrabalho') or txt_fields.get('Instrucao para retrabalho') or '-' }}</div></td>
                 </tr>
             </tbody>
         </table>
@@ -170,7 +170,7 @@
             <tbody>
                 <tr>
                     <td>3</td>
-                    <td colspan="3"><div class="text-block">{{ txt_fields.get('Causa') or '-' }}</div></td>
+                    <td colspan="3"><div class="text-block">{{ rnc.cause_rnc or txt_fields.get('Causa') or txt_fields.get('Causa da RNC') or '-' }}</div></td>
                 </tr>
             </tbody>
         </table>
@@ -186,7 +186,7 @@
             <tbody>
                 <tr>
                     <td>4</td>
-                    <td colspan="3"><div class="text-block">{{ txt_fields.get('Ação') or '-' }}</div></td>
+                    <td colspan="3"><div class="text-block">{{ rnc.action_rnc or txt_fields.get('Ação') or txt_fields.get('Ação a ser tomada') or '-' }}</div></td>
                 </tr>
             </tbody>
         </table>

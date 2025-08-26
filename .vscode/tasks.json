@@ -1,23 +1,44 @@
 {
+	// Unified tasks file
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"label": "Git: Commit e Push - organização de pasta",
+			"label": "Git: Commit+Push (linguagens pronta)",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-NonInteractive",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-File",
+				"${workspaceFolder}\\.vscode\\push-linguagens.ps1",
+				"-Message",
+				"linguagens pronta"
+			],
+			"options": { "cwd": "${workspaceFolder}" }
+		},
+		{
+			"label": "Git: Commit+Push (descriptive via cmd)",
 			"type": "shell",
 			"command": "cmd",
 			"args": [
 				"/d",
 				"/c",
-				".vscode\\commit_and_push_oranizacao_pasta.bat"
+				"\"${workspaceFolder}\\scripts\\commit_and_push_descriptive.bat\""
 			],
-			"options": {
-				"cwd": "${workspaceFolder}"
-			},
+			"options": { "cwd": "${workspaceFolder}" },
 			"problemMatcher": [],
-			"presentation": {
-				"reveal": "always",
-				"panel": "dedicated"
-			}
+			"presentation": { "reveal": "always", "panel": "dedicated" }
+		},
+		{
+			"label": "Git: Commit e Push - organização de pasta",
+			"type": "shell",
+			"command": "cmd",
+			"args": ["/d", "/c", ".vscode\\commit_and_push_oranizacao_pasta.bat"],
+			"options": { "cwd": "${workspaceFolder}" },
+			"problemMatcher": [],
+			"presentation": { "reveal": "always", "panel": "dedicated" }
 		},
 		{
 			"label": "Git: Push HEAD to origin (cmd)",
@@ -28,65 +49,33 @@
 				"/c",
 				"cd /d \"${workspaceFolder}\" && echo PWD: && cd && echo. && echo REMOTES: && git --no-pager remote -v && echo. && echo BRANCH: && git rev-parse --abbrev-ref HEAD && echo. && echo PUSHING HEAD to origin... && git push -u origin HEAD"
 			],
-			"options": {
-				"cwd": "${workspaceFolder}"
-			},
+			"options": { "cwd": "${workspaceFolder}" },
 			"problemMatcher": [],
-			"presentation": {
-				"reveal": "always",
-				"panel": "dedicated"
-			}
+			"presentation": { "reveal": "always", "panel": "dedicated" }
 		},
 		{
 			"label": "Organizar - Dry Run",
 			"type": "shell",
 			"command": "python",
-			"args": [
-				"organize_root.py",
-				"--dry-run"
-			],
-			"options": {
-				"cwd": "${workspaceFolder}"
-			},
+			"args": ["organize_root.py", "--dry-run"],
+			"options": { "cwd": "${workspaceFolder}" },
 			"problemMatcher": []
 		},
 		{
 			"label": "Organizar - Aplicar (sem JSON)",
 			"type": "shell",
 			"command": "python",
-			"args": [
-				"organize_root.py"
-			],
-			"options": {
-				"cwd": "${workspaceFolder}"
-			},
+			"args": ["organize_root.py"],
+			"options": { "cwd": "${workspaceFolder}" },
 			"problemMatcher": []
 		},
 		{
 			"label": "Organizar - Aplicar (inclusive JSON)",
 			"type": "shell",
 			"command": "python",
-			"args": [
-				"organize_root.py",
-				"--move-json"
-			],
-			"options": {
-				"cwd": "${workspaceFolder}"
-			},
+			"args": ["organize_root.py", "--move-json"],
+			"options": { "cwd": "${workspaceFolder}" },
 			"problemMatcher": []
-		},
-		{
-			"label": "Git: Push HEAD to origin (cmd)",
-			"type": "shell",
-			"command": "cmd",
-			"args": [
-				"/d",
-				"/c",
-				"cd /d \"g:\\My Drive\\Trabalhos pendentes\\rncs\\RELATORIO DE NÃO CONFORMIDADE IPPEL\" && echo PWD: && cd && echo. && echo REMOTES: && git --no-pager remote -v || echo (no remotes) && (git remote get-url origin >NUL 2>&1 || git remote add origin https://github.com/Gabriell12321/repositoriornc.git) && echo. && echo REMOTES AFTER: && git --no-pager remote -v && echo. && echo BRANCH: && git rev-parse --abbrev-ref HEAD && echo. && echo STATUS: && git status -sb && echo. && echo PUSH: && git push -u origin HEAD"
-			],
-			"isBackground": false,
-			"problemMatcher": [],
-			"group": "build"
 		},
 		{
 			"label": "Git: Push versão atual para origin",
@@ -97,130 +86,90 @@
 				"/c",
 				"cd /d \"${workspaceFolder}\" && echo === STATUS ATUAL === && git status -sb && echo. && echo === REMOTES === && git remote -v && echo. && echo === BRANCH === && git rev-parse --abbrev-ref HEAD && echo. && echo === PUSH === && git push origin HEAD"
 			],
+			"options": { "cwd": "${workspaceFolder}" },
 			"problemMatcher": [],
 			"group": "build"
 		},
 		{
-			"label": "Commit and Push: linguagens pronta",
+			"label": "Git: Commit+Push (mensagem via cmd)",
 			"type": "shell",
 			"command": "cmd",
 			"args": [
 				"/d",
 				"/c",
-				"cd /d \"G:\\My Drive\\Trabalhos pendentes\\rncs\\RELATORIO DE NÃO CONFORMIDADE IPPEL\" && echo PWD: && cd && echo. && echo STAGING... && git add -A && echo. && echo COMMIT... && git commit -m \"linguagens pronta\" || echo (no changes to commit) && echo. && echo PUSH... && git push -u origin master && echo. && echo LAST LOCAL COMMIT: && git --no-pager log -1 --pretty=oneline && echo. && echo REMOTE MASTER: && git --no-pager ls-remote --heads origin master"
+				"\"${workspaceFolder}\\scripts\\commit_and_push.bat\" atualização julia"
 			],
-			"problemMatcher": [
-				"$git"
-			]
+			"options": { "cwd": "${workspaceFolder}" },
+			"problemMatcher": [],
+			"presentation": { "reveal": "always", "panel": "dedicated" }
 		},
 		{
-			"label": "Commit+Push (linguagens pronta)",
+			"label": "Git: Commit+Push (perguntar mensagem)",
 			"type": "shell",
 			"command": "cmd",
 			"args": [
 				"/d",
 				"/c",
-				"cd /d \"G:\\My Drive\\Trabalhos pendentes\\rncs\\RELATORIO DE NÃO CONFORMIDADE IPPEL\" && echo PWD: && cd && echo. && echo STAGING... && git add -A && echo. && echo COMMIT... && git commit -m \"linguagens pronta\" || echo (no changes to commit) && echo. && echo PUSH... && git push -u origin master && echo. && echo LAST LOCAL COMMIT: && git --no-pager log -1 --pretty=oneline && echo. && echo REMOTE MASTER: && git --no-pager ls-remote --heads origin master"
+				"\"${workspaceFolder}\\scripts\\enviar github.bat\""
 			],
-			"isBackground": false,
-			"problemMatcher": [
-				"$git"
-			],
-			"group": "build"
+			"options": { "cwd": "${workspaceFolder}" },
+			"problemMatcher": [],
+			"presentation": { "reveal": "always", "panel": "dedicated" }
 		},
 		{
-			"label": "Push to GitHub (non-interactive)",
+			"label": "Julia: Instalar deps (Pkg.instantiate)",
 			"type": "shell",
-			"command": "powershell.exe",
+			"command": "powershell",
 			"args": [
 				"-NoProfile",
 				"-NonInteractive",
 				"-ExecutionPolicy",
 				"Bypass",
 				"-Command",
-				"$ErrorActionPreference='Stop'; Set-Location -LiteralPath 'G:\\My Drive\\Trabalhos pendentes\\rncs\\RELATORIO DE NÃO CONFORMIDADE IPPEL'; git add -A; if ((git diff --cached --name-only).Length -eq 0) { Write-Output 'No staged changes'; } else { git commit -m \"chore(push): atualizar mensagem padrao do script para evitar 'linguagens pronta'\"; }; git push origin HEAD:master; git --no-pager log -1 --oneline;"
+				"& { Set-Location -LiteralPath '${workspaceFolder}\\services\\julia_analytics'; julia --project=. -e \"using Pkg; Pkg.instantiate();\" }"
 			],
-			"problemMatcher": [
-				"$gcc"
-			],
-			"group": "build"
+			"options": { "cwd": "${workspaceFolder}" }
 		},
 		{
-			"label": "Commit+Push Descriptive (bat)",
+			"label": "Julia: Rodar serviço (server.jl)",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-Command",
+				"& { Set-Location -LiteralPath '${workspaceFolder}\\services\\julia_analytics'; $env:JULIA_ANALYTICS_ADDR='127.0.0.1:8082'; julia --project=. src/server.jl }"
+			],
+			"options": { "cwd": "${workspaceFolder}" }
+		},
+		{
+			"label": "Julia: Testes (Pkg.test)",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-NonInteractive",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-Command",
+				"& { Set-Location -LiteralPath '${workspaceFolder}\\services\\julia_analytics'; julia --project=. -e \"using Pkg; Pkg.test();\" }"
+			],
+			"options": { "cwd": "${workspaceFolder}" }
+		}
+		,
+		{
+			"label": "Iniciar: Rust + Kotlin + Julia + IPPEL",
 			"type": "shell",
 			"command": "cmd",
 			"args": [
 				"/d",
 				"/c",
-				"\"G:\\My Drive\\Trabalhos pendentes\\rncs\\RELATORIO DE NÃO CONFORMIDADE IPPEL\\scripts\\commit_and_push_descriptive.bat\""
+				"\"${workspaceFolder}\\scripts\\iniciar_todos.bat\""
 			],
-			"isBackground": false,
+			"options": { "cwd": "${workspaceFolder}" },
 			"problemMatcher": [],
-			"group": "build"
-		},
-		{
-			"label": "Gerar relatório de arquitetura completo",
-			"type": "shell",
-			"command": "python",
-			"args": [
-				"scripts/generate_architecture_report.py"
-			],
-			"problemMatcher": [
-				"$python"
-			],
-			"group": "build"
-		},
-		{
-			"label": "Gerar relatório de arquitetura completo (fix UTC)",
-			"type": "shell",
-			"command": "python",
-			"args": [
-				"scripts/generate_architecture_report.py"
-			],
-			"problemMatcher": [
-				"$python"
-			],
-			"group": "build"
-		},
-		{
-			"label": "Organizar - Aplicar (incluir arquitetura)",
-			"type": "shell",
-			"command": "python",
-			"args": [
-				"organize_root.py"
-			],
-			"group": "build"
-		},
-		{
-			"label": "Organizar - Aplicar (mover big file)",
-			"type": "shell",
-			"command": "python",
-			"args": [
-				"organize_root.py"
-			],
-			"group": "build"
-		},
-		{
-			"label": "Gerar pacote IA (study pack)",
-			"type": "shell",
-			"command": "python",
-			"args": [
-				"-c",
-				"from scripts.generate_architecture_report import list_repo_files, write_ai_study_pack, ROOT; files=list_repo_files(ROOT); write_ai_study_pack(files); print('AI study pack generated.')"
-			],
-			"group": "build"
-		},
-		{
-			"label": "Gerar pacote IA (runner)",
-			"type": "shell",
-			"command": "python",
-			"args": [
-				"scripts/generate_ai_study_pack.py"
-			],
-			"problemMatcher": [
-				"$python"
-			],
-			"group": "build"
+			"presentation": { "reveal": "always", "panel": "dedicated" }
 		}
 	]
 }

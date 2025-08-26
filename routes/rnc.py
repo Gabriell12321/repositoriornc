@@ -100,6 +100,9 @@ def create_rnc():
             'inspection_aprovado': int(data.get('inspection_aprovado', False)),
             'inspection_reprovado': int(data.get('inspection_reprovado', False)),
             'inspection_ver_rnc': data.get('inspection_ver_rnc', ''),
+            'instruction_retrabalho': data.get('instruction_retrabalho', ''),
+            'cause_rnc': data.get('cause_rnc', ''),
+            'action_rnc': data.get('action_rnc', ''),
         }
 
         insert_cols = [c for c in values_by_col.keys() if c in cols]
@@ -168,7 +171,8 @@ def rnc_chat(rnc_id):
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         cursor.execute('''
-            SELECT r.*, u.name as user_name, au.name as assigned_user_name
+         SELECT r.*, u.name as user_name, au.name as assigned_user_name,
+             u.department as user_department, au.department as assigned_user_department
             FROM rncs r
             LEFT JOIN users u ON r.user_id = u.id
             LEFT JOIN users au ON r.assigned_user_id = au.id
@@ -388,9 +392,13 @@ def view_rnc(rnc_id):
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         cursor.execute('''
-            SELECT r.*, u.name as user_name, au.name as assigned_user_name
-            FROM rncs r 
-            LEFT JOIN users u ON r.user_id = u.id 
+            SELECT r.*,
+                   u.name as user_name,
+                   au.name as assigned_user_name,
+                   u.department as user_department,
+                   au.department as assigned_user_department
+            FROM rncs r
+            LEFT JOIN users u ON r.user_id = u.id
             LEFT JOIN users au ON r.assigned_user_id = au.id
             WHERE r.id = ?
         ''', (rnc_id,))
@@ -417,10 +425,12 @@ def view_rnc(rnc_id):
                 'id','rnc_number','title','description','equipment','client','priority','status','user_id','assigned_user_id',
                 'is_deleted','deleted_at','finalized_at','created_at','updated_at','disposition_usar','disposition_retrabalhar',
                 'disposition_rejeitar','disposition_sucata','disposition_devolver_estoque','disposition_devolver_fornecedor',
-                'inspection_aprovado','inspection_reprovado','inspection_ver_rnc','signature_inspection_date','signature_engineering_date',
-                'signature_inspection2_date','signature_inspection_name','signature_engineering_name','signature_inspection2_name','price'
+                'inspection_reprovado','inspection_ver_rnc','signature_inspection_date','signature_engineering_date',
+                'signature_inspection2_date','signature_inspection_name','signature_engineering_name','inspection_aprovado',
+                'signature_inspection2_name','price','department','instruction_retrabalho','cause_rnc','action_rnc'
             ]
-        columns = base_columns + ['user_name', 'assigned_user_name']
+
+        columns = base_columns + ['user_name', 'assigned_user_name', 'user_department', 'assigned_user_department']
 
         if len(rnc_data) < len(columns):
             rnc_data = list(rnc_data) + [None] * (len(columns) - len(rnc_data))
@@ -466,8 +476,18 @@ def view_rnc(rnc_id):
                         else:
                             mapping[label] = val
             return mapping
+
         txt_fields = parse_label_map(rnc_dict.get('description') or '')
-        is_creator = (session['user_id'] == rnc_data[8])
+        # Determinar criador de forma robusta usando o dict (evita dependência do índice da coluna)
+        is_creator = str(session['user_id']) == str(rnc_dict.get('user_id'))
+        
+        # Debug: Log os dados para verificar se estão chegando
+        logger.info(f"DEBUG - RNC {rnc_id}: rnc_number={rnc_dict.get('rnc_number')}, title={rnc_dict.get('title')}")
+        logger.info(f"DEBUG - RNC {rnc_id}: equipment={rnc_dict.get('equipment')}, client={rnc_dict.get('client')}")
+        logger.info(f"DEBUG - RNC {rnc_id}: description length={len(str(rnc_dict.get('description') or ''))}")
+        logger.info(f"DEBUG - RNC {rnc_id}: txt_fields={txt_fields}")
+        logger.info(f"DEBUG - RNC {rnc_id}: signature_inspection_name={rnc_dict.get('signature_inspection_name')}")
+        
         # Visualização passa a usar o novo modelo (modelo.html) com todos os dados
         return render_template('modelo.html', rnc=rnc_dict, is_creator=is_creator, txt_fields=txt_fields)
     except Exception as e:
