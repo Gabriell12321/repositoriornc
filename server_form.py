@@ -495,6 +495,302 @@ def api_utils_qr_png():
             pass
         return jsonify({'success': False, 'message': 'Falha ao gerar QR'}), 500
 
+# =============== Optional Swift Tools proxy ===============
+try:
+    from services.swift_client import sha256 as _swift_sha256  # type: ignore
+except Exception:
+    _swift_sha256 = None  # type: ignore
+
+
+@app.post('/api/utils/hash/sha256')
+def api_utils_hash_sha256():
+    try:
+        if not _swift_sha256:
+            return jsonify({'success': False, 'message': 'Swift tools client indisponível'}), 404
+        text = None
+        if request.is_json:
+            data = request.get_json(silent=True) or {}
+            text = data.get('text')
+        if not text:
+            text = request.form.get('text') or request.data.decode('utf-8', errors='ignore')
+        if not text:
+            return jsonify({'success': False, 'message': 'Parâmetro text é obrigatório'}), 400
+        digest = _swift_sha256(text)
+        if not digest:
+            return jsonify({'success': False, 'message': 'Serviço Swift Tools não configurado'}), 404
+        return jsonify({'success': True, 'sha256': digest})
+    except Exception as e:
+        try:
+            logger.error(f"Erro ao calcular sha256: {e}")
+        except Exception:
+            pass
+        return jsonify({'success': False, 'message': 'Falha ao calcular hash'}), 500
+
+# =============== Optional Scala Tools proxy ===============
+try:
+    from services.scala_client import b64_encode as _scala_b64_encode, b64_decode as _scala_b64_decode  # type: ignore
+except Exception:
+    _scala_b64_encode = None  # type: ignore
+    _scala_b64_decode = None  # type: ignore
+
+
+@app.post('/api/utils/b64/encode')
+def api_utils_b64_encode():
+    try:
+        if not _scala_b64_encode:
+            return jsonify({'success': False, 'message': 'Scala tools client indisponível'}), 404
+        text = request.data.decode('utf-8', errors='ignore')
+        if not text and request.is_json:
+            text = (request.get_json(silent=True) or {}).get('text') or ''
+        if not text:
+            return jsonify({'success': False, 'message': 'Parâmetro texto é obrigatório'}), 400
+        out = _scala_b64_encode(text)
+        if not out:
+            return jsonify({'success': False, 'message': 'Serviço Scala Tools não configurado'}), 404
+        return jsonify({'success': True, 'data': out})
+    except Exception as e:
+        try:
+            logger.error(f"Erro b64 encode: {e}")
+        except Exception:
+            pass
+        return jsonify({'success': False, 'message': 'Falha no encode'}), 500
+
+
+@app.post('/api/utils/b64/decode')
+def api_utils_b64_decode():
+    try:
+        if not _scala_b64_decode:
+            return jsonify({'success': False, 'message': 'Scala tools client indisponível'}), 404
+        text = request.data.decode('utf-8', errors='ignore')
+        if not text and request.is_json:
+            text = (request.get_json(silent=True) or {}).get('data') or ''
+        if not text:
+            return jsonify({'success': False, 'message': 'Parâmetro data é obrigatório'}), 400
+        out = _scala_b64_decode(text)
+        if out is None:
+            return jsonify({'success': False, 'message': 'Serviço Scala Tools não configurado ou base64 inválido'}), 400
+        return jsonify({'success': True, 'data': out})
+    except Exception as e:
+        try:
+            logger.error(f"Erro b64 decode: {e}")
+        except Exception:
+            pass
+        return jsonify({'success': False, 'message': 'Falha no decode'}), 500
+
+# =============== Optional Nim Tools proxy ===============
+try:
+    from services.nim_client import get_uuid as _nim_uuid, get_token as _nim_token  # type: ignore
+except Exception:
+    _nim_uuid = None  # type: ignore
+    _nim_token = None  # type: ignore
+
+
+@app.get('/api/utils/uuid')
+def api_utils_uuid():
+    try:
+        if not _nim_uuid:
+            return jsonify({'success': False, 'message': 'Nim tools client indisponível'}), 404
+        u = _nim_uuid()
+        if not u:
+            return jsonify({'success': False, 'message': 'Serviço Nim Tools não configurado'}), 404
+        return jsonify({'success': True, 'uuid': u})
+    except Exception as e:
+        try:
+            logger.error(f"Erro get uuid: {e}")
+        except Exception:
+            pass
+        return jsonify({'success': False, 'message': 'Falha ao gerar uuid'}), 500
+
+
+@app.get('/api/utils/token')
+def api_utils_token():
+    try:
+        if not _nim_token:
+            return jsonify({'success': False, 'message': 'Nim tools client indisponível'}), 404
+        try:
+            size = int(request.args.get('size', '32'))
+        except Exception:
+            size = 32
+        t = _nim_token(size=size)
+        if not t:
+            return jsonify({'success': False, 'message': 'Serviço Nim Tools não configurado'}), 404
+        return jsonify({'success': True, 'token': t})
+    except Exception as e:
+        try:
+            logger.error(f"Erro get token: {e}")
+        except Exception:
+            pass
+        return jsonify({'success': False, 'message': 'Falha ao gerar token'}), 500
+
+# =============== Optional V Tools proxy ===============
+try:
+    from services.v_client import slugify as _v_slugify  # type: ignore
+except Exception:
+    _v_slugify = None  # type: ignore
+
+
+@app.get('/api/utils/slug')
+def api_utils_slug():
+    try:
+        if not _v_slugify:
+            return jsonify({'success': False, 'message': 'V tools client indisponível'}), 404
+        text = request.args.get('text') or ''
+        if not text:
+            return jsonify({'success': False, 'message': 'Parâmetro text é obrigatório'}), 400
+        s = _v_slugify(text)
+        if not s:
+            return jsonify({'success': False, 'message': 'Serviço V Tools não configurado'}), 404
+        return jsonify({'success': True, 'slug': s})
+    except Exception as e:
+        try:
+            logger.error(f"Erro slug: {e}")
+        except Exception:
+            pass
+        return jsonify({'success': False, 'message': 'Falha ao gerar slug'}), 500
+
+# =============== Optional Haskell Tools proxy ===============
+try:
+    from services.haskell_client import levenshtein as _hs_lev  # type: ignore
+except Exception:
+    _hs_lev = None  # type: ignore
+
+
+@app.post('/api/utils/levenshtein')
+def api_utils_levenshtein():
+    try:
+        if not _hs_lev:
+            return jsonify({'success': False, 'message': 'Haskell tools client indisponível'}), 404
+        a = b = ''
+        if request.is_json:
+            data = request.get_json(silent=True) or {}
+            a = data.get('a') or ''
+            b = data.get('b') or ''
+        if not a or not b:
+            # Try body "a;b"
+            raw = request.data.decode('utf-8', errors='ignore')
+            parts = raw.split(';')
+            if len(parts) >= 2:
+                a, b = parts[0], parts[1]
+        if not a or not b:
+            return jsonify({'success': False, 'message': 'Parâmetros a e b são obrigatórios'}), 400
+        dist = _hs_lev(a, b)
+        if dist is None:
+            return jsonify({'success': False, 'message': 'Serviço Haskell Tools não configurado'}), 404
+        return jsonify({'success': True, 'distance': dist})
+    except Exception as e:
+        try:
+            logger.error(f"Erro levenshtein: {e}")
+        except Exception:
+            pass
+        return jsonify({'success': False, 'message': 'Falha ao calcular distância'}), 500
+
+# =============== Optional Zig Tools proxy ===============
+try:
+    from services.zig_client import xxh3 as _zig_xxh3  # type: ignore
+except Exception:
+    _zig_xxh3 = None  # type: ignore
+
+
+@app.post('/api/utils/xxh3')
+def api_utils_xxh3():
+    try:
+        if not _zig_xxh3:
+            return jsonify({'success': False, 'message': 'Zig tools client indisponível'}), 404
+        text = request.data.decode('utf-8', errors='ignore')
+        if not text and request.is_json:
+            text = (request.get_json(silent=True) or {}).get('text') or ''
+        if not text:
+            return jsonify({'success': False, 'message': 'Parâmetro text é obrigatório'}), 400
+        value = _zig_xxh3(text)
+        if not value:
+            return jsonify({'success': False, 'message': 'Serviço Zig Tools não configurado'}), 404
+        return jsonify({'success': True, 'xxh3': value})
+    except Exception as e:
+        try:
+            logger.error(f"Erro xxh3: {e}")
+        except Exception:
+            pass
+        return jsonify({'success': False, 'message': 'Falha ao calcular xxh3'}), 500
+
+# =============== Optional Crystal Tools proxy ===============
+try:
+    from services.crystal_client import sha256 as _cr_sha256  # type: ignore
+except Exception:
+    _cr_sha256 = None  # type: ignore
+
+
+@app.post('/api/utils/sha256')
+def api_utils_sha256():
+    try:
+        if not _cr_sha256:
+            return jsonify({'success': False, 'message': 'Crystal tools client indisponível'}), 404
+        text = request.data.decode('utf-8', errors='ignore')
+        if not text and request.is_json:
+            text = (request.get_json(silent=True) or {}).get('text') or ''
+        if not text:
+            return jsonify({'success': False, 'message': 'Parâmetro text é obrigatório'}), 400
+        digest = _cr_sha256(text)
+        if not digest:
+            return jsonify({'success': False, 'message': 'Serviço Crystal Tools não configurado'}), 404
+        return jsonify({'success': True, 'sha256': digest})
+    except Exception as e:
+        try:
+            logger.error(f"Erro sha256 (crystal): {e}")
+        except Exception:
+            pass
+        return jsonify({'success': False, 'message': 'Falha ao calcular sha256'}), 500
+
+# =============== Optional Deno Tools proxy ===============
+try:
+    from services.deno_client import url_encode as _deno_encode, url_decode as _deno_decode  # type: ignore
+except Exception:
+    _deno_encode = None  # type: ignore
+    _deno_decode = None  # type: ignore
+
+
+@app.post('/api/utils/url/encode')
+def api_utils_url_encode():
+    try:
+        if not _deno_encode:
+            return jsonify({'success': False, 'message': 'Deno tools client indisponível'}), 404
+        text = request.data.decode('utf-8', errors='ignore')
+        if not text and request.is_json:
+            text = (request.get_json(silent=True) or {}).get('text') or ''
+        if not text:
+            return jsonify({'success': False, 'message': 'Parâmetro text é obrigatório'}), 400
+        out = _deno_encode(text)
+        if out is None:
+            return jsonify({'success': False, 'message': 'Serviço Deno Tools não configurado'}), 404
+        return jsonify({'success': True, 'data': out})
+    except Exception as e:
+        try:
+            logger.error(f"Erro URL encode: {e}")
+        except Exception:
+            pass
+        return jsonify({'success': False, 'message': 'Falha no URL encode'}), 500
+
+
+@app.post('/api/utils/url/decode')
+def api_utils_url_decode():
+    try:
+        if not _deno_decode:
+            return jsonify({'success': False, 'message': 'Deno tools client indisponível'}), 404
+        text = request.data.decode('utf-8', errors='ignore')
+        if not text and request.is_json:
+            text = (request.get_json(silent=True) or {}).get('text') or ''
+        if not text:
+            return jsonify({'success': False, 'message': 'Parâmetro text é obrigatório'}), 400
+        out = _deno_decode(text)
+        if out is None:
+            return jsonify({'success': False, 'message': 'Serviço Deno Tools não configurado ou inválido'}), 404
+        return jsonify({'success': True, 'data': out})
+    except Exception as e:
+        try:
+            logger.error(f"Erro URL decode: {e}")
+        except Exception:
+            pass
+        return jsonify({'success': False, 'message': 'Falha no URL decode'}), 500
+
 # Rota de debug de sessão
 @app.route('/api/debug/session')
 def api_debug_session():

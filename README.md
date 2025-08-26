@@ -248,3 +248,102 @@ MIT License - IPPEL 2024
         - Variáveis de ambiente no Flask:
             - `KOTLIN_UTILS_URL=http://127.0.0.1:8084`
         - API proxy no Flask: `GET /api/utils/qr.png?text=...&size=256`
+
+    - Swift Tools (opcional)
+        - Serviço em `services/swift_tools` (SwiftNIO + CryptoSwift)
+        - Requisitos: Swift 5.9+ (macOS ou WSL/Ubuntu com Swift instalado)
+        - Rodar local (na pasta do serviço):
+            - `swift build`; `swift run`
+            - Config: `SWIFT_TOOLS_HOST=0.0.0.0`, `SWIFT_TOOLS_PORT=8085`
+        - Endpoint esperado pelo client: `POST /hash` (body: texto puro) -> `{ ok: true, sha256: "..." }`
+        - Variáveis de ambiente no Flask:
+            - `SWIFT_TOOLS_URL=http://127.0.0.1:8085`
+        - API proxy no Flask: `POST /api/utils/hash/sha256` (JSON `{text}` ou body texto)
+
+    - Scala Tools (opcional)
+        - Serviço em `services/scala_tools` (Akka HTTP)
+        - Requisitos: Java 11+, sbt 1.10+
+        - Rodar local (na pasta do serviço):
+            - `sbt run`
+            - Config: `SCALA_TOOLS_HOST=0.0.0.0`, `SCALA_TOOLS_PORT=8086`
+        - Endpoints: `GET /health`, `POST /b64/encode` (body texto) -> `{ok,data}`, `POST /b64/decode` (body base64) -> `{ok,data}`
+        - Variáveis de ambiente no Flask:
+            - `SCALA_TOOLS_URL=http://127.0.0.1:8086`
+        - API proxy no Flask:
+            - `POST /api/utils/b64/encode`
+            - `POST /api/utils/b64/decode`
+
+    - Nim Tools (opcional)
+        - Serviço em `services/nim_tools` (Jester)
+        - Requisitos: Nim 1.6+, Nimble
+        - Rodar local (na pasta do serviço):
+            - `nimble run`
+            - Config: `NIM_TOOLS_HOST=0.0.0.0`, `NIM_TOOLS_PORT=8087`
+        - Endpoints: `GET /health`, `GET /uuid`, `GET /token?size=32`
+        - Variáveis de ambiente no Flask:
+            - `NIM_TOOLS_URL=http://127.0.0.1:8087`
+        - API proxy no Flask:
+            - `GET /api/utils/uuid`
+            - `GET /api/utils/token?size=32`
+
+    - V Tools (opcional)
+        - Serviço em `services/v_tools` (vweb)
+        - Requisitos: V 0.4+
+        - Rodar local (na pasta do serviço):
+            - `v run .`
+            - Config: `V_TOOLS_HOST=0.0.0.0`, `V_TOOLS_PORT=8088`
+        - Endpoints: `GET /health`, `GET /slug?text=...`
+        - Variáveis de ambiente no Flask:
+            - `V_TOOLS_URL=http://127.0.0.1:8088`
+        - API proxy no Flask:
+            - `GET /api/utils/slug?text=...`
+
+    - Haskell Tools (opcional)
+        - Serviço em `services/haskell_tools` (Scotty)
+        - Requisitos: GHC + cabal-install ou Stack
+        - Rodar local (na pasta do serviço):
+            - Cabal: `cabal run`
+            - Stack: `stack run`
+            - Config: `HASKELL_TOOLS_HOST=0.0.0.0`, `HASKELL_TOOLS_PORT=8089`
+        - Endpoints: `GET /health`, `POST /levenshtein` (body "a;b")
+        - Variáveis de ambiente no Flask:
+            - `HASKELL_TOOLS_URL=http://127.0.0.1:8089`
+        - API proxy no Flask:
+            - `POST /api/utils/levenshtein` (JSON `{a,b}` ou body "a;b")
+
+    - Zig Tools (opcional)
+        - Serviço em `services/zig_tools` (std.net TCP HTTP minimal)
+        - Requisitos: Zig 0.11+
+        - Rodar local (na pasta do serviço):
+            - `zig build run`
+            - Config: `ZIG_TOOLS_HOST=0.0.0.0`, `ZIG_TOOLS_PORT=8090`
+        - Endpoints: `GET /health`, `POST /xxh3` (body texto)
+        - Variáveis de ambiente no Flask:
+            - `ZIG_TOOLS_URL=http://127.0.0.1:8090`
+        - API proxy no Flask:
+            - `POST /api/utils/xxh3`
+
+    - Crystal Tools (opcional)
+        - Serviço em `services/crystal_tools` (Kemal)
+        - Requisitos: Crystal 1.8+, Shards
+        - Rodar local (na pasta do serviço):
+            - `shards install`; `crystal run src/server.cr`
+            - Config: `CRYSTAL_TOOLS_HOST=0.0.0.0`, `CRYSTAL_TOOLS_PORT=8091`
+        - Endpoints: `GET /health`, `POST /sha256`
+        - Variáveis de ambiente no Flask:
+            - `CRYSTAL_TOOLS_URL=http://127.0.0.1:8091`
+        - API proxy no Flask:
+            - `POST /api/utils/sha256`
+
+    - Deno Tools (opcional)
+        - Serviço em `services/deno_tools`
+        - Requisitos: Deno 1.45+
+        - Rodar local (na pasta do serviço):
+            - `deno run --allow-env --allow-net server.ts`
+            - Config: `DENO_TOOLS_HOST=0.0.0.0`, `DENO_TOOLS_PORT=8092`
+        - Endpoints: `GET /health`, `POST /url/encode`, `POST /url/decode`
+        - Variáveis de ambiente no Flask:
+            - `DENO_TOOLS_URL=http://127.0.0.1:8092`
+        - API proxy no Flask:
+            - `POST /api/utils/url/encode`
+            - `POST /api/utils/url/decode`

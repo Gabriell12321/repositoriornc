@@ -52,7 +52,7 @@ function start_server()
     HTTP.serve(router, addr)
 end
 
-end # module
+end # module #teamo
 
 if abspath(PROGRAM_FILE) == @__FILE__
     using .RNCAnalytics
