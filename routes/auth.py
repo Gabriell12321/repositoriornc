@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, session
+from flask import Blueprint, request, jsonify, session, g
 from werkzeug.security import check_password_hash
 import logging
 
@@ -50,6 +50,7 @@ def login():
                     pass
                 return jsonify({'success': False, 'message': f'Conta temporariamente bloqueada. Tente novamente em {seconds} segundos.'}), 429
         if user_data and check_password_hash(user_data[3], password):
+            # Support both session and JWT during migration: set session AND return tokens
             session['user_id'] = user_data[0]
             session['user_name'] = user_data[1]
             session['user_email'] = user_data[2]
@@ -61,6 +62,19 @@ def login():
                 reset_success(user_data[0])
             except Exception:
                 pass
+            # Issue JWT access/refresh
+            try:
+                import importlib
+                _jwt = importlib.import_module('services.jwt_auth')
+                access, access_exp = _jwt.create_access_token(user_data)
+                refresh, refresh_exp, jti = _jwt.create_refresh_token(
+                    user_data,
+                    user_agent=request.headers.get('User-Agent'),
+                    ip=request.remote_addr,
+                )
+            except Exception:
+                access, access_exp, refresh, refresh_exp = None, None, None, None
+
             resp = jsonify({
                 'success': True,
                 'message': 'Login realizado com sucesso!',
@@ -69,6 +83,12 @@ def login():
                     'name': user_data[1],
                     'email': user_data[2],
                     'department': user_data[4]
+                },
+                'tokens': {
+                    'access': access,
+                    'access_expires': access_exp,
+                    'refresh': refresh,
+                    'refresh_expires': refresh_exp,
                 }
             })
             try:
@@ -112,9 +132,62 @@ def logout():
             try: session.pop(k, None)
             except Exception: pass
         session.clear()
+        # Best-effort: if a refresh token JTI is provided, revoke it
+        try:
+            import importlib
+            _jwt = importlib.import_module('services.jwt_auth')
+            jti = request.headers.get('X-Refresh-JTI')
+            if jti:
+                _jwt.revoke_refresh(jti)
+        except Exception:
+            pass
         resp = jsonify({'success': True, 'message': 'Logout realizado com sucesso!'})
         try: resp.delete_cookie('IPPEL_UID', path='/')
         except Exception: pass
         return resp
     except Exception:
         return jsonify({'success': True})
+
+
+@auth.post('/api/token/refresh')
+@rate_limit("20 per minute")
+def token_refresh():
+    """Rotate refresh token and return new access + refresh.
+    Clients send refresh token in JSON: {refresh: "..."}
+    """
+    try:
+        data = request.get_json(silent=True) or {}
+        old_refresh = data.get('refresh')
+        if not old_refresh:
+            return jsonify({'success': False, 'message': 'Refresh token ausente'}), 400
+
+        import importlib
+        _jwt = importlib.import_module('services.jwt_auth')
+
+        def _user_provider(uid: int):
+            from services.users import get_user_by_id as _get_user_by_id
+            return _get_user_by_id(uid)
+
+        access, access_exp, new_refresh, refresh_exp, uid = _jwt.rotate_refresh(
+            old_refresh,
+            user_agent=request.headers.get('User-Agent'),
+            ip=request.remote_addr,
+            user_row_provider=_user_provider,
+        )
+        return jsonify({
+            'success': True,
+            'tokens': {
+                'access': access,
+                'access_expires': access_exp,
+                'refresh': new_refresh,
+                'refresh_expires': refresh_exp,
+            }
+        })
+    except Exception as e:
+        try:
+            import importlib
+            _sl = importlib.import_module('services.security_log')
+            _sl.sec_log('auth', 'token_refresh', ip=request.remote_addr, status='fail', details={'error': str(e)})
+        except Exception:
+            pass
+        return jsonify({'success': False, 'message': 'Refresh inválido'}), 401

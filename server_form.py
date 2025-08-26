@@ -3,7 +3,7 @@
 
 import sqlite3
 import hashlib
-from flask import Flask, request, jsonify, send_from_directory, session, redirect, url_for, render_template, abort, make_response
+from flask import Flask, request, jsonify, send_from_directory, session, redirect, url_for, render_template, abort, make_response, g
 import socket
 from services.db import DB_PATH, get_db_connection, return_db_connection, warm_pool
 from services.cache import cache_query, get_cached_query, clear_expired_cache, clear_rnc_cache
@@ -387,6 +387,31 @@ logger = logging.getLogger(__name__)
 app.register_blueprint(api_bp)
 app.register_blueprint(auth_bp)
 app.register_blueprint(rnc_bp)
+
+# JWT: parse Authorization Bearer and attach g.user_id if valid
+@app.before_request
+def _jwt_before_request():
+    try:
+        authz = request.headers.get('Authorization') or ''
+        if authz.lower().startswith('bearer '):
+            token = authz.split(' ', 1)[1].strip()
+            try:
+                import importlib
+                _jwt = importlib.import_module('services.jwt_auth')
+                payload = _jwt.decode_token(token, verify_type=None)
+                g.jwt = payload
+                g.user_id = int(payload.get('sub')) if payload.get('sub') is not None else None
+                # For compatibility with existing permission decorators, mirror into session if absent
+                if g.user_id and 'user_id' not in session:
+                    session['user_id'] = g.user_id
+                    session['user_name'] = payload.get('name')
+                    session['user_email'] = payload.get('email')
+                    session['user_department'] = payload.get('department')
+                    session['user_role'] = payload.get('role')
+            except Exception:
+                pass
+    except Exception:
+        pass
 
 # Rota de debug de sessão
 @app.route('/api/debug/session')

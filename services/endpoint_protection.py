@@ -10,7 +10,7 @@ import secrets
 from functools import wraps
 from typing import Callable, Optional
 
-from flask import request, jsonify, session
+from flask import request, jsonify, session, g
 
 
 def ensure_csrf_token() -> str:
@@ -55,7 +55,7 @@ def require_permission(perm_name: str) -> Callable:
     def _dec(func: Callable) -> Callable:
         @wraps(func)
         def _wrap(*args, **kwargs):
-            uid = session.get('user_id')
+            uid = session.get('user_id') or getattr(g, 'user_id', None)
             if not uid or not has_permission(uid, perm_name):
                 return jsonify({'success': False, 'message': 'Sem permissão'}), 403
             return func(*args, **kwargs)
