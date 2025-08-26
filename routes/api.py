@@ -1,5 +1,5 @@
-from flask import Blueprint, request, jsonify, session
-import sqlite3, json, logging
+from flask import Blueprint, request, jsonify, session, current_app
+import sqlite3, json, logging, os, time, secrets
 
 # DB path local para evitar dependência circular; mantido igual ao servidor
 DB_PATH = 'ippel_system.db'
@@ -94,3 +94,68 @@ def update_avatar():
             pass
         return jsonify({'success': False, 'message': 'Erro ao atualizar avatar'}), 500
     
+
+# ============ Avatar image upload (multipart) with sanitization ============
+@api.post('/api/user/avatar/upload')
+@csrf_protect()
+@require_permission('update_avatar')
+def upload_avatar_image():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
+    # Basic checks
+    if 'file' not in request.files:
+        return jsonify({'success': False, 'message': 'Arquivo não enviado (campo file)'}), 400
+    file = request.files['file']
+    if not file or file.filename == '':
+        return jsonify({'success': False, 'message': 'Arquivo inválido'}), 400
+
+    # Read bytes with a hard cap to respect MAX_CONTENT_LENGTH
+    try:
+        data = file.read()
+        if not data:
+            return jsonify({'success': False, 'message': 'Arquivo vazio'}), 400
+        # Guard: additional size check (<= 4MB)
+        if len(data) > 4 * 1024 * 1024:
+            return jsonify({'success': False, 'message': 'Arquivo muito grande'}), 413
+    except Exception:
+        return jsonify({'success': False, 'message': 'Falha ao ler arquivo'}), 400
+
+    # MIME allowlist quick check
+    try:
+        from services.image_utils import sanitize_image, is_allowed_mime, ImageSanitizationError
+        if not is_allowed_mime(file.mimetype):
+            return jsonify({'success': False, 'message': 'Tipo de arquivo não permitido'}), 400
+        sanitized_bytes, ext, size = sanitize_image(data, max_size=(256, 256), out_format='WEBP', quality=85)
+    except ImageSanitizationError as e:
+        return jsonify({'success': False, 'message': str(e)}), 400
+    except Exception as e:
+        try:
+            logger.error(f"Falha na sanitização de avatar: {e}")
+        except Exception:
+            pass
+        return jsonify({'success': False, 'message': 'Falha ao processar imagem'}), 400
+
+    # Persist under static/avatars
+    try:
+        static_dir = current_app.static_folder or os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static')
+        avatars_dir = os.path.join(static_dir, 'avatars')
+        os.makedirs(avatars_dir, exist_ok=True)
+        # Unique name per user and timestamp
+        fname = f"u{session['user_id']}_{int(time.time())}_{secrets.token_hex(4)}.{ext}"
+        out_path = os.path.join(avatars_dir, fname)
+        with open(out_path, 'wb') as f:
+            f.write(sanitized_bytes)
+        # Update user to use ava-image with stored path
+        url_path = f"/static/avatars/{fname}"
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        prefs_json = json.dumps({"image": url_path}, ensure_ascii=False)
+        cursor.execute('UPDATE users SET avatar_key = ?, avatar_prefs = ? WHERE id = ?', ('ava-image', prefs_json, session['user_id']))
+        conn.commit(); conn.close()
+        return jsonify({'success': True, 'avatar': 'ava-image', 'prefs': {'image': url_path}, 'size': {'w': size[0], 'h': size[1]}})
+    except Exception as e:
+        try:
+            logger.error(f"Erro ao salvar avatar do usuário {session.get('user_id')}: {e}")
+        except Exception:
+            pass
+        return jsonify({'success': False, 'message': 'Erro ao salvar imagem'}), 500

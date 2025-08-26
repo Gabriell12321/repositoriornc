@@ -1258,6 +1258,11 @@ def get_all_permissions():
             'description': 'Permite criar novas RNCs no sistema'
         },
         {
+            'name': 'update_avatar',
+            'display_name': 'Atualizar Avatar do Usuário',
+            'description': 'Permite enviar e alterar a imagem de avatar do usuário'
+        },
+        {
             'name': 'edit_own_rnc',
             'display_name': 'Editar Próprias RNCs',
             'description': 'Permite editar RNCs criadas pelo próprio usuário'
