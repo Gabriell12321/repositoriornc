@@ -17,23 +17,25 @@ import com.google.zxing.common.BitMatrix
 
 import java.io.ByteArrayOutputStream
 
+fun Application.kotlinUtilsModule() {
+    install(ContentNegotiation) { json() }
+    routing {
+        get("/health") {
+            call.respond(mapOf("ok" to true))
+        }
+        get("/qr.png") {
+            val text = call.request.queryParameters["text"] ?: return@get call.respond(HttpStatusCode.BadRequest, "missing text")
+            val size = (call.request.queryParameters["size"] ?: "256").toIntOrNull() ?: 256
+            val matrix: BitMatrix = MultiFormatWriter().encode(text, BarcodeFormat.QR_CODE, size, size)
+            val baos = ByteArrayOutputStream()
+            MatrixToImageWriter.writeToStream(matrix, "PNG", baos)
+            call.respondBytes(baos.toByteArray(), ContentType.Image.PNG)
+        }
+    }
+}
+
 fun main() {
     val host = System.getenv("KOTLIN_UTILS_HOST") ?: "0.0.0.0"
     val port = (System.getenv("KOTLIN_UTILS_PORT") ?: "8084").toInt()
-    embeddedServer(Netty, port = port, host = host) {
-        install(ContentNegotiation) { json() }
-        routing {
-            get("/health") {
-                call.respond(mapOf("ok" to true))
-            }
-            get("/qr.png") {
-                val text = call.request.queryParameters["text"] ?: return@get call.respond(HttpStatusCode.BadRequest, "missing text")
-                val size = (call.request.queryParameters["size"] ?: "256").toIntOrNull() ?: 256
-                val matrix: BitMatrix = MultiFormatWriter().encode(text, BarcodeFormat.QR_CODE, size, size)
-                val baos = ByteArrayOutputStream()
-                MatrixToImageWriter.writeToStream(matrix, "PNG", baos)
-                call.respondBytes(baos.toByteArray(), ContentType.Image.PNG)
-            }
-        }
-    }.start(wait = true)
+    embeddedServer(Netty, port = port, host = host, module = Application::kotlinUtilsModule).start(wait = true)
 }

@@ -1,7 +1,9 @@
 @echo off
 chcp 65001 >nul
 title IPPEL - Sistema de Relatórios de Não Conformidade
-cd /d "%~dp0"
+
+REM Ir para a raiz do projeto (pasta acima de scripts)
+pushd "%~dp0.." >nul 2>&1
 
 echo.
 echo ========================================
@@ -57,7 +59,7 @@ if %errorlevel% neq 0 (
 if not exist "server_form.py" (
     echo ❌ Arquivo server_form.py não encontrado!
     echo.
-    echo 📁 Certifique-se de que este arquivo .bat está na mesma pasta do projeto
+    echo 📁 Certifique-se de executar este iniciador a partir da pasta raiz do projeto.
     echo.
     pause
     exit /b 1
@@ -77,22 +79,16 @@ echo.
 set FLASK_ENV=production
 set FLASK_DEBUG=0
 
-:: Tentar iniciar com Gunicorn (produção)
-echo 🔄 Tentando iniciar em modo PRODUÇÃO...
-python start_production.py
-if %errorlevel% neq 0 (
-    echo.
-    echo ⚠️  Erro ao iniciar com Gunicorn, tentando modo desenvolvimento...
-    echo.
-    
-    :: Tentar iniciar em modo desenvolvimento
-    echo 🔄 Iniciando em modo DESENVOLVIMENTO...
-    python -c "import sys; sys.path.append('.'); from server_form import app, socketio; print('🌐 Servidor iniciado em: http://localhost:5001'); print('📱 Acesse no navegador ou compartilhe o IP da máquina'); print('⏹️  Pressione Ctrl+C para parar o servidor'); socketio.run(app, host='0.0.0.0', port=5001, debug=False)"
-)
+:: Iniciar diretamente o servidor principal (server_form.py)
+echo 🔄 Iniciando servidor principal (server_form.py)...
+echo RUST_IMAGES_URL=%RUST_IMAGES_URL%
+echo KOTLIN_UTILS_URL=%KOTLIN_UTILS_URL%
+echo JULIA_ANALYTICS_URL=%JULIA_ANALYTICS_URL%
+python -u server_form.py
 
 echo.
 echo ========================================
 echo    👋 Servidor Encerrado
 echo ========================================
 echo.
-pause 
+pause
