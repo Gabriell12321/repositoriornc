@@ -174,8 +174,10 @@ def rnc_chat(rnc_id):
             LEFT JOIN users au ON r.assigned_user_id = au.id
             WHERE r.id = ?
         ''', (rnc_id,))
-        rnc = cursor.fetchone()
-        if not rnc:
+        rnc_row = cursor.fetchone()
+        # Capturar os nomes das colunas antes de executar outras queries
+        rnc_columns = [d[0] for d in cursor.description] if cursor.description else []
+        if not rnc_row:
             conn.close()
             return render_template('error.html', message='RNC não encontrado'), 404
         cursor.execute('SELECT * FROM users WHERE id = ?', (session['user_id'],))
@@ -189,7 +191,17 @@ def rnc_chat(rnc_id):
         ''', (rnc_id,))
         messages = cursor.fetchall()
         conn.close()
-        return render_template('rnc_chat.html', rnc=rnc, current_user=current_user, messages=messages)
+        # Mapear RNC para dict para acesso via rnc.id / rnc.rnc_number no template
+        rnc_dict = {}
+        try:
+            if rnc_row and rnc_columns:
+                rnc_dict = dict(zip(rnc_columns, rnc_row))
+            else:
+                # Fallback mínimo
+                rnc_dict = {'id': rnc_id}
+        except Exception:
+            rnc_dict = {'id': rnc_id}
+        return render_template('rnc_chat.html', rnc=rnc_dict, current_user=current_user, messages=messages)
     except Exception:
         try:
             conn.close()
@@ -488,7 +500,17 @@ def reply_rnc(rnc_id):
         is_creator = str(session['user_id']) == str(owner_id)
         is_admin = has_permission(session['user_id'], 'admin_access')
         can_reply = has_permission(session['user_id'], 'reply_rncs')
-        if not (is_creator or is_admin or can_reply):
+        # Novo: permitir responder se o RNC foi compartilhado com o usuário (qualquer nível)
+        shared_can_reply = False
+        try:
+            conn_share = sqlite3.connect(DB_PATH)
+            cur_share = conn_share.cursor()
+            cur_share.execute('SELECT 1 FROM rnc_shares WHERE rnc_id = ? AND shared_with_user_id = ? LIMIT 1', (rnc_id, session['user_id']))
+            shared_can_reply = cur_share.fetchone() is not None
+            conn_share.close()
+        except Exception:
+            shared_can_reply = False
+        if not (is_creator or is_admin or can_reply or shared_can_reply):
             return render_template('error.html', message='Acesso negado: você não tem permissão para responder este RNC')
 
         try:
@@ -745,7 +767,15 @@ def update_rnc_api(rnc_id):
                 department_match = True
 
         can_reply = has_permission(session['user_id'], 'reply_rncs')
-        if not (can_edit_all or (can_edit_own and user_is_creator) or has_admin or department_match or can_reply):
+        # Novo: permitir atualização quando o RNC foi compartilhado com o usuário (qualquer nível)
+        is_shared_with_user = False
+        try:
+            cur_shared = conn.cursor()
+            cur_shared.execute('SELECT 1 FROM rnc_shares WHERE rnc_id = ? AND shared_with_user_id = ? LIMIT 1', (rnc_id, session['user_id']))
+            is_shared_with_user = cur_shared.fetchone() is not None
+        except Exception:
+            is_shared_with_user = False
+        if not (can_edit_all or (can_edit_own and user_is_creator) or has_admin or department_match or can_reply or is_shared_with_user):
             logger.warning(f"Acesso negado para edição do RNC {rnc_id}")
             return jsonify({'success': False, 'message': 'Acesso negado: você não tem permissão para editar este RNC'}), 403
 
@@ -925,7 +955,15 @@ def reply_rnc_api(rnc_id):
         is_creator = str(user_id) == str(rnc_creator_id)
         is_admin = has_permission(user_id, 'admin_access')
         can_reply = has_permission(user_id, 'reply_rncs')
-        if not (is_creator or is_admin or can_reply):
+        # Novo: permitir responder se compartilhado com o usuário
+        shared_can_reply = False
+        try:
+            cur_share = conn.cursor()
+            cur_share.execute('SELECT 1 FROM rnc_shares WHERE rnc_id = ? AND shared_with_user_id = ? LIMIT 1', (rnc_id, user_id))
+            shared_can_reply = cur_share.fetchone() is not None
+        except Exception:
+            shared_can_reply = False
+        if not (is_creator or is_admin or can_reply or shared_can_reply):
             conn.close()
             return jsonify({'success': False, 'message': 'Sem permissão para responder esta RNC'}), 403
         cursor.execute('''

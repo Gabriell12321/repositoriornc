@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat RNC - {{ rnc.rnc_number }}</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <!-- Socket.IO local/servidor (evita bloqueio de CSP por CDN). Se estiver servindo socket.io no servidor Flask-SocketIO, este path funciona. -->
+    <script src="/socket.io/socket.io.js"></script>
     <style>
         * {
             margin: 0;
@@ -13,7 +14,10 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            /* Fonte local, sem externa (CSP): */
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+                         Ubuntu, Cantarell, 'Helvetica Neue', Arial, 'Noto Sans',
+                         'Liberation Sans', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             color: #333;
@@ -470,7 +474,13 @@
     </style>
 </head>
 <body>
-    <div class="chat-container fade-in">
+    <div class="chat-container fade-in"
+         data-rnc-id="{{ rnc.id }}"
+         data-rnc-number="{{ rnc.rnc_number or ('RNC-' ~ rnc.id) }}"
+         data-current-user-id="{{ current_user[0] }}"
+         data-current-user-name="{{ current_user[1] }}"
+         data-current-user-dept="{{ current_user[4] or '' }}"
+         data-is-admin="{{ 'true' if current_user[5] == 'admin' else 'false' }}">
         <!-- Cabeçalho do Chat -->
         <div class="chat-header">
             <div class="header-left">
@@ -492,25 +502,23 @@
         <div class="chat-messages" id="chatMessages">
             {% if messages %}
                 {% for message in messages %}
-                <div class="message {% if message[2] == current_user[0] %}own{% endif %} fade-in" data-message-id="{{ message[0] }}" data-user-id="{{ message[2] }}">
+                <div class="message {% if message[1] == current_user[0] %}own{% endif %} fade-in" data-message-id="{{ message[0] }}" data-user-id="{{ message[1] }}">
                     <div class="message-avatar">
-                        {{ message[6][0].upper() if message[6] else 'U' }}
+                        {{ (message[2][0].upper() if message[2] else 'U') if message|length > 2 else 'U' }}
                     </div>
                     <div class="message-content">
                         <div class="message-header">
-                            <span class="message-author">{{ message[6] or 'Usuário' }}</span>
-                            {% if message[7] %}
+                            <span class="message-author">{{ (message[2] if message|length > 2 else '') or 'Usuário' }}</span>
+                            {% if message|length > 7 and message[7] %}
                             <span class="message-department">{{ message[7] }}</span>
                             {% endif %}
                             <span class="message-time">{{ message[5].split(' ')[1][:5] if message[5] else '' }}</span>
                         </div>
                         <div class="message-text">{{ message[3] }}</div>
-                        {% set can_delete = (message[2] == current_user[0]) or (current_user[5] == 'admin') %}
+                        {% set can_delete = (message[1] == current_user[0]) or (current_user[5] == 'admin') %}
                         {% if can_delete %}
                         <div class="message-actions">
-                            <button class="icon-btn delete-btn" onclick="deleteMessage({{ message[0] }})" title="Apagar mensagem" aria-label="Apagar mensagem">
-                                🗑️
-                            </button>
+                            <button class="icon-btn delete-btn" data-message-id="{{ message[0] }}" title="Apagar mensagem" aria-label="Apagar mensagem">🗑️</button>
                         </div>
                         {% endif %}
                     </div>
@@ -564,7 +572,7 @@
                 </div>
                 
                 <!-- Botão de Enviar -->
-                <button id="sendBtn" class="send-btn" onclick="sendMessage()">
+                <button id="sendBtn" class="send-btn">
                     📤 Enviar
                 </button>
             </div>
@@ -586,11 +594,14 @@
 
     <script>
         // Configuração do Socket.IO
-        const socket = io();
-        const rncId = {{ rnc.id }};
-        const currentUserId = {{ current_user[0] }};
-        const currentUserName = '{{ current_user[1] }}';
-        const currentUserDept = '{{ current_user[4] or "" }}';
+    const socket = io();
+    const root = document.querySelector('.chat-container');
+    const rncId = Number(root.dataset.rncId);
+    const rncNumber = root.dataset.rncNumber || `RNC-${root.dataset.rncId}`;
+    const currentUserId = Number(root.dataset.currentUserId);
+    const currentUserName = root.dataset.currentUserName || 'Usuário';
+    const currentUserDept = root.dataset.currentUserDept || '';
+    const isAdmin = root.dataset.isAdmin === 'true';
         
         let isTyping = false;
         let typingTimeout;
@@ -811,7 +822,7 @@
             
             const avatar = messageData.user_name ? messageData.user_name[0].toUpperCase() : 'U';
             
-            messageDiv.innerHTML = `
+        messageDiv.innerHTML = `
                 <div class="message-avatar">${avatar}</div>
                 <div class="message-content">
                     <div class="message-header">
@@ -820,9 +831,9 @@
                         <span class="message-time">${new Date(messageData.created_at).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}</span>
                     </div>
                     <div class="message-text">${messageData.message}</div>
-                    ${(messageData.user_id == currentUserId || '${current_user[5]}' === 'admin') ? `
+            ${(messageData.user_id == currentUserId || isAdmin) ? `
                     <div class=\"message-actions\">
-                        <button class=\"icon-btn delete-btn\" onclick=\"deleteMessage(${messageData.id})\" title=\"Apagar mensagem\" aria-label=\"Apagar mensagem\">🗑️</button>
+                        <button class=\"icon-btn delete-btn\" data-message-id=\"${messageData.id}\" title=\"Apagar mensagem\" aria-label=\"Apagar mensagem\">🗑️</button>
                     </div>` : ''}
                 </div>
             `;
@@ -845,7 +856,7 @@
             }
         });
 
-        messageInput.addEventListener('input', function() {
+    messageInput.addEventListener('input', function() {
             // Auto-resize do textarea
             this.style.height = 'auto';
             this.style.height = Math.min(this.scrollHeight, 100) + 'px';
@@ -865,6 +876,18 @@
                 socket.emit('typing', { rnc_id: rncId, is_typing: false });
             }, 1000);
         });
+
+        // Delegação: clique em deletar mensagem
+        chatMessages.addEventListener('click', (e) => {
+            const btn = e.target.closest('.delete-btn');
+            if (btn) {
+                const id = btn.getAttribute('data-message-id');
+                if (id) deleteMessage(Number(id));
+            }
+        });
+
+        // Clique do botão enviar
+        sendBtn.addEventListener('click', sendMessage);
 
         // Função para mostrar notificação de nova mensagem
         function showMessageNotification(messageData) {

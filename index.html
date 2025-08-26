@@ -12,10 +12,8 @@
             box-sizing: border-box;
         }
 
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
-            
         body {
-            font-family: 'Poppins', 'Inter', system-ui, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Liberation Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
             background: white !important;
             padding: 0;
             margin: 0;
@@ -416,7 +414,8 @@
             line-height: 1.2;
             font-size: 0.86rem;
             background: rgba(139, 21, 56, 0.20);
-            transition: transform .1s ease, background .2s ease;
+            position: relative;
+            transition: transform .18s ease, opacity .22s ease, background .2s ease, border-color .2s ease;
         }
         .chip:hover { transform: translateY(-1px); background: rgba(139, 21, 56, 0.28); }
         .chip--muted {
@@ -427,6 +426,41 @@
             background: rgba(139, 21, 56, 0.40);
             border-color: rgba(139, 21, 56, 0.60);
             color: #4d091b;
+        }
+        /* Estado de restauração (revertido), mais escuro para evidenciar */
+        .chip--restored {
+            background: rgba(139, 21, 56, 0.55);
+            border-color: rgba(139, 21, 56, 0.85);
+            color: #ffffff;
+            box-shadow: 0 0 0 2px rgba(139, 21, 56, 0.18) inset;
+            animation: chipRestore 360ms ease-out;
+        }
+        @keyframes chipRestore {
+            0% { transform: scale(0.9); opacity: 0.35; }
+            60% { transform: scale(1.06); opacity: 1; }
+            100% { transform: scale(1); }
+        }
+        /* Animação de remoção do chip */
+        .chip--removing {
+            background: rgba(139, 21, 56, 0.45);
+            border-color: rgba(139, 21, 56, 0.75);
+            transform: translateY(-6px) scale(0.85);
+            opacity: 0;
+        }
+        .chip--removing::after {
+            content: "";
+            position: absolute;
+            left: 50%; top: 50%;
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: #8b1538;
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 0.7;
+            animation: chipRipple 280ms ease-out forwards;
+        }
+        @keyframes chipRipple {
+            from { transform: translate(-50%, -50%) scale(1); opacity: 0.7; }
+            to   { transform: translate(-50%, -50%) scale(4.2); opacity: 0; }
         }
         .chip-remove,
         .chip-remove-group {
@@ -1222,6 +1256,25 @@
             loadFormData();
             loadUserInfo();
             loadClientsIntoSelects();
+            // Marcar quando o campo "Responsável pela Detecção" for editado manualmente
+            const detectedField = document.getElementById('detected_by');
+            if (detectedField) {
+                detectedField.addEventListener('input', () => {
+                    detectedField.dataset.auto = '0'; // não sobrescrever automaticamente após edição manual
+                });
+            }
+            // Tentar sugerir responsável se já houver grupos selecionados carregados
+            setTimeout(() => {
+                try {
+                    const preview = document.getElementById('group-users-preview');
+                    if (preview) {
+                        // Extrair nomes dos chips atuais
+                        const users = Array.from(preview.querySelectorAll('.chip'))
+                            .map(ch => ({ id: ch.getAttribute('data-user-id') || '', name: (ch.querySelector('span')?.textContent || '').trim() }));
+                        if (users.length) maybeAutoDetectResponsavel(users);
+                    }
+                } catch(_) {}
+            }, 700);
         });
 
         // Função para carregar informações do usuário
@@ -1235,6 +1288,8 @@
                     document.getElementById('userArea').style.display = 'block';
                     
                     // Preencher informações
+                    // Disponibilizar globalmente o usuário atual para outras lógicas (ex.: auto preencher responsável)
+                    try { window.CURRENT_USER = data.user; } catch(_) {}
                     document.getElementById('userName').textContent = data.user.name;
                     document.getElementById('userDepartment').textContent = data.user.department;
                     
@@ -1473,6 +1528,9 @@
 
                 // Renderiza preview de usuários dos grupos selecionados
                 renderGroupUsersPreview(usersAll);
+
+                // Auto-preencher "Responsável pela Detecção" a partir dos grupos selecionados
+                try { maybeAutoDetectResponsavel(usersAll); } catch(_) {}
             } catch (err) {
                 console.error('Erro ao filtrar usuários por grupos:', err);
             }
@@ -1491,7 +1549,10 @@
             const chips = users.length
                 ? `<div class="chips">` + users.map(u => {
                     const excluded = EXCLUDED_ASSIGNEE_IDS.has(String(u.id));
-                    const chipClass = excluded ? 'chip chip--danger' : 'chip';
+                    let chipClass = excluded ? 'chip chip--danger' : 'chip';
+                    if (!excluded && String(u.id) === String(window.JUST_RESTORED_USER_ID || '')) {
+                        chipClass = 'chip chip--restored';
+                    }
                     return `<span class="${chipClass}" data-user-id="${u.id}">
                         <span>${u.name}${u.department? ' • '+u.department:''}</span>
                         <button type="button" class="chip-remove" data-user-id="${u.id}" aria-label="Remover" title="Remover">×</button>
@@ -1510,21 +1571,58 @@
             if (clearLink) {
                 clearLink.addEventListener('click', function(e){
                     e.preventDefault();
-                    EXCLUDED_ASSIGNEE_IDS.clear();
-                    updateAssigneeOptionsForGroups();
+                    // anima todos os chips e depois limpa
+                    const allChips = container.querySelectorAll('.chip');
+                    allChips.forEach(ch => ch.classList.add('chip--removing'));
+                    const count = allChips.length;
+                    setTimeout(() => {
+                        EXCLUDED_ASSIGNEE_IDS.clear();
+                        updateAssigneeOptionsForGroups();
+                        if (count > 0) {
+                            try { mostrarNotificacao(`👥 Exclusões limpas (${count} usuários).`, 'info'); } catch(_) {}
+                        }
+                    }, 260);
                 });
             }
-            // Delegação: remover usuário (X)
+            // Delegação: remover usuário (X) ou restaurar ao clicar no chip marcado
             container.addEventListener('click', function(e){
                 const btn = e.target.closest('.chip-remove');
                 if (btn && btn.dataset.userId) {
-                    // feedback visual rápido
+                    // animação e notificação de remoção
                     const chip = btn.closest('.chip');
+                    let label = '';
                     if (chip) {
-                        chip.classList.add('chip--danger');
-                        chip.style.opacity = '0.85';
+                        chip.classList.add('chip--removing');
+                        const span = chip.querySelector('span');
+                        if (span && span.textContent) label = span.textContent.trim();
                     }
-                    setTimeout(() => excludeAssignee(btn.dataset.userId), 120);
+                    setTimeout(() => {
+                        excludeAssignee(btn.dataset.userId);
+                        if (label) {
+                            try { mostrarNotificacao(`👤 Removido: ${label}`, 'success'); } catch(_) {}
+                        }
+                    }, 260);
+                    return;
+                }
+                // Restaurar ao clicar no chip que esteja marcado (chip--danger)
+                const chip = e.target.closest('.chip');
+                if (chip && chip.classList.contains('chip--danger')) {
+                    const uid = chip.getAttribute('data-user-id');
+                    const span = chip.querySelector('span');
+                    const label = span && span.textContent ? span.textContent.trim() : '';
+                    // marca para re-render destacar
+                    window.JUST_RESTORED_USER_ID = String(uid);
+                    // leve efeito antes de atualizar
+                    chip.classList.remove('chip--danger');
+                    chip.classList.add('chip--restored');
+                    setTimeout(() => {
+                        includeAssignee(uid);
+                        if (label) {
+                            try { mostrarNotificacao(`↩️ Restaurado: ${label}`, 'info'); } catch(_) {}
+                        }
+                        // limpar flag após 1s para não manter destaque
+                        setTimeout(() => { window.JUST_RESTORED_USER_ID = null; }, 1000);
+                    }, 220);
                 }
             });
         }
@@ -1539,6 +1637,47 @@
             if (!userId) return;
             EXCLUDED_ASSIGNEE_IDS.add(String(userId));
             updateAssigneeOptionsForGroups();
+        }
+
+        // Inclui novamente um usuário previamente excluído
+        function includeAssignee(userId) {
+            if (!userId) return;
+            EXCLUDED_ASSIGNEE_IDS.delete(String(userId));
+            updateAssigneeOptionsForGroups();
+        }
+
+        // Tenta definir automaticamente o "Responsável pela Detecção" com base nos usuários dos grupos selecionados.
+        // Regras:
+        // 1) Se o usuário atual fizer parte da lista, preferi-lo.
+        // 2) Caso contrário, escolher o primeiro da lista (ordenada por nome).
+        // 3) Não sobrescrever se o campo já foi editado manualmente (dataset.auto === '0')
+        function maybeAutoDetectResponsavel(usersFromGroups) {
+            const field = document.getElementById('detected_by');
+            if (!field) return;
+
+            // Se o usuário marcou que editou manualmente, não mexer
+            if (field.dataset && field.dataset.auto === '0') return;
+
+            // Se já há valor manual (não vazio) e não foi marcado como auto, manter
+            if (field.value && (!field.dataset || field.dataset.auto !== '1')) return;
+
+            const list = Array.isArray(usersFromGroups) ? usersFromGroups : [];
+            if (list.length === 0) return;
+
+            let chosenName = '';
+            const current = (typeof window !== 'undefined' && window.CURRENT_USER) ? window.CURRENT_USER : null;
+            if (current) {
+                const found = list.find(u => String(u.id) === String(current.id) || (u.email && current.email && u.email.toLowerCase() === current.email.toLowerCase()) || (u.name && current.name && u.name.trim() === current.name.trim()));
+                if (found) chosenName = found.name || current.name || '';
+            }
+            if (!chosenName) {
+                chosenName = list[0]?.name || '';
+            }
+            if (chosenName) {
+                field.value = chosenName;
+                if (field.dataset) field.dataset.auto = '1';
+                try { mostrarNotificacao(`👤 Responsável sugerido: ${chosenName}`, 'info'); } catch(_) {}
+            }
         }
 
         // Função para salvar RNC no sistema
@@ -2373,12 +2512,21 @@
             loadRncData(rncId);
         }
 
-        // Preencher data de detecção automaticamente
+        // Preencher datas automaticamente (detecção e emissão)
         document.addEventListener('DOMContentLoaded', function() {
             const detectionDateField = document.getElementById('detection_date');
             if (detectionDateField && !detectionDateField.value) {
-                const today = new Date().toISOString().split('T')[0];
-                detectionDateField.value = today;
+                const todayISO = new Date().toISOString().split('T')[0];
+                detectionDateField.value = todayISO; // yyyy-mm-dd
+            }
+
+            const emissaoField = document.getElementById('data_emissao');
+            if (emissaoField && !emissaoField.value) {
+                const d = new Date();
+                const dd = String(d.getDate()).padStart(2,'0');
+                const mm = String(d.getMonth()+1).padStart(2,'0');
+                const yyyy = d.getFullYear();
+                emissaoField.value = `${dd}/${mm}/${yyyy}`; // dd/mm/yyyy
             }
         });
     </script>
