@@ -182,12 +182,22 @@ def list_rncs():
         from services.permissions import has_permission
         from services.db import get_db_connection, return_db_connection
         from services.cache import get_cached_query, cache_query
-
+        try:
+            # Local import to avoid cyclic/analysis issues
+            from services.pagination import parse_cursor_limit, compute_window  # type: ignore
+        except Exception:
+            import importlib
+            pagination = importlib.import_module('services.pagination')
+            parse_cursor_limit = getattr(pagination, 'parse_cursor_limit')
+            compute_window = getattr(pagination, 'compute_window')
         tab = request.args.get('tab', 'active')
         user_id = session['user_id']
         force_refresh = request.args.get('_t') is not None
 
-        cache_key = f"rncs_list_{user_id}_{tab}"
+        # Cursor-based pagination params (shared util)
+        cursor_id, limit = parse_cursor_limit(request, default_limit=20000, max_limit=20000)
+
+        cache_key = f"rncs_list_{user_id}_{tab}_{cursor_id}_{limit}"
         if not force_refresh:
             cached_result = get_cached_query(cache_key)
             if cached_result:
@@ -198,108 +208,60 @@ def list_rncs():
 
         conn = get_db_connection()
         cursor = conn.cursor()
+        # Build query with cursor-based pagination
+        view_all_active = has_permission(user_id, 'view_all_rncs')
+        view_all_finalized = has_permission(user_id, 'view_finalized_rncs')
 
-        base_query = '''
-                SELECT 
-                    r.id,
-                    r.rnc_number,
-                    r.title,
-                    r.equipment,
-                    r.client,
-                    r.priority,
-                    r.status,
-                    r.user_id,
-                    r.assigned_user_id,
-                    r.created_at,
-                    r.updated_at,
-                    r.finalized_at,
-                    u.name AS user_name,
-                    u.department AS user_department,
-                    au.name AS assigned_user_name
-                FROM rncs r 
-                LEFT JOIN users u ON r.user_id = u.id
-                LEFT JOIN users au ON r.assigned_user_id = au.id
-        '''
+        select_prefix = "SELECT"
+        joins = [
+            "FROM rncs r",
+            "LEFT JOIN users u ON r.user_id = u.id",
+            "LEFT JOIN users au ON r.assigned_user_id = au.id",
+        ]
+        where = ["(r.is_deleted = 0 OR r.is_deleted IS NULL)"]
+        params = []
 
-        if tab == 'active':
-            if has_permission(session['user_id'], 'view_all_rncs'):
-                cursor.execute(base_query + '''
-                    WHERE (r.is_deleted = 0 OR r.is_deleted IS NULL) 
-                    AND r.status NOT IN ('Finalizado') 
-                    ORDER BY r.id DESC
-                ''')
-            else:
-                cursor.execute('''
-                    SELECT DISTINCT
-                        r.id,
-                        r.rnc_number,
-                        r.title,
-                        r.equipment,
-                        r.client,
-                        r.priority,
-                        r.status,
-                        r.user_id,
-                        r.assigned_user_id,
-                        r.created_at,
-                        r.updated_at,
-                        r.finalized_at,
-                        u.name AS user_name,
-                        u.department AS user_department,
-                        au.name AS assigned_user_name
-                    FROM rncs r 
-                    LEFT JOIN users u ON r.user_id = u.id
-                    LEFT JOIN users au ON r.assigned_user_id = au.id
-                    LEFT JOIN rnc_shares rs ON rs.rnc_id = r.id
-                    WHERE (r.is_deleted = 0 OR r.is_deleted IS NULL) 
-                    AND r.status NOT IN ('Finalizado') 
-                    AND (r.user_id = ? OR r.assigned_user_id = ? OR rs.shared_with_user_id = ?)
-                    ORDER BY r.id DESC
-                ''', (session['user_id'], session['user_id'], session['user_id']))
-
-        elif tab == 'finalized':
-            if has_permission(session['user_id'], 'view_finalized_rncs'):
-                cursor.execute(base_query + '''
-                    WHERE (r.is_deleted = 0 OR r.is_deleted IS NULL) 
-                    AND r.status = 'Finalizado'
-                    ORDER BY r.id DESC
-                ''')
-            else:
-                cursor.execute('''
-                    SELECT DISTINCT
-                        r.id,
-                        r.rnc_number,
-                        r.title,
-                        r.equipment,
-                        r.client,
-                        r.priority,
-                        r.status,
-                        r.user_id,
-                        r.assigned_user_id,
-                        r.created_at,
-                        r.updated_at,
-                        r.finalized_at,
-                        u.name AS user_name,
-                        u.department AS user_department,
-                        au.name AS assigned_user_name
-                    FROM rncs r 
-                    LEFT JOIN users u ON r.user_id = u.id
-                    LEFT JOIN users au ON r.assigned_user_id = au.id
-                    LEFT JOIN rnc_shares rs ON rs.rnc_id = r.id
-                    WHERE (r.is_deleted = 0 OR r.is_deleted IS NULL) 
-                    AND r.status = 'Finalizado' 
-                    AND (r.user_id = ? OR r.assigned_user_id = ? OR rs.shared_with_user_id = ?)
-                    ORDER BY r.id DESC
-                ''', (session['user_id'], session['user_id'], session['user_id']))
-
+        if tab == 'finalized':
+            where.append("r.status = 'Finalizado'")
+            if not view_all_finalized:
+                joins.append("LEFT JOIN rnc_shares rs ON rs.rnc_id = r.id")
+                where.append("(r.user_id = ? OR r.assigned_user_id = ? OR rs.shared_with_user_id = ?)")
+                params.extend([user_id, user_id, user_id])
+                select_prefix = "SELECT DISTINCT"
         else:
-            cursor.execute(base_query + '''
-                WHERE (r.is_deleted = 0 OR r.is_deleted IS NULL) 
-                AND r.status NOT IN ('Finalizado')
-                ORDER BY r.id DESC
-            ''')
+            # default to active
+            where.append("r.status NOT IN ('Finalizado')")
+            if not view_all_active:
+                joins.append("LEFT JOIN rnc_shares rs ON rs.rnc_id = r.id")
+                where.append("(r.user_id = ? OR r.assigned_user_id = ? OR rs.shared_with_user_id = ?)")
+                params.extend([user_id, user_id, user_id])
+                select_prefix = "SELECT DISTINCT"
 
-        rncs = cursor.fetchall()
-        logger.info(f"🔍 Query executada para {tab}: {len(rncs)} RNCs encontrados no banco")
+        if cursor_id is not None:
+            # Desc order, so use r.id < cursor for next page
+            where.append("r.id < ?")
+            params.append(cursor_id)
+
+        columns = (
+            "r.id, r.rnc_number, r.title, r.equipment, r.client, r.priority, r.status, "
+            "r.user_id, r.assigned_user_id, r.created_at, r.updated_at, r.finalized_at, "
+            "u.name AS user_name, u.department AS user_department, au.name AS assigned_user_name"
+        )
+
+        sql = f"""
+            {select_prefix}
+                {columns}
+            {' '.join(joins)}
+            WHERE {' AND '.join(where)}
+            ORDER BY r.id DESC
+            LIMIT ?
+        """
+        params_with_limit = params + [limit + 1]  # fetch one extra row to detect has_more
+        cursor.execute(sql, tuple(params_with_limit))
+
+        rncs_rows = cursor.fetchall()
+        rncs_rows, has_more, next_cursor = compute_window(rncs_rows, limit, id_index=0)
+        logger.info(f"🔍 Query executada para {tab}: {len(rncs_rows)} RNCs retornados (limit={limit}, has_more={has_more})")
 
         current_user_id = session['user_id']
         formatted_rncs = [
@@ -324,12 +286,18 @@ def list_rncs():
                 'is_creator': (current_user_id == rnc[7]),
                 'is_assigned': (current_user_id == rnc[8])
             }
-            for rnc in rncs
+            for rnc in rncs_rows
         ]
 
-        result = {'success': True, 'rncs': formatted_rncs, 'tab': tab}
+        result = {
+            'success': True,
+            'rncs': formatted_rncs,
+            'tab': tab,
+            'limit': limit,
+            'next_cursor': next_cursor,
+            'has_more': has_more,
+        }
         # Cache the result (Redis-backed with in-memory fallback)
-        from services.cache import cache_query  # local service
         cache_query(cache_key, result, ttl=120)
 
         response = jsonify(result)
@@ -349,7 +317,6 @@ def list_rncs():
                     conn.close()
                 except Exception:
                     pass
-
 
 @rnc.route('/api/rnc/get/<int:rnc_id>', methods=['GET'])
 def api_get_rnc(rnc_id):
@@ -1025,19 +992,54 @@ def get_shared_users(rnc_id):
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
     try:
-        from services.rnc import can_user_access_rnc, get_rnc_shared_users
+        from services.rnc import can_user_access_rnc
+        from services.db import get_db_connection, return_db_connection
+        try:
+            from services.pagination import parse_cursor_limit, compute_window  # type: ignore
+        except Exception:
+            import importlib
+            pagination = importlib.import_module('services.pagination')
+            parse_cursor_limit = getattr(pagination, 'parse_cursor_limit')
+            compute_window = getattr(pagination, 'compute_window')
         if not can_user_access_rnc(session['user_id'], rnc_id):
             return jsonify({'success': False, 'message': 'Sem permissão para acessar esta RNC'}), 403
-        shared_users = get_rnc_shared_users(rnc_id)
-        shared_users_list = []
-        for user_data in shared_users:
-            shared_users_list.append({
-                'user_id': user_data[0],
-                'permission_level': user_data[1],
-                'name': user_data[2],
-                'email': user_data[3]
-            })
-        return jsonify({'success': True, 'shared_users': shared_users_list})
+        cursor_id, limit = parse_cursor_limit(request, default_limit=20, max_limit=200)
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+        where_extra = ""
+        params = [rnc_id]
+        # Use rs.id (share row id) as cursor anchor for deterministic pagination
+        if cursor_id is not None:
+            where_extra = " AND rs.id < ?"
+            params.append(cursor_id)
+        params.append(limit + 1)
+        cur.execute(
+            '''
+            SELECT rs.id, rs.shared_with_user_id, rs.permission_level, u.name, u.email
+              FROM rnc_shares rs
+              JOIN users u ON rs.shared_with_user_id = u.id
+             WHERE rs.rnc_id = ?
+                   ''' + where_extra + '''
+             ORDER BY rs.id DESC
+             LIMIT ?
+            ''', tuple(params)
+        )
+        rows = cur.fetchall()
+        # id_index=0 now (rs.id)
+        rows, has_more, next_cursor = compute_window(rows, limit, id_index=0)
+        return_db_connection(conn)
+
+        shared_users_list = [
+            {
+                'user_id': user_id,
+                'permission_level': perm,
+                'name': name,
+                'email': email,
+            }
+            for (_row_id, user_id, perm, name, email) in rows
+        ]
+        return jsonify({'success': True, 'shared_users': shared_users_list, 'limit': limit, 'next_cursor': next_cursor, 'has_more': has_more})
     except Exception as e:
         logger.error(f"Erro ao buscar usuários compartilhados da RNC {rnc_id}: {e}")
         return jsonify({'success': False, 'message': 'Erro interno do sistema'}), 500

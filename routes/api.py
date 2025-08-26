@@ -46,3 +46,4 @@ def update_avatar():
         except Exception:
             pass
         return jsonify({'success': False, 'message': 'Erro ao atualizar avatar'}), 500
+    
