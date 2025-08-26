@@ -11,6 +11,11 @@ let allRNCs = [];
 let currentTab = 'active';
 let isAdmin = false;
 let currentUserId = null;
+// Paginação (cursor-based)
+let nextCursor = null;
+let hasMore = false;
+let isLoading = false;
+const PAGE_LIMIT = 500; // ajuste fino de desempenho
 
 // Utilitário seguro de fetch JSON
 async function fetchJSON(url, options = {}) {
@@ -49,16 +54,66 @@ function switchTab(tab) {
 }
 window.switchTab = switchTab;
 
-// Carregar RNCs por aba
+// Carregar RNCs por aba (com limite explícito e cursor)
 async function loadRNCs(tab='active') {
-    const data = await fetchJSON(`/api/rnc/list?tab=${encodeURIComponent(tab)}`);
+    // Reset estado de paginação para a nova aba
+    nextCursor = null;
+    hasMore = false;
+    isLoading = true;
+    const data = await fetchJSON(`/api/rnc/list?tab=${encodeURIComponent(tab)}&limit=${PAGE_LIMIT}`);
+    isLoading = false;
     if (!data.success) {
         document.getElementById('rncGrid').innerHTML = '<div style="padding:20px;color:#dc3545;">Erro ao carregar RNCs.</div>';
+        renderLoadMore();
         return;
     }
     allRNCs = data.rncs || [];
+    nextCursor = data.next_cursor || null;
+    hasMore = !!data.has_more;
     renderRNCs();
     updateSummary();
+    renderLoadMore();
+}
+
+// Carregar mais (append) usando next_cursor
+async function loadMore() {
+    if (!hasMore || isLoading) return;
+    isLoading = true;
+    renderLoadMore();
+    const url = `/api/rnc/list?tab=${encodeURIComponent(currentTab)}&limit=${PAGE_LIMIT}${nextCursor ? `&cursor=${encodeURIComponent(nextCursor)}` : ''}`;
+    const data = await fetchJSON(url);
+    isLoading = false;
+    if (!data.success) {
+        renderLoadMore();
+        return;
+    }
+    const newItems = data.rncs || [];
+    if (newItems.length) {
+        allRNCs = allRNCs.concat(newItems);
+    }
+    nextCursor = data.next_cursor || null;
+    hasMore = !!data.has_more;
+    renderRNCs();
+    updateSummary();
+    renderLoadMore();
+}
+
+function renderLoadMore() {
+    const c = document.getElementById('loadMoreContainer');
+    if (!c) return;
+    if (isLoading) {
+        c.innerHTML = '<div style="padding:16px;text-align:center;color:#0d6efd;font-weight:600;">Carregando...</div>';
+        return;
+    }
+    if (!hasMore) {
+        c.innerHTML = '';
+        return;
+    }
+    c.innerHTML = `
+        <div style="padding:16px;text-align:center;">
+            <button onclick="loadMore()" style="padding:10px 16px;border:none;border-radius:6px;background:#0d6efd;color:white;font-weight:700;cursor:pointer;">Carregar mais</button>
+        </div>
+    `;
 }
 
 // Resumo simples
@@ -115,6 +170,11 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 // ================================================================
         </script>
+        
+        <style>
+            /* Espaço para o botão de carregar mais */
+            #loadMoreContainer { margin-bottom: 24px; }
+        </style>
         
         .card-name {
             font-size: 16px;
@@ -660,6 +720,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <p>Clique em "Criar Novo RNC" para começar</p>
                 </div>
             </div>
+            <div id="loadMoreContainer"></div>
 
             <!-- Seção de Gráficos -->
             <div class="charts-section">
