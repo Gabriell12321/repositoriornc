@@ -48,6 +48,48 @@ except ImportError:
 
 import re
 import secrets
+import sys
+import os
+
+# Adicionar o diretório utils ao path para importar formatação
+utils_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'utils')
+if utils_path not in sys.path:
+    sys.path.append(utils_path)
+
+# Importar funções de formatação
+try:
+    from utils.formatting import format_currency, format_number, format_percentage, format_data_for_dashboard, format_table_data
+    HAS_FORMATTING = True
+except ImportError:
+    HAS_FORMATTING = False
+    print("⚠️ Módulo de formatação não encontrado - valores não serão formatados")
+    # Funções de fallback para formatação
+    def format_currency(value):
+        try:
+            num = float(value) if value is not None else 0
+            return f"$ {num:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+        except:
+            return "$ 0,00"
+    
+    def format_number(value):
+        try:
+            num = float(value) if value is not None else 0
+            return f"{num:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+        except:
+            return "0,00"
+    
+    def format_percentage(value):
+        try:
+            num = float(value) if value is not None else 0
+            return f"{num:.1f}%"
+        except:
+            return "0,0%"
+    
+    def format_data_for_dashboard(data):
+        return data  # Retorna dados sem formatação no fallback
+    
+    def format_table_data(data):
+        return data  # Retorna dados sem formatação no fallback
 import queue
 import time
 import gc
@@ -1979,13 +2021,22 @@ def api_indicadores_detalhados():
     try:
         # Primeiro tenta importar e usar o script especializado para leitura de Excel
         try:
-            import extract_indicators_by_type
+            import sys
+            script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'scripts')
+            if script_path not in sys.path:
+                sys.path.append(script_path)
+            
             from extract_indicators_by_type import extract_indicators_by_type
             
             # Tenta obter dados da planilha
             excel_data = extract_indicators_by_type(tipo)
             if excel_data:
                 print(f"✅ Dados extraídos com sucesso da planilha para: {tipo}")
+                
+                # Aplicar formatação aos dados se o módulo estiver disponível
+                if HAS_FORMATTING:
+                    excel_data = format_data_for_dashboard(excel_data)
+                
                 return jsonify({
                     'success': True,
                     'source': 'excel',
@@ -2004,6 +2055,7 @@ def api_indicadores_detalhados():
         
         # Não temos coluna "tipo" na tabela rncs, então usamos todos os dados
         # independentemente do tipo solicitado
+        tipo_filter = ""  # Sem filtro específico, pois o banco não tem coluna tipo
         
         # Dados básicos
         cursor.execute("SELECT COUNT(*) FROM rncs WHERE is_deleted = 0")
@@ -2231,6 +2283,10 @@ def api_indicadores():
             'eficiencia': round((finalizadas / max(total_rncs, 1)) * 100, 1)
         }
         
+        # Aplicar formatação aos dados se o módulo estiver disponível
+        if HAS_FORMATTING:
+            result = format_data_for_dashboard(result)
+        
         print(f"📊 API Indicadores retornando: {result}")
         return jsonify(result)
         
@@ -2298,7 +2354,7 @@ def dashboard_api_kpis():
         
         conn.close()
         
-        return jsonify({
+        kpis_data = {
             'success': True,
             'kpis': {
                 'total_rncs': total_rncs,
@@ -2307,7 +2363,13 @@ def dashboard_api_kpis():
                 'departamentos_ativos': departamentos_ativos,
                 'eficiencia_geral': eficiencia_geral
             }
-        })
+        }
+        
+        # Aplicar formatação aos dados se o módulo estiver disponível
+        if HAS_FORMATTING:
+            kpis_data = format_data_for_dashboard(kpis_data)
+        
+        return jsonify(kpis_data)
         
     except Exception as e:
         print(f"❌ Erro na API de KPIs: {e}")
@@ -2463,14 +2525,20 @@ def get_employee_performance():
         for emp in result[:3]:
             print(f"   👤 {emp['name']}: {emp['rncs']} RNCs ({emp['percentage']}%)")
 
-        return jsonify({
+        performance_data = {
             'success': True,
             'data': result,
             'filters': {
                 'year': year or 'todos',
                 'month': month or 'todos'
             }
-        })
+        }
+        
+        # Aplicar formatação aos dados se o módulo estiver disponível
+        if HAS_FORMATTING:
+            performance_data = format_data_for_dashboard(performance_data)
+
+        return jsonify(performance_data)
     except Exception as e:
         print(f"❌ Erro ao buscar desempenho de funcionários: {e}")
         import traceback
@@ -2598,14 +2666,20 @@ def get_dashboard_performance():
         result.sort(key=lambda x: x['percentage'], reverse=True)
         print(f"✅ Dashboard: {len(result)} funcionários processados")
 
-        return jsonify({
+        dashboard_data = {
             'success': True,
             'data': result,
             'filters': {
                 'year': year or 'todos',
                 'month': month or 'todos'
             }
-        })
+        }
+        
+        # Aplicar formatação aos dados se o módulo estiver disponível
+        if HAS_FORMATTING:
+            dashboard_data = format_data_for_dashboard(dashboard_data)
+
+        return jsonify(dashboard_data)
     except Exception as e:
         print(f"❌ Erro no dashboard: {e}")
         import traceback

@@ -8,8 +8,50 @@ import pandas as pd
 import os
 import json
 import glob
+import sys
 from pathlib import Path
 from datetime import datetime
+
+# Adicionar o diretório utils ao path para importar formatação
+utils_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'utils')
+if utils_path not in sys.path:
+    sys.path.append(utils_path)
+
+# Importar funções de formatação
+try:
+    from formatting import format_currency, format_number, format_percentage, safe_float, format_data_for_dashboard
+except ImportError:
+    # Fallback se não conseguir importar
+    def format_currency(value):
+        try:
+            if value == 0 or value is None:
+                return "$ 0,00"
+            formatted = f"{float(value):,.2f}"
+            parts = formatted.split('.')
+            if len(parts) == 2:
+                integer_part = parts[0].replace(',', '.')
+                decimal_part = parts[1]
+                formatted = f"{integer_part},{decimal_part}"
+            return f"$ {formatted}"
+        except:
+            return "$ 0,00"
+    
+    def format_percentage(value):
+        try:
+            return f"{float(value):.1f}%".replace('.', ',')
+        except:
+            return "0%"
+    
+    def safe_float(value):
+        try:
+            if pd.isna(value):
+                return 0.0
+            return float(value)
+        except:
+            return 0.0
+    
+    def format_data_for_dashboard(data):
+        return data
 
 def extract_indicators_by_type(tipo='rnc'):
     """
@@ -42,7 +84,21 @@ def extract_indicators_by_type(tipo='rnc'):
         if len(all_files) > 5:
             print(f'   • ... e mais {len(all_files) - 5} arquivos')
         
-        # Primeiro, tente o arquivo principal de indicadores
+        # Para Garantia, priorizar arquivos de levantamento
+        if tipo.lower() == 'garantia':
+            print(f'🔍 Buscando dados de GARANTIA em arquivos de levantamento...')
+            
+            # Ordenar por ano (mais recente primeiro)
+            levantamento_files = sorted([f for f in all_files if "Levantamento RNC" in f], 
+                                       key=lambda x: extract_year_from_filename(x), 
+                                       reverse=True)
+            
+            if levantamento_files:
+                latest_file = levantamento_files[0]
+                print(f'✅ Usando arquivo de levantamento: {os.path.basename(latest_file)}')
+                return extract_from_levantamento_file(latest_file, tipo)
+        
+        # Para RNC, primeiro tentar o arquivo principal de indicadores
         indicators_file = os.path.join(base_folder, "INDICADORES - NÃO CONFORMIDADES.xlsx")
         if os.path.exists(indicators_file):
             print(f'✅ Usando arquivo principal de indicadores')
@@ -120,35 +176,41 @@ def create_fallback_data(tipo):
             
         monthly_data.append({
             "month": month,
-            "meta": meta,
-            "realizado": realizado
+            "meta": format_currency(meta * 1000),  # Multiplicar por 1000 para valores realistas
+            "realizado": format_currency(realizado * 1000),
+            "meta_raw": meta * 1000,
+            "realizado_raw": realizado * 1000
         })
     
     # Dados departamentais padrão
     if tipo.lower() == 'rnc':
         departments = [
-            {"name": "ENGENHARIA", "meta": 60, "realizado": 45, "efficiency": 75},
-            {"name": "PRODUÇÃO", "meta": 50, "realizado": 42, "efficiency": 84},
-            {"name": "SUPRIMENTOS", "meta": 40, "realizado": 30, "efficiency": 75},
-            {"name": "PCP", "meta": 30, "realizado": 24, "efficiency": 80}
+            {"name": "ENGENHARIA", "meta": format_currency(60000), "realizado": format_currency(45000), "efficiency": "75%", "meta_raw": 60000, "realizado_raw": 45000, "efficiency_raw": 75},
+            {"name": "PRODUÇÃO", "meta": format_currency(50000), "realizado": format_currency(42000), "efficiency": "84%", "meta_raw": 50000, "realizado_raw": 42000, "efficiency_raw": 84},
+            {"name": "SUPRIMENTOS", "meta": format_currency(40000), "realizado": format_currency(30000), "efficiency": "75%", "meta_raw": 40000, "realizado_raw": 30000, "efficiency_raw": 75},
+            {"name": "PCP", "meta": format_currency(30000), "realizado": format_currency(24000), "efficiency": "80%", "meta_raw": 30000, "realizado_raw": 24000, "efficiency_raw": 80}
         ]
     else:  # garantia
         departments = [
-            {"name": "ENGENHARIA", "meta": 40, "realizado": 28, "efficiency": 70},
-            {"name": "PRODUÇÃO", "meta": 35, "realizado": 29, "efficiency": 83},
-            {"name": "SUPRIMENTOS", "meta": 30, "realizado": 20, "efficiency": 67},
-            {"name": "PCP", "meta": 25, "realizado": 18, "efficiency": 72}
+            {"name": "ENGENHARIA", "meta": format_currency(40000), "realizado": format_currency(28000), "efficiency": "70%", "meta_raw": 40000, "realizado_raw": 28000, "efficiency_raw": 70},
+            {"name": "PRODUÇÃO", "meta": format_currency(35000), "realizado": format_currency(29000), "efficiency": "83%", "meta_raw": 35000, "realizado_raw": 29000, "efficiency_raw": 83},
+            {"name": "SUPRIMENTOS", "meta": format_currency(30000), "realizado": format_currency(20000), "efficiency": "67%", "meta_raw": 30000, "realizado_raw": 20000, "efficiency_raw": 67},
+            {"name": "PCP", "meta": format_currency(25000), "realizado": format_currency(18000), "efficiency": "72%", "meta_raw": 25000, "realizado_raw": 18000, "efficiency_raw": 72}
         ]
     
-    # Calcular totais
-    meta_total = sum(d['meta'] for d in monthly_data)
-    realizado_total = sum(d['realizado'] for d in monthly_data)
+    # Calcular totais usando valores brutos
+    meta_total = sum(d['meta_raw'] for d in monthly_data)
+    realizado_total = sum(d['realizado_raw'] for d in monthly_data)
     
     totals = {
-        "meta": meta_total / len(monthly_data), 
-        "realizado": realizado_total / len(monthly_data),
-        "variacao": (meta_total - realizado_total) / len(monthly_data),
-        "acumulado": realizado_total
+        "meta": format_currency(meta_total / len(monthly_data)), 
+        "realizado": format_currency(realizado_total / len(monthly_data)),
+        "variacao": format_currency((meta_total - realizado_total) / len(monthly_data)),
+        "acumulado": format_currency(realizado_total),
+        "meta_raw": meta_total / len(monthly_data),
+        "realizado_raw": realizado_total / len(monthly_data),
+        "variacao_raw": (meta_total - realizado_total) / len(monthly_data),
+        "acumulado_raw": realizado_total
     }
     
     return {
@@ -291,45 +353,180 @@ def extract_from_levantamento_file(file_path, tipo):
         if file_ext == '.xlsx':
             df = pd.read_excel(file_path, sheet_name=0)
         elif file_ext == '.ods':
-            df = pd.read_excel(file_path, engine='odf')
+            # Tentar diferentes engines para .ods
+            try:
+                df = pd.read_excel(file_path, sheet_name='RNC', engine='odf')
+            except:
+                try:
+                    df = pd.read_excel(file_path, engine='odf')
+                except:
+                    df = pd.read_excel(file_path)
         else:
             print(f'❌ Formato de arquivo não suportado: {file_ext}')
             return create_fallback_data(tipo)
         
-        # Buscar as seções de RNC e Garantias no arquivo
+        # Encontrar onde começam as seções RNC e GARANTIAS
         rnc_start = None
-        garantia_start = None
+        garantias_start = None
         
-        # Procurar as palavras-chave nas células
         for idx, row in df.iterrows():
-            row_str = str(row.values).upper()
-            if 'RNC' in row_str and rnc_start is None:
+            first_col = str(row.iloc[0]).strip().upper()
+            if first_col == 'RNC':
                 rnc_start = idx
-            elif 'GARANTIA' in row_str and garantia_start is None:
-                garantia_start = idx
+                print(f'📊 Seção RNC encontrada na linha {idx}')
+            elif first_col == 'GARANTIAS':
+                garantias_start = idx
+                print(f'📊 Seção GARANTIAS encontrada na linha {idx}')
         
-        if rnc_start is None and garantia_start is None:
-            print('❌ Não foi possível identificar as seções de RNC e Garantia')
-            return create_fallback_data(tipo)
-        
-        # Extrair dados da seção apropriada
-        section_start = None
+        # Extrair dados baseado no tipo solicitado
         if tipo.lower() == 'rnc' and rnc_start is not None:
-            section_start = rnc_start
-            print(f'✅ Seção RNC encontrada na linha {rnc_start + 1}')
-        elif tipo.lower() == 'garantia' and garantia_start is not None:
-            section_start = garantia_start
-            print(f'✅ Seção Garantia encontrada na linha {garantia_start + 1}')
+            return extract_section_data(df, rnc_start, garantias_start, 'RNC')
+        elif tipo.lower() == 'garantia' and garantias_start is not None:
+            return extract_section_data(df, garantias_start, len(df), 'GARANTIA')
         else:
-            print(f'❌ Seção {tipo} não encontrada no arquivo')
+            print(f'❌ Seção {tipo.upper()} não encontrada')
             return create_fallback_data(tipo)
-        
-        # Extrair dados da seção identificada
-        return extract_data_from_section(df, section_start, tipo)
         
     except Exception as e:
         print(f'❌ Erro ao extrair dados do arquivo de levantamento: {e}')
         return create_fallback_data(tipo)
+
+def extract_section_data(df, start_idx, end_idx, section_name):
+    """
+    Extrai dados de uma seção específica (RNC ou GARANTIAS)
+    
+    Args:
+        df (DataFrame): DataFrame com os dados
+        start_idx (int): Índice inicial da seção
+        end_idx (int): Índice final da seção (ou None para até o final)
+        section_name (str): Nome da seção ('RNC' ou 'GARANTIA')
+        
+    Returns:
+        dict: Dados formatados para o dashboard
+    """
+    try:
+        print(f'📋 Extraindo dados da seção {section_name}')
+        
+        # Definir o fim da seção
+        if end_idx is None:
+            end_idx = len(df)
+        
+        # Pegar a linha de cabeçalhos (linha seguinte à que contém o nome da seção)
+        header_idx = start_idx + 1
+        headers = df.iloc[header_idx].tolist()
+        
+        # Pegar os dados (linhas seguintes aos cabeçalhos)
+        data_start = start_idx + 2
+        section_data = df.iloc[data_start:end_idx]
+        
+        # Limpar dados vazios
+        section_data = section_data.dropna(how='all')
+        
+        print(f'✅ {len(section_data)} linhas de dados encontradas')
+        
+        # Extrair dados mensais
+        monthly_data = []
+        departments = {}
+        total_by_month = []
+        
+        # Mapear colunas (baseado na estrutura observada)
+        # ['Data', nan, 'Produção', 'Engenharia', 'Terceiros', 'Compras', 'Comercial', 'Pcp', 'Expedição', 'Qualidade', 'Ñ definido', 'Total']
+        col_mapping = {
+            'data': 0,
+            'producao': 2,
+            'engenharia': 3,
+            'terceiros': 4,
+            'compras': 5,
+            'comercial': 6,
+            'pcp': 7,
+            'expedicao': 8,
+            'qualidade': 9,
+            'nao_definido': 10,
+            'total': 11
+        }
+        
+        # Processar cada linha de dados
+        for idx, row in section_data.iterrows():
+            data_str = str(row.iloc[col_mapping['data']])
+            
+            # Pular linhas inválidas
+            if pd.isna(row.iloc[col_mapping['data']]) or data_str.strip() == '':
+                continue
+            
+            # Extrair mês da string de data (formato "01/25 – Janeiro")
+            month_name = 'N/A'
+            if '–' in data_str:
+                month_name = data_str.split('–')[1].strip()
+            elif '-' in data_str:
+                month_name = data_str.split('-')[1].strip()
+            
+            # Extrair valores numéricos
+            total_val = safe_float(row.iloc[col_mapping['total']])
+            producao_val = safe_float(row.iloc[col_mapping['producao']])
+            engenharia_val = safe_float(row.iloc[col_mapping['engenharia']])
+            
+            # Adicionar aos dados mensais
+            monthly_data.append({
+                "month": month_name[:3].upper(),  # Primeiras 3 letras em maiúsculo
+                "meta": format_currency(total_val * 1.2 if total_val else 0),  # Meta 20% acima do realizado
+                "realizado": format_currency(total_val if total_val else 0),
+                "meta_raw": total_val * 1.2 if total_val else 0,  # Valor numérico para cálculos
+                "realizado_raw": total_val if total_val else 0
+            })
+            
+            # Acumular dados por departamento
+            for dept, col_idx in [('PRODUÇÃO', col_mapping['producao']), 
+                                  ('ENGENHARIA', col_mapping['engenharia']),
+                                  ('PCP', col_mapping['pcp']),
+                                  ('COMPRAS', col_mapping['compras'])]:
+                if dept not in departments:
+                    departments[dept] = {'realizado': 0, 'meta': 0}
+                
+                val = safe_float(row.iloc[col_idx])
+                if val:
+                    departments[dept]['realizado'] += val
+                    departments[dept]['meta'] += val * 1.2
+        
+        # Formatear dados departamentais
+        dept_list = []
+        for dept_name, dept_data in departments.items():
+            efficiency = (dept_data['realizado'] / dept_data['meta'] * 100) if dept_data['meta'] > 0 else 0
+            dept_list.append({
+                "name": dept_name,
+                "meta": format_currency(dept_data['meta']),
+                "realizado": format_currency(dept_data['realizado']),
+                "efficiency": f"{round(efficiency, 1)}%",
+                "meta_raw": round(dept_data['meta'], 2),
+                "realizado_raw": round(dept_data['realizado'], 2),
+                "efficiency_raw": round(efficiency, 1)
+            })
+        
+        # Calcular totais usando valores brutos
+        meta_total = sum(d['meta_raw'] for d in monthly_data)
+        realizado_total = sum(d['realizado_raw'] for d in monthly_data)
+        
+        totals = {
+            "meta": format_currency(meta_total / len(monthly_data) if monthly_data else 0),
+            "realizado": format_currency(realizado_total / len(monthly_data) if monthly_data else 0),
+            "variacao": format_currency((meta_total - realizado_total) / len(monthly_data) if monthly_data else 0),
+            "acumulado": format_currency(realizado_total),
+            "meta_raw": round(meta_total / len(monthly_data), 2) if monthly_data else 0,
+            "realizado_raw": round(realizado_total / len(monthly_data), 2) if monthly_data else 0,
+            "variacao_raw": round((meta_total - realizado_total) / len(monthly_data), 2) if monthly_data else 0,
+            "acumulado_raw": round(realizado_total, 2)
+        }
+        
+        print(f'✅ Processamento concluído: {len(monthly_data)} meses, {len(dept_list)} departamentos')
+        
+        return {
+            'monthlyData': monthly_data,
+            'departments': dept_list,
+            'totals': totals
+        }
+        
+    except Exception as e:
+        print(f'❌ Erro ao extrair dados da seção {section_name}: {e}')
+        return create_fallback_data(section_name.lower())
 
 def extract_data_from_section(df, start_idx, tipo):
     """
