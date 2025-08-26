@@ -96,18 +96,10 @@ Ou duplo clique em: `start.bat`
 - Abra o navegador
 - Acesse: http://localhost:3000
 
-### 2. Preencher o Relatório
-- Preencha todos os campos necessários
 - Marque os checkboxes conforme necessário
 
-### 3. Enviar por E-mail
-- Clique no botão verde "📧 Enviar por E-mail"
-- Selecione o tipo de destinatário:
   - **Primeira Aba**: Descrição, Instrução, Causa
   - **Ação**: Ação a Ser Tomada
-  - **Todos**: Relatório completo
-- Digite o e-mail do destinatário
-- Clique em "Enviar E-mail"
 
 ### 4. Gerar PDF
 - Clique no botão vermelho "📄 Gerar Relatório PDF"
@@ -127,7 +119,6 @@ const PORT = 3000; // Mude para a porta desejada
 service: 'yahoo'
 
 // Para Outlook
-service: 'outlook'
 
 // Para servidor SMTP personalizado
 host: 'smtp.seu-servidor.com',
