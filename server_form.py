@@ -105,8 +105,40 @@ except Exception:
     pass
 
 app = Flask(__name__)
+
+# Rate limiting global (se lib disponível)
+try:
+    import importlib
+    _rl = importlib.import_module('services.rate_limit')
+    _init_limiter = getattr(_rl, 'init_limiter', None)
+    _defaults = os.environ.get('RATE_LIMIT_DEFAULTS', '200 per minute').split(';')
+    _defaults = [d.strip() for d in _defaults if d.strip()]
+    _limiter = _init_limiter(app, default_limits=_defaults) if _init_limiter else None
+    HAS_LIMITER = _limiter is not None
+except Exception:
+    HAS_LIMITER = False
+
+# Config de compressão (gzip/brotli se disponível)
 if HAS_COMPRESS and Compress is not None:
+    try:
+        # Tipos comuns a comprimir
+        app.config['COMPRESS_MIMETYPES'] = [
+            'text/html', 'text/css', 'text/xml', 'application/json',
+            'application/javascript', 'text/javascript', 'image/svg+xml'
+        ]
+        app.config['COMPRESS_LEVEL'] = 6
+        app.config['COMPRESS_MIN_SIZE'] = 1024
+        # Preferir Brotli se lib estiver disponível; caso contrário, usa gzip
+        try:
+            import brotli  # type: ignore  # noqa: F401
+            app.config['COMPRESS_ALGORITHM'] = 'br'
+            app.config['COMPRESS_BR_LEVEL'] = 5
+        except Exception:
+            app.config['COMPRESS_ALGORITHM'] = 'gzip'
+    except Exception:
+        pass
     Compress(app)
+
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 # Secret key estável: lê de variável de ambiente ou de arquivo local persistente
@@ -135,6 +167,208 @@ app.config['SESSION_COOKIE_SECURE'] = False
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['REMEMBER_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_NAME'] = 'ippel_session'
+app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB por requisição
+
+# Preferir assets minificados em produção
+app.config['USE_MIN_ASSETS'] = os.environ.get('USE_MIN_ASSETS', '1') not in ('0', 'false', 'False')
+
+def asset_url(filename: str) -> str:
+    """
+    Retorna URL para static, preferindo arquivo .min.* quando configurado e existente.
+    Também adiciona um query param de versão baseado em mtime para cache busting.
+    """
+    try:
+        use_min = bool(app.config.get('USE_MIN_ASSETS'))
+        chosen = filename
+        full_dir = app.static_folder or os.path.join(os.path.dirname(__file__), 'static')
+        if use_min and '.min.' not in filename:
+            parts = filename.rsplit('.', 1)
+            if len(parts) == 2:
+                candidate = f"{parts[0]}.min.{parts[1]}"
+                full_path = os.path.join(full_dir, candidate)
+                if os.path.exists(full_path):
+                    chosen = candidate
+        # Cache bust por mtime
+        try:
+            full_path_final = os.path.join(full_dir, chosen)
+            v = str(int(os.path.getmtime(full_path_final))) if os.path.exists(full_path_final) else '1'
+        except Exception:
+            v = '1'
+        return url_for('static', filename=chosen) + f"?v={v}"
+    except Exception:
+        # Fallback simples
+        return url_for('static', filename=filename)
+
+# Disponibiliza helper no Jinja
+app.jinja_env.globals['asset_url'] = asset_url
+
+# Security headers e CSP básicos (aplicados se Flask-Talisman estiver disponível)
+try:
+    if HAS_TALISMAN and Talisman is not None:
+        csp = {
+            'default-src': ["'self'"],
+            'base-uri': ["'self'"],
+            'frame-ancestors': ["'self'"],
+            'object-src': ["'none'"],
+            'form-action': ["'self'"],
+            'img-src': ["'self'", 'data:', 'blob:', 'https://api.dicebear.com'],
+            'style-src': ["'self'", "'unsafe-inline'"],  # manter inline até extrair estilos
+            'font-src': ["'self'", 'data:'],
+            'script-src': [
+                "'self'",
+                # Temporário: ainda há scripts inline e handlers; manter até migração
+                "'unsafe-inline'",
+                'https://cdn.jsdelivr.net',
+                'https://cdnjs.cloudflare.com',
+            ],
+            'connect-src': ["'self'"],
+            'manifest-src': ["'self'"],
+        }
+        Talisman(
+            app,
+            force_https=False,
+            content_security_policy=csp,
+            content_security_policy_nonce_in=['script-src'],
+            session_cookie_secure=False,
+            frame_options='SAMEORIGIN',
+            referrer_policy='no-referrer',
+            feature_policy=None,
+        )
+        # Adiciona um header "report-only" mais estrito para mapear violações sem quebrar páginas
+        @app.after_request
+        def add_csp_report_only(resp):
+            try:
+                ro_directives = {
+                    'default-src': "'self'",
+                    'base-uri': "'self'",
+                    'frame-ancestors': "'self'",
+                    'object-src': "'none'",
+                    'form-action': "'self'",
+                    'img-src': "'self' data: blob: https://api.dicebear.com",
+                    'style-src': "'self'",  # sem inline
+                    'font-src': "'self' data:",
+                    'script-src': "'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com",  # sem inline
+                    'connect-src': "'self'",
+                    'manifest-src': "'self'",
+                    'report-uri': "/csp-report",
+                }
+                policy = '; '.join([f"{k} {v}" for k, v in ro_directives.items()])
+                resp.headers['Content-Security-Policy-Report-Only'] = policy
+            except Exception:
+                pass
+            return resp
+        
+        # Endpoint para receber relatórios CSP (report-uri)
+        @app.post('/csp-report')
+        def csp_report():
+            try:
+                payload = None
+                ct = request.headers.get('Content-Type', '')
+                if 'application/json' in ct or 'csp-report' in ct or 'reports+json' in ct:
+                    payload = request.get_json(silent=True)
+                if payload is None:
+                    payload = {'raw': request.data.decode('utf-8', errors='ignore')}
+            except Exception:
+                payload = {'raw': ''}
+            try:
+                import importlib
+                _sl = importlib.import_module('services.security_log')
+                sec_log = getattr(_sl, 'sec_log', None)
+                if sec_log:
+                    sec_log('csp', 'violation_report', status='report-only', details=payload)
+            except Exception:
+                pass
+            return ('', 204)
+except Exception:
+    pass
+
+# Fallback: se Talisman não estiver disponível, aplica CSP mínima e report-only manualmente
+if not HAS_TALISMAN:
+    @app.after_request
+    def add_basic_csp(resp):
+        try:
+            policy = " ".join([
+                "default-src 'self';",
+                "base-uri 'self';",
+                "frame-ancestors 'self';",
+                "object-src 'none';",
+                "form-action 'self';",
+                "img-src 'self' data: blob: https://api.dicebear.com;",
+                "style-src 'self' 'unsafe-inline';",
+                "font-src 'self' data:;",
+                "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;",
+                "connect-src 'self';",
+                "manifest-src 'self';",
+            ])
+            resp.headers['Content-Security-Policy'] = policy
+
+            # Report-Only estrito
+            report_only = " ".join([
+                "default-src 'self';",
+                "base-uri 'self';",
+                "frame-ancestors 'self';",
+                "object-src 'none';",
+                "form-action 'self';",
+                "img-src 'self' data: blob: https://api.dicebear.com;",
+                "style-src 'self';",
+                "font-src 'self' data:;",
+                "script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;",
+                "connect-src 'self';",
+                "manifest-src 'self';",
+                "report-uri /csp-report;",
+            ])
+            resp.headers['Content-Security-Policy-Report-Only'] = report_only
+        except Exception:
+            pass
+        return resp
+
+    @app.post('/csp-report')
+    def csp_report_fallback():
+        try:
+            payload = None
+            ct = request.headers.get('Content-Type', '')
+            if 'application/json' in ct or 'csp-report' in ct or 'reports+json' in ct:
+                payload = request.get_json(silent=True)
+            if payload is None:
+                payload = {'raw': request.data.decode('utf-8', errors='ignore')}
+        except Exception:
+            payload = {'raw': ''}
+        try:
+            import importlib
+            _sl = importlib.import_module('services.security_log')
+            sec_log = getattr(_sl, 'sec_log', None)
+            if sec_log:
+                sec_log('csp', 'violation_report', status='report-only', details=payload)
+        except Exception:
+            pass
+        return ('', 204)
+
+# Security logger inicial
+try:
+    import importlib
+    _sl = importlib.import_module('services.security_log')
+    _setup_sec = getattr(_sl, 'setup_security_logger', None)
+    if _setup_sec:
+        _setup_sec(app)
+except Exception:
+    pass
+
+# Rota para servir logo(s) existentes na raiz do projeto (compatibilidade com templates)
+@app.route('/LOGOIPPEL.JPEG')
+def _serve_logo_legacy_upper():
+    try:
+        root_dir = os.path.dirname(os.path.abspath(__file__))
+        return send_from_directory(root_dir, 'IPPELLOGO.jpg')
+    except Exception:
+        abort(404)
+
+@app.route('/IPPELLOGO.jpg')
+def _serve_logo_legacy():
+    try:
+        root_dir = os.path.dirname(os.path.abspath(__file__))
+        return send_from_directory(root_dir, 'IPPELLOGO.jpg')
+    except Exception:
+        abort(404)
 
 # SocketIO (com fallback já preparado acima)
 # Força modo 'threading' para evitar dependências como eventlet/gevent em ambientes Windows/Python 3.13
@@ -1136,6 +1370,170 @@ def dashboard():
     }
     
     return render_template('dashboard_improved.html', user_permissions=user_permissions)
+
+# ===================== MONITORING DASHBOARD (Admin) =====================
+@app.route('/admin/monitoring')
+def monitoring_dashboard():
+    if 'user_id' not in session:
+        return redirect('/')
+    try:
+        from services.permissions import has_permission
+        if not has_permission(session['user_id'], 'admin_access'):
+            return redirect('/dashboard?error=access_denied&message=Acesso negado ao painel de monitoramento')
+    except Exception:
+        return redirect('/dashboard')
+    return render_template('monitoring_dashboard.html')
+
+@app.get('/api/monitoring/security-events')
+def api_monitoring_security_events():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Não autorizado'}), 401
+    try:
+        from services.permissions import has_permission
+        if not has_permission(session['user_id'], 'admin_access'):
+            return jsonify({'success': False, 'message': 'Sem permissão'}), 403
+        import os, json
+        limit = int(request.args.get('limit', 200))
+        if limit < 1:
+            limit = 1
+        if limit > 2000:
+            limit = 2000
+        # Localizar arquivo de log de segurança
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        logs_dir = os.path.join(os.path.dirname(base_dir), 'logs')
+        log_path = os.path.join(logs_dir, 'security.log')
+        events = []
+        if os.path.exists(log_path):
+            # Ler de trás para frente com consumo moderado
+            with open(log_path, 'r', encoding='utf-8') as f:
+                lines = f.readlines()[-limit:]
+            for ln in lines:
+                try:
+                    events.append(json.loads(ln.strip()))
+                except Exception:
+                    continue
+        return jsonify({'success': True, 'events': events})
+    except Exception as e:
+        try: logger.error(f"Erro ao ler eventos de segurança: {e}")
+        except Exception: pass
+        return jsonify({'success': False, 'message': 'Erro ao carregar eventos'}), 500
+
+@app.get('/api/monitoring/summary')
+def api_monitoring_summary():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Não autorizado'}), 401
+    try:
+        from services.permissions import has_permission
+        if not has_permission(session['user_id'], 'admin_access'):
+            return jsonify({'success': False, 'message': 'Sem permissão'}), 403
+        import os, json, time
+        from datetime import datetime, timedelta
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        logs_dir = os.path.join(os.path.dirname(base_dir), 'logs')
+        log_path = os.path.join(logs_dir, 'security.log')
+        now = datetime.utcnow()
+        window_hours = int(request.args.get('hours', 24))
+        if window_hours < 1:
+            window_hours = 1
+        if window_hours > 168:
+            window_hours = 168
+        since = now - timedelta(hours=window_hours)
+
+        counters = {
+            'auth_success': 0,
+            'auth_fail': 0,
+            'auth_lockout': 0,
+            'api_unauthorized': 0,
+        }
+        timeline = []  # [(iso, count)] aggregated per hour for failures
+        bucket = {}
+
+        if os.path.exists(log_path):
+            with open(log_path, 'r', encoding='utf-8') as f:
+                for ln in f:
+                    try:
+                        ev = json.loads(ln)
+                    except Exception:
+                        continue
+                    ts = ev.get('ts')
+                    if not ts:
+                        continue
+                    try:
+                        dt = datetime.fromisoformat(ts.replace('Z','').replace('z',''))
+                    except Exception:
+                        continue
+                    if dt < since:
+                        continue
+                    cat = str(ev.get('cat') or '')
+                    act = str(ev.get('act') or '')
+                    status = str(ev.get('status') or '')
+                    # Counters
+                    if cat == 'auth' and act == 'login' and status == 'success':
+                        counters['auth_success'] += 1
+                    if cat == 'auth' and act == 'login' and status == 'fail':
+                        counters['auth_fail'] += 1
+                        key = dt.strftime('%Y-%m-%d %H:00')
+                        bucket[key] = bucket.get(key, 0) + 1
+                    if cat == 'auth' and act == 'lockout':
+                        counters['auth_lockout'] += 1
+                        key = dt.strftime('%Y-%m-%d %H:00')
+                        bucket[key] = bucket.get(key, 0) + 1
+                    if cat == 'api' and act == 'unauthorized':
+                        counters['api_unauthorized'] += 1
+
+        # Build ordered timeline
+        for k in sorted(bucket.keys()):
+            timeline.append({'bucket': k, 'count': bucket[k]})
+
+        # Lockouts at the moment
+        try:
+            import sqlite3
+            conn = sqlite3.connect(DB_PATH); cur = conn.cursor()
+            cur.execute('SELECT COUNT(*) FROM login_lockouts WHERE locked_until IS NOT NULL AND locked_until > strftime("%s","now")')
+            active_lockouts = cur.fetchone()[0]
+            conn.close()
+        except Exception:
+            active_lockouts = 0
+
+        return jsonify({'success': True, 'window_hours': window_hours, 'counters': counters, 'timeline': timeline, 'active_lockouts': active_lockouts})
+    except Exception as e:
+        try: logger.error(f"Erro no summary de monitoramento: {e}")
+        except Exception: pass
+        return jsonify({'success': False, 'message': 'Erro ao carregar resumo'}), 500
+
+@app.get('/api/monitoring/lockouts')
+def api_monitoring_lockouts():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Não autorizado'}), 401
+    try:
+        from services.permissions import has_permission
+        if not has_permission(session['user_id'], 'admin_access'):
+            return jsonify({'success': False, 'message': 'Sem permissão'}), 403
+        import sqlite3
+        conn = sqlite3.connect(DB_PATH); cur = conn.cursor()
+        cur.execute('''
+            SELECT ll.user_id, u.name, u.email, ll.failed_count, ll.locked_until
+              FROM login_lockouts ll
+              LEFT JOIN users u ON u.id = ll.user_id
+             WHERE ll.locked_until IS NOT NULL AND ll.locked_until > strftime('%s','now')
+             ORDER BY ll.locked_until DESC
+             LIMIT 100
+        ''')
+        rows = cur.fetchall(); conn.close()
+        data = [
+            {
+                'user_id': r[0],
+                'name': r[1],
+                'email': r[2],
+                'failed_count': r[3],
+                'locked_until': int(r[4]) if r[4] is not None else None
+            } for r in rows
+        ]
+        return jsonify({'success': True, 'lockouts': data})
+    except Exception as e:
+        try: logger.error(f"Erro ao listar lockouts: {e}")
+        except Exception: pass
+        return jsonify({'success': False, 'message': 'Erro ao carregar lockouts'}), 500
 
 @app.route('/indicadores-dashboard')
 def indicadores_dashboard():
