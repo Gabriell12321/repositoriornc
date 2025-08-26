@@ -237,3 +237,14 @@ MIT License - IPPEL 2024
         - Variáveis de ambiente no Flask:
             - `GO_REPORTS_URL=http://127.0.0.1:8083`
         - API proxy no Flask: `GET /api/reports/rnc/<id>.pdf`
+
+    - Kotlin Utils (opcional)
+        - Serviço em `services/kotlin_utils` (Ktor + ZXing)
+        - Requisitos: JDK 17+, Gradle (wrapper incluído)
+        - Rodar local (na pasta do serviço):
+            - Windows PowerShell: `./gradlew.bat run`
+            - Config: `KOTLIN_UTILS_HOST=0.0.0.0`, `KOTLIN_UTILS_PORT=8084`
+        - Endpoints: `GET /health`, `GET /qr.png?text=...&size=256`
+        - Variáveis de ambiente no Flask:
+            - `KOTLIN_UTILS_URL=http://127.0.0.1:8084`
+        - API proxy no Flask: `GET /api/utils/qr.png?text=...&size=256`

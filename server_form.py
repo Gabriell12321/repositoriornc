@@ -462,6 +462,39 @@ def api_reports_rnc_pdf(rnc_id: int):
             pass
         return jsonify({'success': False, 'message': 'Falha ao gerar relatório'}), 500
 
+# =============== Optional Kotlin Utils proxy ===============
+try:
+    from services.kotlin_client import get_qr_png as _get_qr_png  # type: ignore
+except Exception:
+    _get_qr_png = None  # type: ignore
+
+
+@app.get('/api/utils/qr.png')
+def api_utils_qr_png():
+    try:
+        if not _get_qr_png:
+            return jsonify({'success': False, 'message': 'Kotlin utils client indisponível'}), 404
+        text = request.args.get('text')
+        if not text:
+            return jsonify({'success': False, 'message': 'Parâmetro text é obrigatório'}), 400
+        try:
+            size = int(request.args.get('size', '256'))
+        except Exception:
+            size = 256
+        content = _get_qr_png(text, size=size)
+        if not content:
+            return jsonify({'success': False, 'message': 'Serviço Kotlin Utils não configurado'}), 404
+        resp = make_response(content)
+        resp.headers['Content-Type'] = 'image/png'
+        resp.headers['Cache-Control'] = 'no-store'
+        return resp
+    except Exception as e:
+        try:
+            logger.error(f"Erro ao gerar QR: {e}")
+        except Exception:
+            pass
+        return jsonify({'success': False, 'message': 'Falha ao gerar QR'}), 500
+
 # Rota de debug de sessão
 @app.route('/api/debug/session')
 def api_debug_session():
