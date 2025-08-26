@@ -165,26 +165,88 @@
             }
         }
 
-        /* Container principal */
+        /* Layout em tela cheia (lado a lado) */
+        .auth-grid {
+            position: relative;
+            z-index: 3;
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 2.25rem;
+            align-items: center;
+            width: min(1240px, 96vw);
+            min-height: 100vh;
+            padding: 3rem 1.25rem;
+        }
+
+        .brand-side {
+            background:
+              radial-gradient(120% 120% at 0% 0%, rgba(102,126,234,0.25), transparent 60%),
+              radial-gradient(120% 120% at 100% 100%, rgba(245,87,108,0.22), transparent 60%),
+              linear-gradient(135deg, #0e1128 0%, #0b0f26 60%, #0a0d22 100%);
+            border: 1px solid var(--glass-border);
+            border-radius: 28px;
+            padding: clamp(24px, 4vw, 48px);
+            box-shadow: 0 30px 80px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(255,255,255,0.06);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .brand-side::before {
+            content: "";
+            position: absolute;
+            inset: -2px;
+            border-radius: inherit;
+            background: conic-gradient(from 0deg at 50% 50%, rgba(102,126,234,0.0), rgba(102,126,234,0.35), rgba(79,172,254,0.25), rgba(245,87,108,0.35), rgba(102,126,234,0.0));
+            filter: blur(18px);
+            opacity: 0.45;
+            pointer-events: none;
+        }
+
+        .brand-content { position: relative; z-index: 2; }
+
+        .brand-logos {
+            display: flex; align-items: center; gap: 14px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--glass-border);
+            padding: 14px;
+            border-radius: 16px;
+            width: fit-content;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25), inset 0 0 0 1px rgba(255,255,255,0.05);
+        }
+        .brand-logos img { width: 78px; height: 78px; object-fit: contain; border-radius: 14px; }
+
+        .brand-title { margin-top: 20px; font-size: clamp(28px, 4vw, 40px); font-weight: 800; color: var(--text-light); letter-spacing: -0.5px; }
+        .brand-subtitle { margin-top: 8px; font-size: clamp(14px, 2.2vw, 16px); color: var(--text-medium); }
+
+        .brand-points { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px 16px; margin-top: 26px; }
+        .brand-point {
+            display: flex; align-items: center; gap: 10px; color: var(--text-light);
+            background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
+            padding: 12px 14px; border-radius: 12px; font-size: 0.95rem;
+        }
+        .brand-point i { color: #6ea8fe; }
+
+        .brand-footer { margin-top: 26px; color: var(--text-subtle); font-size: 0.9rem; }
+
+        /* Card de login (lado direito) */
         .login-container {
             background: var(--glass-bg-strong);
             backdrop-filter: blur(24px);
             -webkit-backdrop-filter: blur(24px);
             border-radius: var(--radius-2xl);
             padding: var(--space-2xl);
-            box-shadow: 
-                var(--glass-shadow),
-                inset 0 0 0 1px var(--glass-border);
-            width: 440px;
-            max-width: calc(100vw - 2rem);
+            box-shadow: var(--glass-shadow), inset 0 0 0 1px var(--glass-border);
+            width: 460px;
+            max-width: 100%;
             position: relative;
             z-index: 10;
             border: 1px solid var(--glass-border);
             overflow: hidden;
-            animation: containerEnter 1s ease-out;
+            animation: containerEnter 0.8s ease-out;
             transform: perspective(1000px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
             transition: transform 120ms ease;
             will-change: transform;
+            margin-left: auto; /* gruda no lado direito do grid */
         }
 
         /* Borda gradiente animada ao redor do card */
@@ -645,11 +707,19 @@
         }
 
         /* Responsividade */
+        @media (max-width: 1100px) {
+            .auth-grid { grid-template-columns: 1fr; gap: 1.5rem; padding: 2rem 1rem; }
+            .brand-side { order: -1; }
+            .login-container { margin: 0 auto; }
+            .brand-points { grid-template-columns: 1fr; }
+        }
+
         @media (max-width: 768px) {
+            .auth-grid { width: min(680px, 96vw); }
             .login-container {
-                width: 90%;
-                max-width: 400px;
-                padding: 36px 28px;
+                width: 100%;
+                max-width: 480px;
+                padding: 32px 26px;
             }
 
             .logo-wrapper { width: 200px; height: 110px; }
@@ -677,9 +747,10 @@
         }
 
         @media (max-width: 480px) {
+            .auth-grid { width: 100%; padding: 1.25rem 1rem; }
             .login-container {
-                width: 95%;
-                padding: 28px 20px;
+                width: 100%;
+                padding: 24px 18px;
             }
 
             .logo-wrapper { width: 170px; height: 100px; }
@@ -705,7 +776,6 @@
 <body>
     <!-- Background animado -->
     <div class="animated-bg"></div>
-    
     <!-- Orbs flutuantes -->
     <div class="floating-orbs">
         <div class="orb orb1"></div>
@@ -713,7 +783,26 @@
         <div class="orb orb3"></div>
     </div>
 
-    <div class="login-container">
+    <main class="auth-grid">
+      <section class="brand-side" aria-label="Apresentação do sistema">
+        <div class="brand-content">
+            <div class="brand-logos">
+                <img src="{{ url_for('static', filename='LOGOSQI.jpg') }}" alt="Logotipo SQI">
+                <img src="/IPPELLOGO.jpg" alt="Logotipo IPPEL">
+            </div>
+            <h1 class="brand-title">Relatório de Não Conformidades</h1>
+            <p class="brand-subtitle">Gestão moderna de qualidade • Rápido • Seguro • Integrado</p>
+            <div class="brand-points">
+                <div class="brand-point"><i class="fa-solid fa-shield-check"></i> Autenticação segura e registro de auditoria</div>
+                <div class="brand-point"><i class="fa-solid fa-chart-line"></i> Indicadores e evolução contínua</div>
+                <div class="brand-point"><i class="fa-solid fa-bolt"></i> Fluxos ágeis e responsivos</div>
+                <div class="brand-point"><i class="fa-solid fa-diagram-project"></i> Integração com serviços auxiliares</div>
+            </div>
+            <div class="brand-footer">SQI • IPPEL — excelência em processos e conformidade</div>
+        </div>
+      </section>
+
+      <div class="login-container">
         <div class="logo-section">
             <div class="logo-wrapper" style="display:flex;align-items:center;justify-content:center;">
                 <div class="logo-orbit"></div>
@@ -777,7 +866,8 @@
         <div class="footer">
             © <span id="year"></span> <span>IPPEL</span> • Todos os direitos reservados
         </div>
-    </div>
+      </div>
+    </main>
 
     <script>
         // Ano no rodapé
