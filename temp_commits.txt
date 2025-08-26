@@ -1,3 +1,6 @@
+bfb9c45 versão funcionando
+4f36071 Melhora na visualização e nas permissões
+b1053a0 ENVIAR GITHUB FUNCIONANDO PERFEITAMENTE
 5caea67 teste2
 01080ee chore: update modelo logos and view fix
 5c9d480 teste
@@ -15,6 +18,3 @@ d00ba5c Versão definitiva
 4bfd1a9 atualização julia
 3bc6f11 feat(services): integra├º├Áes multi-idioma + robustez em Julia analytics e groups (valida├º├Áes, cache TTL, testes)
 3fdae2f linguagens pronta
-39fcde5 feat(kotlin): add Kotlin Ktor utils service (QR code) with Flask proxy and Python client; docs: README instructions
-63901ca docs(readme): document Go reports microservice and Flask proxy; chore: add Go reports client and proxy route
-081b177 feat(analytics): add Julia analytics microservice with Flask proxy; optional Rust image service integration; docs and deps

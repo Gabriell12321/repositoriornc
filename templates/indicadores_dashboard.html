@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IPPEL - Indicadores de Não Conformidades</title>
+    <title>IPPEL - Indicadores de Não Conformidades e Garantias</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <style>
@@ -142,6 +142,26 @@
         .refresh-button:hover {
             background: #5a67d8;
             transform: translateY(-2px);
+        }
+        
+        .btn-filter {
+            background: #e2e8f0;
+            color: #475569;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-filter:hover {
+            background: #cbd5e1;
+        }
+        
+        .btn-filter.active {
+            background: #dc2626;
+            color: white;
         }
 
         .main-grid {
@@ -473,7 +493,7 @@
                  data-logo-fallback2="{{ url_for('static', filename='LOGOSQI.jpg') }}"
                  onerror="if(this.dataset.try1!=='1'){this.dataset.try1='1'; this.src=this.dataset.logoFallback1;} else if(this.dataset.try2!=='1'){this.dataset.try2='1'; this.src=this.dataset.logoFallback2;} else {this.style.display='none';}">
             <div class="header-title">
-                <h1>Evidências Indicadores RNC - Relatório de Não Conformidade</h1>
+                <h1>Evidências Indicadores <span id="headerTitle">RNC - Relatório de Não Conformidade</span></h1>
                 <p>Monitoramento e análise em tempo real</p>
             </div>
             <a href="/dashboard" class="back-button">
@@ -524,6 +544,13 @@
                     <select id="responsibleFilter">
                         <option value="">Todos</option>
                     </select>
+                </div>
+                <div class="filter-group">
+                    <label>Tipo:</label>
+                    <div style="display: flex; gap: 8px;">
+                        <button id="rncFilterBtn" class="btn-filter active" onclick="setDataTypeFilter('rnc')">RNC</button>
+                        <button id="garantiaFilterBtn" class="btn-filter" onclick="setDataTypeFilter('garantia')">Garantia</button>
+                    </div>
                 </div>
             </div>
             <button class="refresh-button" onclick="refreshData()">
@@ -712,6 +739,7 @@
         let mainChart = null;
         let accumulatedChart = null;
         let currentData = null;
+        let currentDataType = 'rnc'; // 'rnc' ou 'garantia'
 
         // Configuração do Chart.js
         Chart.register(ChartDataLabels);
@@ -750,12 +778,25 @@
             document.getElementById('yearFilter').addEventListener('change', filterData);
             document.getElementById('responsibleFilter').addEventListener('change', filterData);
         }
+        
+        function setDataTypeFilter(type) {
+            if (currentDataType === type) return; // No change needed
+            
+            currentDataType = type;
+            
+            // Update button states
+            document.getElementById('rncFilterBtn').classList.toggle('active', type === 'rnc');
+            document.getElementById('garantiaFilterBtn').classList.toggle('active', type === 'garantia');
+            
+            // Reload data with the new filter
+            refreshData();
+        }
 
         async function loadData() {
             try {
                 showLoading();
                 
-                const response = await fetch('/api/indicadores-detalhados');
+                const response = await fetch(`/api/indicadores-detalhados?tipo=${currentDataType}`);
                 const data = await response.json();
                 
                 currentData = data;
@@ -806,6 +847,16 @@
         }
 
         function updateDashboard(data) {
+            // Atualizar título baseado no tipo de dados atual
+            const headerTitle = document.getElementById('headerTitle');
+            if (headerTitle) {
+                if (currentDataType === 'rnc') {
+                    headerTitle.textContent = 'RNC - Relatório de Não Conformidade';
+                } else {
+                    headerTitle.textContent = 'Garantia';
+                }
+            }
+            
             updateKPIs(data.totals);
             updateDepartmentList(data.departments);
             createMainChart(data.monthlyData);
@@ -1295,6 +1346,20 @@
             loadData();
         }
 
+        function setDataTypeFilter(type) {
+            console.log(`🔄 Alterando tipo de dados para: ${type}`);
+            
+            // Atualizar o tipo atual
+            currentDataType = type;
+            
+            // Atualizar estado visual dos botões
+            document.getElementById('rncFilterBtn').classList.toggle('active', type === 'rnc');
+            document.getElementById('garantiaFilterBtn').classList.toggle('active', type === 'garantia');
+            
+            // Recarregar dados com o novo tipo
+            loadData();
+        }
+
         function showLoading() {
             // Implementar loading se necessário
         }
@@ -1334,8 +1399,8 @@
             try {
                 showLoading();
                 
-                // Chamar API com filtro de setor
-                const response = await fetch(`/api/indicadores?sector=${encodeURIComponent(sector)}`);
+                // Chamar API com filtro de setor e tipo
+                const response = await fetch(`/api/indicadores?sector=${encodeURIComponent(sector)}&tipo=${currentDataType}`);
                 if (response.ok) {
                     const data = await response.json();
                     updateDashboard(data);

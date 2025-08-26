@@ -1972,9 +1972,38 @@ def api_indicadores_detalhados():
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Não autorizado'}), 401
     
+    # Pegar o tipo de indicador (rnc ou garantia)
+    tipo = request.args.get('tipo', 'rnc')
+    print(f"📊 Solicitação de dados para tipo: {tipo}")
+    
     try:
+        # Primeiro tenta importar e usar o script especializado para leitura de Excel
+        try:
+            import extract_indicators_by_type
+            from extract_indicators_by_type import extract_indicators_by_type
+            
+            # Tenta obter dados da planilha
+            excel_data = extract_indicators_by_type(tipo)
+            if excel_data:
+                print(f"✅ Dados extraídos com sucesso da planilha para: {tipo}")
+                return jsonify({
+                    'success': True,
+                    'source': 'excel',
+                    'totals': excel_data['totals'],
+                    'departments': excel_data['departments'],
+                    'monthlyData': excel_data['monthlyData']
+                })
+            else:
+                print("⚠️ Não foi possível extrair dados da planilha, usando banco de dados")
+        except Exception as excel_error:
+            print(f"⚠️ Erro ao usar script de extração: {excel_error}")
+            
+        # Se falhar a extração do Excel, usa dados do banco
         conn = sqlite3.connect('ippel_system.db')
         cursor = conn.cursor()
+        
+        # Não temos coluna "tipo" na tabela rncs, então usamos todos os dados
+        # independentemente do tipo solicitado
         
         # Dados básicos
         cursor.execute("SELECT COUNT(*) FROM rncs WHERE is_deleted = 0")
@@ -1997,23 +2026,25 @@ def api_indicadores_detalhados():
             """, (month_key,))
             count = cursor.fetchone()[0]
             tendencia_mensal[date.strftime('%b/%Y')] = count
+            count = cursor.fetchone()[0]
+            tendencia_mensal[date.strftime('%b/%Y')] = count
         
         # RNCs por departamento (baseado nos usuários)
-        cursor.execute("""
+        cursor.execute(f"""
             SELECT u.department, COUNT(r.id) as total
             FROM rncs r
             LEFT JOIN users u ON r.user_id = u.id
-            WHERE r.is_deleted = 0
+            WHERE r.is_deleted = 0 {tipo_filter}
             GROUP BY u.department
             ORDER BY total DESC
         """)
         por_departamento = dict(cursor.fetchall())
         
         # Status das RNCs
-        cursor.execute("""
+        cursor.execute(f"""
             SELECT status, COUNT(*) as total
             FROM rncs 
-            WHERE is_deleted = 0
+            WHERE is_deleted = 0 {tipo_filter}
             GROUP BY status
             ORDER BY total DESC
         """)
@@ -2027,11 +2058,11 @@ def api_indicadores_detalhados():
         }
         
         # RNCs recentes
-        cursor.execute("""
+        cursor.execute(f"""
             SELECT r.rnc_number, r.title, r.status, r.priority, r.created_at, u.name as user_name
             FROM rncs r
             LEFT JOIN users u ON r.user_id = u.id
-            WHERE r.is_deleted = 0
+            WHERE r.is_deleted = 0 {tipo_filter}
             ORDER BY r.created_at DESC
             LIMIT 10
         """)
