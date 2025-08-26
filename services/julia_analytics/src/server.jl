@@ -4,27 +4,97 @@ using HTTP, JSON3, DataFrames, SQLite, Dates, Statistics
 
 const DB_PATH = get(ENV, "IPPEL_DB", joinpath(@__DIR__, "..", "..", "..", "ippel_system.db"))
 
+"""
+    fetch_rncs() :: DataFrame
+
+Tenta carregar as colunas essenciais da tabela `rncs`. Se a tabela não existir
+ou ocorrer erro, retorna um DataFrame vazio e seguro (com zero colunas),
+permitindo que os consumidores tratem o caso sem exceção.
+"""
 function fetch_rncs()
     db = SQLite.DB(DB_PATH)
     try
-        df = DataFrame(DBInterface.execute(db, "SELECT id, created_at, status, priority, finalized_at FROM rncs"))
-        return df
+        try
+            return DataFrame(DBInterface.execute(db,
+                "SELECT id, created_at, status, priority, finalized_at FROM rncs"))
+        catch e
+            @warn "Falha ao ler tabela rncs; retornando DF vazio" exception = (e, catch_backtrace())
+            return DataFrame()
+        end
     finally
         SQLite.close(db)
     end
 end
 
+"""
+    summarize() -> NamedTuple
+
+Gera um resumo robusto do conjunto de RNCs, tolerando ausências de colunas,
+formatos de data diversos e banco vazio.
+Retorna (total, finalized, pending, by_month::DataFrame)
+"""
 function summarize()
     df = fetch_rncs()
-    # parse dates
-    if :created_at in names(df)
-        df.created_at = DateTime.(string.(df.created_at))
-        df.month = Date.(Dates.year.(df.created_at), Dates.month.(df.created_at), 1)
-    end
+
+    # Total simples
     total = nrow(df)
-    finalized = sum(coalesce.(df.status .== "Finalizado", false))
-    pending = total - finalized
-    by_month = combine(groupby(df, :month), nrow => :count)
+
+    # Normalização de status finalizado (case-insensitive, alguns sinônimos)
+    finalized = 0
+    if :status in names(df)
+        try
+            stat = lowercase.(string.(df.status))
+            finals = Set(["finalizado", "finalizada", "encerrado", "encerrada", "concluido", "concluída", "concluida"]) # acentos/variações
+            finalized = sum(in.(stat, Ref(finals)))
+        catch
+            finalized = 0
+        end
+    end
+
+    pending = max(total - finalized, 0)
+
+    # Construção de coluna mês a partir de created_at quando possível
+    by_month = DataFrame(month = Date[], count = Int[])
+    if :created_at in names(df) && nrow(df) > 0
+        # parsing tolerante
+        parsed = Vector{Union{Missing,DateTime}}(undef, nrow(df))
+        @inbounds for i in eachindex(parsed)
+            val = df.created_at[i]
+            if val isa DateTime
+                parsed[i] = val
+            else
+                s = try
+                    string(val)
+                catch
+                    missing
+                end
+                if s === missing
+                    parsed[i] = missing
+                else
+                    dt = tryparse(DateTime, s)
+                    if dt === nothing
+                        d = tryparse(Date, s)
+                        parsed[i] = d === nothing ? missing : DateTime(d)
+                    else
+                        parsed[i] = dt
+                    end
+                end
+            end
+        end
+
+        months = Vector{Union{Missing,Date}}(undef, nrow(df))
+        @inbounds for i in eachindex(months)
+            m = parsed[i]
+            months[i] = isnothing(m) || m === missing ? missing : Date(year(m::DateTime), month(m::DateTime), 1)
+        end
+
+        tmp = DataFrame(month = months)
+        tmp = dropmissing(tmp, :month; disallow = false)
+        if nrow(tmp) > 0
+            by_month = combine(groupby(tmp, :month), nrow => :count)
+        end
+    end
+
     return (; total, finalized, pending, by_month)
 end
 
@@ -52,7 +122,7 @@ function start_server()
     HTTP.serve(router, addr)
 end
 
-end # module #teamo
+end # module
 
 if abspath(PROGRAM_FILE) == @__FILE__
     using .RNCAnalytics

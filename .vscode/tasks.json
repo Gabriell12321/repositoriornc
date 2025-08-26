@@ -99,6 +99,64 @@
 			],
 			"problemMatcher": [],
 			"group": "build"
+		},
+		{
+			"label": "Commit and Push: linguagens pronta",
+			"type": "shell",
+			"command": "cmd",
+			"args": [
+				"/d",
+				"/c",
+				"cd /d \"G:\\My Drive\\Trabalhos pendentes\\rncs\\RELATORIO DE NÃO CONFORMIDADE IPPEL\" && echo PWD: && cd && echo. && echo STAGING... && git add -A && echo. && echo COMMIT... && git commit -m \"linguagens pronta\" || echo (no changes to commit) && echo. && echo PUSH... && git push -u origin master && echo. && echo LAST LOCAL COMMIT: && git --no-pager log -1 --pretty=oneline && echo. && echo REMOTE MASTER: && git --no-pager ls-remote --heads origin master"
+			],
+			"problemMatcher": [
+				"$git"
+			]
+		},
+		{
+			"label": "Commit+Push (linguagens pronta)",
+			"type": "shell",
+			"command": "cmd",
+			"args": [
+				"/d",
+				"/c",
+				"cd /d \"G:\\My Drive\\Trabalhos pendentes\\rncs\\RELATORIO DE NÃO CONFORMIDADE IPPEL\" && echo PWD: && cd && echo. && echo STAGING... && git add -A && echo. && echo COMMIT... && git commit -m \"linguagens pronta\" || echo (no changes to commit) && echo. && echo PUSH... && git push -u origin master && echo. && echo LAST LOCAL COMMIT: && git --no-pager log -1 --pretty=oneline && echo. && echo REMOTE MASTER: && git --no-pager ls-remote --heads origin master"
+			],
+			"isBackground": false,
+			"problemMatcher": [
+				"$git"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Push to GitHub (non-interactive)",
+			"type": "shell",
+			"command": "powershell.exe",
+			"args": [
+				"-NoProfile",
+				"-NonInteractive",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-Command",
+				"$ErrorActionPreference='Stop'; Set-Location -LiteralPath 'G:\\My Drive\\Trabalhos pendentes\\rncs\\RELATORIO DE NÃO CONFORMIDADE IPPEL'; git add -A; if ((git diff --cached --name-only).Length -eq 0) { Write-Output 'No staged changes'; } else { git commit -m \"chore(push): atualizar mensagem padrao do script para evitar 'linguagens pronta'\"; }; git push origin HEAD:master; git --no-pager log -1 --oneline;"
+			],
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Commit+Push Descriptive (bat)",
+			"type": "shell",
+			"command": "cmd",
+			"args": [
+				"/d",
+				"/c",
+				"\"G:\\My Drive\\Trabalhos pendentes\\rncs\\RELATORIO DE NÃO CONFORMIDADE IPPEL\\scripts\\commit_and_push_descriptive.bat\""
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
 		}
 	]
 }
