@@ -15,7 +15,7 @@ let currentUserId = null;
 let nextCursor = null;
 let hasMore = false;
 let isLoading = false;
-const PAGE_LIMIT = 500; // ajuste fino de desempenho
+const PAGE_LIMIT = 50000; // carregar tudo (21k) em uma única resposta
 
 // Utilitário seguro de fetch JSON
 async function fetchJSON(url, options = {}) {
