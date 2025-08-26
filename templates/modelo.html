@@ -103,7 +103,7 @@
             </tr>
             <tr>
                 <td>DESCRIÇÃO DES.</td>
-                <td>{{ txt_fields.get('Descrição da RNC') or '-' }}</td>
+                <td>{{ txt_fields.get('Descrição da RNC') or txt_fields.get('Descrição do desenho') or '-' }}</td>
                 <td>QTDE LOTE</td>
                 <td>{{ txt_fields.get('Quantidade') or '-' }}</td>
                 <td>MATERIAL</td>
@@ -154,7 +154,17 @@
             <tbody>
                 <tr>
                     <td>2</td>
-                    <td colspan="3"><div class="text-block">{{ rnc.instruction_retrabalho or txt_fields.get('Instrução para retrabalho') or txt_fields.get('Instrucao para retrabalho') or '-' }}</div></td>
+                    <td colspan="3"><div class="text-block">
+                        {% if rnc.instruction_retrabalho %}
+                            {{ rnc.instruction_retrabalho }}
+                        {% elif txt_fields.get('Instrução para retrabalho') %}
+                            {{ txt_fields.get('Instrução para retrabalho') }}
+                        {% elif txt_fields.get('Instrucao para retrabalho') %}
+                            {{ txt_fields.get('Instrucao para retrabalho') }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </div></td>
                 </tr>
             </tbody>
         </table>
@@ -170,7 +180,17 @@
             <tbody>
                 <tr>
                     <td>3</td>
-                    <td colspan="3"><div class="text-block">{{ rnc.cause_rnc or txt_fields.get('Causa') or txt_fields.get('Causa da RNC') or '-' }}</div></td>
+                    <td colspan="3"><div class="text-block">
+                        {% if rnc.cause_rnc %}
+                            {{ rnc.cause_rnc }}
+                        {% elif txt_fields.get('Causa') %}
+                            {{ txt_fields.get('Causa') }}
+                        {% elif txt_fields.get('Causa da RNC') %}
+                            {{ txt_fields.get('Causa da RNC') }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </div></td>
                 </tr>
             </tbody>
         </table>
@@ -186,7 +206,17 @@
             <tbody>
                 <tr>
                     <td>4</td>
-                    <td colspan="3"><div class="text-block">{{ rnc.action_rnc or txt_fields.get('Ação') or txt_fields.get('Ação a ser tomada') or '-' }}</div></td>
+                    <td colspan="3"><div class="text-block">
+                        {% if rnc.action_rnc %}
+                            {{ rnc.action_rnc }}
+                        {% elif txt_fields.get('Ação') %}
+                            {{ txt_fields.get('Ação') }}
+                        {% elif txt_fields.get('Ação a ser tomada') %}
+                            {{ txt_fields.get('Ação a ser tomada') }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </div></td>
                 </tr>
             </tbody>
         </table>

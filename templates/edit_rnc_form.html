@@ -238,11 +238,11 @@
                 <td class="field-label" style="width: 15%;">CV.</td>
             </tr>
             <tr>
-                <td><input type="text" id="title" class="input-field" value="{{ rnc.title or '' }}"></td>
-                <td><input type="text" class="input-field"></td>
-                <td><input type="text" class="input-field"></td>
-                <td><input type="text" class="input-field"></td>
-                <td><input type="text" class="input-field"></td>
+                <td><input type="text" id="title" class="input-field" value="{{ txt_fields.get('Desenho') or rnc.title or '' }}"></td>
+                <td><input type="text" class="input-field" value="{{ txt_fields.get('MP') or '' }}"></td>
+                <td><input type="text" class="input-field" value="{{ txt_fields.get('Revisão') or txt_fields.get('REVISAO') or '' }}"></td>
+                <td><input type="text" class="input-field" value="{{ txt_fields.get('POS') or '' }}"></td>
+                <td><input type="text" class="input-field" value="{{ txt_fields.get('CV') or '' }}"></td>
             </tr>
         </table>
 
@@ -254,8 +254,8 @@
             </tr>
             <tr>
                 <td><input type="text" id="equipment" class="input-field" value="{{ rnc.equipment or '' }}"></td>
-                <td><input type="text" class="input-field"></td>
-                <td><input type="text" class="input-field"></td>
+                <td><input type="text" class="input-field" value="{{ txt_fields.get('Conjunto') or '' }}"></td>
+                <td><input type="text" class="input-field" value="{{ txt_fields.get('Modelo') or '' }}"></td>
             </tr>
         </table>
 
@@ -267,10 +267,10 @@
                 <td class="field-label" style="width: 20%;">MATERIAL</td>
             </tr>
             <tr>
-                <td><input type="text" class="input-field"></td>
-                <td><input type="text" class="input-field"></td>
+                <td><input type="text" class="input-field" value="{{ txt_fields.get('Descrição da RNC') or txt_fields.get('Descrição do desenho') or '' }}"></td>
+                <td><input type="text" class="input-field" value="{{ txt_fields.get('Quantidade') or '' }}"></td>
                 <td><input type="text" id="client" class="input-field" value="{{ rnc.client or '' }}"></td>
-                <td><input type="text" class="input-field"></td>
+                <td><input type="text" class="input-field" value="{{ txt_fields.get('Material') or '' }}"></td>
             </tr>
         </table>
 
@@ -282,9 +282,9 @@
                 <td class="field-label" style="width: 25%;">NOME RESP.</td>
             </tr>
             <tr>
-                <td><input type="text" id="assinatura_gerente" class="input-field" value="{{ rnc.user_name or '' }}"></td>
-                <td><input type="text" class="input-field"></td>
-                <td><input type="text" class="input-field"></td>
+                <td><input type="text" id="assinatura_gerente" class="input-field" value="{{ rnc.signature_engineering_name or rnc.user_name or '' }}"></td>
+                <td><input type="text" class="input-field" value="{{ rnc.signature_inspection2_name or '' }}"></td>
+                <td><input type="text" class="input-field" value="{{ txt_fields.get('OC') or '' }}"></td>
                 <td><input type="text" id="nome_responsavel" class="input-field" value="{{ rnc.user_name or '' }}"></td>
             </tr>
         </table>
@@ -297,10 +297,10 @@
                 <td class="field-label" style="width: 15%;">ASS. RESP.</td>
             </tr>
             <tr>
-                <td><input type="text" class="input-field"></td>
-                <td><input type="text" id="data_emissao" class="input-field" placeholder="___/___/______" style="text-align: center;"></td>
-                <td><input type="text" id="area_responsavel" class="input-field"></td>
-                <td><input type="text" class="input-field"></td>
+                <td><input type="text" class="input-field" value="{{ rnc.signature_inspection_name or '' }}"></td>
+                <td><input type="text" class="input-field" value="{{ (rnc.created_at or '')[:10] if rnc.created_at else '' }}"></td>
+                <td><input type="text" class="input-field" value="{{ rnc.department or rnc.user_department or '' }}"></td>
+                <td><input type="text" class="input-field" value="{{ rnc.user_name or '' }}"></td>
             </tr>
         </table>
 
@@ -461,11 +461,11 @@
     <!-- Barra de ações moderna -->
     <div class="action-bar">
         <button class="action-btn dashboard-btn" title="Voltar ao Dashboard" onclick="window.location.href='/dashboard'">
-            <span class="icon">🏠</span>
+            🏠
             <span class="label">Dashboard</span>
         </button>
         <button class="action-btn save-btn" title="Salvar Alterações" onclick="salvarAlteracoes()">
-            <span class="icon">💾</span>
+            💾
             <span class="label">Salvar</span>
         </button>
     </div>

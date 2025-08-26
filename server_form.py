@@ -2974,7 +2974,8 @@ def get_user_info():
                 'is_deleted','deleted_at','finalized_at','created_at','updated_at','disposition_usar','disposition_retrabalhar',
                 'disposition_rejeitar','disposition_sucata','disposition_devolver_estoque','disposition_devolver_fornecedor',
                 'inspection_aprovado','inspection_reprovado','inspection_ver_rnc','signature_inspection_date','signature_engineering_date',
-                'signature_inspection2_date','signature_inspection_name','signature_engineering_name','signature_inspection2_name','price'
+                'signature_inspection2_date','signature_inspection_name','signature_engineering_name','signature_inspection2_name','price',
+                'department','instruction_retrabalho','cause_rnc','action_rnc'
             ]
         columns = base_columns + ['user_name', 'assigned_user_name']
         
@@ -3084,7 +3085,8 @@ def get_user_info():
                 'is_deleted','deleted_at','finalized_at','created_at','updated_at','disposition_usar','disposition_retrabalhar',
                 'disposition_rejeitar','disposition_sucata','disposition_devolver_estoque','disposition_devolver_fornecedor',
                 'inspection_aprovado','inspection_reprovado','inspection_ver_rnc','signature_inspection_date','signature_engineering_date',
-                'signature_inspection2_date','signature_inspection_name','signature_engineering_name','signature_inspection2_name','price'
+                'signature_inspection2_date','signature_inspection_name','signature_engineering_name','signature_inspection2_name','price',
+                'department','instruction_retrabalho','cause_rnc','action_rnc'
             ]
         columns = base_columns + ['user_name', 'assigned_user_name']
 
@@ -3322,7 +3324,8 @@ def get_user_info():
                 'is_deleted','deleted_at','finalized_at','created_at','updated_at','disposition_usar','disposition_retrabalhar',
                 'disposition_rejeitar','disposition_sucata','disposition_devolver_estoque','disposition_devolver_fornecedor',
                 'inspection_aprovado','inspection_reprovado','inspection_ver_rnc','signature_inspection_date','signature_engineering_date',
-                'signature_inspection2_date','signature_inspection_name','signature_engineering_name','signature_inspection2_name','price'
+                'signature_inspection2_date','signature_inspection_name','signature_engineering_name','signature_inspection2_name','price',
+                'department','instruction_retrabalho','cause_rnc','action_rnc'
             ]
         columns = base_columns + ['user_name', 'assigned_user_name']
 

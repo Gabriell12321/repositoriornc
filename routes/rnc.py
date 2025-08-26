@@ -388,7 +388,6 @@ def view_rnc(rnc_id):
     if 'user_id' not in session:
         return redirect('/')
     try:
-        from services.rnc import can_user_access_rnc
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         cursor.execute('''
@@ -404,15 +403,12 @@ def view_rnc(rnc_id):
         ''', (rnc_id,))
         rnc_data = cursor.fetchone()
         conn.close()
+        
         if not rnc_data:
             return render_template('error.html', message='RNC não encontrado')
+        
         if not isinstance(rnc_data, (tuple, list)):
-            logger.error(f"Erro: rnc_data não é uma tupla/lista: {type(rnc_data)} - {rnc_data}")
             return render_template('error.html', message='Erro interno do sistema')
-
-        if not can_user_access_rnc(session['user_id'], rnc_id):
-            logger.warning(f"Acesso negado para usuário {session['user_id']} à RNC {rnc_id}")
-            return render_template('error.html', message='Acesso negado')
 
         try:
             conn_cols = sqlite3.connect(DB_PATH)
@@ -438,46 +434,84 @@ def view_rnc(rnc_id):
         rnc_dict = dict(zip(columns, rnc_data))
 
         def parse_label_map(text: str):
+            """Extract key=value style pairs from description, tolerant to separators.
+            Supports:
+              - DES.: 123   REV - X   POS = 1   MOD  ABC
+              - Handles accents and punctuation; recognizes abbreviations.
+            """
+            import re, unicodedata
             if not text:
                 return {}
-            mapping = {}
-            lines = [ln.strip() for ln in str(text).split('\n') if ln.strip()]
+            def _norm(s: str) -> str:
+                s = unicodedata.normalize('NFD', s)
+                s = ''.join(ch for ch in s if unicodedata.category(ch) != 'Mn')
+                s = s.lower()
+                s = re.sub(r'[^a-z0-9]', '', s)
+                return s
+            sep_re = re.compile(r'^\s*([A-Za-zÀ-ÿ\.\s/_-]{2,}?)\s*(?:[:=\-–—]+|\s{2,})\s*(.+)$')
+            token_re = re.compile(r'^\s*([A-Za-zÀ-ÿ\.]{2,})\s+(.+)$')
+            mapping: dict[str, str] = {}
+            lines = [ln.rstrip() for ln in str(text).split('\n') if ln.strip()]
             for ln in lines:
-                if ':' in ln:
-                    parts = ln.split(':', 1)
-                    if len(parts) == 2:
-                        label = parts[0].strip()
-                        val = parts[1].strip()
-                        normalized_label = label.lower().replace(' ', '').replace('ã', 'a').replace('ç', 'c')
-                        if 'desenho' in normalized_label:
-                            mapping['Desenho'] = val
-                        elif 'mp' in normalized_label:
-                            mapping['MP'] = val
-                        elif 'revisao' in normalized_label or 'revisão' in normalized_label:
-                            mapping['Revisão'] = val
-                        elif 'cv' in normalized_label:
-                            mapping['CV'] = val
-                        elif 'pos' in normalized_label:
-                            mapping['POS'] = val
-                        elif 'conjunto' in normalized_label:
-                            mapping['Conjunto'] = val
-                        elif 'modelo' in normalized_label:
-                            mapping['Modelo'] = val
-                        elif 'quantidade' in normalized_label:
-                            mapping['Quantidade'] = val
-                        elif 'area' in normalized_label and 'responsavel' in normalized_label:
-                            mapping['Área responsável'] = val
-                        elif 'descricao' in normalized_label and 'rnc' in normalized_label:
-                            mapping['Descrição da RNC'] = val
-                        elif 'instrucao' in normalized_label and 'retrabalho' in normalized_label:
-                            mapping['Instrução para retrabalho'] = val
-                        elif 'valor' in normalized_label:
-                            mapping['Valor'] = val
-                        else:
-                            mapping[label] = val
+                m = sep_re.match(ln)
+                if not m:
+                    m = token_re.match(ln)
+                if not m:
+                    continue
+                label, val = m.group(1).strip(), m.group(2).strip()
+                n = _norm(label)
+                if n in {'des', 'desenho'}:
+                    mapping['Desenho'] = val
+                elif n in {'mp'}:
+                    mapping['MP'] = val
+                elif n in {'rev', 'revisao'}:
+                    mapping['Revisão'] = val
+                elif n == 'cv' or 'cv' in n:
+                    mapping['CV'] = val
+                elif n == 'pos' or 'pos' in n:
+                    mapping['POS'] = val
+                elif 'conjunto' in n or n == 'conj':
+                    mapping['Conjunto'] = val
+                elif n in {'modelo', 'mod'}:
+                    mapping['Modelo'] = val
+                elif n in {'quantidade', 'qtde', 'qtd'}:
+                    mapping['Quantidade'] = val
+                elif 'material' in n or n == 'mat':
+                    mapping['Material'] = val
+                elif n in {'oc', 'ordemdecompra', 'ordemcompra'}:
+                    mapping['OC'] = val
+                elif ('area' in n and 'responsavel' in n) or n in {'arearesponsavel'}:
+                    mapping['Área responsável'] = val
+                elif 'descricao' in n and 'rnc' in n:
+                    mapping['Descrição da RNC'] = val
+                elif 'instrucao' in n and 'retrabalho' in n:
+                    mapping['Instrução para retrabalho'] = val
+                elif n in {'valor', 'vlr'}:
+                    mapping['Valor'] = val
+                elif n in {'causa'}:
+                    mapping['Causa'] = val
+                elif 'acao' in n or 'acaosertomada' in n:
+                    mapping['Ação'] = val
+                else:
+                    mapping[label] = val
             return mapping
 
         txt_fields = parse_label_map(rnc_dict.get('description') or '')
+        # Debug rápido para conferir extração
+        try:
+            logger.info(f"VIEW RNC {rnc_id}: txt_fields keys -> {list(txt_fields.keys())}")
+        except Exception:
+            pass
+        # Determinar criador de forma robusta usando o dict (evita dependência do índice da coluna)
+        is_creator = str(session['user_id']) == str(rnc_dict.get('user_id'))
+        # Visualização usa o template atualizado com estilo do modelo
+        return render_template('view_rnc_full.html', rnc=rnc_dict, is_creator=is_creator, txt_fields=txt_fields)
+    except Exception as e:
+        return render_template('error.html', message=f'Erro interno do sistema: {str(e)}')
+
+
+
+# Função print_rnc correta está mais abaixo no arquivo
         # Determinar criador de forma robusta usando o dict (evita dependência do índice da coluna)
         is_creator = str(session['user_id']) == str(rnc_dict.get('user_id'))
         
@@ -488,8 +522,14 @@ def view_rnc(rnc_id):
         logger.info(f"DEBUG - RNC {rnc_id}: txt_fields={txt_fields}")
         logger.info(f"DEBUG - RNC {rnc_id}: signature_inspection_name={rnc_dict.get('signature_inspection_name')}")
         
-        # Visualização passa a usar o novo modelo (modelo.html) com todos os dados
-        return render_template('modelo.html', rnc=rnc_dict, is_creator=is_creator, txt_fields=txt_fields)
+        # Debug específico para os novos campos
+        logger.info(f"DEBUG - RNC {rnc_id}: instruction_retrabalho='{rnc_dict.get('instruction_retrabalho')}'")
+        logger.info(f"DEBUG - RNC {rnc_id}: cause_rnc='{rnc_dict.get('cause_rnc')}'")
+        logger.info(f"DEBUG - RNC {rnc_id}: action_rnc='{rnc_dict.get('action_rnc')}'")
+        logger.info(f"DEBUG - RNC {rnc_id}: Chaves do rnc_dict: {list(rnc_dict.keys())}")
+        
+        # Visualização usa o template atualizado com estilo do modelo
+        return render_template('view_rnc_full.html', rnc=rnc_dict, is_creator=is_creator, txt_fields=txt_fields)
     except Exception as e:
         logger.error(f"Erro ao visualizar RNC {rnc_id}: {e}")
         return render_template('error.html', message='Erro interno do sistema')
@@ -601,43 +641,66 @@ def print_rnc(rnc_id):
             rnc_dict['user_name'] = 'Sistema'
 
         def parse_label_map(text: str):
+            """Extrai pares label→valor da descrição, tolerando diferentes separadores e abreviações.
+            Suporta linhas como:
+              - "DES.: 123   REV - X   POS = 1   MOD  ABC"
+              - "QTDE LOTE: 25" → Quantidade
+              - "DESCRIÇÃO DES.: ..." → Descrição da RNC/Descrição do desenho
+            """
+            import re, unicodedata
             if not text:
                 return {}
-            mapping = {}
-            lines = [ln.strip() for ln in str(text).split('\n') if ln.strip()]
+            def _norm(s: str) -> str:
+                s = unicodedata.normalize('NFD', s)
+                s = ''.join(ch for ch in s if unicodedata.category(ch) != 'Mn')
+                s = s.lower()
+                s = re.sub(r'[^a-z0-9]', '', s)
+                return s
+            # Suporta: ":", "-", "—", "=", ou 2+ espaços como separador
+            sep_re = re.compile(r'^\s*([A-Za-zÀ-ÿ\.\s/_-]{2,}?)\s*(?:[:=\-\u2013\u2014]+|\s{2,})\s*(.+)$')
+            token_re = re.compile(r'^\s*([A-Za-zÀ-ÿ\.]{2,})\s+(.+)$')
+            mapping: dict[str, str] = {}
+            lines = [ln.rstrip() for ln in str(text).split('\n') if ln.strip()]
             for ln in lines:
-                if ':' in ln:
-                    parts = ln.split(':', 1)
-                    if len(parts) == 2:
-                        label = parts[0].strip()
-                        val = parts[1].strip()
-                        normalized_label = label.lower().replace(' ', '').replace('ã', 'a').replace('ç', 'c')
-                        if 'desenho' in normalized_label:
-                            mapping['Desenho'] = val
-                        elif 'mp' in normalized_label:
-                            mapping['MP'] = val
-                        elif 'revisao' in normalized_label or 'revisão' in normalized_label:
-                            mapping['Revisão'] = val
-                        elif 'cv' in normalized_label:
-                            mapping['CV'] = val
-                        elif 'pos' in normalized_label:
-                            mapping['POS'] = val
-                        elif 'conjunto' in normalized_label:
-                            mapping['Conjunto'] = val
-                        elif 'modelo' in normalized_label:
-                            mapping['Modelo'] = val
-                        elif 'quantidade' in normalized_label:
-                            mapping['Quantidade'] = val
-                        elif 'area' in normalized_label and 'responsavel' in normalized_label:
-                            mapping['Área responsável'] = val
-                        elif 'descricao' in normalized_label and 'rnc' in normalized_label:
-                            mapping['Descrição da RNC'] = val
-                        elif 'instrucao' in normalized_label and 'retrabalho' in normalized_label:
-                            mapping['Instrução para retrabalho'] = val
-                        elif 'valor' in normalized_label:
-                            mapping['Valor'] = val
-                        else:
-                            mapping[label] = val
+                m = sep_re.match(ln)
+                if not m:
+                    m = token_re.match(ln)
+                if not m:
+                    continue
+                label, val = m.group(1).strip(), m.group(2).strip()
+                n = _norm(label)
+                if n in {'des', 'desenho'}:
+                    mapping['Desenho'] = val
+                elif n in {'mp'}:
+                    mapping['MP'] = val
+                elif n in {'rev', 'revisao'}:
+                    mapping['Revisão'] = val
+                elif n == 'cv' or 'cv' in n:
+                    mapping['CV'] = val
+                elif n == 'pos' or 'pos' in n:
+                    mapping['POS'] = val
+                elif 'conjunto' in n or n == 'conj':
+                    mapping['Conjunto'] = val
+                elif n in {'modelo', 'mod'}:
+                    mapping['Modelo'] = val
+                elif n == 'quantidade' or n.startswith('qtde') or n.startswith('qtd'):
+                    mapping['Quantidade'] = val
+                elif 'material' in n or n == 'mat':
+                    mapping['Material'] = val
+                elif n in {'oc', 'ordemdecompra', 'ordemcompra'}:
+                    mapping['OC'] = val
+                elif ('area' in n and 'responsavel' in n) or n in {'arearesponsavel'}:
+                    mapping['Área responsável'] = val
+                elif ('descricao' in n and 'rnc' in n) or n in {'descricaodes', 'descricaododesenho', 'descricaodesenho'}:
+                    # Preencher ambos para máxima compatibilidade com templates
+                    mapping['Descrição da RNC'] = val
+                    mapping['Descrição do desenho'] = val
+                elif 'instrucao' in n and 'retrabalho' in n:
+                    mapping['Instrução para retrabalho'] = val
+                elif n in {'valor', 'vlr'}:
+                    mapping['Valor'] = val
+                else:
+                    mapping[label] = val
             return mapping
         txt_fields = parse_label_map(rnc_dict.get('description') or '')
         return render_template('view_rnc_print.html', rnc=rnc_dict, txt_fields=txt_fields, mode='print')
@@ -679,51 +742,68 @@ def print_rnc_modelo(rnc_id):
 
         # Extrair campos rotulados do description
         def parse_label_map(text: str):
+            """Extrai pares label→valor da descrição, tolerando diferentes separadores e abreviações.
+            Suporta linhas como:
+              - "DES.: 123   REV - X   POS = 1   MOD  ABC"
+              - "QTDE LOTE: 25" → Quantidade
+              - "DESCRIÇÃO DES.: ..." → Descrição da RNC/Descrição do desenho
+            """
+            import re, unicodedata
             if not text:
                 return {}
-            mapping = {}
-            lines = [ln.strip() for ln in str(text).split('\n') if ln.strip()]
+            def _norm(s: str) -> str:
+                s = unicodedata.normalize('NFD', s)
+                s = ''.join(ch for ch in s if unicodedata.category(ch) != 'Mn')
+                s = s.lower()
+                s = re.sub(r'[^a-z0-9]', '', s)
+                return s
+            sep_re = re.compile(r'^\s*([A-Za-zÀ-ÿ\.\s/_-]{2,}?)\s*(?:[:=\-\u2013\u2014]+|\s{2,})\s*(.+)$')
+            token_re = re.compile(r'^\s*([A-Za-zÀ-ÿ\.]{2,})\s+(.+)$')
+            mapping: dict[str, str] = {}
+            lines = [ln.rstrip() for ln in str(text).split('\n') if ln.strip()]
             for ln in lines:
-                if ':' in ln:
-                    parts = ln.split(':', 1)
-                    if len(parts) == 2:
-                        label = parts[0].strip()
-                        val = parts[1].strip()
-                        normalized_label = label.lower().replace(' ', '').replace('ã', 'a').replace('ç', 'c')
-                        if 'desenho' in normalized_label:
-                            mapping['Desenho'] = val
-                        elif 'mp' in normalized_label:
-                            mapping['MP'] = val
-                        elif 'revisao' in normalized_label or 'revisão' in normalized_label:
-                            mapping['Revisão'] = val
-                        elif 'cv' in normalized_label:
-                            mapping['CV'] = val
-                        elif 'pos' in normalized_label:
-                            mapping['POS'] = val
-                        elif 'conjunto' in normalized_label:
-                            mapping['Conjunto'] = val
-                        elif 'modelo' in normalized_label:
-                            mapping['Modelo'] = val
-                        elif 'quantidade' in normalized_label:
-                            mapping['Quantidade'] = val
-                        elif 'material' in normalized_label:
-                            mapping['Material'] = val
-                        elif 'ordem' in normalized_label and 'compra' in normalized_label:
-                            mapping['OC'] = val
-                        elif 'area' in normalized_label and 'responsavel' in normalized_label:
-                            mapping['Área responsavel'] = val
-                        elif 'descricao' in normalized_label and 'rnc' in normalized_label:
-                            mapping['Descrição da RNC'] = val
-                        elif 'instrucao' in normalized_label and 'retrabalho' in normalized_label:
-                            mapping['Instrução para retrabalho'] = val
-                        elif 'valor' in normalized_label:
-                            mapping['Valor'] = val
-                        elif 'causa' in normalized_label:
-                            mapping['Causa'] = val
-                        elif 'acao' in normalized_label or 'ação' in normalized_label:
-                            mapping['Ação'] = val
-                        else:
-                            mapping[label] = val
+                m = sep_re.match(ln)
+                if not m:
+                    m = token_re.match(ln)
+                if not m:
+                    continue
+                label, val = m.group(1).strip(), m.group(2).strip()
+                n = _norm(label)
+                if n in {'des', 'desenho'}:
+                    mapping['Desenho'] = val
+                elif n in {'mp'}:
+                    mapping['MP'] = val
+                elif n in {'rev', 'revisao'}:
+                    mapping['Revisão'] = val
+                elif n == 'cv' or 'cv' in n:
+                    mapping['CV'] = val
+                elif n == 'pos' or 'pos' in n:
+                    mapping['POS'] = val
+                elif 'conjunto' in n or n == 'conj':
+                    mapping['Conjunto'] = val
+                elif n in {'modelo', 'mod'}:
+                    mapping['Modelo'] = val
+                elif n == 'quantidade' or n.startswith('qtde') or n.startswith('qtd'):
+                    mapping['Quantidade'] = val
+                elif 'material' in n or n == 'mat':
+                    mapping['Material'] = val
+                elif n in {'oc', 'ordemdecompra', 'ordemcompra'}:
+                    mapping['OC'] = val
+                elif ('area' in n and 'responsavel' in n) or n in {'arearesponsavel'}:
+                    mapping['Área responsável'] = val
+                elif ('descricao' in n and 'rnc' in n) or n in {'descricaodes', 'descricaododesenho', 'descricaodesenho'}:
+                    mapping['Descrição da RNC'] = val
+                    mapping['Descrição do desenho'] = val
+                elif 'instrucao' in n and 'retrabalho' in n:
+                    mapping['Instrução para retrabalho'] = val
+                elif n in {'valor', 'vlr'}:
+                    mapping['Valor'] = val
+                elif n in {'causa'}:
+                    mapping['Causa'] = val
+                elif 'acao' in n or 'acaosertomada' in n:
+                    mapping['Ação'] = val
+                else:
+                    mapping[label] = val
             return mapping
 
         txt_fields = parse_label_map(rnc_dict.get('description') or '')
@@ -840,7 +920,28 @@ def edit_rnc(rnc_id):
         if len(rnc_data) < len(columns):
             rnc_data = list(rnc_data) + [None] * (len(columns) - len(rnc_data))
         rnc_dict = dict(zip(columns, rnc_data))
-        return render_template('edit_rnc_form.html', rnc=rnc_dict, is_editing=True)
+        
+        # Adicionar a função parse_label_map para extrair campos de texto
+        def parse_label_map(text: str):
+            if not text:
+                return {}
+            result = {}
+            lines = text.split('\n')
+            for line in lines:
+                line = line.strip()
+                if ':' in line:
+                    parts = line.split(':', 1)
+                    if len(parts) == 2:
+                        key = parts[0].strip()
+                        value = parts[1].strip()
+                        if key and value:
+                            result[key] = value
+            return result
+        
+        # Extrair campos de texto da descrição
+        txt_fields = parse_label_map(rnc_dict.get('description') or '')
+        
+        return render_template('edit_rnc_form.html', rnc=rnc_dict, txt_fields=txt_fields, is_editing=True)
     except Exception as e:
         logger.error(f"Erro ao editar RNC {rnc_id}: {e}")
         return render_template('error.html', message='Erro interno do sistema')

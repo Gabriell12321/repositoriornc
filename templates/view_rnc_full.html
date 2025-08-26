@@ -3,572 +3,940 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RNC {{ rnc.rnc_number }}</title>
+    <title>Visualização RNC - {{ rnc.rnc_number }}</title>
+    <!-- Removido Font Awesome do CDN para evitar problemas de CSP -->
     <style>
-        * { box-sizing: border-box; }
-        body { 
-            font-family: 'Poppins','Inter', system-ui, sans-serif; 
-            margin: 0; 
-            background: #f7f7fb; 
-            color: #333; 
-        }
-        .container { 
-            max-width: 1200px; 
-            margin: 0 auto; 
-            padding: 24px; 
-        }
-        .header { 
-            display:flex; 
-            align-items:center; 
-            justify-content:space-between; 
-            margin-bottom: 20px; 
-        }
-        .logo { 
-            display:flex; 
-            align-items:center; 
-            gap:12px; 
-        }
-        .logo img { 
-            width:60px; 
-            height:60px; 
-            border-radius:12px; 
-            object-fit:contain; 
-            box-shadow:0 4px 14px rgba(0,0,0,.1); 
-        }
-        .title { 
-            font-weight:800; 
-            letter-spacing:.5px; 
-            font-size:18px; 
-            color:#8b1538; 
-        }
-        .rnc-number { 
-            font-weight:700; 
-            font-size:14px; 
-            color:#495057; 
+        :root {
+            --primary-red: #C1272D;
+            --secondary-red: #8b1538;
+            --accent-blue: #2c3e50;
+            --light-gray: #f8f9fa;
+            --border-gray: #e9ecef;
+            --text-dark: #2c3e50;
+            --text-muted: #6c757d;
+            --success-green: #28a745;
+            --warning-orange: #ffc107;
+            --danger-red: #dc3545;
         }
 
-        .actions { 
-            display:flex; 
-            gap:10px; 
-        }
-        .btn { 
-            padding:10px 14px; 
-            border:none; 
-            border-radius:10px; 
-            font-weight:600; 
-            cursor:pointer; 
-            color:#fff; 
-            display:inline-flex; 
-            align-items:center; 
-            gap:8px; 
-            box-shadow:0 8px 20px rgba(0,0,0,.12); 
-        }
-        .btn-secondary { background:#6c757d; }
-        .btn-primary { background:#0d6efd; }
-        .btn-info { background:#17a2b8; }
-        .btn-warning { background:#ffc107; color:#333; }
-
-        .card { 
-            background:#fff; 
-            border-radius:14px; 
-            box-shadow:0 10px 30px rgba(0,0,0,.08); 
-            margin-bottom:16px; 
-            overflow:hidden; 
-            border:1px solid #eee; 
-        }
-        .card-header { 
-            background:#8b1538; 
-            color:#fff; 
-            padding:10px 14px; 
-            font-weight:700; 
-            font-size:12px; 
-            letter-spacing:.4px; 
-        }
-        .card-body { 
-            padding:16px; 
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        .grid { 
-            display:grid; 
-            gap:12px; 
-        }
-        .grid-2 { 
-            grid-template-columns: 1fr 1fr; 
-        }
-        .grid-3 { 
-            grid-template-columns: 1fr 1fr 1fr; 
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            color: var(--text-dark);
+            line-height: 1.4;
+            font-size: 11px;
         }
 
-        .field { 
-            display:flex; 
-            flex-direction:column; 
-            gap:6px; 
-        }
-        .label { 
-            font-size:11px; 
-            color:#8b1538; 
-            font-weight:700; 
-        }
-        .value { 
-            padding:10px 12px; 
-            border:2px solid #8b1538; 
-            border-radius:8px; 
-            background:#fff; 
-            font-size:13px; 
-            min-height:38px; 
-            display:flex; 
-            align-items:center; 
-        }
-        .muted { 
-            color:#6c757d; 
+        /* Header com controles */
+        .print-controls {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 12px 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid var(--border-gray);
         }
 
-        .dispo-grid { 
-            display:grid; 
-            grid-template-columns: 1fr 1fr; 
-        }
-        .section-split { 
-            display:grid; 
-            grid-template-columns: 1fr 1fr; 
-            border:2px solid #8b1538; 
-            border-top:none; 
-            border-radius:0 0 10px 10px; 
-        }
-        .split-left { 
-            border-right:1px solid #8b1538; 
-            padding:12px; 
-        }
-        .split-right { 
-            padding:12px; 
-        }
-        .checkbox { 
-            display:flex; 
-            align-items:center; 
-            gap:8px; 
-            font-weight:600; 
-            font-size:12px; 
-            margin:6px 0; 
-        }
-        .checkbox input { 
-            width:16px; 
-            height:16px; 
-            accent-color:#8b1538; 
+        .controls-container {
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
         }
 
-        .sign-row { 
-            display:flex; 
-            border-top:1px solid #8b1538; 
-        }
-        .sign-col { 
-            width:33.33%; 
-            padding:14px; 
-            text-align:center; 
-            border-right:1px solid #8b1538; 
-        }
-        .sign-col:last-child { 
-            border-right:none; 
-        }
-        .sign-name { 
-            font-weight:700; 
-            margin-bottom:18px; 
-            min-height:20px; 
-        }
-        .sign-line { 
-            margin-top:8px; 
-            padding-top:8px; 
-            border-top:1px solid #dee2e6; 
-            color:#6c757d; 
-            font-weight:600; 
+        .controls-left, .controls-right {
+            display: flex;
+            gap: 8px;
+            align-items: center;
         }
 
-        @media (max-width: 900px) {
-            .grid-2 { grid-template-columns: 1fr; }
-            .grid-3 { grid-template-columns: 1fr; }
-            .section-split { grid-template-columns: 1fr; }
-            .split-left { border-right:none; border-bottom:1px solid #8b1538; }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--primary-red);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--secondary-red);
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(193, 39, 45, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--accent-blue);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #34495e;
+            transform: translateY(-1px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--primary-red);
+            border: 2px solid var(--primary-red);
+        }
+
+        .btn-outline:hover {
+            background: var(--primary-red);
+            color: white;
+        }
+
+        .btn-print {
+            background: var(--success-green);
+            color: white;
+        }
+
+        .btn-print:hover {
+            background: #218838;
+            transform: translateY(-1px);
+        }
+
+        /* Container principal - ULTRA EXTREMO para uma folha só */
+        .container {
+            max-width: 720px;
+            margin: 3px auto;
+            background: white;
+            padding: 6px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+            min-height: 100vh;
+        }
+
+        /* Header ULTRA EXTREMAMENTE compacto */
+        .header {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            grid-template-rows: auto auto;
+            align-items: center;
+            gap: 3px;
+            margin-bottom: 6px;
+            border-bottom: 1px solid var(--primary-red);
+            padding-bottom: 4px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 6px;
+            border-radius: 3px;
+        }
+
+        .form-number {
+            grid-column: 1;
+            grid-row: 1 / 3;
+            font-size: 7px;
+            font-weight: bold;
+            color: var(--primary-red);
+            background: white;
+            padding: 1px 3px;
+            border-radius: 1px;
+            border: 1px solid var(--primary-red);
+        }
+
+        .logo-container {
+            grid-column: 2;
+            grid-row: 1 / 3;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .logo-img {
+            height: 20px;
+            width: auto;
+            filter: drop-shadow(0 1px 1px rgba(0,0,0,0.08));
+        }
+
+        .title {
+            grid-column: 3;
+            grid-row: 1;
+            font-size: 8px;
+            font-weight: bold;
+            text-align: right;
+            color: var(--primary-red);
+            max-width: 130px;
+            line-height: 1.0;
+        }
+
+        .subtitle {
+            grid-column: 3;
+            grid-row: 2;
+            font-size: 6px;
+            text-align: right;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .rnc-number {
+            grid-column: 3;
+            grid-row: 2;
+            font-size: 7px;
+            font-weight: bold;
+            text-align: right;
+            color: var(--primary-red);
+            background: var(--light-gray);
+            padding: 1px 3px;
+            border-radius: 1px;
+            border: 1px solid var(--primary-red);
+            margin-top: 1px;
+        }
+
+        /* Tabelas ULTRA EXTREMAMENTE compactas */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 4px;
+            font-size: 7px;
+            border-radius: 1px;
+            overflow: hidden;
+            box-shadow: 0 1px 1px rgba(0,0,0,0.03);
+        }
+
+        table td, table th {
+            border: 1px solid var(--border-gray);
+            padding: 1px 3px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        table th {
+            background: linear-gradient(135deg, var(--primary-red) 0%, var(--secondary-red) 100%);
+            color: white;
+            font-weight: 600;
+            font-size: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.2px;
+        }
+
+        /* Seções com títulos ULTRA EXTREMAMENTE compactos */
+        .section-title {
+            background: linear-gradient(135deg, var(--primary-red) 0%, var(--secondary-red) 100%) !important;
+            color: white !important;
+            text-align: center;
+            font-weight: bold;
+            font-size: 8px;
+            padding: 3px !important;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            position: relative;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, var(--accent-blue) 0%, var(--success-green) 100%);
+        }
+
+        .section-table {
+            margin-bottom: 4px;
+        }
+
+        /* Campos de texto ULTRA EXTREMAMENTE compactos */
+        .text-block {
+            min-height: 20px;
+            padding: 2px;
+            word-wrap: break-word;
+            background: var(--light-gray);
+            border-radius: 1px;
+            border: 1px solid var(--border-gray);
+            font-size: 7px;
+            line-height: 1.0;
+            color: var(--text-dark);
+        }
+
+        /* Seção inferior EXTREMAMENTE compacta */
+        .bottom-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+            margin-top: 8px;
+            border: 1px solid var(--primary-red);
+            border-radius: 2px;
+            overflow: hidden;
+            background: white;
+        }
+
+        .disposition-section, .inspection-section {
+            padding: 5px;
+            position: relative;
+        }
+
+        .disposition-section {
+            background: var(--light-gray);
+            border-right: 1px solid var(--primary-red);
+        }
+
+        .inspection-section {
+            background: white;
+        }
+
+        .section-header {
+            background: var(--primary-red);
+            color: white;
+            text-align: center;
+            font-weight: bold;
+            font-size: 8px;
+            padding: 3px;
+            margin: -5px -5px 5px -5px;
+            text-transform: uppercase;
+            letter-spacing: 0.2px;
+        }
+
+        /* Opções de disposição EXTREMAMENTE compactas */
+        .disposition-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3px;
+            margin-bottom: 8px;
+        }
+
+        .disposition-option {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            font-size: 7px;
+            font-weight: 600;
+            padding: 2px;
+            border-radius: 1px;
+            transition: all 0.3s ease;
+        }
+
+        .disposition-option:hover {
+            background: rgba(193, 39, 45, 0.1);
+        }
+
+        .disposition-option input[type="checkbox"] {
+            width: 8px;
+            height: 8px;
+            accent-color: var(--primary-red);
+            flex-shrink: 0;
+        }
+
+        .disposition-option label {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Campos de assinatura EXTREMAMENTE compactos */
+        .signature-fields {
+            margin-top: 5px;
+        }
+
+        .signature-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 2px;
+            gap: 2px;
+            flex-wrap: wrap;
+        }
+
+        .signature-label {
+            font-size: 7px;
+            font-weight: 600;
+            color: var(--text-dark);
+            min-width: 40px;
+            flex-shrink: 0;
+        }
+
+        .signature-input {
+            flex: 1;
+            min-width: 60px;
+            height: 12px;
+            border: 1px solid var(--border-gray);
+            border-radius: 1px;
+            padding: 1px 2px;
+            font-size: 6px;
+            background: white;
+        }
+
+        .date-input {
+            width: 25px;
+            height: 12px;
+            border: 1px solid var(--border-gray);
+            border-radius: 1px;
+            padding: 1px;
+            font-size: 6px;
+            background: white;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .signature-separator {
+            margin: 0 1px;
+            color: var(--text-muted);
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        /* Checkboxes de aprovação EXTREMAMENTE compactos */
+        .approval-options {
+            margin-bottom: 8px;
+        }
+
+        .approval-option {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            font-size: 7px;
+            font-weight: 600;
+            padding: 2px;
+            border-radius: 1px;
+            transition: all 0.3s ease;
+        }
+
+        .approval-option:hover {
+            background: rgba(193, 39, 45, 0.1);
+        }
+
+        .approval-option input[type="checkbox"] {
+            width: 8px;
+            height: 8px;
+            accent-color: var(--primary-red);
+            flex-shrink: 0;
+        }
+
+        .approval-option label {
+            flex: 1;
+        }
+
+        /* Campo de referência RNC EXTREMAMENTE compacto */
+        .rnc-reference {
+            margin-bottom: 8px;
+        }
+
+        .rnc-reference-label {
+            font-size: 7px;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 1px;
+        }
+
+        .rnc-reference-input {
+            width: 100%;
+            height: 12px;
+            border: 1px solid var(--border-gray);
+            border-radius: 1px;
+            padding: 1px 2px;
+            font-size: 6px;
+            background: white;
+        }
+
+        /* Responsividade para impressão */
+        @media print {
+            .print-controls {
+                display: none;
+            }
+            
+            body {
+                background: white;
+                font-size: 9px;
+            }
+            
+            .container {
+                margin: 0;
+                box-shadow: none;
+                max-width: none;
+                padding: 15px;
+            }
+            
+            .header {
+                padding: 12px;
+                margin-bottom: 15px;
+            }
+            
+            table {
+                margin-bottom: 15px;
+            }
+            
+            .text-block {
+                min-height: 50px;
+                padding: 8px;
+            }
+            
+            .bottom-section {
+                gap: 0;
+                margin-top: 15px;
+            }
+            
+            .section-title {
+                padding: 8px !important;
+                font-size: 11px;
+            }
+
+            .disposition-section, .inspection-section {
+                padding: 12px;
+            }
+
+            .signature-input, .date-input, .rnc-reference-input {
+                height: 20px;
+                font-size: 9px;
+            }
+        }
+
+        /* Animações suaves */
+        .header, table, .text-block, .disposition-option, .approval-option {
+            transition: all 0.3s ease;
+        }
+
+        .header:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+        }
+
+        table:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+        }
+
+        .text-block:hover {
+            border-color: var(--primary-red);
+            box-shadow: 0 2px 6px rgba(193, 39, 45, 0.1);
+        }
+
+        /* Melhorias nos campos vazios */
+        .value:empty::before {
+            content: 'Não informado';
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        /* Indicadores visuais */
+        .rnc-number::before {
+            content: '🔴 ';
+            margin-right: 5px;
+        }
+
+        .form-number::before {
+            content: '📋 ';
+            margin-right: 5px;
+        }
+
+        /* Espaçamento otimizado para uma folha */
+        .container {
+            padding: 12px;
+        }
+
+        .header {
+            margin-bottom: 12px;
+        }
+
+        table {
+            margin-bottom: 10px;
+        }
+
+        .section-table {
+            margin-bottom: 10px;
+        }
+
+        .bottom-section {
+            margin-top: 12px;
+        }
+
+        /* Correções específicas para evitar bugs */
+        .disposition-section {
+            overflow: hidden;
+        }
+
+        .inspection-section {
+            overflow: hidden;
+        }
+
+        /* Garantir que os campos não quebrem */
+        .signature-row {
+            min-height: 30px;
+            align-items: center;
+        }
+
+        /* Ajustar tamanho dos campos para evitar overflow */
+        @media (max-width: 850px) {
+            .bottom-section {
+                grid-template-columns: 1fr;
+                gap: 0;
+            }
+            
+            .disposition-section {
+                border-right: none;
+                border-bottom: 1px solid var(--primary-red);
+            }
         }
     </style>
 </head>
 <body>
+    <!-- Controles de impressão e navegação -->
+    <div class="print-controls">
+        <div class="controls-container">
+            <div class="controls-left">
+                <a href="/dashboard" class="btn btn-outline">
+                    ←
+                    Voltar
+                </a>
+                <a href="/rnc/{{ rnc.id }}/edit" class="btn btn-secondary">
+                    ✏️
+                    Editar
+                </a>
+            </div>
+            <div class="controls-right">
+                <button onclick="window.print()" class="btn btn-print">
+                    🖨️
+                    Imprimir
+                </button>
+                <button onclick="downloadPDF()" class="btn btn-primary">
+                    💾
+                    Baixar PDF
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div class="container">
+        <!-- Header original mas mais compacto e bonito -->
         <div class="header">
-            <div class="logo" style="gap:12px;">
-                <img src="{{ url_for('static', filename='LOGOSQI.jpg') }}" alt="SQI Logo">
-                <img src="/IPPELLOGO.jpg" alt="IPPEL Logo" class="apply-logo"
-                     data-logo-primary="/IPPELLOGO.jpg"
-                     data-logo-fallback1="/IPPELLOGO.jpg"
-                     data-logo-fallback2="{{ url_for('static', filename='LOGOSQI.jpg') }}"
-                     onerror="if(this.dataset.try1!=='1'){this.dataset.try1='1'; this.src=this.dataset.logoFallback1;} else if(this.dataset.try2!=='1'){this.dataset.try2='1'; this.src=this.dataset.logoFallback2;} else {this.style.display='none';}">
-                <div>
-                    <div class="title">Relatório de Não Conformidades Internas – RNC</div>
-                    <div class="rnc-number">Nº: {{ rnc.rnc_number }}</div>
-                </div>
+            <div class="form-number">FQ – 002</div>
+            <div class="logo-container">
+                <img src="/IPPELLOGO.jpg" alt="IPPEL" class="logo-img logo-ippeel-img">
+                <img src="{{ url_for('static', filename='LOGOSQI.jpg') }}" alt="SQI" class="logo-img logo-sqi-img">
             </div>
-            <div class="actions">
-                <button class="btn btn-secondary" onclick="window.location.href='/dashboard'">← Voltar</button>
-                <button class="btn btn-info" onclick="window.location.href='/rnc/{{ rnc.id }}/reply'">↩️ Responder</button>
-                <button class="btn btn-primary" onclick="window.location.href='/rnc/{{ rnc.id }}/edit'">✏️ Editar</button>
-                <button class="btn btn-warning" onclick="window.open('/rnc/{{ rnc.id }}/print','_blank')">📄 Modelo IPPEL</button>
-            </div>
+            <div class="title">Relatório De Não Conformidades Internas – RNC</div>
+            <div class="subtitle">FABRICAÇÃO / RECEBIMENTO</div>
+            <div class="rnc-number">RNC Nº: {{ rnc.rnc_number or rnc.id }}</div>
         </div>
 
-        <!-- Informações principais -->
-        <div class="card">
-            <div class="card-header">INFORMAÇÕES</div>
-            <div class="card-body grid grid-3">
-                <div class="field">
-                    <div class="label">📋 Título</div>
-                    <div class="value">{{ rnc.title or 'Sem título' }}</div>
-                </div>
-                <div class="field">
-                    <div class="label">🔧 Equipamento</div>
-                    <div class="value">
-                        {% if rnc.equipment %}
-                            {{ rnc.equipment }}
-                        {% else %}
-                            <span style="color: #6c757d; font-style: italic;">Não especificado</span>
-                        {% endif %}
-                    </div>
-                </div>
-                <div class="field">
-                    <div class="label">🏢 Cliente</div>
-                    <div class="value">
-                        {% if rnc.client %}
-                            {{ rnc.client }}
-                        {% else %}
-                            <span style="color: #6c757d; font-style: italic;">Não especificado</span>
-                        {% endif %}
-                    </div>
-                </div>
-                <div class="field">
-                    <div class="label">💰 Preço (R$)</div>
-                    <div class="value">
-                        {% if rnc.price and rnc.price > 0 %}
-                            {{ '%.2f'|format(rnc.price) }}
-                        {% else %}
-                            <span style="color: #6c757d; font-style: italic;">Não informado</span>
-                        {% endif %}
-                    </div>
-                </div>
-                <div class="field">
-                    <div class="label">⚡ Prioridade</div>
-                    <div class="value">
-                        {% if rnc.priority == 'Crítica' %}
-                            <span style="color: #dc3545; font-weight: bold;">{{ rnc.priority }}</span>
-                        {% elif rnc.priority == 'Alta' %}
-                            <span style="color: #fd7e14; font-weight: bold;">{{ rnc.priority }}</span>
-                        {% elif rnc.priority == 'Média' %}
-                            <span style="color: #ffc107; font-weight: bold;">{{ rnc.priority }}</span>
-                        {% elif rnc.priority == 'Baixa' %}
-                            <span style="color: #28a745; font-weight: bold;">{{ rnc.priority }}</span>
-                        {% else %}
-                            {{ rnc.priority or 'Média' }}
-                        {% endif %}
-                    </div>
-                </div>
-                <div class="field">
-                    <div class="label">📊 Status Atual</div>
-                    <div class="value">
-                        {% if rnc.status == 'Finalizado' %}
-                            <span style="color: #28a745; font-weight: bold;">✅ {{ rnc.status }}</span>
-                        {% elif rnc.status == 'Pendente' %}
-                            <span style="color: #ffc107; font-weight: bold;">⏳ {{ rnc.status }}</span>
-                        {% elif rnc.status == 'Em andamento' %}
-                            <span style="color: #17a2b8; font-weight: bold;">🔄 {{ rnc.status }}</span>
-                        {% else %}
-                            {{ rnc.status or 'Pendente' }}
-                        {% endif %}
-                    </div>
-                </div>
-                <div class="field">
-                    <div class="label">👤 Responsável</div>
-                    <div class="value">{{ rnc.user_name or 'Não definido' }}</div>
-                </div>
-                {% if rnc.user_department %}
-                <div class="field">
-                    <div class="label">🏢 Departamento</div>
-                    <div class="value">{{ rnc.user_department }}</div>
-                </div>
-                {% endif %}
-                {% if rnc.created_at %}
-                <div class="field">
-                    <div class="label">📅 Data de Criação</div>
-                    <div class="value">{{ rnc.created_at[:10] if rnc.created_at else 'N/A' }}</div>
-                </div>
-                {% endif %}
-            </div>
-        </div>
+        <!-- Principal - mais compacto -->
+        <table>
+            <tr>
+                <td><strong>DES.</strong></td>
+                <td>{{ txt_fields.get('Desenho') or '-' }}</td>
+                <td><strong>MP.</strong></td>
+                <td>{{ txt_fields.get('MP') or '-' }}</td>
+                <td><strong>REV.</strong></td>
+                <td>{{ txt_fields.get('Revisão') or txt_fields.get('REVISAO') or '-' }}</td>
+            </tr>
+            <tr>
+                <td><strong>POS.</strong></td>
+                <td>{{ txt_fields.get('POS') or '-' }}</td>
+                <td><strong>CV.</strong></td>
+                <td>{{ txt_fields.get('CV') or '-' }}</td>
+                <td><strong>MOD.</strong></td>
+                <td>{{ txt_fields.get('Modelo') or '-' }}</td>
+            </tr>
+            <tr>
+                <td><strong>EQUIPAMENTO</strong></td>
+                <td>{{ rnc.equipment or '-' }}</td>
+                <td><strong>CONJUNTO</strong></td>
+                <td>{{ txt_fields.get('Conjunto') or '-' }}</td>
+                <td><strong>CLIENTE</strong></td>
+                <td>{{ rnc.client or '-' }}</td>
+            </tr>
+            <tr>
+                <td><strong>DESCRIÇÃO DES.</strong></td>
+                <td>{{ txt_fields.get('Descrição da RNC') or txt_fields.get('Descrição do desenho') or '-' }}</td>
+                <td><strong>QTDE LOTE</strong></td>
+                <td>{{ txt_fields.get('Quantidade') or '-' }}</td>
+                <td><strong>MATERIAL</strong></td>
+                <td>{{ txt_fields.get('Material') or '-' }}</td>
+            </tr>
+            <tr>
+                <td><strong>ASSINATURA GERENTE</strong></td>
+                <td>{{ rnc.signature_engineering_name or '-' }}</td>
+                <td><strong>ASSINATURA LÍDER SETOR</strong></td>
+                <td>{{ rnc.signature_inspection2_name or '-' }}</td>
+                <td><strong>ORDEM DE COMPRA</strong></td>
+                <td>{{ txt_fields.get('OC') or '-' }}</td>
+            </tr>
+            <tr>
+                <td><strong>INSPECTOR:</strong></td>
+                <td>{{ rnc.signature_inspection_name or '-' }}</td>
+                <td><strong>DATA EMISSÃO</strong></td>
+                <td>{{ (rnc.created_at or '')[:10] if rnc.created_at else '-' }}</td>
+                <td><strong>ÁREA RESPONSÁVEL</strong></td>
+                <td>{{ rnc.department or rnc.user_department or '-' }}</td>
+            </tr>
+        </table>
 
-        <!-- Descrição -->
-        <div class="card">
-            <div class="card-header">DESCRIÇÃO DA NÃO CONFORMIDADE</div>
-            <div class="card-body">
-                <!-- Informações técnicas organizadas -->
-                {% if txt_fields %}
-                    {% if txt_fields.get('Desenho') or txt_fields.get('DESENHO') or txt_fields.get('MP') or txt_fields.get('mp') %}
-                    <div class="grid grid-3" style="margin-bottom: 20px;">
-                        {% if txt_fields.get('Desenho') or txt_fields.get('DESENHO') %}
-                        <div class="field">
-                            <div class="label">📐 Desenho</div>
-                            <div class="value">{{ txt_fields.get('Desenho') or txt_fields.get('DESENHO') or '-' }}</div>
-                        </div>
+        <!-- Descrição NC - mais compacto -->
+        <table class="section-table">
+            <thead>
+                <tr>
+                    <th style="width:60px;">ITEM</th>
+                    <th colspan="3" class="section-title">DESCRIÇÃO DA NÃO CONFORMIDADE</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="width:60px; text-align:center; font-weight:bold; font-size:14px;">1</td>
+                    <td colspan="3"><div class="text-block">{{ txt_fields.get('Descrição da RNC') or rnc.description or '-' }}</div></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Instrução retrabalho - mais compacto -->
+        <table class="section-table">
+            <thead>
+                <tr>
+                    <th style="width:60px;">ITEM</th>
+                    <th colspan="3" class="section-title">INSTRUÇÃO PARA RETRABALHO</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="width:60px; text-align:center; font-weight:bold; font-size:14px;">2</td>
+                    <td colspan="3"><div class="text-block">
+                        {% if rnc.instruction_retrabalho %}
+                            {{ rnc.instruction_retrabalho }}
+                        {% elif txt_fields.get('Instrução para retrabalho') %}
+                            {{ txt_fields.get('Instrução para retrabalho') }}
+                        {% elif txt_fields.get('Instrucao para retrabalho') %}
+                            {{ txt_fields.get('Instrucao para retrabalho') }}
+                        {% else %}
+                            -
                         {% endif %}
-                        {% if txt_fields.get('MP') or txt_fields.get('mp') %}
-                        <div class="field">
-                            <div class="label">🔧 MP</div>
-                            <div class="value">{{ txt_fields.get('MP') or txt_fields.get('mp') or '-' }}</div>
-                        </div>
+                    </div></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Causa - mais compacto -->
+        <table class="section-table">
+            <thead>
+                <tr>
+                    <th style="width:60px;">ITEM</th>
+                    <th colspan="3" class="section-title">CAUSA DA RNC</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="width:60px; text-align:center; font-weight:bold; font-size:14px;">3</td>
+                    <td colspan="3"><div class="text-block">
+                        {% if rnc.cause_rnc %}
+                            {{ rnc.cause_rnc }}
+                        {% elif txt_fields.get('Causa') %}
+                            {{ txt_fields.get('Causa') }}
+                        {% elif txt_fields.get('Causa da RNC') %}
+                            {{ txt_fields.get('Causa da RNC') }}
+                        {% else %}
+                            -
                         {% endif %}
-                        {% if txt_fields.get('Revisão') or txt_fields.get('REVISAO') or txt_fields.get('REV') %}
-                        <div class="field">
-                            <div class="label">📝 Revisão</div>
-                            <div class="value">{{ txt_fields.get('Revisão') or txt_fields.get('REVISAO') or txt_fields.get('REV') or '-' }}</div>
-                        </div>
+                    </div></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Ação - mais compacto -->
+        <table class="section-table">
+            <thead>
+                <tr>
+                    <th style="width:60px;">ITEM</th>
+                    <th colspan="3" class="section-title">AÇÃO A SER TOMADA</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="width:60px; text-align:center; font-weight:bold; font-size:14px;">4</td>
+                    <td colspan="3"><div class="text-block">
+                        {% if rnc.action_rnc %}
+                            {{ rnc.action_rnc }}
+                        {% elif txt_fields.get('Ação') %}
+                            {{ txt_fields.get('Ação') }}
+                        {% elif txt_fields.get('Ação a ser tomada') %}
+                            {{ txt_fields.get('Ação a ser tomada') }}
+                        {% else %}
+                            -
                         {% endif %}
+                    </div></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Disposição e Inspeção - corrigido e funcionando perfeitamente -->
+        <div class="bottom-section">
+            <!-- Coluna da Esquerda: Disposição do Material -->
+            <div class="disposition-section">
+                <div class="section-header">DISPOSIÇÃO DO MATERIAL NÃO-CONFORME</div>
+                
+                <!-- Opções de disposição em duas colunas -->
+                <div class="disposition-options">
+                    <div class="disposition-option">
+                        <input type="checkbox" id="usar" {% if rnc.disposition_usar %}checked{% endif %} disabled>
+                        <label for="usar">USAR COMO ESTÁ</label>
                     </div>
-                    {% endif %}
+                    <div class="disposition-option">
+                        <input type="checkbox" id="sucata" {% if rnc.disposition_sucata %}checked{% endif %} disabled>
+                        <label for="sucata">SUCATA</label>
+                    </div>
+                    <div class="disposition-option">
+                        <input type="checkbox" id="retrabalhar" {% if rnc.disposition_retrabalhar %}checked{% endif %} disabled>
+                        <label for="retrabalhar">RETRABALHAR</label>
+                    </div>
+                    <div class="disposition-option">
+                        <input type="checkbox" id="devolver_estoque" {% if rnc.disposition_devolver_estoque %}checked{% endif %} disabled>
+                        <label for="devolver_estoque">DEVOLVER AO ESTOQUE</label>
+                    </div>
+                    <div class="disposition-option">
+                        <input type="checkbox" id="rejeitar" {% if rnc.disposition_rejeitar %}checked{% endif %} disabled>
+                        <label for="rejeitar">REJEITAR</label>
+                    </div>
+                    <div class="disposition-option">
+                        <input type="checkbox" id="devolver_fornecedor" {% if rnc.disposition_devolver_fornecedor %}checked{% endif %} disabled>
+                        <label for="devolver_fornecedor">DEVOLVER AO FORNECEDOR</label>
+                    </div>
+                </div>
+
+                <!-- Campos de assinatura corrigidos -->
+                <div class="signature-fields">
+                    <div class="signature-row">
+                        <span class="signature-label">INSPEÇÃO:</span>
+                        <input type="text" class="date-input" value="{{ (rnc.created_at or '')[:2] if rnc.created_at else '' }}" disabled>
+                        <span class="signature-separator">/</span>
+                        <input type="text" class="date-input" value="{{ (rnc.created_at or '')[:5][3:5] if rnc.created_at else '' }}" disabled>
+                        <span class="signature-separator">/</span>
+                        <input type="text" class="date-input" value="{{ (rnc.created_at or '')[:4] if rnc.created_at else '' }}" disabled>
+                    </div>
+                    <div class="signature-row">
+                        <span class="signature-label">NOME:</span>
+                        <input type="text" class="signature-input" value="{{ rnc.signature_inspection_name or '' }}" disabled>
+                        <span class="signature-separator">VISTO:</span>
+                        <input type="text" class="signature-input" value="" disabled>
+                    </div>
                     
-                    {% if txt_fields.get('CV') or txt_fields.get('cv') or txt_fields.get('POS') or txt_fields.get('Pos') %}
-                    <div class="grid grid-3" style="margin-bottom: 20px;">
-                        {% if txt_fields.get('CV') or txt_fields.get('cv') %}
-                        <div class="field">
-                            <div class="label">📊 CV</div>
-                            <div class="value">{{ txt_fields.get('CV') or txt_fields.get('cv') or '-' }}</div>
-                        </div>
-                        {% endif %}
-                        {% if txt_fields.get('POS') or txt_fields.get('Pos') %}
-                        <div class="field">
-                            <div class="label">📍 POS</div>
-                            <div class="value">{{ txt_fields.get('POS') or txt_fields.get('Pos') or '-' }}</div>
-                        </div>
-                        {% endif %}
-                        {% if txt_fields.get('Conjunto') or txt_fields.get('CONJUNTO') %}
-                        <div class="field">
-                            <div class="label">🔗 Conjunto</div>
-                            <div class="value">{{ txt_fields.get('Conjunto') or txt_fields.get('CONJUNTO') or '-' }}</div>
-                        </div>
-                        {% endif %}
+                    <div class="signature-row">
+                        <span class="signature-label">ENGENHARIA:</span>
+                        <input type="text" class="date-input" value="{{ (rnc.created_at or '')[:2] if rnc.created_at else '' }}" disabled>
+                        <span class="signature-separator">/</span>
+                        <input type="text" class="date-input" value="{{ (rnc.created_at or '')[:5][3:5] if rnc.created_at else '' }}" disabled>
+                        <span class="signature-separator">/</span>
+                        <input type="text" class="date-input" value="{{ (rnc.created_at or '')[:4] if rnc.created_at else '' }}" disabled>
                     </div>
-                    {% endif %}
-                    
-                    {% if txt_fields.get('Modelo') or txt_fields.get('MODELO') or txt_fields.get('Quantidade') or txt_fields.get('QUANTIDADE') %}
-                    <div class="grid grid-3" style="margin-bottom: 20px;">
-                        {% if txt_fields.get('Modelo') or txt_fields.get('MODELO') %}
-                        <div class="field">
-                            <div class="label">🏷️ Modelo</div>
-                            <div class="value">{{ txt_fields.get('Modelo') or txt_fields.get('MODELO') or '-' }}</div>
-                        </div>
-                        {% endif %}
-                        {% if txt_fields.get('Quantidade') or txt_fields.get('QUANTIDADE') %}
-                        <div class="field">
-                            <div class="label">🔢 Quantidade</div>
-                            <div class="value">{{ txt_fields.get('Quantidade') or txt_fields.get('QUANTIDADE') or '-' }}</div>
-                        </div>
-                        {% endif %}
-                        {% if txt_fields.get('Área responsável') or txt_fields.get('AREA RESPONSAVEL') or txt_fields.get('Area responsavel') %}
-                        <div class="field">
-                            <div class="label">👥 Área Responsável</div>
-                            <div class="value">{{ txt_fields.get('Área responsável') or txt_fields.get('AREA RESPONSAVEL') or txt_fields.get('Area responsavel') or '-' }}</div>
-                        </div>
-                        {% endif %}
+                    <div class="signature-row">
+                        <span class="signature-label">NOME:</span>
+                        <input type="text" class="signature-input" value="{{ rnc.signature_engineering_name or '' }}" disabled>
+                        <span class="signature-separator">VISTO:</span>
+                        <input type="text" class="signature-input" value="" disabled>
                     </div>
-                    {% endif %}
-                {% endif %}
+                </div>
+            </div>
+
+            <!-- Coluna da Direita: Inspeção do Retrabalho -->
+            <div class="inspection-section">
+                <div class="section-header">INSPEÇÃO DO RETRABALHO</div>
                 
-                <!-- Instrução para retrabalho -->
-                {% if txt_fields.get('Instrução para retrabalho') or txt_fields.get('INSTRUÇÃO PARA RETRABALHO') or txt_fields.get('Instrucao para retrabalho') or txt_fields.get('INSTRUCAO PARA RETRABALHO') %}
-                <div class="field" style="margin-top: 20px;">
-                    <div class="label">⚙️ Instrução para Retrabalho</div>
-                    <div class="value" style="min-height: 60px; white-space: pre-wrap;">{{ txt_fields.get('Instrução para retrabalho') or txt_fields.get('INSTRUÇÃO PARA RETRABALHO') or txt_fields.get('Instrucao para retrabalho') or txt_fields.get('INSTRUCAO PARA RETRABALHO') or '-' }}</div>
-                </div>
-                {% endif %}
-                
-                <!-- Valor -->
-                {% if txt_fields.get('Valor') or txt_fields.get('VALOR') %}
-                <div class="field" style="margin-top: 20px;">
-                    <div class="label">💰 Valor</div>
-                    <div class="value">{{ txt_fields.get('Valor') or txt_fields.get('VALOR') or '-' }}</div>
-                </div>
-                {% endif %}
-                
-                <!-- Descrição da RNC -->
-                {% if txt_fields.get('Descrição da RNC') or txt_fields.get('DESCRIÇÃO DA RNC') or txt_fields.get('Descricao da RNC') or txt_fields.get('DESCRICAO DA RNC') %}
-                <div class="field" style="margin-top: 20px;">
-                    <div class="label">📋 Descrição da RNC</div>
-                    <div class="value" style="min-height: 60px; white-space: pre-wrap;">{{ txt_fields.get('Descrição da RNC') or txt_fields.get('DESCRIÇÃO DA RNC') or txt_fields.get('Descricao da RNC') or txt_fields.get('DESCRICAO DA RNC') }}</div>
-                </div>
-                {% elif rnc.description %}
-                <div class="field" style="margin-top: 20px;">
-                    <div class="label">📄 Descrição</div>
-                    <div class="value" style="min-height: 60px; white-space: pre-wrap;">{{ rnc.description }}</div>
-                </div>
-                {% else %}
-                <div class="field" style="margin-top: 20px;">
-                    <div class="label">📄 Descrição</div>
-                    <div class="value" style="min-height: 60px; white-space: pre-wrap; color: #6c757d; font-style: italic;">
-                        📝 Descrição da não conformidade não informada
+                <!-- Opções de aprovação -->
+                <div class="approval-options">
+                    <div class="approval-option">
+                        <input type="checkbox" id="aprovado" {% if rnc.inspection_aprovado %}checked{% endif %} disabled>
+                        <label for="aprovado">APROVADO</label>
+                    </div>
+                    <div class="approval-option">
+                        <input type="checkbox" id="reprovado" {% if rnc.inspection_reprovado %}checked{% endif %} disabled>
+                        <label for="reprovado">REPROVADO</label>
                     </div>
                 </div>
-                {% endif %}
-            </div>
-        </div>
 
-        <!-- Instrução para Retrabalho -->
-        <div class="card">
-            <div class="card-header">⚙️ INSTRUÇÃO PARA RETRABALHO</div>
-            <div class="card-body">
-                <div class="value" style="min-height:60px; white-space: pre-wrap;">
-                    {% if txt_fields.get('Instrução para retrabalho') or txt_fields.get('INSTRUÇÃO PARA RETRABALHO') or txt_fields.get('Instrucao para retrabalho') or txt_fields.get('INSTRUCAO PARA RETRABALHO') %}
-                        {{ txt_fields.get('Instrução para retrabalho') or txt_fields.get('INSTRUÇÃO PARA RETRABALHO') or txt_fields.get('Instrucao para retrabalho') or txt_fields.get('INSTRUCAO PARA RETRABALHO') }}
-                    {% elif rnc.instruction_retrabalho and rnc.instruction_retrabalho|trim and rnc.instruction_retrabalho != 'Aguardando instruções de retrabalho' %}
-                        {{ rnc.instruction_retrabalho }}
-                    {% else %}
-                        <span style="color: #6c757d; font-style: italic;">📝 Aguardando instruções de retrabalho</span>
-                    {% endif %}
+                <!-- Campo de referência RNC -->
+                <div class="rnc-reference">
+                    <div class="rnc-reference-label">VER RNC. N°:</div>
+                    <input type="text" class="rnc-reference-input" value="{{ rnc.inspection_ver_rnc or '' }}" disabled>
                 </div>
-            </div>
-        </div>
 
-        <!-- Causa da RNC -->
-        <div class="card">
-            <div class="card-header">🔍 CAUSA DA RNC</div>
-            <div class="card-body">
-                <div class="value" style="min-height:60px; white-space: pre-wrap;">
-                    {% if txt_fields.get('Causa da RNC') or txt_fields.get('CAUSA DA RNC') or txt_fields.get('Causa da rnc') or txt_fields.get('causa da rnc') %}
-                        {{ txt_fields.get('Causa da RNC') or txt_fields.get('CAUSA DA RNC') or txt_fields.get('Causa da rnc') or txt_fields.get('causa da rnc') }}
-                    {% elif rnc.cause_rnc and rnc.cause_rnc|trim and rnc.cause_rnc != 'Causa a ser investigada' %}
-                        {{ rnc.cause_rnc }}
-                    {% else %}
-                        <span style="color: #6c757d; font-style: italic;">🔍 Causa a ser investigada</span>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-
-        <!-- Ação a ser Tomada -->
-        <div class="card">
-            <div class="card-header">✅ AÇÃO A SER TOMADA</div>
-            <div class="card-body">
-                <div class="value" style="min-height:60px; white-space: pre-wrap;">
-                    {% if txt_fields.get('Ação a ser tomada') or txt_fields.get('AÇÃO A SER TOMADA') or txt_fields.get('Acao a ser tomada') or txt_fields.get('ACAO A SER TOMADA') %}
-                        {{ txt_fields.get('Ação a ser tomada') or txt_fields.get('AÇÃO A SER TOMADA') or txt_fields.get('Acao a ser tomada') or txt_fields.get('ACAO A SER TOMADA') }}
-                    {% elif rnc.action_rnc and rnc.action_rnc|trim and rnc.action_rnc != 'Ações a serem definidas' %}
-                        {{ rnc.action_rnc }}
-                    {% else %}
-                        <span style="color: #6c757d; font-style: italic;">✅ Ações a serem definidas</span>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-
-        <!-- Disposição e Inspeção -->
-        <div class="card">
-            <div class="card-header" style="display:flex; justify-content:space-between;">
-                <div>DISPOSIÇÃO DO MATERIAL NÃO-CONFORME</div>
-                <div>INSPEÇÃO DO RETRABALHO</div>
-            </div>
-            <div class="section-split">
-                <div class="split-left">
-                    <div class="checkbox">
-                        <input type="checkbox" disabled {% if rnc.disposition_usar %}checked{% endif %}> 
-                        <span {% if rnc.disposition_usar %}style="color: #28a745; font-weight: bold;"{% endif %}>USAR COMO ESTÁ</span>
+                <!-- Campos de assinatura corrigidos -->
+                <div class="signature-fields">
+                    <div class="signature-row">
+                        <span class="signature-label">INSPEÇÃO:</span>
+                        <input type="text" class="date-input" value="{{ (rnc.created_at or '')[:2] if rnc.created_at else '' }}" disabled>
+                        <span class="signature-separator">/</span>
+                        <input type="text" class="date-input" value="{{ (rnc.created_at or '')[:5][3:5] if rnc.created_at else '' }}" disabled>
+                        <span class="signature-separator">/</span>
+                        <input type="text" class="date-input" value="{{ (rnc.created_at or '')[:4] if rnc.created_at else '' }}" disabled>
                     </div>
-                    <div class="checkbox">
-                        <input type="checkbox" disabled {% if rnc.disposition_retrabalhar %}checked{% endif %}> 
-                        <span {% if rnc.disposition_retrabalhar %}style="color: #17a2b8; font-weight: bold;"{% endif %}>RETRABALHAR</span>
-                    </div>
-                    <div class="checkbox">
-                        <input type="checkbox" disabled {% if rnc.disposition_rejeitar %}checked{% endif %}> 
-                        <span {% if rnc.disposition_rejeitar %}style="color: #dc3545; font-weight: bold;"{% endif %}>REJEITAR</span>
-                    </div>
-                    <div class="checkbox">
-                        <input type="checkbox" disabled {% if rnc.disposition_sucata %}checked{% endif %}> 
-                        <span style="color: #6c757d; font-weight: bold;">SUCATA</span>
-                    </div>
-                    <div class="checkbox">
-                        <input type="checkbox" disabled {% if rnc.disposition_devolver_estoque %}checked{% endif %}> 
-                        <span style="color: #fd7e14; font-weight: bold;">DEVOLVER AO ESTOQUE</span>
-                    </div>
-                    <div class="checkbox">
-                        <input type="checkbox" disabled {% if rnc.disposition_devolver_fornecedor %}checked{% endif %}> 
-                        <span style="color: #6f42c1; font-weight: bold;">DEVOLVER AO FORNECEDOR</span>
-                    </div>
-                </div>
-                <div class="split-right">
-                    <div class="checkbox">
-                        <input type="checkbox" disabled {% if rnc.inspection_aprovado %}checked{% endif %}> 
-                        <span {% if rnc.inspection_aprovado %}style="color: #28a745; font-weight: bold;"{% endif %}>APROVADO</span>
-                    </div>
-                    <div class="checkbox">
-                        <input type="checkbox" disabled {% if rnc.inspection_reprovado %}checked{% endif %}> 
-                        <span {% if rnc.inspection_reprovado %}style="color: #dc3545; font-weight: bold;"{% endif %}>REPROVADO</span>
-                    </div>
-                    <div class="checkbox" style="gap:12px;">
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <input type="checkbox" disabled {% if rnc.inspection_ver_rnc %}checked{% endif %}> 
-                            <span {% if rnc.inspection_ver_rnc %}style="color: #ffc107; font-weight: bold;"{% endif %}>VER RNC Nº:</span>
-                            <div class="value" style="border:none; padding:0; min-height:auto;">
-                                {% if rnc.inspection_ver_rnc and rnc.inspection_ver_rnc|string|trim %}
-                                    {{ rnc.inspection_ver_rnc }}
-                                {% else %}
-                                    <span style="color: #6c757d; font-style: italic;">N/A</span>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Assinaturas -->
-        <div class="card">
-            <div class="card-header">ASSINATURAS</div>
-            <div class="card-body" style="padding:0; border:2px solid #8b1538; border-radius:8px; overflow:hidden;">
-                <div class="sign-row" style="border-bottom:1px solid #8b1538;">
-                    <div class="sign-col" style="font-size:11px; font-weight:bold;">
-                        INSPEÇÃO: {{ rnc.signature_inspection_date[:10] if rnc.signature_inspection_date and rnc.signature_inspection_date|trim else 'Aguardando' }}
-                    </div>
-                    <div class="sign-col" style="font-size:11px; font-weight:bold;">
-                        ENGENHARIA: {{ rnc.signature_engineering_date[:10] if rnc.signature_engineering_date and rnc.signature_engineering_date|trim else 'Aguardando' }}
-                    </div>
-                    <div class="sign-col" style="font-size:11px; font-weight:bold;">
-                        INSPEÇÃO 2: {{ rnc.signature_inspection2_date[:10] if rnc.signature_inspection2_date and rnc.signature_inspection2_date|trim else 'Aguardando' }}
-                    </div>
-                </div>
-                <div class="sign-row">
-                    <div class="sign-col">
-                        <div class="sign-name">
-                            {% if rnc.signature_inspection_name and rnc.signature_inspection_name|trim and rnc.signature_inspection_name != 'NOME' %}
-                                {{ rnc.signature_inspection_name }}
-                            {% else %}
-                                <span style="color: #6c757d; font-style: italic;">Aguardando assinatura</span>
-                            {% endif %}
-                        </div>
-                        <div class="sign-line">VISTO</div>
-                    </div>
-                    <div class="sign-col">
-                        <div class="sign-name">
-                            {% if rnc.signature_engineering_name and rnc.signature_engineering_name|trim and rnc.signature_engineering_name != 'NOME' %}
-                                {{ rnc.signature_engineering_name }}
-                            {% else %}
-                                <span style="color: #6c757d; font-style: italic;">Aguardando assinatura</span>
-                            {% endif %}
-                        </div>
-                        <div class="sign-line">VISTO</div>
-                    </div>
-                    <div class="sign-col">
-                        <div class="sign-name">
-                            {% if rnc.signature_inspection2_name and rnc.signature_inspection2_name|trim and rnc.signature_inspection2_name != 'NOME' %}
-                                {{ rnc.signature_inspection2_name }}
-                            {% else %}
-                                <span style="color: #6c757d; font-style: italic;">Aguardando assinatura</span>
-                            {% endif %}
-                        </div>
-                        <div class="sign-line">VISTO</div>
+                    <div class="signature-row">
+                        <span class="signature-label">NOME:</span>
+                        <input type="text" class="signature-input" value="{{ rnc.signature_inspection_name or '' }}" disabled>
+                        <span class="signature-separator">VISTO:</span>
+                        <input type="text" class="signature-input" value="" disabled>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <script>
+        // Função para download de PDF (placeholder)
+        function downloadPDF() {
+            alert('Funcionalidade de download de PDF será implementada em breve!');
+        }
+
+        // Adicionar efeitos de hover e interação
+        document.addEventListener('DOMContentLoaded', function() {
+            // Adicionar loading state aos botões
+            document.querySelectorAll('.btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    if (!this.classList.contains('btn-outline')) {
+                        this.classList.add('loading');
+                        setTimeout(() => {
+                            this.classList.remove('loading');
+                        }, 1000);
+                    }
+                });
+            });
+
+            // Melhorar experiência de impressão
+            window.addEventListener('beforeprint', function() {
+                document.body.classList.add('printing');
+            });
+
+            window.addEventListener('afterprint', function() {
+                document.body.classList.remove('printing');
+            });
+
+            // Verificar se há campos cortados e ajustar automaticamente
+            function checkLayoutIssues() {
+                const dispositionSection = document.querySelector('.disposition-section');
+                const inspectionSection = document.querySelector('.inspection-section');
+                
+                if (dispositionSection && inspectionSection) {
+                    const dispositionHeight = dispositionSection.scrollHeight;
+                    const inspectionHeight = inspectionSection.scrollHeight;
+                    
+                    // Ajustar altura se necessário
+                    if (dispositionHeight > inspectionHeight) {
+                        inspectionSection.style.minHeight = dispositionHeight + 'px';
+                    } else if (inspectionHeight > dispositionHeight) {
+                        dispositionSection.style.minHeight = inspectionHeight + 'px';
+                    }
+                }
+            }
+
+            // Executar verificação após carregamento
+            setTimeout(checkLayoutIssues, 100);
+        });
+    </script>
 </body>
-</html> 
+</html>
+ 
