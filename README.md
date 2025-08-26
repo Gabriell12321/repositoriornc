@@ -1,3 +1,11 @@
+## Otimização de Assets e Compressão HTTP
+
+- Ativamos compressão HTTP (gzip/Brotli) automaticamente quando as dependências estão instaladas.
+- Adicionamos um helper `asset_url()` no Jinja que prefere arquivos `.min.js` e `.min.css` quando disponíveis e inclui um parâmetro `?v=mtime` para cache busting.
+- Para gerar versões minificadas dos assets, execute o script:
+    - Windows PowerShell: `python scripts/minify_assets.py`
+    - Os arquivos serão escritos ao lado dos originais com sufixo `.min.*`.
+
 # 📧 Sistema RNC IPPEL - Servidor de E-mail
 
 Sistema completo para geração e envio de relatórios de Não Conformidade (RNC) da IPPEL.

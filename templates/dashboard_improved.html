@@ -9,11 +9,11 @@
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="{{ url_for('static', filename='js/charts-advanced.js') }}" defer></script>
+    <script src="{{ asset_url('js/charts-advanced.js') }}" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js" defer crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="{{ url_for('static', filename='js/app.js') }}?v=2" defer></script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/avatar.css') }}?v=4">
-    <script src="{{ url_for('static', filename='js/avatar.js') }}?v=4" defer></script>
+    <script src="{{ asset_url('js/app.js') }}" defer></script>
+    <link rel="stylesheet" href="{{ asset_url('css/avatar.css') }}">
+    <script src="{{ asset_url('js/avatar.js') }}" defer></script>
     <!-- Permissões do usuário são usadas diretamente via Jinja nas seções abaixo -->
     <script>
       // Utilidades de cache para carregamento imediato
@@ -6978,7 +6978,7 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
         // 📊 Dados Reais das Planilhas ODS (2016-2025)
         // Gerado automaticamente a partir das planilhas de levantamento
         
-        const REAL_LEVANTAMENTO_DATA = {
+    window.REAL_LEVANTAMENTO_DATA = {
             "2016": {
                 "year": 2016,
                 "months": [

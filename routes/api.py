@@ -7,7 +7,54 @@ logger = logging.getLogger('ippel.api')
 
 api = Blueprint('api_bp', __name__)
 
+# Exigir autenticação para todas as rotas deste blueprint
+@api.before_request
+def _require_auth_api():
+    if request.method != 'OPTIONS' and 'user_id' not in session:
+        try:
+            import importlib
+            _sl = importlib.import_module('services.security_log')
+            _sl.sec_log('api', 'unauthorized', ip=request.remote_addr, details={'path': request.path, 'method': request.method})
+        except Exception:
+            pass
+        return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
+
+# Aplicar um limite padrão por IP em todas as rotas da API (se limiter estiver ativo)
+try:
+    import importlib
+    _rl = importlib.import_module('services.rate_limit')
+    _limiter = getattr(_rl, 'limiter')()
+    if _limiter is not None:
+        _limiter.limit("120 per minute")(api)
+except Exception:
+    pass
+
+# Proteções avançadas: CSRF em endpoints de escrita e permissão
+try:
+    import importlib
+    _ep = importlib.import_module('services.endpoint_protection')
+    csrf_protect = getattr(_ep, 'csrf_protect')
+    require_permission = getattr(_ep, 'require_permission')
+    ensure_csrf_token = getattr(_ep, 'ensure_csrf_token')
+except Exception:
+    def csrf_protect(*_a, **_k):
+        def _d(f): return f
+        return _d
+    def require_permission(*_a, **_k):
+        def _d(f): return f
+        return _d
+    def ensure_csrf_token():
+        return ''
+
+@api.get('/api/csrf-token')
+def get_csrf_token():
+    token = ensure_csrf_token()
+    return jsonify({'success': True, 'csrf_token': token})
+
+
 @api.post('/api/user/avatar')
+@csrf_protect()
+@require_permission('update_avatar')
 def update_avatar():
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401

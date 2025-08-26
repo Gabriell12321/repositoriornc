@@ -99,9 +99,9 @@
         {% block extra_css %}{% endblock %}
     </style>
     {% block head %}{% endblock %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/avatar.css') }}?v=4">
-    <script src="{{ url_for('static', filename='js/app.js') }}?v=2" defer></script>
-    <script src="{{ url_for('static', filename='js/avatar.js') }}?v=4" defer></script>
+    <link rel="stylesheet" href="{{ asset_url('css/avatar.css') }}">
+    <script src="{{ asset_url('js/app.js') }}" defer></script>
+    <script src="{{ asset_url('js/avatar.js') }}" defer></script>
 </head>
 <body>
     <div class="header">

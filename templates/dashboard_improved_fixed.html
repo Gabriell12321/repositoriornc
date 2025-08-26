@@ -9,9 +9,9 @@
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="{{ url_for('static', filename='js/charts-advanced.js') }}" defer></script>
+    <script src="{{ asset_url('js/charts-advanced.js') }}" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js" defer crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="{{ url_for('static', filename='js/app.js') }}?v=2" defer></script>
+    <script src="{{ asset_url('js/app.js') }}" defer></script>
     <script>
       // ===== FUNÃ‡ÃƒO GLOBAL PARA ALTERNAR ABAS =====
       // Declarada PRIMEIRO para estar sempre disponÃ­vel
@@ -6856,7 +6856,7 @@
         // ðŸ“Š Dados Reais das Planilhas ODS (2016-2025)
         // Gerado automaticamente a partir das planilhas de levantamento
         
-        /* DADOS REMOVIDOS: Já definidos globalmente */ // const REAL_LEVANTAMENTO_DATA = {
+        window.REAL_LEVANTAMENTO_DATA = {
             "2016": {
                 "year": 2016,
                 "months": [
@@ -9951,7 +9951,7 @@
         // ðŸ“Š Dados Reais das Planilhas ODS (2016-2025)
         // Gerado automaticamente a partir das planilhas de levantamento
         
-        /* DADOS REMOVIDOS: Já definidos globalmente */ // const REAL_LEVANTAMENTO_DATA = {
+        window.REAL_LEVANTAMENTO_DATA = {
             "2016": {
                 "year": 2016,
                 "months": [
@@ -11702,7 +11702,7 @@
         // ðŸ“Š Dados Reais das Planilhas ODS (2016-2025)
         // Gerado automaticamente a partir das planilhas de levantamento
         
-        /* DADOS REMOVIDOS: Já definidos globalmente */ // const REAL_LEVANTAMENTO_DATA = {
+        window.REAL_LEVANTAMENTO_DATA = {
             "2016": {
                 "year": 2016,
                 "months": [

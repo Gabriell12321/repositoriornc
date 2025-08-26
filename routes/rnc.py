@@ -8,10 +8,36 @@ from flask import Blueprint, request, jsonify, render_template, redirect, sessio
 DB_PATH = 'ippel_system.db'
 
 rnc = Blueprint('rnc', __name__)
+
+# Limite padrão para endpoints do RNC (se limiter ativo)
+try:
+    import importlib
+    _rl = importlib.import_module('services.rate_limit')
+    _limiter = getattr(_rl, 'limiter')()
+    if _limiter is not None:
+        _limiter.limit("180 per minute")(rnc)
+except Exception:
+    pass
+# Proteções avançadas (CSRF/Permissões) com fallback seguro
+try:
+    import importlib as _importlib_ep
+    _ep = _importlib_ep.import_module('services.endpoint_protection')
+    csrf_protect = getattr(_ep, 'csrf_protect')
+    require_permission = getattr(_ep, 'require_permission')
+except Exception:
+    def csrf_protect(*_a, **_k):
+        def _d(f):
+            return f
+        return _d
+    def require_permission(*_a, **_k):
+        def _d(f):
+            return f
+        return _d
 logger = logging.getLogger('ippel.rnc')
 
 
 @rnc.route('/api/rnc/create', methods=['POST'])
+@csrf_protect()
 def create_rnc():
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
@@ -195,7 +221,7 @@ def list_rncs():
         force_refresh = request.args.get('_t') is not None
 
         # Cursor-based pagination params (shared util)
-        cursor_id, limit = parse_cursor_limit(request, default_limit=20000, max_limit=20000)
+        cursor_id, limit = parse_cursor_limit(request, default_limit=50000, max_limit=50000)
 
         cache_key = f"rncs_list_{user_id}_{tab}_{cursor_id}_{limit}"
         if not force_refresh:
@@ -686,6 +712,7 @@ def edit_rnc(rnc_id):
 
 
 @rnc.route('/api/rnc/<int:rnc_id>/update', methods=['PUT'])
+@csrf_protect()
 def update_rnc_api(rnc_id):
     logger.info(f"Iniciando atualização da RNC {rnc_id}")
     if 'user_id' not in session:
@@ -829,6 +856,7 @@ def update_rnc_api(rnc_id):
 
 
 @rnc.route('/api/rnc/<int:rnc_id>/finalize', methods=['POST'])
+@csrf_protect()
 def finalize_rnc(rnc_id):
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
@@ -878,6 +906,7 @@ def finalize_rnc(rnc_id):
 
 
 @rnc.route('/api/rnc/<int:rnc_id>/reply', methods=['POST'])
+@csrf_protect()
 def reply_rnc_api(rnc_id):
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
@@ -923,18 +952,28 @@ def reply_rnc_api(rnc_id):
 
 
 @rnc.route('/api/rnc/<int:rnc_id>/delete', methods=['DELETE'])
+@csrf_protect()
 def delete_rnc(rnc_id):
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
     try:
         from services.cache import cache_lock, query_cache
+        from services.permissions import has_permission
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM rncs WHERE id = ?', (rnc_id,))
+        cursor.execute('SELECT id, user_id FROM rncs WHERE id = ?', (rnc_id,))
         rnc = cursor.fetchone()
         if not rnc:
             conn.close()
             return jsonify({'success': False, 'message': 'RNC não encontrado'}), 404
+        # Permissão: apenas criador ou admin pode deletar
+        creator_id = rnc[1]
+        user_id = session['user_id']
+        is_creator = str(user_id) == str(creator_id)
+        is_admin = has_permission(user_id, 'admin_access')
+        if not (is_creator or is_admin):
+            conn.close()
+            return jsonify({'success': False, 'message': 'Sem permissão para excluir este RNC'}), 403
         cursor.execute('DELETE FROM rncs WHERE id = ?', (rnc_id,))
         cursor.execute('DELETE FROM rnc_shares WHERE rnc_id = ?', (rnc_id,))
         cursor.execute('DELETE FROM chat_messages WHERE rnc_id = ?', (rnc_id,))
@@ -952,6 +991,7 @@ def delete_rnc(rnc_id):
 
 
 @rnc.route('/api/rnc/<int:rnc_id>/share', methods=['POST'])
+@csrf_protect()
 def share_rnc(rnc_id):
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401

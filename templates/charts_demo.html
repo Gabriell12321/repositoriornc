@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- CSS Customizado -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/charts-enhanced.css') }}">
+    <link rel="stylesheet" href="{{ asset_url('css/charts-enhanced.css') }}">
     
     <style>
         body {
@@ -350,7 +350,7 @@
     </div>
 
     <!-- Scripts -->
-    <script src="{{ url_for('static', filename='js/charts-advanced.js') }}"></script>
+    <script src="{{ asset_url('js/charts-advanced.js') }}"></script>
     <script>
         // Dados de demonstração
         const demoData = {
