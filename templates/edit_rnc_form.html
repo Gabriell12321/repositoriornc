@@ -312,7 +312,7 @@
             </tr>
             <tr>
                 <td style="width: 60px;"></td>
-                <td><textarea id="description" name="description" class="input-field large-text-area" placeholder="Descreva a não conformidade identificada...">{{ rnc.description or '' }}</textarea></td>
+                <td><textarea id="description" name="description" class="input-field large-text-area" placeholder="Descreva a não conformidade identificada...">{{ txt_fields.get('Descrição da RNC', '') or txt_fields.get('Descrição do desenho', '') or rnc.description or '' }}</textarea></td>
             </tr>
         </table>
 
@@ -469,233 +469,249 @@
             <span class="label">Salvar</span>
         </button>
     </div>
+</div>
 
-    <script>
+<script>
+        console.log('🔧 Script carregado - verificando funções...');
+        
         // Cache do usuário atual para uso em assinaturas
         let __CURRENT_USER_NAME = null;
         let __CURRENT_USER_DEPT = null;
-        try {
-            fetch('/api/user/info', { credentials: 'include' })
-                .then(r => r.json())
-                .then(d => {
-                    if (d && d.success && d.user) {
-                        __CURRENT_USER_NAME = d.user.name || null;
-                        __CURRENT_USER_DEPT = d.user.department || null;
+        
+        // Função para mostrar notificações
+        function mostrarNotificacao(mensagem, tipo = 'success') {
+            console.log('📢 Notificação:', mensagem, tipo);
+            const notificacao = document.createElement('div');
+            
+            let background, shadow;
+            if (tipo === 'error') {
+                background = 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)';
+                shadow = 'rgba(220, 53, 69, 0.3)';
+            } else {
+                background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
+                shadow = 'rgba(40, 167, 69, 0.3)';
+            }
+            
+            notificacao.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${background};
+                color: white;
+                padding: 12px 20px;
+                border-radius: 8px;
+                box-shadow: 0 4px 15px ${shadow};
+                z-index: 3000;
+                animation: slideInRight 0.3s ease-out;
+                font-size: 14px;
+                font-weight: 500;
+            `;
+            
+            notificacao.textContent = mensagem;
+            document.body.appendChild(notificacao);
+            
+            setTimeout(() => {
+                notificacao.style.animation = 'slideOutRight 0.3s ease-in';
+                setTimeout(() => {
+                    if (document.body.contains(notificacao)) {
+                        document.body.removeChild(notificacao);
                     }
-                })
-                .catch(() => {});
-        } catch(_) {}
+                }, 300);
+            }, 3000);
+        }
 
-                 // Função para preencher assinatura automaticamente
-         function preencherAssinatura(elemento) {
-             const nomeElement = elemento.querySelector('div[id^="nome_coluna"]');
-             // Se já existe assinatura, não permitir remover (travado)
+        // Função para verificar se há pelo menos uma assinatura
+        function verificarAssinaturas() {
+            console.log('🔍 Verificando assinaturas...');
+            const assinaturas = [
+                document.getElementById('nome_coluna1')?.textContent || '',
+                document.getElementById('nome_coluna2')?.textContent || '',
+                document.getElementById('nome_coluna3')?.textContent || ''
+            ];
+            
+            console.log('📝 Assinaturas encontradas:', assinaturas);
+            return assinaturas.some(assinatura => assinatura && assinatura !== 'NOME' && assinatura.trim() !== '');
+        }
+
+        // Função para preencher assinatura automaticamente
+        function preencherAssinatura(elemento) {
+            console.log('✍️ Preenchendo assinatura...');
+            const nomeElement = elemento.querySelector('div[id^="nome_coluna"]');
+            // Se já existe assinatura, não permitir remover (travado)
             if (nomeElement && nomeElement.textContent && nomeElement.textContent.trim() !== '' && nomeElement.textContent !== 'NOME') {
-                 mostrarNotificacao('Assinatura já registrada.');
+                mostrarNotificacao('Assinatura já registrada.');
                 return;
             }
-             
-             fetch('/api/user/info')
-                 .then(response => response.json())
-                 .then(data => {
-                     if (data.success) {
-                         const nomeUsuario = data.user.name;
-                         const departamento = data.user.department;
-                         
-                         if (nomeElement) {
-                             nomeElement.textContent = `${nomeUsuario} (${departamento})`;
-                             
-                             elemento.style.transform = 'scale(1.02)';
-                             elemento.style.transition = 'transform 0.2s ease';
-                             
-                             setTimeout(() => {
-                                 elemento.style.transform = 'scale(1)';
-                             }, 200);
-                             
-                             mostrarNotificacao('✅ Assinatura preenchida automaticamente!');
-                             // Preencher data correspondente e travar inputs
-                             const hoje = new Date();
-                             const d = String(hoje.getDate()).padStart(2,'0');
-                             const m = String(hoje.getMonth()+1).padStart(2,'0');
-                             const y = String(hoje.getFullYear());
-                             if (elemento.id === 'assinatura_coluna1') {
-                                 setDateInputs('insp1', d, m, y);
-                             } else if (elemento.id === 'assinatura_coluna2') {
-                                 setDateInputs('eng', d, m, y);
-                             } else if (elemento.id === 'assinatura_coluna3') {
-                                 setDateInputs('insp2', d, m, y);
-                             }
-                         }
-                     } else {
-                         mostrarNotificacao('❌ Erro: Usuário não autenticado', 'error');
-                     }
-                 })
-                 .catch(error => {
-                     console.error('Erro ao buscar informações do usuário:', error);
-                     mostrarNotificacao('❌ Erro ao preencher assinatura', 'error');
-                 });
-         }
+            
+            fetch('/api/user/info')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const nomeUsuario = data.user.name;
+                        const departamento = data.user.department;
+                        
+                        if (nomeElement) {
+                            nomeElement.textContent = `${nomeUsuario} (${departamento})`;
+                            
+                            elemento.style.transform = 'scale(1.02)';
+                            elemento.style.transition = 'transform 0.2s ease';
+                            
+                            setTimeout(() => {
+                                elemento.style.transform = 'scale(1)';
+                            }, 200);
+                            
+                            mostrarNotificacao('✅ Assinatura preenchida automaticamente!');
+                            // Preencher data correspondente e travar inputs
+                            const hoje = new Date();
+                            const d = String(hoje.getDate()).padStart(2,'0');
+                            const m = String(hoje.getMonth()+1).padStart(2,'0');
+                            const y = String(hoje.getFullYear());
+                            if (elemento.id === 'assinatura_coluna1') {
+                                setDateInputs('insp1', d, m, y);
+                            } else if (elemento.id === 'assinatura_coluna2') {
+                                setDateInputs('eng', d, m, y);
+                            } else if (elemento.id === 'assinatura_coluna3') {
+                                setDateInputs('insp2', d, m, y);
+                            }
+                        }
+                    } else {
+                        mostrarNotificacao('❌ Erro: Usuário não autenticado', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao buscar informações do usuário:', error);
+                    mostrarNotificacao('❌ Erro ao preencher assinatura', 'error');
+                });
+        }
 
-         function setDateInputs(prefix, d, m, y) {
-             const di = document.getElementById(prefix + '_d');
-             const mi = document.getElementById(prefix + '_m');
-             const yi = document.getElementById(prefix + '_y');
-             if (di && mi && yi) {
-                 di.value = d; mi.value = m; yi.value = y;
-                 di.readOnly = true; mi.readOnly = true; yi.readOnly = true;
-                 di.style.pointerEvents='none'; mi.style.pointerEvents='none'; yi.style.pointerEvents='none';
-             }
-         }
+        function setDateInputs(prefix, d, m, y) {
+            const di = document.getElementById(prefix + '_d');
+            const mi = document.getElementById(prefix + '_m');
+            const yi = document.getElementById(prefix + '_y');
+            if (di && mi && yi) {
+                di.value = d; mi.value = m; yi.value = y;
+                di.readOnly = true; mi.readOnly = true; yi.readOnly = true;
+                di.style.pointerEvents='none'; mi.style.pointerEvents='none'; yi.style.pointerEvents='none';
+            }
+        }
 
-                 // Função para mostrar notificações
-         function mostrarNotificacao(mensagem, tipo = 'success') {
-             const notificacao = document.createElement('div');
-             
-             let background, shadow;
-             if (tipo === 'error') {
-                 background = 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)';
-                 shadow = 'rgba(220, 53, 69, 0.3)';
-             } else {
-                 background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
-                 shadow = 'rgba(40, 167, 69, 0.3)';
-             }
-             
-             notificacao.style.cssText = `
-                 position: fixed;
-                 top: 20px;
-                 right: 20px;
-                 background: ${background};
-                 color: white;
-                 padding: 12px 20px;
-                 border-radius: 8px;
-                 box-shadow: 0 4px 15px ${shadow};
-                 z-index: 3000;
-                 animation: slideInRight 0.3s ease-out;
-                 font-size: 14px;
-                 font-weight: 500;
-             `;
-             
-             notificacao.textContent = mensagem;
-             document.body.appendChild(notificacao);
-             
-             setTimeout(() => {
-                 notificacao.style.animation = 'slideOutRight 0.3s ease-in';
-                 setTimeout(() => {
-                     if (document.body.contains(notificacao)) {
-                         document.body.removeChild(notificacao);
-                     }
-                 }, 300);
-             }, 3000);
-         }
+        // Função para salvar alterações
+        function salvarAlteracoes() {
+            console.log('💾 Função salvarAlteracoes chamada!');
+            
+            // Verificar se há pelo menos uma assinatura
+            if (!verificarAssinaturas()) {
+                mostrarNotificacao('❌ É obrigatório preencher pelo menos uma assinatura!', 'error');
+                return;
+            }
 
-                 // Função para verificar se há pelo menos uma assinatura
-         function verificarAssinaturas() {
-             const assinaturas = [
-                 document.getElementById('nome_coluna1').textContent,
-                 document.getElementById('nome_coluna2').textContent,
-                 document.getElementById('nome_coluna3').textContent
-             ];
-             
-             return assinaturas.some(assinatura => assinatura && assinatura !== 'NOME' && assinatura.trim() !== '');
-         }
+            // Normalizar: se data foi preenchida e nome ficou 'NOME', completar com usuário atual
+            (function normalizeSignatures(){
+                const s = [
+                    {prefix:'insp1', id:'nome_coluna1'},
+                    {prefix:'eng', id:'nome_coluna2'},
+                    {prefix:'insp2', id:'nome_coluna3'}
+                ];
+                s.forEach(({prefix,id})=>{
+                    const nameEl = document.getElementById(id);
+                    const di = document.getElementById(prefix+'_d');
+                    const mi = document.getElementById(prefix+'_m');
+                    const yi = document.getElementById(prefix+'_y');
+                    const dateFilled = (di?.value||'')!=='' || (mi?.value||'')!=='' || (yi?.value||'')!=='';
+                    const hasName = nameEl && nameEl.textContent && nameEl.textContent.trim()!=='' && nameEl.textContent!=='NOME';
+                    if (dateFilled && !hasName) {
+                        if (nameEl && __CURRENT_USER_NAME) {
+                            nameEl.textContent = __CURRENT_USER_NAME + (__CURRENT_USER_DEPT ? ' ('+__CURRENT_USER_DEPT+')' : '');
+                        }
+                    }
+                });
+            })();
 
-         // Função para salvar alterações
-         function salvarAlteracoes() {
-             // Verificar se há pelo menos uma assinatura
-             if (!verificarAssinaturas()) {
-                 mostrarNotificacao('❌ É obrigatório preencher pelo menos uma assinatura!', 'error');
-                 return;
-             }
+            const formData = {
+                title: document.getElementById('title')?.value ?? {{ (rnc.title or "") | tojson }},
+                description: document.getElementById('description')?.value ?? {{ (rnc.description or "") | tojson }},
+                equipment: document.getElementById('equipment')?.value ?? {{ (rnc.equipment or "") | tojson }},
+                client: document.getElementById('client')?.value ?? {{ (rnc.client or "") | tojson }},
+                rnc_number: document.getElementById('rnc_number')?.value || {{ rnc.rnc_number | tojson }},
+                signature_inspection_name: document.getElementById('nome_coluna1').textContent,
+                signature_engineering_name: document.getElementById('nome_coluna2').textContent,
+                signature_inspection2_name: document.getElementById('nome_coluna3').textContent,
+                status: (IS_REPLY ? 'Pendente' : undefined),
+                // Disposição
+                disposition_usar: document.getElementById('usar')?.checked || false,
+                disposition_retrabalhar: document.getElementById('retrabalhar')?.checked || false,
+                disposition_rejeitar: document.getElementById('rejeitar')?.checked || false,
+                disposition_sucata: document.getElementById('sucata')?.checked || false,
+                disposition_devolver_estoque: document.getElementById('devolver_estoque')?.checked || false,
+                disposition_devolver_fornecedor: document.getElementById('devolver_fornecedor')?.checked || false,
+                // Inspeção retrabalho
+                inspection_aprovado: document.getElementById('aprovado')?.checked || false,
+                inspection_reprovado: document.getElementById('reprovado')?.checked || false,
+                inspection_ver_rnc: document.getElementById('ver_rnc_input')?.value || '',
+                // Datas de assinatura (concatenadas dd/mm/aaaa)
+                signature_inspection_date: [document.getElementById('insp1_d')?.value||'', document.getElementById('insp1_m')?.value||'', document.getElementById('insp1_y')?.value||''].join('/'),
+                signature_engineering_date: [document.getElementById('eng_d')?.value||'', document.getElementById('eng_m')?.value||'', document.getElementById('eng_y')?.value||''].join('/'),
+                signature_inspection2_date: [document.getElementById('insp2_d')?.value||'', document.getElementById('insp2_m')?.value||'', document.getElementById('insp2_y')?.value||''].join('/'),
+                // Seções textuais
+                instruction_retrabalho: document.getElementById('instruction_retrabalho')?.value || '',
+                cause_rnc: document.getElementById('cause_rnc')?.value || '',
+                action_rnc: document.getElementById('action_rnc')?.value || ''
+            };
 
-             // Normalizar: se data foi preenchida e nome ficou 'NOME', completar com usuário atual
-             (function normalizeSignatures(){
-                 const s = [
-                     {prefix:'insp1', id:'nome_coluna1'},
-                     {prefix:'eng', id:'nome_coluna2'},
-                     {prefix:'insp2', id:'nome_coluna3'}
-                 ];
-                 s.forEach(({prefix,id})=>{
-                     const nameEl = document.getElementById(id);
-                     const di = document.getElementById(prefix+'_d');
-                     const mi = document.getElementById(prefix+'_m');
-                     const yi = document.getElementById(prefix+'_y');
-                     const dateFilled = (di?.value||'')!=='' || (mi?.value||'')!=='' || (yi?.value||'')!=='';
-                     const hasName = nameEl && nameEl.textContent && nameEl.textContent.trim()!=='' && nameEl.textContent!=='NOME';
-                     if (dateFilled && !hasName) {
-                         if (nameEl && __CURRENT_USER_NAME) {
-                             nameEl.textContent = __CURRENT_USER_NAME + (__CURRENT_USER_DEPT ? ' ('+__CURRENT_USER_DEPT+')' : '');
-                         }
-                     }
-                 });
-             })();
+            console.log('📤 Enviando dados:', formData);
 
-             const formData = {
-                 title: document.getElementById('title')?.value ?? '{{ rnc.title or "" }}',
-                 description: document.getElementById('description')?.value ?? '{{ rnc.description or "" }}',
-                 equipment: document.getElementById('equipment')?.value ?? '{{ rnc.equipment or "" }}',
-                 client: document.getElementById('client')?.value ?? '{{ rnc.client or "" }}',
-                 rnc_number: document.getElementById('rnc_number')?.value || '{{ rnc.rnc_number }}',
-                 signature_inspection_name: document.getElementById('nome_coluna1').textContent,
-                 signature_engineering_name: document.getElementById('nome_coluna2').textContent,
-                 signature_inspection2_name: document.getElementById('nome_coluna3').textContent,
-                 status: (IS_REPLY ? 'Pendente' : undefined),
-                 // Disposição
-                 disposition_usar: document.getElementById('usar')?.checked || false,
-                 disposition_retrabalhar: document.getElementById('retrabalhar')?.checked || false,
-                 disposition_rejeitar: document.getElementById('rejeitar')?.checked || false,
-                 disposition_sucata: document.getElementById('sucata')?.checked || false,
-                 disposition_devolver_estoque: document.getElementById('devolver_estoque')?.checked || false,
-                 disposition_devolver_fornecedor: document.getElementById('devolver_fornecedor')?.checked || false,
-                 // Inspeção retrabalho
-                 inspection_aprovado: document.getElementById('aprovado')?.checked || false,
-                 inspection_reprovado: document.getElementById('reprovado')?.checked || false,
-                 inspection_ver_rnc: document.getElementById('ver_rnc_input')?.value || '',
-                 // Datas de assinatura (concatenadas dd/mm/aaaa)
-                 signature_inspection_date: [document.getElementById('insp1_d')?.value||'', document.getElementById('insp1_m')?.value||'', document.getElementById('insp1_y')?.value||''].join('/'),
-                 signature_engineering_date: [document.getElementById('eng_d')?.value||'', document.getElementById('eng_m')?.value||'', document.getElementById('eng_y')?.value||''].join('/'),
-                 signature_inspection2_date: [document.getElementById('insp2_d')?.value||'', document.getElementById('insp2_m')?.value||'', document.getElementById('insp2_y')?.value||''].join('/'),
-                 // Seções textuais
-                 instruction_retrabalho: document.getElementById('instruction_retrabalho')?.value || '',
-                 cause_rnc: document.getElementById('cause_rnc')?.value || '',
-                 action_rnc: document.getElementById('action_rnc')?.value || ''
-             };
-
-             fetch('/api/rnc/{{ rnc.id }}/update', {
-                 method: 'PUT',
-                 headers: {
-                     'Content-Type': 'application/json',
-                 },
-                 body: JSON.stringify(formData)
-             })
-             .then(response => response.json())
-             .then(data => {
-                 if (data.success) {
-                     try { localStorage.removeItem('dashboardCacheV1'); } catch(e){}
-                     mostrarNotificacao('✅ Alterações salvas com sucesso!');
-                     setTimeout(() => {
-                         const ts = Date.now();
-                         window.location.href = '/rnc/{{ rnc.id }}?_t=' + ts;
-                     }, 1000);
-                 } else {
-                     mostrarNotificacao('❌ Erro ao salvar alterações: ' + data.message, 'error');
-                 }
-             })
-             .catch(error => {
-                 console.error('Erro ao salvar:', error);
-                 mostrarNotificacao('❌ Erro ao salvar alterações', 'error');
-             });
-         }
-
-        // Auto-resize textareas
-        document.querySelectorAll('textarea').forEach(textarea => {
-            textarea.addEventListener('input', function() {
-                this.style.height = 'auto';
-                this.style.height = this.scrollHeight + 'px';
+            fetch('/api/rnc/{{ rnc.id }}/update', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    try { localStorage.removeItem('dashboardCacheV1'); } catch(e){}
+                    mostrarNotificacao('✅ Alterações salvas com sucesso!');
+                    setTimeout(() => {
+                        const ts = Date.now();
+                        window.location.href = '/rnc/{{ rnc.id }}?_t=' + ts;
+                    }, 1000);
+                } else {
+                    mostrarNotificacao('❌ Erro ao salvar alterações: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao salvar:', error);
+                mostrarNotificacao('❌ Erro ao salvar alterações', 'error');
             });
-        });
+        }
 
-        // Preencher data de emissão automaticamente
+        // Carregar informações do usuário quando a página carregar
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 DOM carregado - inicializando...');
+            
+            try {
+                fetch('/api/user/info', { credentials: 'include' })
+                    .then(r => r.json())
+                    .then(d => {
+                        if (d && d.success && d.user) {
+                            __CURRENT_USER_NAME = d.user.name || null;
+                            __CURRENT_USER_DEPT = d.user.department || null;
+                            console.log('👤 Usuário carregado:', __CURRENT_USER_NAME, __CURRENT_USER_DEPT);
+                        }
+                    })
+                    .catch(() => {});
+            } catch(_) {}
+
+            // Auto-resize textareas
+            document.querySelectorAll('textarea').forEach(textarea => {
+                textarea.addEventListener('input', function() {
+                    this.style.height = 'auto';
+                    this.style.height = this.scrollHeight + 'px';
+                });
+            });
+
+            // Preencher data de emissão automaticamente
             const dataEmissao = document.getElementById('data_emissao');
             if (dataEmissao && !dataEmissao.value) {
                 const hoje = new Date();
@@ -704,6 +720,14 @@
                 const ano = hoje.getFullYear();
                 dataEmissao.value = `${dia}/${mes}/${ano}`;
             }
+            
+            console.log('✅ Inicialização concluída!');
+            console.log('🔍 Funções disponíveis:', {
+                'salvarAlteracoes': typeof salvarAlteracoes,
+                'verificarAssinaturas': typeof verificarAssinaturas,
+                'mostrarNotificacao': typeof mostrarNotificacao,
+                'preencherAssinatura': typeof preencherAssinatura
+            });
         });
 
         // Animações CSS
@@ -719,6 +743,8 @@
             }
         `;
         document.head.appendChild(style);
+        
+        console.log('🔧 Script carregado completamente!');
     </script>
 </body>
 </html> 

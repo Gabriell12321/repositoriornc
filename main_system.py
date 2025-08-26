@@ -18,6 +18,7 @@ import hashlib
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, send_from_directory
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
+from security_enhancements import add_security_headers
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
@@ -1102,9 +1103,7 @@ def api_charts_enhanced_data():
         # Dados simulados realistas baseados no banco
         data = {
             'trend': [
-                {'date': '202000'
-                ''
-                '5-08-01', 'count': 12},
+                {'date': '2025-08-01', 'count': 12},
                 {'date': '2025-08-02', 'count': 8},
                 {'date': '2025-08-03', 'count': 15},
                 {'date': '2025-08-04', 'count': 6},

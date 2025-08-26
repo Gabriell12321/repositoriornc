@@ -433,32 +433,105 @@ def view_rnc(rnc_id):
 
         rnc_dict = dict(zip(columns, rnc_data))
 
-        # Função para extrair campos de texto da descrição
-        def parse_label_map(text: str):
-            if not text:
-                return {}
-            result = {}
-            lines = text.split('\n')
-            for line in lines:
-                line = line.strip()
-                if ':' in line:
-                    parts = line.split(':', 1)
-                    if len(parts) == 2:
-                        key = parts[0].strip()
-                        value = parts[1].strip()
-                        if key and value:
-                            result[key] = value
-            return result
-
         # Extrair campos de texto da descrição para visualização
         txt_fields = parse_label_map(rnc_dict.get('description') or '')
-        
-        # Determinar criador de forma robusta usando o dict
+
+        return render_template('view_rnc_full.html', rnc=rnc_dict, txt_fields=txt_fields)
+            """Extract key=value style pairs from description, tolerant to separators.
+            Supports:
+              - DES.: 123   REV - X   POS = 1   MOD  ABC
+              - Handles accents and punctuation; recognizes abbreviations.
+            """
+            import re, unicodedata
+            if not text:
+                return {}
+            def _norm(s: str) -> str:
+                s = unicodedata.normalize('NFD', s)
+                s = ''.join(ch for ch in s if unicodedata.category(ch) != 'Mn')
+                s = s.lower()
+                s = re.sub(r'[^a-z0-9]', '', s)
+                return s
+            sep_re = re.compile(r'^\s*([A-Za-zÀ-ÿ\.\s/_-]{2,}?)\s*(?:[:=\-–—]+|\s{2,})\s*(.+)$')
+            token_re = re.compile(r'^\s*([A-Za-zÀ-ÿ\.]{2,})\s+(.+)$')
+            mapping: dict[str, str] = {}
+            lines = [ln.rstrip() for ln in str(text).split('\n') if ln.strip()]
+            for ln in lines:
+                m = sep_re.match(ln)
+                if not m:
+                    m = token_re.match(ln)
+                if not m:
+                    continue
+                label, val = m.group(1).strip(), m.group(2).strip()
+                n = _norm(label)
+                if n in {'des', 'desenho'}:
+                    mapping['Desenho'] = val
+                elif n in {'mp'}:
+                    mapping['MP'] = val
+                elif n in {'rev', 'revisao'}:
+                    mapping['Revisão'] = val
+                elif n == 'cv' or 'cv' in n:
+                    mapping['CV'] = val
+                elif n == 'pos' or 'pos' in n:
+                    mapping['POS'] = val
+                elif 'conjunto' in n or n == 'conj':
+                    mapping['Conjunto'] = val
+                elif n in {'modelo', 'mod'}:
+                    mapping['Modelo'] = val
+                elif n in {'quantidade', 'qtde', 'qtd'}:
+                    mapping['Quantidade'] = val
+                elif 'material' in n or n == 'mat':
+                    mapping['Material'] = val
+                elif n in {'oc', 'ordemdecompra', 'ordemcompra'}:
+                    mapping['OC'] = val
+                elif ('area' in n and 'responsavel' in n) or n in {'arearesponsavel'}:
+                    mapping['Área responsável'] = val
+                elif 'descricao' in n and 'rnc' in n:
+                    mapping['Descrição da RNC'] = val
+                elif 'instrucao' in n and 'retrabalho' in n:
+                    mapping['Instrução para retrabalho'] = val
+                elif n in {'valor', 'vlr'}:
+                    mapping['Valor'] = val
+                elif n in {'causa'}:
+                    mapping['Causa'] = val
+                elif 'acao' in n or 'acaosertomada' in n:
+                    mapping['Ação'] = val
+                else:
+                    mapping[label] = val
+            return mapping
+
+        txt_fields = parse_label_map(rnc_dict.get('description') or '')
+        # Debug rápido para conferir extração
+        try:
+            logger.info(f"VIEW RNC {rnc_id}: txt_fields keys -> {list(txt_fields.keys())}")
+        except Exception:
+            pass
+        # Determinar criador de forma robusta usando o dict (evita dependência do índice da coluna)
         is_creator = str(session['user_id']) == str(rnc_dict.get('user_id'))
-        
-        return render_template('view_rnc_full.html', rnc=rnc_dict, txt_fields=txt_fields, is_creator=is_creator)
+        # Visualização usa o template atualizado com estilo do modelo
+        return render_template('view_rnc_full.html', rnc=rnc_dict, is_creator=is_creator, txt_fields=txt_fields)
     except Exception as e:
         return render_template('error.html', message=f'Erro interno do sistema: {str(e)}')
+
+
+
+# Função print_rnc correta está mais abaixo no arquivo
+        # Determinar criador de forma robusta usando o dict (evita dependência do índice da coluna)
+        is_creator = str(session['user_id']) == str(rnc_dict.get('user_id'))
+        
+        # Debug: Log os dados para verificar se estão chegando
+        logger.info(f"DEBUG - RNC {rnc_id}: rnc_number={rnc_dict.get('rnc_number')}, title={rnc_dict.get('title')}")
+        logger.info(f"DEBUG - RNC {rnc_id}: equipment={rnc_dict.get('equipment')}, client={rnc_dict.get('client')}")
+        logger.info(f"DEBUG - RNC {rnc_id}: description length={len(str(rnc_dict.get('description') or ''))}")
+        logger.info(f"DEBUG - RNC {rnc_id}: txt_fields={txt_fields}")
+        logger.info(f"DEBUG - RNC {rnc_id}: signature_inspection_name={rnc_dict.get('signature_inspection_name')}")
+        
+        # Debug específico para os novos campos
+        logger.info(f"DEBUG - RNC {rnc_id}: instruction_retrabalho='{rnc_dict.get('instruction_retrabalho')}'")
+        logger.info(f"DEBUG - RNC {rnc_id}: cause_rnc='{rnc_dict.get('cause_rnc')}'")
+        logger.info(f"DEBUG - RNC {rnc_id}: action_rnc='{rnc_dict.get('action_rnc')}'")
+        logger.info(f"DEBUG - RNC {rnc_id}: Chaves do rnc_dict: {list(rnc_dict.keys())}")
+        
+        # Visualização usa o template atualizado com estilo do modelo
         return render_template('view_rnc_full.html', rnc=rnc_dict, is_creator=is_creator, txt_fields=txt_fields)
     except Exception as e:
         logger.error(f"Erro ao visualizar RNC {rnc_id}: {e}")
