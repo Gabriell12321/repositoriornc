@@ -1,0 +1,10 @@
+G:\My Drive\Trabalhos pendentes\rncs\RELATORIO DE NÃO CONFORMIDADE IPPEL\services\rust_images\target\release\deps\ravif-0ac3db8186926390.d: C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ravif-0.11.20\src\lib.rs C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ravif-0.11.20\src\av1encoder.rs C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ravif-0.11.20\src\error.rs C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ravif-0.11.20\src\dirtyalpha.rs
+
+G:\My Drive\Trabalhos pendentes\rncs\RELATORIO DE NÃO CONFORMIDADE IPPEL\services\rust_images\target\release\deps\libravif-0ac3db8186926390.rlib: C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ravif-0.11.20\src\lib.rs C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ravif-0.11.20\src\av1encoder.rs C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ravif-0.11.20\src\error.rs C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ravif-0.11.20\src\dirtyalpha.rs
+
+G:\My Drive\Trabalhos pendentes\rncs\RELATORIO DE NÃO CONFORMIDADE IPPEL\services\rust_images\target\release\deps\libravif-0ac3db8186926390.rmeta: C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ravif-0.11.20\src\lib.rs C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ravif-0.11.20\src\av1encoder.rs C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ravif-0.11.20\src\error.rs C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ravif-0.11.20\src\dirtyalpha.rs
+
+C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ravif-0.11.20\src\lib.rs:
+C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ravif-0.11.20\src\av1encoder.rs:
+C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ravif-0.11.20\src\error.rs:
+C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ravif-0.11.20\src\dirtyalpha.rs:

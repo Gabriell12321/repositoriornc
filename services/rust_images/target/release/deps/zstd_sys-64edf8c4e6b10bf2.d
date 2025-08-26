@@ -1,0 +1,9 @@
+G:\My Drive\Trabalhos pendentes\rncs\RELATORIO DE NÃO CONFORMIDADE IPPEL\services\rust_images\target\release\deps\zstd_sys-64edf8c4e6b10bf2.d: C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\zstd-sys-2.0.15+zstd.1.5.7\src\lib.rs C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\zstd-sys-2.0.15+zstd.1.5.7\src\bindings_zstd.rs C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\zstd-sys-2.0.15+zstd.1.5.7\src\bindings_zdict.rs
+
+G:\My Drive\Trabalhos pendentes\rncs\RELATORIO DE NÃO CONFORMIDADE IPPEL\services\rust_images\target\release\deps\libzstd_sys-64edf8c4e6b10bf2.rlib: C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\zstd-sys-2.0.15+zstd.1.5.7\src\lib.rs C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\zstd-sys-2.0.15+zstd.1.5.7\src\bindings_zstd.rs C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\zstd-sys-2.0.15+zstd.1.5.7\src\bindings_zdict.rs
+
+G:\My Drive\Trabalhos pendentes\rncs\RELATORIO DE NÃO CONFORMIDADE IPPEL\services\rust_images\target\release\deps\libzstd_sys-64edf8c4e6b10bf2.rmeta: C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\zstd-sys-2.0.15+zstd.1.5.7\src\lib.rs C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\zstd-sys-2.0.15+zstd.1.5.7\src\bindings_zstd.rs C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\zstd-sys-2.0.15+zstd.1.5.7\src\bindings_zdict.rs
+
+C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\zstd-sys-2.0.15+zstd.1.5.7\src\lib.rs:
+C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\zstd-sys-2.0.15+zstd.1.5.7\src\bindings_zstd.rs:
+C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\zstd-sys-2.0.15+zstd.1.5.7\src\bindings_zdict.rs:

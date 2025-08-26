@@ -1,0 +1,10 @@
+G:\My Drive\Trabalhos pendentes\rncs\RELATORIO DE NÃO CONFORMIDADE IPPEL\services\rust_images\target\release\deps\imgref-3a27af138c89c624.d: C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\imgref-1.11.0\src\lib.rs C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\imgref-1.11.0\src\traits.rs C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\imgref-1.11.0\src\iter.rs C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\imgref-1.11.0\src\ops.rs
+
+G:\My Drive\Trabalhos pendentes\rncs\RELATORIO DE NÃO CONFORMIDADE IPPEL\services\rust_images\target\release\deps\libimgref-3a27af138c89c624.rlib: C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\imgref-1.11.0\src\lib.rs C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\imgref-1.11.0\src\traits.rs C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\imgref-1.11.0\src\iter.rs C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\imgref-1.11.0\src\ops.rs
+
+G:\My Drive\Trabalhos pendentes\rncs\RELATORIO DE NÃO CONFORMIDADE IPPEL\services\rust_images\target\release\deps\libimgref-3a27af138c89c624.rmeta: C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\imgref-1.11.0\src\lib.rs C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\imgref-1.11.0\src\traits.rs C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\imgref-1.11.0\src\iter.rs C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\imgref-1.11.0\src\ops.rs
+
+C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\imgref-1.11.0\src\lib.rs:
+C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\imgref-1.11.0\src\traits.rs:
+C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\imgref-1.11.0\src\iter.rs:
+C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\imgref-1.11.0\src\ops.rs:

@@ -1,12 +1,115 @@
-## Otimização de Assets e Compressão HTTP
+# IPPEL - Sistema de Relatórios de Não Conformidade
 
-- Ativamos compressão HTTP (gzip/Brotli) automaticamente quando as dependências estão instaladas.
-- Adicionamos um helper `asset_url()` no Jinja que prefere arquivos `.min.js` e `.min.css` quando disponíveis e inclui um parâmetro `?v=mtime` para cache busting.
-- Para gerar versões minificadas dos assets, execute o script:
-    - Windows PowerShell: `python scripts/minify_assets.py`
-    - Os arquivos serão escritos ao lado dos originais com sufixo `.min.*`.
+## 🚀 Como Iniciar os Servidores
 
-# 📧 Sistema RNC IPPEL - Servidor de E-mail
+### Opção 1: Inicialização Automática (Recomendado)
+```batch
+# Duplo clique no arquivo ou execute no CMD:
+iniciar_todos_cmd.bat
+```
+
+### Opção 2: Inicialização Manual
+
+#### 1. Servidor Principal (OBRIGATÓRIO)
+```batch
+cd /d "G:\My Drive\Trabalhos pendentes\rncs\RELATORIO DE NÃO CONFORMIDADE IPPEL"
+set RUST_IMAGES_URL=http://127.0.0.1:8081
+set KOTLIN_UTILS_URL=http://127.0.0.1:8084
+set JULIA_ANALYTICS_URL=http://127.0.0.1:8082
+python server_form.py
+```
+**Acesso:** http://localhost:5001
+
+#### 2. Rust Images Service (OPCIONAL)
+```batch
+cd /d "G:\My Drive\Trabalhos pendentes\rncs\RELATORIO DE NÃO CONFORMIDADE IPPEL\services\rust_images"
+set RUST_IMAGES_ADDR=127.0.0.1:8081
+cargo run --release
+```
+**Porta:** 8081 | **Teste:** curl http://127.0.0.1:8081/health
+
+#### 3. Kotlin Utils Service (OPCIONAL)
+```batch
+cd /d "G:\My Drive\Trabalhos pendentes\rncs\RELATORIO DE NÃO CONFORMIDADE IPPEL\services\kotlin_utils"
+set KOTLIN_UTILS_HOST=0.0.0.0
+set KOTLIN_UTILS_PORT=8084
+gradlew.bat run
+```
+**Porta:** 8084 | **Teste:** curl http://127.0.0.1:8084/health
+
+#### 4. Julia Analytics Service (OPCIONAL)
+```batch
+cd /d "G:\My Drive\Trabalhos pendentes\rncs\RELATORIO DE NÃO CONFORMIDADE IPPEL\services\julia_analytics"
+set JULIA_ANALYTICS_ADDR=127.0.0.1:8082
+julia --project=. src\server.jl
+```
+**Porta:** 8082 | **Teste:** curl http://127.0.0.1:8082/health
+
+## 🔧 Configuração Inicial
+
+### Instalar Dependências
+```batch
+# Execute uma vez antes do primeiro uso:
+instalar_dependencias.bat
+```
+
+### Login Padrão
+- **URL:** http://localhost:5001
+- **Email:** admin@ippel.com.br
+- **Senha:** admin123
+
+## 📋 Portas Utilizadas
+
+| Serviço | Porta | Status | Função |
+|---------|-------|--------|---------|
+| **Backend Principal** | 5001 | Obrigatório | Sistema principal |
+| Rust Images | 8081 | Opcional | Processamento de imagens |
+| Kotlin Utils | 8084 | Opcional | Geração de QR codes |
+| Julia Analytics | 8082 | Opcional | Analytics avançados |
+
+## ⚠️ Notas Importantes
+
+- **Execute sempre sem "Administrador"** (o drive G: pode não aparecer)
+- **Apenas o Backend Principal é obrigatório** - outros são opcionais
+- **Para rede externa:** use o IP da máquina em vez de localhost
+- **Firewall:** libere a porta 5001 para acesso na rede
+
+## 🌐 Acesso na Rede
+
+Para acessar de outros dispositivos:
+```batch
+# Descobrir IP da máquina:
+ipconfig | findstr "IPv4"
+
+# Liberar firewall (executar como Admin):
+netsh advfirewall firewall add rule name="IPPEL 5001" dir=in action=allow protocol=TCP localport=5001
+```
+
+**Acesso externo:** http://SEU_IP:5001
+
+## 🛠️ Solução de Problemas
+
+### Python não encontrado
+```batch
+# Instale Python de: https://python.org/downloads/
+# Marque "Add Python to PATH" na instalação
+```
+
+### Drive G: não encontrado
+```batch
+# Feche terminais "Administrador" e use CMD normal
+# Ou mude os caminhos para sua unidade local
+```
+
+### Serviços opcionais falhando
+```batch
+# O sistema funciona apenas com Python + Backend Principal
+# Rust/Kotlin/Julia são opcionais para funcionalidades extras
+```
+
+---
+
+## 🔧 Informações Técnicas Detalhadas
 
 Sistema completo para geração e envio de relatórios de Não Conformidade (RNC) da IPPEL.
 

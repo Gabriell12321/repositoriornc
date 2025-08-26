@@ -2,7 +2,7 @@ use actix_multipart::Multipart;
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use bytes::BytesMut;
 use futures_util::TryStreamExt as _;
-use image::{imageops::FilterType, DynamicImage, ImageFormat};
+use image::{imageops::FilterType, DynamicImage, ImageFormat, GenericImageView};
 use serde::Serialize;
 use std::io::Cursor;
 use tracing::{error, info};
@@ -21,8 +21,8 @@ async fn sanitize(mut payload: Multipart) -> actix_web::Result<HttpResponse> {
     let mut data = BytesMut::new();
 
     while let Ok(Some(mut field)) = payload.try_next().await {
-        let cd = field.content_disposition().cloned();
-        let name = cd.and_then(|d| d.get_name().map(|s| s.to_string())).unwrap_or_default();
+        let cd = field.content_disposition();
+        let name = cd.get_name().unwrap_or("").to_string();
         if name != "file" { continue; }
         while let Some(chunk) = field.try_next().await? {
             if data.len() + chunk.len() > 6 * 1024 * 1024 { // 6MB guard
@@ -37,7 +37,7 @@ async fn sanitize(mut payload: Multipart) -> actix_web::Result<HttpResponse> {
     }
 
     let reader = Cursor::new(&data);
-    let img = match image::load(reader, ImageFormat::from_buffer(&data).unwrap_or(ImageFormat::Png)) {
+    let img = match image::load_from_memory(&data) {
         Ok(i) => i,
         Err(e) => {
             error!(?e, "falha ao decodificar imagem");

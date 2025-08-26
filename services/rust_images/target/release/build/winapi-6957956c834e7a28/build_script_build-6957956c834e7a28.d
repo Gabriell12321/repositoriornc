@@ -1,0 +1,5 @@
+G:\My Drive\Trabalhos pendentes\rncs\RELATORIO DE NÃO CONFORMIDADE IPPEL\services\rust_images\target\release\build\winapi-6957956c834e7a28\build_script_build-6957956c834e7a28.d: C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\winapi-0.3.9\build.rs
+
+G:\My Drive\Trabalhos pendentes\rncs\RELATORIO DE NÃO CONFORMIDADE IPPEL\services\rust_images\target\release\build\winapi-6957956c834e7a28\build_script_build-6957956c834e7a28.exe: C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\winapi-0.3.9\build.rs
+
+C:\Users\gabriel.garcia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\winapi-0.3.9\build.rs:
