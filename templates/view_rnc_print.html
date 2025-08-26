@@ -3,9 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modelo IPPEL - {{ rnc.rnc_number }}</title>
+    <title>IPPEL - RNC {{ rnc.rnc_number }}</title>
     
     <style>
+        :root {
+            --ippel-primary: #e74c3c;       /* IPPEL Red */
+            --ippel-primary-dark: #c0392b;  /* Darker Red */
+            --ippel-accent: #aa2b22;       /* Accent Red/Burgundy */
+            --header-dark: #222;            /* Header text contrast */
+            --text: #2c3e50;
+            --border: #e3e6ea;
+            --bg: #f7f9fb;
+        }
+
         @media print {
             @page {
                 size: A4;
@@ -14,7 +24,7 @@
             body {
                 margin: 0;
                 padding: 0;
-                font-size: 8px !important; /* Fonte ultra-compacta para impressão */
+                font-size: 8px !important; /* Fonte compacta para impressão */
                 line-height: 1.1 !important;
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
@@ -140,10 +150,10 @@
 
         body {
             font-family: 'Segoe UI', 'Roboto', 'Arial', sans-serif;
-            font-size: 9px; /* Fonte ultra-compacta */
+            font-size: 9px; /* Compacta */
             line-height: 1.1; /* Espaçamento mínimo */
-            color: #2c3e50;
-            background: #f8f9fa;
+            color: var(--text);
+            background: var(--bg);
             padding: 8px;
         }
 
@@ -157,35 +167,34 @@
             overflow: hidden;
         }
 
-        /* Cabeçalho ultra-compacto */
+        /* Cabeçalho com cores IPPEL */
         .header {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-            color: white;
+            background: linear-gradient(135deg, var(--ippel-primary) 0%, var(--ippel-primary-dark) 100%);
+            color: #fff;
             padding: 10px 15px;
             margin: 0;
-            border-bottom: none;
+            border-bottom: 2px solid var(--ippel-accent);
             position: relative;
             overflow: hidden;
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
 
-        .header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 60px;
-            height: 60px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 50%;
-            transform: translate(20px, -20px);
+        .header::before { display: none; }
+
+        .header-logo {
+            height: 26px;
+            width: auto;
+            object-fit: contain;
+            filter: drop-shadow(0 1px 1px rgba(0,0,0,.25));
         }
 
         .header-info h1 {
             font-size: 14px;
-            color: white;
+            color: #fff;
             margin: 0 0 4px 0;
-            font-weight: 600;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+            font-weight: 700;
         }
 
         .header-meta {
@@ -197,20 +206,19 @@
         }
 
         .header-meta span {
-            background: rgba(255,255,255,0.2);
-            padding: 2px 5px;
+            background: rgba(255,255,255,0.18);
+            padding: 2px 6px;
             border-radius: 10px;
-            backdrop-filter: blur(10px);
         }
 
         .rnc-badge {
-            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-            color: white;
-            padding: 4px 10px;
-            border-radius: 15px;
-            font-weight: bold;
+            background: #ffffff;
+            color: var(--ippel-primary-dark);
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-weight: 700;
             font-size: 10px;
-            box-shadow: 0 2px 8px rgba(231, 76, 60, 0.4);
+            border: 1px solid rgba(0,0,0,.08);
             position: absolute;
             top: 10px;
             right: 15px;
@@ -227,8 +235,8 @@
         }
 
         .print-btn {
-            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
-            color: white;
+            background: linear-gradient(135deg, var(--ippel-primary) 0%, var(--ippel-primary-dark) 100%);
+            color: #fff;
             border: none;
             padding: 10px 16px;
             border-radius: 20px;
@@ -239,7 +247,7 @@
             align-items: center;
             gap: 6px;
             transition: all 0.3s ease;
-            box-shadow: 0 3px 12px rgba(39, 174, 96, 0.4);
+            box-shadow: 0 3px 12px rgba(192, 57, 43, 0.35);
         }
 
         .print-btn:hover {
@@ -251,7 +259,7 @@
         .form-section {
             margin: 6px 10px;
             background: white;
-            border: 1px solid #e9ecef;
+            border: 1px solid var(--border);
             border-radius: 6px;
             overflow: hidden;
             box-shadow: 0 1px 5px rgba(0,0,0,0.05);
@@ -263,8 +271,8 @@
         }
 
         .section-title {
-            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-            color: white;
+            background: linear-gradient(135deg, var(--ippel-primary) 0%, var(--ippel-primary-dark) 100%);
+            color: #fff;
             padding: 6px 12px;
             font-weight: 600;
             font-size: 10px;
@@ -273,15 +281,7 @@
             position: relative;
         }
 
-        .section-title::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 1px;
-            background: linear-gradient(90deg, #e74c3c, #f39c12, #27ae60);
-        }
+    .section-title::after { display: none; }
 
         .form-row {
             display: grid;
@@ -298,7 +298,7 @@
 
         .form-label {
             font-weight: 600;
-            color: #34495e;
+            color: #333;
             font-size: 8px;
             text-transform: uppercase;
             letter-spacing: 0.2px;
@@ -306,12 +306,12 @@
 
         .form-value {
             padding: 4px 8px;
-            border: 1px solid #e9ecef;
+            border: 1px solid var(--border);
             border-radius: 4px;
             font-size: 9px;
             line-height: 1.2;
-            background: #f8f9fa;
-            color: #2c3e50;
+            background: #fbfbfc;
+            color: var(--text);
             white-space: pre-wrap;
             word-break: break-word;
             min-height: 16px;
@@ -326,8 +326,8 @@
         }
 
         .text-block {
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
+            background: #fbfbfc;
+            border: 1px solid var(--border);
             border-radius: 4px;
             padding: 6px 8px;
             white-space: pre-wrap;
@@ -366,17 +366,17 @@
 
         /* Disposição e Inspeção ultra-compacta */
         .disposition-section {
-            border: 1px solid #3498db;
+            border: 1px solid var(--ippel-primary);
             border-radius: 6px;
             background: white;
             margin: 6px 10px;
             overflow: hidden;
-            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.2);
+            box-shadow: 0 2px 8px rgba(231, 76, 60, 0.18);
         }
 
         .disposition-header {
-            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-            color: white;
+            background: linear-gradient(135deg, var(--ippel-primary) 0%, var(--ippel-primary-dark) 100%);
+            color: #fff;
             text-align: center;
             padding: 6px 0;
             font-weight: 600;
@@ -385,15 +385,7 @@
             position: relative;
         }
 
-        .disposition-header::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 1px;
-            background: linear-gradient(90deg, #e74c3c, #f39c12);
-        }
+    .disposition-header::after { display: none; }
 
         .disposition-header > div {
             width: 50%;
@@ -592,29 +584,29 @@
 <body>
     <!-- Controles de impressão -->
     <div class="print-controls no-print">
-        <button class="print-btn" onclick="window.print()">🖨️ Imprimir Modelo IPPEL</button>
-        <button class="print-btn" onclick="window.close()" style="background: linear-gradient(135deg, #6c757d 0%, #495057 100%);">❌ Fechar</button>
+    <button class="print-btn" onclick="window.print()">Imprimir</button>
+    <button class="print-btn" onclick="window.close()" style="background: linear-gradient(135deg, #6c757d 0%, #495057 100%);">Fechar</button>
     </div>
 
     <div class="container">
-        <!-- Cabeçalho ultra-compacto -->
+        <!-- Cabeçalho -->
         <div class="header">
             <div class="header-info">
-                <h1>📋 RELATÓRIO DE NÃO CONFORMIDADE INTERNA - RNC</h1>
+                <h1>RELATÓRIO DE NÃO CONFORMIDADE INTERNA - RNC</h1>
                 <div class="header-meta">
-                    <span>📅 {{ (rnc.created_at or '')[:10] if rnc.created_at else 'N/A' }}</span>
-                    <span>👤 {{ rnc.user_name or 'Não definido' }}</span>
-                    <span>📊 {{ rnc.status or 'Pendente' }}</span>
+                    <span>{{ (rnc.created_at or '')[:10] if rnc.created_at else 'N/A' }}</span>
+                    <span>{{ rnc.user_name or 'Não definido' }}</span>
+                    <span>{{ rnc.status or 'Pendente' }}</span>
                 </div>
             </div>
             <div class="rnc-badge">
-                🔴 RNC {{ rnc.rnc_number }}
+                RNC {{ rnc.rnc_number }}
             </div>
         </div>
 
         <!-- Seção: Informações do RNC -->
         <div class="form-section">
-            <div class="section-title">📋 INFORMAÇÕES DO RNC</div>
+            <div class="section-title">INFORMAÇÕES DO RNC</div>
             <div class="form-row">
                 <div class="form-group">
                     <label class="form-label">Título</label>
@@ -638,7 +630,7 @@
                     <label class="form-label">Prioridade</label>
                     <div class="form-value">
                         {% if rnc.priority == 'Alta' %}
-                            <span class="priority-high">🔴 {{ rnc.priority }}</span>
+                            <span class="priority-high">{{ rnc.priority }}</span>
                         {% elif rnc.priority == 'Média' %}
                             <span class="priority-medium">🟡 {{ rnc.priority }}</span>
                         {% else %}
@@ -692,7 +684,7 @@
                     {% endif %}
                     {% if has_cv %}
                     <div class="form-group">
-                        <label class="form-label">📊 CV</label>
+                        <label class="form-label">CV</label>
                         <div class="form-value" title="{{ txt_fields.get('CV') or txt_fields.get('cv') }}">{{ txt_fields.get('CV') or txt_fields.get('cv') }}</div>
                     </div>
                     {% endif %}
@@ -709,7 +701,7 @@
                     {% endif %}
                     {% if txt_fields.get('Modelo') or txt_fields.get('MODELO') %}
                     <div class="form-group">
-                        <label class="form-label">🏷️ Modelo</label>
+                        <label class="form-label">Modelo</label>
                         <div class="form-value" title="{{ txt_fields.get('Modelo') or txt_fields.get('MODELO') }}">{{ txt_fields.get('Modelo') or txt_fields.get('MODELO') }}</div>
                     </div>
                     {% endif %}
@@ -842,15 +834,15 @@
                 <!-- Linha de Assinaturas (caixas) -->
                 <div class="signature-boxes">
                     <div class="signature-box">
-                        <div style="margin-bottom: 10px;">👤 NOME</div>
+                        <div style="margin-bottom: 10px;">NOME</div>
                         <div style="border-top: 1px solid #3498db; padding-top: 2px;">✅ VISTO</div>
                     </div>
                     <div class="signature-box">
-                        <div style="margin-bottom: 10px;">👤 NOME</div>
+                        <div style="margin-bottom: 10px;">NOME</div>
                         <div style="border-top: 1px solid #3498db; padding-top: 2px;">✅ VISTO</div>
                     </div>
                     <div class="signature-box">
-                        <div style="margin-bottom: 10px;">👤 NOME</div>
+                        <div style="margin-bottom: 10px;">NOME</div>
                         <div style="border-top: 1px solid #3498db; padding-top: 2px;">✅ VISTO</div>
                     </div>
                 </div>
@@ -869,11 +861,11 @@
             <div class="section-title">ℹ️ INFORMAÇÕES ADICIONAIS</div>
             <div class="form-row">
                 <div class="form-group">
-                    <label class="form-label">👤 Criado por</label>
+                    <label class="form-label">Criado por</label>
                     <div class="form-value" title="{{ rnc.user_name or 'Sistema' }}">{{ rnc.user_name or 'Sistema' }}</div>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">📅 Data de Criação</label>
+                    <label class="form-label">Data de Criação</label>
                     <div class="form-value">{{ (rnc.created_at or '')[:10] if rnc.created_at else 'N/A' }}</div>
                 </div>
                 <div class="form-group">

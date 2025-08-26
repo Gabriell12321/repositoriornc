@@ -157,6 +157,70 @@
 			"isBackground": false,
 			"problemMatcher": [],
 			"group": "build"
+		},
+		{
+			"label": "Gerar relatório de arquitetura completo",
+			"type": "shell",
+			"command": "python",
+			"args": [
+				"scripts/generate_architecture_report.py"
+			],
+			"problemMatcher": [
+				"$python"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Gerar relatório de arquitetura completo (fix UTC)",
+			"type": "shell",
+			"command": "python",
+			"args": [
+				"scripts/generate_architecture_report.py"
+			],
+			"problemMatcher": [
+				"$python"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Organizar - Aplicar (incluir arquitetura)",
+			"type": "shell",
+			"command": "python",
+			"args": [
+				"organize_root.py"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Organizar - Aplicar (mover big file)",
+			"type": "shell",
+			"command": "python",
+			"args": [
+				"organize_root.py"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Gerar pacote IA (study pack)",
+			"type": "shell",
+			"command": "python",
+			"args": [
+				"-c",
+				"from scripts.generate_architecture_report import list_repo_files, write_ai_study_pack, ROOT; files=list_repo_files(ROOT); write_ai_study_pack(files); print('AI study pack generated.')"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Gerar pacote IA (runner)",
+			"type": "shell",
+			"command": "python",
+			"args": [
+				"scripts/generate_ai_study_pack.py"
+			],
+			"problemMatcher": [
+				"$python"
+			],
+			"group": "build"
 		}
 	]
 }

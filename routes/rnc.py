@@ -466,10 +466,11 @@ def view_rnc(rnc_id):
                         else:
                             mapping[label] = val
             return mapping
-
         txt_fields = parse_label_map(rnc_dict.get('description') or '')
         is_creator = (session['user_id'] == rnc_data[8])
-        return render_template('view_rnc_full.html', rnc=rnc_dict, is_creator=is_creator, txt_fields=txt_fields)
+        # Para garantir que visualização seja idêntica ao modelo de impressão,
+        # reutilizamos o mesmo template da impressão com um modo de exibição.
+        return render_template('view_rnc_print.html', rnc=rnc_dict, is_creator=is_creator, txt_fields=txt_fields, mode='view')
     except Exception as e:
         logger.error(f"Erro ao visualizar RNC {rnc_id}: {e}")
         return render_template('error.html', message='Erro interno do sistema')
@@ -497,7 +498,9 @@ def reply_rnc(rnc_id):
             return render_template('error.html', message='RNC não encontrado')
 
         owner_id = rnc_data[8]
+        assigned_user_id = rnc_data[9] if len(rnc_data) > 9 else None
         is_creator = str(session['user_id']) == str(owner_id)
+        is_assigned = assigned_user_id is not None and str(session['user_id']) == str(assigned_user_id)
         is_admin = has_permission(session['user_id'], 'admin_access')
         can_reply = has_permission(session['user_id'], 'reply_rncs')
         # Novo: permitir responder se o RNC foi compartilhado com o usuário (qualquer nível)
@@ -510,7 +513,8 @@ def reply_rnc(rnc_id):
             conn_share.close()
         except Exception:
             shared_can_reply = False
-        if not (is_creator or is_admin or can_reply or shared_can_reply):
+
+        if not (is_creator or is_assigned or is_admin or can_reply or shared_can_reply):
             return render_template('error.html', message='Acesso negado: você não tem permissão para responder este RNC')
 
         try:
@@ -616,9 +620,8 @@ def print_rnc(rnc_id):
                         else:
                             mapping[label] = val
             return mapping
-
         txt_fields = parse_label_map(rnc_dict.get('description') or '')
-        return render_template('view_rnc_print.html', rnc=rnc_dict, txt_fields=txt_fields)
+        return render_template('view_rnc_print.html', rnc=rnc_dict, txt_fields=txt_fields, mode='print')
     except Exception as e:
         logger.error(f"Erro ao gerar página de impressão para RNC {rnc_id}: {e}")
         return render_template('error.html', message='Erro interno do sistema')
@@ -951,9 +954,11 @@ def reply_rnc_api(rnc_id):
             conn.close()
             return jsonify({'success': False, 'message': 'RNC não encontrada'}), 404
         rnc_creator_id = rnc[1]
+        rnc_assigned_id = rnc[2]
         user_id = session['user_id']
         is_creator = str(user_id) == str(rnc_creator_id)
         is_admin = has_permission(user_id, 'admin_access')
+        is_assigned = (rnc_assigned_id is not None and str(user_id) == str(rnc_assigned_id))
         can_reply = has_permission(user_id, 'reply_rncs')
         # Novo: permitir responder se compartilhado com o usuário
         shared_can_reply = False
@@ -963,7 +968,7 @@ def reply_rnc_api(rnc_id):
             shared_can_reply = cur_share.fetchone() is not None
         except Exception:
             shared_can_reply = False
-        if not (is_creator or is_admin or can_reply or shared_can_reply):
+        if not (is_creator or is_assigned or is_admin or can_reply or shared_can_reply):
             conn.close()
             return jsonify({'success': False, 'message': 'Sem permissão para responder esta RNC'}), 403
         cursor.execute('''
@@ -971,9 +976,9 @@ def reply_rnc_api(rnc_id):
                SET status = 'Pendente',
                    finalized_at = NULL,
                    updated_at = CURRENT_TIMESTAMP,
-                   assigned_user_id = user_id
+                   assigned_user_id = ?
              WHERE id = ?
-        ''', (rnc_id,))
+        ''', (user_id, rnc_id))
         if cursor.rowcount == 0:
             conn.close()
             return jsonify({'success': False, 'message': 'Nenhuma alteração realizada'}), 400

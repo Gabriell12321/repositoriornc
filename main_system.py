@@ -645,8 +645,20 @@ def view_rnc(rnc_id):
             flash('RNC não encontrado', 'error')
             return redirect(url_for('dashboard'))
             
-        # Verificar se o usuário tem acesso a este RNC
-        if rnc_details['main'][9] != current_user.id and current_user.role != 'admin':
+        # Verificar se o usuário tem acesso a este RNC (criador, admin ou compartilhado)
+        is_owner = (rnc_details['main'][9] == current_user.id)
+        is_admin = (current_user.role == 'admin')
+        has_share = False
+        if not (is_owner or is_admin):
+            try:
+                conn = sqlite3.connect(DB_PATH)
+                cur = conn.cursor()
+                cur.execute('SELECT 1 FROM rnc_shares WHERE rnc_id = ? AND shared_with_user_id = ? LIMIT 1', (rnc_id, current_user.id))
+                has_share = cur.fetchone() is not None
+                conn.close()
+            except Exception as ie:
+                logger.error(f"Erro ao verificar compartilhamento da RNC {rnc_id}: {ie}")
+        if not (is_owner or is_admin or has_share):
             flash('Acesso negado', 'error')
             return redirect(url_for('dashboard'))
             
@@ -813,12 +825,21 @@ def get_rnc_details_api(rnc_id):
         rnc_details = rnc_system.get_rnc_details(rnc_id)
         
         if rnc_details:
-            # Verificar acesso
-            if rnc_details['main'][9] != current_user.id and current_user.role != 'admin':
-                return jsonify({
-                    'success': False,
-                    'message': 'Acesso negado'
-                }), 403
+            # Verificar acesso (criador, admin ou compartilhado)
+            is_owner = (rnc_details['main'][9] == current_user.id)
+            is_admin = (current_user.role == 'admin')
+            has_share = False
+            if not (is_owner or is_admin):
+                try:
+                    conn = sqlite3.connect(DB_PATH)
+                    cur = conn.cursor()
+                    cur.execute('SELECT 1 FROM rnc_shares WHERE rnc_id = ? AND shared_with_user_id = ? LIMIT 1', (rnc_id, current_user.id))
+                    has_share = cur.fetchone() is not None
+                    conn.close()
+                except Exception as ie:
+                    logger.error(f"Erro ao verificar compartilhamento da RNC {rnc_id}: {ie}")
+            if not (is_owner or is_admin or has_share):
+                return jsonify({'success': False, 'message': 'Acesso negado'}), 403
                 
             return jsonify({
                 'success': True,

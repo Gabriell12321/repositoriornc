@@ -65,18 +65,36 @@ def get_rnc_shared_users(rnc_id: int):
 
 
 def can_user_access_rnc(user_id: int, rnc_id: int) -> bool:
+    """Determina acesso de visualização a uma RNC.
+    Regras:
+    - Admin: sempre pode
+    - Criador: pode
+    - Responsável atribuído (assigned_user_id): pode
+    - Compartilhado em rnc_shares: pode
+    """
     try:
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
-        cursor.execute('SELECT user_id FROM rncs WHERE id = ?', (rnc_id,))
+
+        # Admin tem acesso total
+        cursor.execute('SELECT role FROM users WHERE id = ?', (user_id,))
+        role_row = cursor.fetchone()
+        if role_row and str(role_row[0]).lower() == 'admin':
+            conn.close()
+            return True
+
+        # Verificar criador e responsável atribuído
+        cursor.execute('SELECT user_id, assigned_user_id FROM rncs WHERE id = ?', (rnc_id,))
         row = cursor.fetchone()
         if not row:
             conn.close()
             return False
-        is_creator = str(row[0]) == str(user_id)
-        if is_creator:
+        owner_id, assigned_id = row[0], row[1]
+        if str(owner_id) == str(user_id) or (assigned_id is not None and str(assigned_id) == str(user_id)):
             conn.close()
             return True
+
+        # Verificar compartilhamento explícito
         cursor.execute('''
             SELECT 1 FROM rnc_shares WHERE rnc_id = ? AND shared_with_user_id = ? LIMIT 1
         ''', (rnc_id, user_id))

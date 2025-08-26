@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parent
 # Target folders
 DIRS = {
     'docs': ROOT / 'docs',
+    'docs_ia': ROOT / 'docs' / 'ia estudar',
     'logs': ROOT / 'logs',
     'backups': ROOT / 'backups',
     'tests': ROOT / 'tests',
@@ -43,8 +44,20 @@ def safe_move(src: Path, dst_dir: Path):
     if args.dry_run:
         moved.append((src.relative_to(ROOT), dst.relative_to(ROOT)))
     else:
-        shutil.move(str(src), str(dst))
-        moved.append((src.relative_to(ROOT), dst.relative_to(ROOT)))
+        try:
+            shutil.move(str(src), str(dst))
+            moved.append((src.relative_to(ROOT), dst.relative_to(ROOT)))
+        except Exception as e:
+            # Fallback: if file is locked by another process on Windows, try copy
+            msg = str(e).lower()
+            if "used by another process" in msg or isinstance(e, PermissionError):
+                try:
+                    shutil.copy2(str(src), str(dst))
+                    moved.append((src.relative_to(ROOT), dst.relative_to(ROOT)))
+                except Exception as e2:
+                    raise e2
+            else:
+                raise e
 
 # 1) Docs (Markdown) except root README.md
 for p in ROOT.glob('*.md'):
@@ -54,6 +67,25 @@ for p in ROOT.glob('*.md'):
         safe_move(p, DIRS['docs'])
     except Exception as e:
         skipped.append((p.name, str(e)))
+
+# 1.1) Docs de arquitetura/estudo → docs/ia estudar
+arch_patterns = (
+    'arquitetura*.md',  # arquitetura.md, arquitetura_completa.md, etc.
+)
+# Mover dentro de docs/
+for pattern in arch_patterns:
+    for p in DIRS['docs'].glob(pattern):
+        try:
+            safe_move(p, DIRS['docs_ia'])
+        except Exception as e:
+            skipped.append((p.name, str(e)))
+# Caso estejam no root por algum motivo
+for pattern in arch_patterns:
+    for p in ROOT.glob(pattern):
+        try:
+            safe_move(p, DIRS['docs_ia'])
+        except Exception as e:
+            skipped.append((p.name, str(e)))
 
 # 2) Logs (known log files only)
 for name in ('ippel_system.log', 'email_system.log', 'ippel_security.log'):
