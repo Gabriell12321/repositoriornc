@@ -1,91 +1,104 @@
 {
-  "version": "2.0.0",
-  "tasks": [
-    {
-      "label": "Git: Commit and Push (master)",
-      "type": "shell",
-      "command": "powershell",
-      "args": [
-        "-NoProfile",
-        "-ExecutionPolicy",
-        {
-          "version": "2.0.0",
-          "tasks": [
-            {
-              "label": "Git: Commit e Push - oranização de pasta",
-              "type": "shell",
-              "command": "cmd",
-              "args": ["/d", "/c", ".vscode\\commit_and_push_oranizacao_pasta.bat"],
-              "options": {
-                "cwd": "${workspaceFolder}"
-              },
-              {
-                "version": "2.0.0",
-                "tasks": [
-                  {
-                    "label": "Git: Commit e Push - oranização de pasta",
-                    "type": "shell",
-                    "command": "cmd",
-                    "args": ["/d", "/c", ".vscode\\commit_and_push_oranizacao_pasta.bat"],
-                    "options": { "cwd": "${workspaceFolder}" },
-                    "problemMatcher": []
-                  },
-                  {
-                    "label": "Organizar - Dry Run",
-                    "type": "shell",
-                    "command": "python",
-                    "args": ["organize_root.py", "--dry-run"],
-                    "options": { "cwd": "${workspaceFolder}" },
-                    "problemMatcher": []
-                  },
-                  {
-                    "label": "Organizar - Aplicar (sem JSON)",
-                    "type": "shell",
-                    "command": "python",
-                    "args": ["organize_root.py"],
-                    "options": { "cwd": "${workspaceFolder}" },
-                    "problemMatcher": []
-                  },
-                  {
-                    "label": "Organizar - Aplicar (inclusive JSON)",
-                    "type": "shell",
-                    "command": "python",
-                    "args": ["organize_root.py", "--move-json"],
-                    "options": { "cwd": "${workspaceFolder}" },
-                    {
-                      "version": "2.0.0",
-                      "tasks": [
-                        {
-                          "label": "Git: Commit e Push - oranização de pasta",
-                          "type": "shell",
-                          "command": "cmd",
-                          "args": ["/d", "/c", ".vscode\\commit_and_push_oranizacao_pasta.bat"],
-                          "options": { "cwd": "${workspaceFolder}" },
-                          "problemMatcher": []
-                        },
-                        {
-                          "label": "Organizar - Dry Run",
-                          "type": "shell",
-                          "command": "python",
-                          "args": ["organize_root.py", "--dry-run"],
-                          "options": { "cwd": "${workspaceFolder}" },
-                          "problemMatcher": []
-                        },
-                        {
-                          "label": "Organizar - Aplicar (sem JSON)",
-                          "type": "shell",
-                          "command": "python",
-                          "args": ["organize_root.py"],
-                          "options": { "cwd": "${workspaceFolder}" },
-                          "problemMatcher": []
-                        },
-                        {
-                          "label": "Organizar - Aplicar (inclusive JSON)",
-                          "type": "shell",
-                          "command": "python",
-                          "args": ["organize_root.py", "--move-json"],
-                          "options": { "cwd": "${workspaceFolder}" },
-                          "problemMatcher": []
-                        }
-                      ]
-                    }
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Git: Commit e Push - organização de pasta",
+			"type": "shell",
+			"command": "cmd",
+			"args": [
+				"/d",
+				"/c",
+				".vscode\\commit_and_push_oranizacao_pasta.bat"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			}
+		},
+		{
+			"label": "Git: Push HEAD to origin (cmd)",
+			"type": "shell",
+			"command": "cmd",
+			"args": [
+				"/d",
+				"/c",
+				"cd /d \"${workspaceFolder}\" && echo PWD: && cd && echo. && echo REMOTES: && git --no-pager remote -v && echo. && echo BRANCH: && git rev-parse --abbrev-ref HEAD && echo. && echo PUSHING HEAD to origin... && git push -u origin HEAD"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			}
+		},
+		{
+			"label": "Organizar - Dry Run",
+			"type": "shell",
+			"command": "python",
+			"args": [
+				"organize_root.py",
+				"--dry-run"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"problemMatcher": []
+		},
+		{
+			"label": "Organizar - Aplicar (sem JSON)",
+			"type": "shell",
+			"command": "python",
+			"args": [
+				"organize_root.py"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"problemMatcher": []
+		},
+		{
+			"label": "Organizar - Aplicar (inclusive JSON)",
+			"type": "shell",
+			"command": "python",
+			"args": [
+				"organize_root.py",
+				"--move-json"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"problemMatcher": []
+		},
+		{
+			"label": "Git: Push HEAD to origin (cmd)",
+			"type": "shell",
+			"command": "cmd",
+			"args": [
+				"/d",
+				"/c",
+				"cd /d \"g:\\My Drive\\Trabalhos pendentes\\rncs\\RELATORIO DE NÃO CONFORMIDADE IPPEL\" && echo PWD: && cd && echo. && echo REMOTES: && git --no-pager remote -v || echo (no remotes) && (git remote get-url origin >NUL 2>&1 || git remote add origin https://github.com/Gabriell12321/repositoriornc.git) && echo. && echo REMOTES AFTER: && git --no-pager remote -v && echo. && echo BRANCH: && git rev-parse --abbrev-ref HEAD && echo. && echo STATUS: && git status -sb && echo. && echo PUSH: && git push -u origin HEAD"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Git: Push versão atual para origin",
+			"type": "shell",
+			"command": "cmd",
+			"args": [
+				"/d",
+				"/c",
+				"cd /d \"${workspaceFolder}\" && echo === STATUS ATUAL === && git status -sb && echo. && echo === REMOTES === && git remote -v && echo. && echo === BRANCH === && git rev-parse --abbrev-ref HEAD && echo. && echo === PUSH === && git push origin HEAD"
+			],
+			"problemMatcher": [],
+			"group": "build"
+		}
+	]
+}
