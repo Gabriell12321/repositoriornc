@@ -1399,8 +1399,8 @@
             try {
                 showLoading();
                 
-                // Chamar API com filtro de setor e tipo
-                const response = await fetch(`/api/indicadores?sector=${encodeURIComponent(sector)}&tipo=${currentDataType}`);
+                // Chamar API com filtro de setor
+                const response = await fetch(`/api/indicadores?sector=${encodeURIComponent(sector)}`);
                 if (response.ok) {
                     const data = await response.json();
                     updateDashboard(data);

@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório Detalhado de RNCs - {{ start_date }} a {{ end_date }}</title>
+    <style>
+        @page {
+            margin: 1.5cm;
+            size: A4;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #333;
+            background: white;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #8b1538;
+        }
+        
+        .logo {
+            max-width: 80px;
+            height: auto;
+            margin: 0 auto 15px;
+            display: block;
+        }
+        
+        .header h1 {
+            color: #8b1538;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .header h2 {
+            color: #666;
+            font-size: 16px;
+            font-weight: normal;
+        }
+        
+        .period {
+            color: #e74c3c;
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        
+        .stats-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .stat-box {
+            text-align: center;
+            padding: 15px;
+            background: white;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #8b1538;
+            display: block;
+        }
+        
+        .stat-label {
+            font-size: 11px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .rncs-section {
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            color: #8b1538;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #e74c3c;
+        }
+        
+        .rnc-item {
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            page-break-inside: avoid;
+            background: white;
+        }
+        
+        .rnc-header {
+            background: #8b1538;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 6px 6px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .rnc-number {
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .rnc-status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+        
+        .rnc-status.pendente {
+            background: #ffc107;
+            color: #000;
+        }
+        
+        .rnc-status.finalizado {
+            background: #28a745;
+            color: white;
+        }
+        
+        .rnc-status.andamento {
+            background: #17a2b8;
+            color: white;
+        }
+        
+        .rnc-body {
+            padding: 15px;
+        }
+        
+        .rnc-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            color: #666;
+            font-size: 10px;
+            text-transform: uppercase;
+            margin-bottom: 3px;
+        }
+        
+        .info-value {
+            font-size: 12px;
+            color: #333;
+        }
+        
+        .description-section {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+        
+        .description-text {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            line-height: 1.5;
+            min-height: 40px;
+        }
+        
+        .signatures-section {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
+        
+        .signature-box {
+            text-align: center;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #f8f9fa;
+        }
+        
+        .signature-title {
+            font-size: 9px;
+            font-weight: bold;
+            color: #666;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        
+        .signature-name {
+            font-size: 11px;
+            color: #333;
+            font-weight: bold;
+        }
+        
+        .footer {
+            position: fixed;
+            bottom: 1cm;
+            left: 1.5cm;
+            right: 1.5cm;
+            text-align: center;
+            font-size: 10px;
+            color: #666;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+        }
+        
+        .page-break {
+            page-break-before: always;
+        }
+        
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            
+            body {
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+        }
+        
+        @media screen {
+            body {
+                padding: 20px;
+                background: #f5f5f5;
+            }
+            
+            .container {
+                max-width: 210mm;
+                margin: 0 auto;
+                background: white;
+                padding: 30px;
+                box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Cabeçalho -->
+        <div class="header">
+            <img src="/IPPELLOGO.jpg" alt="IPPEL Logo" class="logo">
+            <h1>RELATÓRIO DETALHADO DE RNCs</h1>
+            <h2>Relatório de Não Conformidades</h2>
+            <div class="period">
+                Período: {{ start_date.strftime('%d/%m/%Y') if start_date else start_date }} 
+                a {{ end_date.strftime('%d/%m/%Y') if end_date else end_date }}
+            </div>
+        </div>
+        
+        <!-- Estatísticas Resumidas -->
+        <div class="stats-section">
+            <div class="stat-box">
+                <span class="stat-number">{{ stats.total_rncs }}</span>
+                <div class="stat-label">Total de RNCs</div>
+            </div>
+            <div class="stat-box">
+                <span class="stat-number">{{ stats.finalized }}</span>
+                <div class="stat-label">Finalizados</div>
+            </div>
+            <div class="stat-box">
+                <span class="stat-number">{{ stats.pending }}</span>
+                <div class="stat-label">Pendentes</div>
+            </div>
+            <div class="stat-box">
+                <span class="stat-number">{{ stats.resolution_rate }}%</span>
+                <div class="stat-label">Taxa de Resolução</div>
+            </div>
+        </div>
+        
+        <!-- Lista Detalhada de RNCs -->
+        <div class="rncs-section">
+            <h3 class="section-title">Detalhamento das RNCs</h3>
+            
+            {% for rnc in rncs %}
+            <div class="rnc-item">
+                <div class="rnc-header">
+                    <span class="rnc-number">{{ rnc.rnc_number }}</span>
+                    <span class="rnc-status {{ rnc.status.lower() }}">{{ rnc.status }}</span>
+                </div>
+                
+                <div class="rnc-body">
+                    <div class="rnc-info">
+                        <div class="info-item">
+                            <span class="info-label">Título</span>
+                            <span class="info-value">{{ rnc.title or 'N/A' }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Equipamento</span>
+                            <span class="info-value">{{ rnc.equipment or 'N/A' }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Cliente</span>
+                            <span class="info-value">{{ rnc.client or 'N/A' }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Prioridade</span>
+                            <span class="info-value">{{ rnc.priority or 'N/A' }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Criado por</span>
+                            <span class="info-value">{{ rnc.creator_name or 'N/A' }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Departamento</span>
+                            <span class="info-value">{{ rnc.creator_department or 'N/A' }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Data de Criação</span>
+                            <span class="info-value">{{ rnc.created_at.split('T')[0] if rnc.created_at else 'N/A' }}</span>
+                        </div>
+                        {% if rnc.assigned_user_name %}
+                        <div class="info-item">
+                            <span class="info-label">Responsável</span>
+                            <span class="info-value">{{ rnc.assigned_user_name }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if rnc.description %}
+                    <div class="description-section">
+                        <div class="info-label">Descrição</div>
+                        <div class="description-text">{{ rnc.description }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Assinaturas -->
+                    {% if rnc.signature_inspection_name or rnc.signature_engineering_name or rnc.signature_inspection2_name %}
+                    <div class="signatures-section">
+                        {% if rnc.signature_inspection_name and rnc.signature_inspection_name != 'NOME' %}
+                        <div class="signature-box">
+                            <div class="signature-title">Inspeção</div>
+                            <div class="signature-name">{{ rnc.signature_inspection_name }}</div>   
+                        </div>
+                        {% endif %}
+                        
+                        {% if rnc.signature_engineering_name and rnc.signature_engineering_name != 'NOME' %}
+                        <div class="signature-box">
+                            <div class="signature-title">Engenharia</div>
+                            <div class="signature-name">{{ rnc.signature_engineering_name }}</div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if rnc.signature_inspection2_name and rnc.signature_inspection2_name != 'NOME' %}
+                        <div class="signature-box">
+                            <div class="signature-title">Inspeção Final</div>
+                            <div class="signature-name">{{ rnc.signature_inspection2_name }}</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+            
+            {% if not rncs %}
+            <div style="text-align: center; padding: 40px; color: #666;">
+                <h3>Nenhuma RNC encontrada no período especificado</h3>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <div class="footer">
+        Relatório gerado em {{ generated_at.strftime('%d/%m/%Y às %H:%M') }} | 
+        Sistema IPPEL - Relatórios de Não Conformidade | 
+        Página <span id="pageNum"></span>
+    </div>
+    
+    <script>
+        // Configurar impressão automática se solicitado
+        window.addEventListener('load', function() {
+            // Aguardar um pouco para garantir que tudo carregou
+            setTimeout(() => {
+                // Se veio do botão de impressão, imprimir automaticamente
+                if (window.location.search.includes('auto_print=true')) {
+                    window.print();
+                }
+            }, 500);
+        });
+        
+        // Botão para imprimir manualmente
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'p') {
+                e.preventDefault();
+                window.print();
+            }
+        });
+    </script>
+</body>
+</html>

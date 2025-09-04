@@ -27,7 +27,7 @@ def has_department_permission(user_id: int, action: str) -> bool:
             return True
         if action in {'view_own_rncs', 'edit_rncs', 'view_groups_for_assignment', 'view_users_for_assignment'}:
             return True
-        if action in {'view_all_rncs', 'view_finalized_rncs', 'view_charts', 'view_reports', 'view_levantamento_14_15'}:
+        if action in {'view_all_rncs', 'view_finalized_rncs', 'view_charts', 'view_reports', 'view_levantamento_14_15', 'can_print_reports'}:
             return dept in ['administração', 'administracao', 'ti', 'qualidade']
         if action in {'admin_access', 'manage_users'}:
             return dept in ['administração', 'administracao', 'ti']

@@ -659,16 +659,27 @@
                 <td>{{ rnc.signature_engineering_name or '-' }}</td>
                 <td><strong>ASSINATURA LÍDER SETOR</strong></td>
                 <td>{{ rnc.signature_inspection2_name or '-' }}</td>
-                <td><strong>ORDEM DE COMPRA</strong></td>
-                <td>{{ txt_fields.get('OC') or '-' }}</td>
+                <td><strong>VALOR</strong></td>
+                <td style="font-weight: bold; color: #C1272D;">
+                    {% if rnc.price and rnc.price > 0 %}
+                        R$ {{ "{:,.2f}".format(rnc.price).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
             </tr>
             <tr>
                 <td><strong>INSPECTOR:</strong></td>
                 <td>{{ rnc.signature_inspection_name or '-' }}</td>
                 <td><strong>DATA EMISSÃO</strong></td>
                 <td>{{ (rnc.created_at or '')[:10] if rnc.created_at else '-' }}</td>
+                <td><strong>ORDEM DE COMPRA</strong></td>
+                <td>{{ txt_fields.get('OC') or '-' }}</td>
+            </tr>
+            <tr>
                 <td><strong>ÁREA RESPONSÁVEL</strong></td>
                 <td>{{ rnc.department or rnc.user_department or '-' }}</td>
+                <td colspan="4"></td>
             </tr>
         </table>
 

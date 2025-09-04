@@ -207,6 +207,16 @@
                     <span class="info-label">Cliente:</span>
                     <span class="info-value">{{ rnc.client or 'N/A' }}</span>
                 </div>
+                <div class="info-item">
+                    <span class="info-label">Valor:</span>
+                    <span class="info-value" style="font-weight: bold; color: #007bff;">
+                        {% if rnc.price and rnc.price > 0 %}
+                            R$ {{ "{:,.2f}".format(rnc.price).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                        {% else %}
+                            R$ 0,00
+                        {% endif %}
+                    </span>
+                </div>
             </div>
         </div>
 
@@ -268,6 +278,8 @@
             doc.text(`Equipamento: {{ rnc.equipment or 'N/A' }}`, margin, y);
             y += 6;
             doc.text(`Cliente: {{ rnc.client or 'N/A' }}`, margin, y);
+            y += 6;
+            doc.text(`Valor: {% if rnc.price and rnc.price > 0 %}R$ {{ "{:,.2f}".format(rnc.price).replace(',', 'X').replace('.', ',').replace('X', '.') }}{% else %}R$ 0,00{% endif %}`, margin, y);
             y += 6;
             doc.text(`Status: {{ rnc.status or 'N/A' }}`, margin, y);
             y += 6;

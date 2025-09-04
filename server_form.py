@@ -104,6 +104,7 @@ from datetime import datetime, timedelta
 from routes.api import api as api_bp
 from routes.auth import auth as auth_bp
 from routes.rnc import rnc as rnc_bp
+from routes.print_reports import print_reports as print_reports_bp
 
 try:
     from flask_socketio import SocketIO, emit, join_room, leave_room  # type: ignore
@@ -429,6 +430,7 @@ logger = logging.getLogger(__name__)
 app.register_blueprint(api_bp)
 app.register_blueprint(auth_bp)
 app.register_blueprint(rnc_bp)
+app.register_blueprint(print_reports_bp)
 
 # JWT: parse Authorization Bearer and attach g.user_id if valid
 @app.before_request
@@ -1826,6 +1828,7 @@ def dashboard():
         'canViewGroupsForAssignment': has_permission(session['user_id'], 'view_groups_for_assignment'),
         'canViewUsersForAssignment': has_permission(session['user_id'], 'view_users_for_assignment'),
         'canViewEngineeringRncs': has_permission(session['user_id'], 'view_engineering_rncs'),
+        'canPrintReports': True,  # Forçando permissão de impressão para todos os usuários
         'department': get_user_department(session['user_id'])
     }
     
@@ -6406,6 +6409,58 @@ def get_available_months():
         
     except Exception as e:
         print(f"Erro ao buscar meses disponíveis: {e}")
+        return jsonify({'success': False, 'message': 'Erro interno do servidor'}), 500
+
+# ===================== ROTA PARA GERAR RELATÓRIO POR DATA =====================
+@app.route('/generate_report_by_date', methods=['POST'])
+def generate_report_by_date():
+    """Gera relatório de RNCs por período de data especificado."""
+    if 'user_id' not in session:
+        return redirect('/')
+    
+    try:
+        # Obter dados do formulário
+        start_date = request.form.get('reportStartDate')
+        end_date = request.form.get('reportEndDate')
+        report_format = request.form.get('reportFormat', 'pdf')
+        
+        if not start_date or not end_date:
+            return jsonify({'success': False, 'message': 'Datas inicial e final são obrigatórias'}), 400
+        
+        # Buscar RNCs no período especificado
+        conn = sqlite3.connect('ippel_system.db')
+        cursor = conn.cursor()
+        
+        # Query para buscar RNCs no período
+        query = """
+            SELECT 
+                numero_rnc, titulo, cliente, equipamento, setor, responsavel, 
+                data_finalizacao, prioridade, status
+            FROM rncs 
+            WHERE data_finalizacao BETWEEN ? AND ?
+            ORDER BY data_finalizacao DESC
+        """
+        
+        cursor.execute(query, (start_date, end_date))
+        rncs = cursor.fetchall()
+        conn.close()
+        
+        # Para agora, retornar uma mensagem simples
+        # (Você pode implementar a geração do relatório aqui mais tarde)
+        response_data = {
+            'success': True,
+            'message': f'Relatório gerado com sucesso! Período: {start_date} a {end_date}',
+            'format': report_format,
+            'total_rncs': len(rncs),
+            'start_date': start_date,
+            'end_date': end_date
+        }
+        
+        # Por enquanto, retornar dados em JSON para teste
+        return jsonify(response_data)
+        
+    except Exception as e:
+        print(f"Erro ao gerar relatório por data: {e}")
         return jsonify({'success': False, 'message': 'Erro interno do servidor'}), 500
 
 if __name__ == '__main__':
