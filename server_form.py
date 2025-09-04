@@ -1834,6 +1834,73 @@ def dashboard():
     
     return render_template('dashboard_improved.html', user_permissions=user_permissions)
 
+@app.route('/dashboard/expenses')
+def dashboard_expenses():
+    """Dashboard com gastos por funcionário e setor."""
+    if 'user_id' not in session:
+        return redirect('/')
+    
+    user_id = session['user_id']
+    user = get_user_by_id(user_id)
+    
+    if not user:
+        return redirect('/')
+    
+    # Buscar todas as RNCs para calcular estatísticas
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Estatísticas gerais
+    cursor.execute("SELECT COUNT(*) FROM rncs WHERE is_deleted = 0")
+    total_rncs = cursor.fetchone()[0]
+    
+    cursor.execute("SELECT COUNT(*) FROM rncs WHERE status = 'Finalizado' AND is_deleted = 0")
+    finalized_rncs = cursor.fetchone()[0]
+    
+    cursor.execute("SELECT SUM(price) FROM rncs WHERE is_deleted = 0")
+    total_value = cursor.fetchone()[0] or 0
+    
+    cursor.execute("SELECT SUM(price) FROM rncs WHERE status = 'Finalizado' AND is_deleted = 0")
+    finalized_value = cursor.fetchone()[0] or 0
+    
+    # Organizar dados por departamento e responsável
+    cursor.execute("""
+        SELECT department, responsavel, SUM(price) as total_value, COUNT(*) as rnc_count
+        FROM rncs 
+        WHERE is_deleted = 0 AND responsavel IS NOT NULL AND responsavel != ''
+        GROUP BY department, responsavel
+        ORDER BY department, total_value DESC
+    """)
+    
+    dept_employee_data = cursor.fetchall()
+    
+    # Organizar em estrutura hierárquica
+    departments = {}
+    
+    for dept, responsavel, value, count in dept_employee_data:
+        if dept not in departments:
+            departments[dept] = {'employees': {}, 'total': 0}
+        
+        # Usar o responsável diretamente
+        employee_name = responsavel if responsavel else "Sistema"
+        
+        departments[dept]['employees'][employee_name] = value
+        departments[dept]['total'] += value
+    
+    conn.close()
+    
+    stats = {
+        'total_rncs': total_rncs,
+        'finalized_rncs': finalized_rncs,
+        'total_value': total_value,
+        'finalized_value': finalized_value
+    }
+    
+    return render_template('dashboard_with_employee_expenses.html', 
+                         user=user, 
+                         stats=stats,
+                         departments=departments)
+
 # ===================== MONITORING DASHBOARD (Admin) =====================
 @app.route('/admin/monitoring')
 def monitoring_dashboard():
@@ -2795,7 +2862,6 @@ def get_user_info():
     # rota /api/user/avatar movida para routes/api.py (Blueprint)
 
 ## Rota movida: /api/rnc/create agora está em routes/rnc.py (Blueprint)
-
 ## Rota movida: /api/rnc/<id>/update (variante 1) agora está em routes/rnc.py
 
     except Exception as e:

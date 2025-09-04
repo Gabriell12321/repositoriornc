@@ -157,31 +157,38 @@ def generate_report():
         elif report_type == 'by_operator':
             # Relatório por operador
             query = """
-                SELECT r.*, u.name as creator_name, u.department as creator_department,
-                       au.name as assigned_user_name, au.department as assigned_department
+                SELECT r.*, r.responsavel as creator_name, r.department as creator_department,
+                       r.responsavel as assigned_user_name, r.department as assigned_department
                 FROM rncs r
-                LEFT JOIN users u ON r.user_id = u.id
-                LEFT JOIN users au ON r.assigned_user_id = au.id
                 WHERE r.is_deleted = 0 
                 AND DATE(r.created_at) BETWEEN ? AND ?
-                ORDER BY u.name, r.created_at DESC
+                AND r.responsavel IS NOT NULL AND r.responsavel != ''
+                ORDER BY r.responsavel, r.created_at DESC
             """
             template = 'reports/by_operator_report.html'
             stats = calculate_operator_stats_period(cursor, start_date, end_date)
             
         elif report_type == 'by_sector':
-            # Relatório por setor
+            # Relatório por grupo (baseado no departamento dos RNCs)
             query = """
-                SELECT r.*, u.name as creator_name, u.department as creator_department,
-                       au.name as assigned_user_name, au.department as assigned_department
+                SELECT r.*, r.department as creator_department, r.responsavel as creator_name,
+                       r.department as assigned_department, r.responsavel as assigned_user_name,
+                       CASE 
+                           WHEN r.department = 'Engenharia' THEN 'Engenharia'
+                           WHEN r.department = 'Qualidade' THEN 'Qualidade'
+                           WHEN r.department = 'TI' THEN 'TI'
+                           WHEN r.department = 'Produção' THEN 'Produção'
+                           WHEN r.department = 'Compras' THEN 'Compras'
+                           WHEN r.department = 'Administração' THEN 'Administrador'
+                           WHEN r.department = 'Terceiros' THEN 'Terceiros'
+                           ELSE 'Outros'
+                       END as group_name
                 FROM rncs r
-                LEFT JOIN users u ON r.user_id = u.id
-                LEFT JOIN users au ON r.assigned_user_id = au.id
                 WHERE r.is_deleted = 0 
                 AND DATE(r.created_at) BETWEEN ? AND ?
-                ORDER BY u.department, r.created_at DESC
+                ORDER BY group_name, r.department, r.created_at DESC
             """
-            template = 'reports/by_sector_report.html'
+            template = 'reports/by_sector_report_simple.html'
             stats = calculate_sector_stats_period(cursor, start_date, end_date)
             
         else:
@@ -401,31 +408,28 @@ def calculate_sector_stats_period(cursor, start_date, end_date):
     
     # RNCs por setor
     cursor.execute("""
-        SELECT u.department, COUNT(*) FROM rncs r
-        LEFT JOIN users u ON r.user_id = u.id
+        SELECT r.department, COUNT(*) FROM rncs r
         WHERE r.is_deleted = 0 AND DATE(r.created_at) BETWEEN ? AND ?
-        GROUP BY u.department
+        GROUP BY r.department
         ORDER BY COUNT(*) DESC
     """, (start_date, end_date))
     stats['by_sector'] = dict(cursor.fetchall())
     
     # Valor por setor
     cursor.execute("""
-        SELECT u.department, SUM(CAST(r.price AS REAL)) FROM rncs r
-        LEFT JOIN users u ON r.user_id = u.id
+        SELECT r.department, SUM(CAST(r.price AS REAL)) FROM rncs r
         WHERE r.is_deleted = 0 AND DATE(r.created_at) BETWEEN ? AND ?
         AND r.price IS NOT NULL AND r.price != ''
-        GROUP BY u.department
+        GROUP BY r.department
         ORDER BY SUM(CAST(r.price AS REAL)) DESC
     """, (start_date, end_date))
     stats['value_by_sector'] = dict(cursor.fetchall())
     
     # RNCs por status por setor
     cursor.execute("""
-        SELECT u.department, r.status, COUNT(*) FROM rncs r
-        LEFT JOIN users u ON r.user_id = u.id
+        SELECT r.department, r.status, COUNT(*) FROM rncs r
         WHERE r.is_deleted = 0 AND DATE(r.created_at) BETWEEN ? AND ?
-        GROUP BY u.department, r.status
+        GROUP BY r.department, r.status
     """, (start_date, end_date))
     sector_status = cursor.fetchall()
     stats['sector_status'] = {}

@@ -1,0 +1,142 @@
+{
+  "last_updated": "2025-09-04T10:57:00.697799",
+  "summary": {
+    "total_rncs": 20932,
+    "finalized_rncs": 20928,
+    "pending_rncs": 4,
+    "in_progress_rncs": 0,
+    "total_value": 2416675.38,
+    "finalized_value": 2412217.38
+  },
+  "by_department": [
+    {
+      "department": "Engenharia",
+      "count": 14437,
+      "value": 1603335.72
+    },
+    {
+      "department": "Produção",
+      "count": 4942,
+      "value": 610654.88
+    },
+    {
+      "department": "Terceiros",
+      "count": 1416,
+      "value": 182543.04
+    },
+    {
+      "department": "Compras",
+      "count": 85,
+      "value": 11265.23
+    },
+    {
+      "department": "Qualidade",
+      "count": 41,
+      "value": 6236.51
+    },
+    {
+      "department": "Administração",
+      "count": 6,
+      "value": 0.0
+    },
+    {
+      "department": "TI",
+      "count": 5,
+      "value": 2640.0
+    }
+  ],
+  "by_status": [
+    {
+      "status": "Finalizado",
+      "count": 20928,
+      "value": 2412217.38
+    },
+    {
+      "status": "Pendente",
+      "count": 4,
+      "value": 4458.0
+    }
+  ],
+  "by_month": [
+    {
+      "month": "2031-11",
+      "count": 1,
+      "value": 80.0
+    },
+    {
+      "month": "2026-02",
+      "count": 1,
+      "value": 100.0
+    },
+    {
+      "month": "2025-12",
+      "count": 2,
+      "value": 282.0
+    },
+    {
+      "month": "2025-09",
+      "count": 2,
+      "value": 725.0
+    },
+    {
+      "month": "2025-08",
+      "count": 56,
+      "value": 6907.83
+    },
+    {
+      "month": "2025-07",
+      "count": 71,
+      "value": 12532.05
+    },
+    {
+      "month": "2025-06",
+      "count": 113,
+      "value": 16682.3
+    },
+    {
+      "month": "2025-05",
+      "count": 93,
+      "value": 9274.15
+    },
+    {
+      "month": "2025-04",
+      "count": 97,
+      "value": 12766.75
+    },
+    {
+      "month": "2025-03",
+      "count": 102,
+      "value": 10200.0
+    },
+    {
+      "month": "2025-02",
+      "count": 178,
+      "value": 21109.14
+    },
+    {
+      "month": "2025-01",
+      "count": 166,
+      "value": 17150.0
+    },
+    {
+      "month": "2024-12",
+      "count": 140,
+      "value": 14964.0
+    },
+    {
+      "month": "2024-11",
+      "count": 178,
+      "value": 20964.16
+    },
+    {
+      "month": "2024-10",
+      "count": 190,
+      "value": 18945.0
+    },
+    {
+      "month": "2024-09",
+      "count": 70,
+      "value": 7634.39
+    }
+  ]
+}

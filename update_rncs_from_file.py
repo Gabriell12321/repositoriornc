@@ -77,8 +77,7 @@ def parse_rnc_line(line):
         'priority': 'Média',
         'status': 'Finalizado',
         'price': valor,
-        'creator_name': responsavel,
-        'creator_department': area_responsavel,
+        'department': area_responsavel,
         'created_at': data_emissao or datetime.now().strftime('%Y-%m-%d'),
         'finalized_at': data_emissao or datetime.now().strftime('%Y-%m-%d'),
         'is_deleted': 0
@@ -88,7 +87,7 @@ def update_database():
     """Atualizar banco de dados com RNCs do arquivo"""
     
     # Conectar ao banco
-    db_path = 'database.db'
+    db_path = 'ippel_system.db'
     if not os.path.exists(db_path):
         print(f"❌ Banco de dados não encontrado: {db_path}")
         return
@@ -144,13 +143,13 @@ def update_database():
                     cursor.execute("""
                         UPDATE rncs SET 
                         title = ?, description = ?, equipment = ?, client = ?, 
-                        priority = ?, status = ?, price = ?, creator_name = ?, 
-                        creator_department = ?, finalized_at = ?, updated_at = ?
+                        priority = ?, status = ?, price = ?, department = ?, 
+                        finalized_at = ?, updated_at = ?
                         WHERE rnc_number = ?
                     """, (
                         rnc_data['title'], rnc_data['description'], rnc_data['equipment'],
                         rnc_data['client'], rnc_data['priority'], rnc_data['status'],
-                        rnc_data['price'], rnc_data['creator_name'], rnc_data['creator_department'],
+                        rnc_data['price'], rnc_data['department'],
                         rnc_data['finalized_at'], datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                         rnc_data['rnc_number']
                     ))
@@ -161,15 +160,14 @@ def update_database():
                         INSERT INTO rncs (
                             rnc_number, title, description, equipment, client, 
                             priority, status, user_id, created_at, updated_at, 
-                            finalized_at, is_deleted, price, creator_name, creator_department
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            finalized_at, is_deleted, price, department
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """, (
                         rnc_data['rnc_number'], rnc_data['title'], rnc_data['description'],
                         rnc_data['equipment'], rnc_data['client'], rnc_data['priority'],
                         rnc_data['status'], 1, rnc_data['created_at'], 
                         datetime.now().strftime('%Y-%m-%d %H:%M:%S'), rnc_data['finalized_at'],
-                        rnc_data['is_deleted'], rnc_data['price'], rnc_data['creator_name'],
-                        rnc_data['creator_department']
+                        rnc_data['is_deleted'], rnc_data['price'], rnc_data['department']
                     ))
                     new_rncs += 1
                 

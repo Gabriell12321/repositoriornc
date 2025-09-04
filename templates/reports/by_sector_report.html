@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Relatório RNC por Operador - IPPEL</title>
+    <title>Relatório RNC por Setor - IPPEL</title>
     <style>
         @page {
             size: A4;
@@ -61,11 +61,11 @@
             margin-bottom: 20px;
         }
         
-        .department-section {
+        .sector-section {
             margin-bottom: 30px;
         }
         
-        .department-header {
+        .sector-header {
             background: #f0f0f0;
             padding: 10px 15px;
             margin-bottom: 15px;
@@ -76,42 +76,58 @@
             font-size: 16px;
         }
         
-        .department-name {
+        .sector-name {
             color: #333;
         }
         
-        .department-total {
+        .sector-total {
             color: #333;
             font-weight: bold;
         }
         
-        .department-subtotal {
+        .sector-subtotal {
             margin-left: 20px;
             margin-bottom: 10px;
             font-weight: bold;
             color: #333;
         }
         
-        .employee-list {
+        .rnc-list {
             margin-left: 40px;
         }
         
-        .employee-item {
+        .rnc-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 5px 0;
+            border-bottom: 1px solid #eee;
         }
         
-        .employee-name {
+        .rnc-info {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+        
+        .rnc-title {
             color: #333;
             font-size: 14px;
+            font-weight: bold;
         }
         
-        .employee-value {
+        .rnc-details {
+            color: #666;
+            font-size: 12px;
+            margin-top: 2px;
+        }
+        
+        .rnc-value {
             color: #333;
             font-weight: bold;
             font-size: 14px;
+            text-align: right;
+            min-width: 100px;
         }
         
         .section-divider {
@@ -147,12 +163,12 @@
                 font-size: 20px;
             }
             
-            .department-header {
+            .sector-header {
                 font-size: 14px;
                 padding: 8px 12px;
             }
             
-            .employee-item {
+            .rnc-item {
                 font-size: 12px;
             }
         }
@@ -199,6 +215,15 @@
             color: #666;
             font-style: italic;
         }
+        
+        .sector-stats {
+            background: #f8f9fa;
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            color: #666;
+        }
     </style>
 </head>
 <body>
@@ -208,7 +233,7 @@
     <div class="header">
         <img src="/IPPELLOGO.jpg" alt="IPPEL Logo" class="logo">
         <div class="title-section">
-            <h1 class="main-title">RELATÓRIO RNC POR DATA</h1>
+            <h1 class="main-title">RELATÓRIO RNC POR SETOR</h1>
             <p class="date-info">{{ start_date.split('-')[1] }}/{{ start_date.split('-')[0] }}</p>
         </div>
     </div>
@@ -219,45 +244,60 @@
         <p>Total de RNCs: {{ stats.total_rncs }}</p>
     </div>
     
-    {# Organizar todos os RNCs por departamento e funcionário #}
-    {% set departments = {} %}
+    {# Organizar todos os RNCs por setor/departamento #}
+    {% set sectors = {} %}
     
     {# Processar todos os RNCs #}
     {% for rnc in rncs %}
-        {% set dept = rnc.department or 'Sem Departamento' %}
-        {% set employee = rnc.responsavel or 'Sistema' %}
+        {% set sector = rnc.department or 'Sem Setor' %}
         {% set value = rnc.price|float if rnc.price else 0 %}
         
-        {# Inicializar departamento se não existir #}
-        {% if dept not in departments %}
-            {% set _ = departments.update({dept: {'employees': {}, 'total': 0}}) %}
+        {# Inicializar setor se não existir #}
+        {% if sector not in sectors %}
+            {% set _ = sectors.update({sector: {'rncs': [], 'total': 0, 'count': 0}}) %}
         {% endif %}
         
-        {# Adicionar funcionário se não existir #}
-        {% if employee not in departments[dept]['employees'] %}
-            {% set _ = departments[dept]['employees'].update({employee: 0}) %}
-        {% endif %}
-        
-        {# Somar valor #}
-        {% set _ = departments[dept]['employees'].update({employee: departments[dept]['employees'][employee] + value}) %}
-        {% set _ = departments[dept].update({'total': departments[dept]['total'] + value}) %}
+        {# Adicionar RNC ao setor #}
+        {% set _ = sectors[sector]['rncs'].append(rnc) %}
+        {% set _ = sectors[sector].update({'total': sectors[sector]['total'] + value}) %}
+        {% set _ = sectors[sector].update({'count': sectors[sector]['count'] + 1}) %}
     {% endfor %}
     
-    {# Renderizar por departamento #}
-    {% for dept_name, dept_data in departments.items() %}
-        <div class="department-section">
-            <div class="department-header">
-                <span class="department-name">{{ dept_name }}</span>
-                <span class="department-total">R$ {{ "%.2f"|format(dept_data.total) }}</span>
+    {# Renderizar por setor #}
+    {% for sector_name, sector_data in sectors.items() %}
+        <div class="sector-section">
+            <div class="sector-header">
+                <span class="sector-name">{{ sector_name }}</span>
+                <span class="sector-total">R$ {{ "%.2f"|format(sector_data.total) }} ({{ sector_data.count }} RNCs)</span>
             </div>
-            <div class="department-subtotal">
-                R$ {{ "%.2f"|format(dept_data.total) }}
+            
+            <div class="sector-stats">
+                <strong>Estatísticas do Setor:</strong>
+                <br>• Total de RNCs: {{ sector_data.count }}
+                <br>• Valor Total: R$ {{ "%.2f"|format(sector_data.total) }}
+                <br>• Valor Médio por RNC: R$ {{ "%.2f"|format(sector_data.total / sector_data.count) if sector_data.count > 0 else 0 }}
             </div>
-            <div class="employee-list">
-                {% for employee_name, employee_value in dept_data.employees.items() %}
-                    <div class="employee-item">
-                        <span class="employee-name">{{ employee_name }}</span>
-                        <span class="employee-value">R$ {{ "%.2f"|format(employee_value) }}</span>
+            
+            <div class="rnc-list">
+                {% for rnc in sector_data.rncs %}
+                    <div class="rnc-item">
+                        <div class="rnc-info">
+                            <div class="rnc-title">RNC {{ rnc.rnc_number }} - {{ rnc.title or 'Sem título' }}</div>
+                            <div class="rnc-details">
+                                {% if rnc.responsavel %}
+                                    Responsável: {{ rnc.responsavel }} | 
+                                {% endif %}
+                                {% if rnc.equipment %}
+                                    Equipamento: {{ rnc.equipment }} | 
+                                {% endif %}
+                                {% if rnc.client %}
+                                    Cliente: {{ rnc.client }} | 
+                                {% endif %}
+                                Status: {{ rnc.status or 'Não definido' }} | 
+                                Data: {{ rnc.created_at.split(' ')[0] if rnc.created_at else 'N/A' }}
+                            </div>
+                        </div>
+                        <div class="rnc-value">R$ {{ "%.2f"|format(rnc.price|float if rnc.price else 0) }}</div>
                     </div>
                 {% endfor %}
             </div>
@@ -268,7 +308,7 @@
         {% endif %}
     {% endfor %}
     
-    {% if not departments %}
+    {% if not sectors %}
         <div class="no-data">
             <h3>Nenhum RNC encontrado</h3>
             <p>Não há RNCs no período selecionado.</p>
