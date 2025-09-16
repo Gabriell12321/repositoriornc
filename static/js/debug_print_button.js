@@ -68,7 +68,7 @@ document.addEventListener('DOMContentLoaded', function() {
     diagBtn.onclick = function() {
         console.log('🖱️ Botão de diagnóstico clicado');
         if (typeof showPrintReportModal === 'function') {
-            showPrintReportModal();
+            showPrintReportModal();3
             console.log('🔍 Função showPrintReportModal chamada');
         } else {
             console.error('❌ Impossível chamar showPrintReportModal - não definida');

@@ -199,6 +199,50 @@
         </div>
 
         <div class="form-group">
+            <label class="form-label" for="department">🏢 Setor:</label>
+            <select id="department" name="department" class="form-input form-select" required>
+                <option value="" disabled selected>Selecione o setor</option>
+                <option value="Engenharia">Engenharia</option>
+                <option value="PCP">PCP</option>
+                <option value="Produção">Produção</option>
+                <option value="Qualidade">Qualidade</option>
+                <option value="Compras">Compras</option>
+                <option value="Administração">Administração</option>
+                <option value="Terceiros">Terceiros</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="responsavel">👤 Responsável:</label>
+            <select id="responsavel" name="responsavel" class="form-input form-select">
+                <option value="" disabled selected>Selecione o responsável</option>
+                <optgroup label="Engenharia">
+                    <option value="Guilherme">Guilherme</option>
+                    <option value="Cíntia">Cíntia</option>
+                    <option value="Fundibem">Fundibem</option>
+                </optgroup>
+                <optgroup label="PCP">
+                    <option value="Fernando">Fernando</option>
+                </optgroup>
+                <optgroup label="Produção">
+                    <option value="Ronaldo">Ronaldo</option>
+                </optgroup>
+                <optgroup label="Compras">
+                    <option value="Marcelo">Marcelo</option>
+                </optgroup>
+                <optgroup label="Administração">
+                    <option value="Alan">Alan</option>
+                </optgroup>
+                <optgroup label="Qualidade">
+                    <option value="Supervisor Qualidade">Supervisor Qualidade</option>
+                </optgroup>
+                <optgroup label="Terceiros">
+                    <option value="Terceiro Responsável">Terceiro Responsável</option>
+                </optgroup>
+            </select>
+        </div>
+
+        <div class="form-group">
             <label class="form-label" for="instruction_retrabalho">🔧 Instrução para Retrabalho:</label>
             <textarea id="instruction_retrabalho" name="instruction_retrabalho" class="form-input form-textarea" rows="3" placeholder="Instruções detalhadas para correção..."></textarea>
         </div>

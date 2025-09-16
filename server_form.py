@@ -105,6 +105,7 @@ from routes.api import api as api_bp
 from routes.auth import auth as auth_bp
 from routes.rnc import rnc as rnc_bp
 from routes.print_reports import print_reports as print_reports_bp
+from routes.quick_actions import quick_actions_bp
 
 try:
     from flask_socketio import SocketIO, emit, join_room, leave_room  # type: ignore
@@ -255,8 +256,8 @@ try:
             'object-src': ["'none'"],
             'form-action': ["'self'"],
             'img-src': ["'self'", 'data:', 'blob:', 'https://api.dicebear.com'],
-            'style-src': ["'self'", "'unsafe-inline'"],  # manter inline até extrair estilos
-            'font-src': ["'self'", 'data:'],
+            'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],  # permitir Google Fonts
+            'font-src': ["'self'", 'data:', 'https://fonts.gstatic.com'],  # permitir Google Fonts
             'script-src': [
                 "'self'",
                 # Temporário: ainda há scripts inline e handlers; manter até migração
@@ -431,6 +432,7 @@ app.register_blueprint(api_bp)
 app.register_blueprint(auth_bp)
 app.register_blueprint(rnc_bp)
 app.register_blueprint(print_reports_bp)
+app.register_blueprint(quick_actions_bp)
 
 # JWT: parse Authorization Bearer and attach g.user_id if valid
 @app.before_request

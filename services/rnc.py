@@ -8,14 +8,22 @@ logger = logging.getLogger('ippel.services.rnc')
 
 def share_rnc_with_user(rnc_id: int, shared_by_user_id: int, shared_with_user_id: int, permission_level: str = 'view') -> bool:
     attempt = 0
-    max_attempts = 5
-    backoff_base = 0.2
+    max_attempts = 10  # Aumentando número de tentativas
+    backoff_base = 0.5  # Backoff mais longo
     while attempt < max_attempts:
         conn = None
         try:
-            conn = sqlite3.connect(DB_PATH, timeout=10, isolation_level=None)
+            # Aumentando timeout e usando conexão da pool
+            try:
+                from .db import get_db_connection, return_db_connection
+                conn = get_db_connection()  # Usar conexão da pool com configurações otimizadas
+            except Exception:
+                # Fallback se falhar importação ou pool
+                conn = sqlite3.connect(DB_PATH, timeout=30.0, isolation_level=None)
+                cursor = conn.cursor()
+                cursor.execute('PRAGMA busy_timeout=15000')  # 15 segundos de espera
+            
             cursor = conn.cursor()
-            cursor.execute('PRAGMA busy_timeout=5000')
             cursor.execute('BEGIN IMMEDIATE')
             cursor.execute(
                 '''INSERT OR REPLACE INTO rnc_shares (rnc_id, shared_by_user_id, shared_with_user_id, permission_level)

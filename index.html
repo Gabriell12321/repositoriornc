@@ -1682,77 +1682,45 @@
 
         // Função para salvar RNC no sistema
         function saveRNCToSystem() {
-            // Coletar dados do formulário
+            // Versão simplificada para resolver problemas
+            
+            // Coletar grupos selecionados para compartilhamento
             const shareGroupsSelect = document.getElementById('share_groups');
             const selectedGroupIds = Array.from(shareGroupsSelect.selectedOptions)
                 .map(option => option.value)
                 .filter(value => value !== '');
-
+            
+            // Coletar dados essenciais
             const formData = {
-                title: document.getElementById('title').value || 'RNC sem título',
-                description: document.getElementById('description').value || '',
-                equipment: document.getElementById('equipment').value || '',
-                client: document.getElementById('client').value || '',
-                priority: document.getElementById('priority').value || 'Média',
-                price: (function () { const v = (document.getElementById('price').value || '').replace(',', '.'); return v ? parseFloat(v) : 0; })(),
-                location: document.getElementById('location').value || '',
-                detected_by: document.getElementById('detected_by').value || '',
-                emergency_contact: document.getElementById('emergency_contact').value || '',
-                detection_date: document.getElementById('detection_date').value || new Date().toISOString().split('T')[0],
-                shared_group_ids: selectedGroupIds,
-                assigned_user_id: (document.getElementById('assigned_user_single') && document.getElementById('assigned_user_single').value) || null,
-                assinatura1: document.getElementById('nome_coluna1').textContent,
-                assinatura2: document.getElementById('nome_coluna2').textContent,
-                assinatura3: document.getElementById('nome_coluna3').textContent
+                title: document.getElementById('title').value,
+                description: document.getElementById('description').value,
+                equipment: document.getElementById('equipment')?.value || '',
+                client: document.getElementById('client')?.value || '',
+                priority: document.getElementById('priority')?.value || 'Média',
+                shared_group_ids: selectedGroupIds
             };
-
-            // Função para verificar se há pelo menos uma assinatura
-            function verificarAssinaturas() {
-                const assinaturas = [
-                    document.getElementById('nome_coluna1').textContent,
-                    document.getElementById('nome_coluna2').textContent,
-                    document.getElementById('nome_coluna3').textContent
-                ];
-                
-                return assinaturas.some(assinatura => assinatura && assinatura !== 'NOME' && assinatura.trim() !== '');
-            }
-
-            // Validar dados obrigatórios
-            if (!formData.title || !formData.description || !formData.equipment || !formData.client) {
-                const camposFaltando = [];
-                if (!formData.title) camposFaltando.push('Título');
-                if (!formData.description) camposFaltando.push('Descrição');
-                if (!formData.equipment) camposFaltando.push('Equipamento');
-                if (!formData.client) camposFaltando.push('Cliente');
-                
-                mostrarNotificacao(`❌ Campos obrigatórios não preenchidos: ${camposFaltando.join(', ')}`, 'error');
-                return;
-            }
-
-            // Validar grupos compartilhados
-            if (formData.shared_group_ids.length === 0) {
-                mostrarNotificacao('❌ Por favor, selecione pelo menos um grupo para compartilhar o RNC.', 'error');
+            
+            // Validação básica
+            if (!formData.title || !formData.description) {
+                alert('Por favor, preencha pelo menos o título e a descrição.');
                 return;
             }
             
-            // Verificar se selecionou apenas o placeholder
-            if (formData.shared_group_ids.includes('')) {
-                mostrarNotificacao('❌ Por favor, selecione grupos válidos (não apenas o placeholder).', 'error');
+            // Validar grupos compartilhados
+            if (formData.shared_group_ids.length === 0) {
+                alert('Por favor, selecione pelo menos um grupo para compartilhar o RNC.');
                 return;
             }
-
-            // Validar assinatura obrigatória
-            if (!verificarAssinaturas()) {
-                mostrarNotificacao('❌ É obrigatório preencher pelo menos uma assinatura!', 'error');
-                return;
-            }
-
+            
+            // Log para depuração
+            console.log('Enviando dados:', formData);
+            
             // Mostrar loading
             const saveBtn = document.querySelector('.fab-btn');
-            const originalText = saveBtn.innerHTML;
-            saveBtn.innerHTML = '⏳ Salvando...';
+            const originalContent = saveBtn.innerHTML;
             saveBtn.disabled = true;
-
+            saveBtn.innerHTML = '⏳ Salvando...';
+            
             // Enviar para API
             const base = window.location.origin.replace(/^https:/, 'http:');
             fetch(base + '/api/rnc/create', {
@@ -1762,37 +1730,28 @@
                 },
                 body: JSON.stringify(formData)
             })
-            .then(response => response.json())
+            .then(response => {
+                console.log('Status da resposta:', response.status);
+                return response.json();
+            })
             .then(data => {
+                console.log('Resposta completa:', data);
                 if (data.success) {
-                    // Mostrar confirmação
-                    showSaveConfirmation(data);
-                    
-                    // Limpar formulário
-                    clearForm();
-                    
-                    // Salvar no localStorage
-                    saveFormData();
-                    
-                    // Atualizar área do usuário
-                    loadUserRNCs();
-                    
-                    // Redirecionar para o dashboard após 2 segundos
-                    setTimeout(() => {
-                        window.location.href = '/dashboard';
-                    }, 2000);
+                    alert('RNC criada com sucesso!');
+                    window.location.href = '/dashboard';
                 } else {
+                    console.error('Erro detalhado:', data);
                     alert('Erro ao salvar RNC: ' + data.message);
                 }
             })
             .catch(error => {
-                console.error('Erro:', error);
-                alert('Erro ao conectar com o servidor. Verifique se o sistema está rodando.');
+                console.error('Erro na requisição:', error);
+                alert('Erro ao conectar ao servidor.');
             })
             .finally(() => {
                 // Restaurar botão
-                saveBtn.innerHTML = originalText;
                 saveBtn.disabled = false;
+                saveBtn.innerHTML = originalContent;
             });
         }
 

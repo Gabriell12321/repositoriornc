@@ -1,0 +1,245 @@
+/* 
+   CSS específico para otimização de impressão de relatórios
+   Arquivo: print-optimization.css
+   
+   Este arquivo contém estilos para melhorar a impressão de relatórios
+   com gráficos Chart.js e layouts responsivos
+*/
+
+/* Configurações gerais de página para impressão */
+@media print {
+    @page {
+        size: A4;
+        margin: 1cm;
+    }
+    
+    /* Reset de elementos que podem interferir na impressão */
+    * {
+        -webkit-print-color-adjust: exact !important;
+        color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    
+    /* Configurações do body */
+    body {
+        font-size: 11px !important;
+        line-height: 1.4 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    
+    /* Headers e títulos */
+    .header {
+        margin-bottom: 15px !important;
+        padding-bottom: 10px !important;
+        page-break-after: avoid !important;
+    }
+    
+    .title, .main-title {
+        font-size: 18px !important;
+        margin-bottom: 8px !important;
+        page-break-after: avoid !important;
+    }
+    
+    .subtitle, .date-info {
+        font-size: 12px !important;
+        margin-bottom: 5px !important;
+    }
+    
+    .generated-info {
+        font-size: 10px !important;
+        margin: 10px 0 !important;
+    }
+    
+    /* Seção de gráficos - layout otimizado para impressão */
+    .charts-section, .charts-grid {
+        page-break-inside: avoid !important;
+        margin: 15px 0 !important;
+        display: grid !important;
+        gap: 15px !important;
+    }
+    
+    /* Gráficos em grid de 2 colunas para a maioria dos relatórios */
+    .charts-section {
+        grid-template-columns: 1fr 1fr !important;
+    }
+    
+    /* Gráficos em grid de 3 colunas para relatório detalhado */
+    .charts-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 10px !important;
+    }
+    
+    /* Containers individuais dos gráficos */
+    .chart-container, .chart-card {
+        background: white !important;
+        border: 1px solid #ccc !important;
+        border-radius: 4px !important;
+        padding: 10px !important;
+        box-shadow: none !important;
+        height: 250px !important;
+        width: 100% !important;
+        page-break-inside: avoid !important;
+    }
+    
+    /* Títulos dos gráficos */
+    .chart-container h3, .chart-card h3 {
+        font-size: 12px !important;
+        margin-bottom: 8px !important;
+        text-align: center !important;
+        color: #2c3e50 !important;
+    }
+    
+    /* Canvas dos gráficos */
+    canvas {
+        max-height: 200px !important;
+        width: 100% !important;
+        height: auto !important;
+    }
+    
+    /* Cards de resumo */
+    .summary-grid, .stats-grid {
+        display: grid !important;
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 10px !important;
+        margin: 10px 0 !important;
+        page-break-inside: avoid !important;
+    }
+    
+    .summary-card, .stat-card {
+        background: white !important;
+        border: 1px solid #ccc !important;
+        border-radius: 4px !important;
+        padding: 8px !important;
+        text-align: center !important;
+        box-shadow: none !important;
+    }
+    
+    .summary-card .number, .stat-card .number {
+        font-size: 16px !important;
+        font-weight: bold !important;
+        color: #2c3e50 !important;
+    }
+    
+    .summary-card .label, .stat-card .label {
+        font-size: 10px !important;
+        color: #7f8c8d !important;
+    }
+    
+    /* Tabelas */
+    .rnc-table {
+        font-size: 9px !important;
+        width: 100% !important;
+        border-collapse: collapse !important;
+    }
+    
+    .rnc-table th,
+    .rnc-table td {
+        padding: 3px !important;
+        border: 1px solid #ccc !important;
+        font-size: 9px !important;
+    }
+    
+    .rnc-table th {
+        background: #f8f9fa !important;
+        font-weight: bold !important;
+    }
+    
+    /* Seções de departamento */
+    .department-section {
+        page-break-inside: avoid !important;
+        margin: 10px 0 !important;
+    }
+    
+    .department-title {
+        font-size: 14px !important;
+        margin: 10px 0 5px 0 !important;
+        font-weight: bold !important;
+    }
+    
+    .employee-row {
+        font-size: 10px !important;
+        padding: 2px 0 !important;
+    }
+    
+    /* Items de setor/categoria */
+    .sector-item {
+        font-size: 10px !important;
+        padding: 3px 6px !important;
+        margin: 2px !important;
+        border: 1px solid #ccc !important;
+        border-radius: 3px !important;
+        display: inline-block !important;
+    }
+    
+    /* Footer */
+    .footer {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        font-size: 8px !important;
+        text-align: center !important;
+        padding: 5px !important;
+        border-top: 1px solid #ccc !important;
+        background: white !important;
+    }
+    
+    /* Quebras de página */
+    .page-break {
+        page-break-before: always !important;
+    }
+    
+    .no-page-break {
+        page-break-inside: avoid !important;
+    }
+    
+    /* Elementos que não devem aparecer na impressão */
+    .no-print {
+        display: none !important;
+    }
+    
+    /* Ajustes específicos para diferentes layouts */
+    
+    /* Para relatório por operador - layout 2x1 */
+    .by-operator .charts-section {
+        grid-template-columns: 1fr 1fr !important;
+    }
+    
+    /* Para relatório total detalhado - layout 3x1 */
+    .total-detailed .charts-section {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 10px !important;
+    }
+    
+    .total-detailed .chart-container {
+        height: 200px !important;
+        padding: 8px !important;
+    }
+    
+    .total-detailed canvas {
+        max-height: 150px !important;
+    }
+    
+    /* Para relatório por setor - layout 2x2 */
+    .by-sector .charts-grid {
+        grid-template-columns: 1fr 1fr !important;
+    }
+    
+    /* Otimizações para cores em impressão */
+    .chart-container,
+    .chart-card,
+    .summary-card,
+    .stat-card {
+        border: 1px solid #333 !important;
+    }
+    
+    /* Garantir que textos sejam legíveis */
+    h1, h2, h3, h4, h5, h6 {
+        color: #000 !important;
+    }
+    
+    p, span, div {
+        color: #333 !important;
+    }
+}

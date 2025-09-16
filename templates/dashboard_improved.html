@@ -1288,11 +1288,11 @@
                 function applyLogo(img){
                     if(!img) return;
                     if(!img.dataset.logoPrimary){
-                        img.dataset.logoPrimary = '/LOGOIPPEL.JPEG';
+                        img.dataset.logoPrimary = '/IPPELLOGO.jpg';
                         img.dataset.logoFallback1 = '/IPPELLOGO.jpg';
                         img.dataset.logoFallback2 = (typeof flaskUrlForStatic !== 'undefined') ? flaskUrlForStatic('LOGOSQI.jpg') : '/static/LOGOSQI.jpg';
                     }
-                    if(!/LOGOIPPEL\.JPEG$/i.test(img.src)){
+                    if(!/IPPELLOGO\.jpg$/i.test(img.src)){
                         img.src = img.dataset.logoPrimary;
                     }
                     img.onerror = function(){
@@ -11048,5 +11048,150 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
             }
         }
     </style>
+    
+    <script>
+        // Sistema de Permissões para Ações Rápidas
+        async function loadQuickActions() {
+            try {
+                // Mapear ações para seus elementos HTML
+                const actionElements = {
+                    'manage_users': document.getElementById('manageUsersBtn'),
+                    'manage_groups': document.getElementById('manageGroupsBtn'),
+                    'manage_permissions': document.getElementById('managePermissionsBtn'),
+                    'manage_clients': document.getElementById('manageClientsBtn'),
+                    'manage_operators': document.getElementById('manageOperatorsBtn'),
+                    'manage_areas': document.getElementById('manageAreasBtn')
+                };
+                
+                // Buscar ações permitidas para o usuário atual
+                const userId = getCurrentUserId();
+                if (!userId) {
+                    console.log('⚠️ ID do usuário não encontrado - mantendo ações ocultas');
+                    return;
+                }
+                
+                const response = await fetch(`/admin/api/user-quick-actions/${userId}`, {
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) {
+                    console.error('❌ Erro ao carregar ações rápidas:', response.status);
+                    return;
+                }
+                
+                const allowedActions = await response.json();
+                console.log('✅ Ações permitidas carregadas:', allowedActions);
+                
+                // Mostrar apenas as ações permitidas
+                allowedActions.forEach(action => {
+                    const element = actionElements[action.key];
+                    if (element) {
+                        element.style.display = 'flex';
+                        console.log(`✅ Ação "${action.name}" habilitada`);
+                    }
+                });
+                
+                // Adicionar botão de gerenciar permissões se o usuário for admin
+                if (allowedActions.some(action => action.key === 'manage_permissions')) {
+                    addQuickActionsManagementButton();
+                }
+                
+                // Ocultar seção inteira se não houver ações
+                const quickActionsSection = document.querySelector('h3').closest('div');
+                const quickActionsHeader = Array.from(document.querySelectorAll('h3')).find(h3 => h3.textContent.includes('⚡ Ações Rápidas'));
+                if (quickActionsHeader && allowedActions.length === 0) {
+                    quickActionsHeader.closest('div').style.display = 'none';
+                    console.log('📦 Seção de Ações Rápidas ocultada - nenhuma permissão');
+                } else if (quickActionsHeader) {
+                    quickActionsHeader.closest('div').style.display = 'block';
+                }
+                
+            } catch (error) {
+                console.error('❌ Erro ao carregar ações rápidas:', error);
+            }
+        }
+        
+        function getCurrentUserId() {
+            // Tentar obter do sessionStorage
+            let userId = sessionStorage.getItem('user_id');
+            if (userId) return parseInt(userId);
+            
+            // Tentar obter de uma variável global
+            if (window.currentUserId) return window.currentUserId;
+            
+            // Tentar obter de um meta tag (se existir)
+            const metaUserId = document.querySelector('meta[name="user-id"]');
+            if (metaUserId) return parseInt(metaUserId.content);
+            
+            // Fallback: tentar obter do cookie de sessão
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                const [name, value] = cookie.trim().split('=');
+                if (name === 'user_id') {
+                    return parseInt(value);
+                }
+            }
+            
+            console.warn('⚠️ Não foi possível determinar o ID do usuário');
+            return null;
+        }
+        
+        function addQuickActionsManagementButton() {
+            const quickActionsHeader = Array.from(document.querySelectorAll('h3')).find(h3 => h3.textContent.includes('⚡ Ações Rápidas'));
+            if (!quickActionsHeader) return;
+            
+            const quickActionsContainer = quickActionsHeader.nextElementSibling;
+            if (!quickActionsContainer) return;
+            
+            // Verificar se já existe
+            if (document.getElementById('manageQuickActionsBtn')) return;
+            
+            const manageBtn = document.createElement('button');
+            manageBtn.id = 'manageQuickActionsBtn';
+            manageBtn.onclick = () => window.location.href = '/admin/quick-actions-permissions';
+            manageBtn.style.cssText = `
+                padding: 10px;
+                background: linear-gradient(135deg, #e74c3c, #c0392b);
+                color: white;
+                border: none;
+                border-radius: 10px;
+                cursor: pointer;
+                font-size: 14px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                box-shadow: 0 8px 20px rgba(231, 76, 60, 0.25);
+                transition: transform .15s ease, box-shadow .15s ease;
+                margin-top: 10px;
+            `;
+            manageBtn.innerHTML = '⚙️ Gerenciar Permissões de Ações';
+            
+            // Efeitos hover
+            manageBtn.onmouseover = function() {
+                this.style.transform = 'translateY(-1px)';
+                this.style.boxShadow = '0 10px 22px rgba(231,76,60,.3)';
+            };
+            manageBtn.onmouseout = function() {
+                this.style.transform = '';
+                this.style.boxShadow = '0 8px 20px rgba(231,76,60,.25)';
+            };
+            
+            quickActionsContainer.appendChild(manageBtn);
+            console.log('✅ Botão de gerenciar permissões adicionado');
+        }
+        
+        // Carregar ações quando a página estiver pronta
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Carregando sistema de permissões das ações rápidas...');
+            
+            // Pequeno delay para garantir que outros scripts carregaram
+            setTimeout(() => {
+                loadQuickActions();
+            }, 500);
+        });
+        
+        // Recarregar ações quando necessário (por exemplo, após login)
+        window.reloadQuickActions = loadQuickActions;
+    </script>
 </body>
 </html>

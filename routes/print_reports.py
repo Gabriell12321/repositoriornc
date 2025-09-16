@@ -14,6 +14,65 @@ from services.permissions import has_permission
 
 print_reports = Blueprint('print_reports', __name__)
 
+def format_currency_br(value):
+    """Formata valor monetário no padrão brasileiro"""
+    try:
+        if value is None or value == '' or value == 0:
+            return 'R$ 0,00'
+        
+        if isinstance(value, str):
+            value = float(value)
+        
+        # Formatar no padrão brasileiro
+        formatted = f"R$ {value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+        return formatted
+    except (ValueError, TypeError):
+        return 'R$ 0,00'
+
+def format_stats_values(stats):
+    """Formata valores monetários nas estatísticas para padrão brasileiro"""
+    if 'total_value' in stats:
+        stats['total_value_formatted'] = format_currency_br(stats['total_value'])
+    
+    # Formatar valores por operador
+    if 'value_by_operator' in stats and isinstance(stats['value_by_operator'], dict):
+        stats['value_by_operator_formatted'] = {}
+        for operator, value in stats['value_by_operator'].items():
+            stats['value_by_operator_formatted'][operator] = format_currency_br(value)
+    
+    # Formatar valores por setor 
+    if 'value_by_sector' in stats and isinstance(stats['value_by_sector'], dict):
+        stats['value_by_sector_formatted'] = {}
+        for sector, value in stats['value_by_sector'].items():
+            stats['value_by_sector_formatted'][sector] = format_currency_br(value)
+    
+    # Manter compatibilidade com estruturas antigas
+    if 'by_operator' in stats and isinstance(stats['by_operator'], dict):
+        for operator, data in stats['by_operator'].items():
+            if isinstance(data, dict) and 'total' in data:
+                stats['by_operator'][operator]['total_formatted'] = format_currency_br(data['total'])
+    
+    if 'by_department' in stats and isinstance(stats['by_department'], dict):
+        for dept, data in stats['by_department'].items():
+            if isinstance(data, dict) and 'total' in data:
+                stats['by_department'][dept]['total_formatted'] = format_currency_br(data['total'])
+    
+    if 'by_sector' in stats and isinstance(stats['by_sector'], dict):
+        for sector, data in stats['by_sector'].items():
+            if isinstance(data, dict) and 'total' in data:
+                stats['by_sector'][sector]['total_formatted'] = format_currency_br(data['total'])
+    
+    return stats
+
+def format_rnc_list_values(rncs_list):
+    """Formata valores monetários na lista de RNCs para padrão brasileiro"""
+    for rnc in rncs_list:
+        if 'price' in rnc and rnc['price']:
+            rnc['price_formatted'] = format_currency_br(rnc['price'])
+        else:
+            rnc['price_formatted'] = "R$ 0,00"
+    return rncs_list
+
 @print_reports.route('/report/print_rnc')
 def print_rnc_report():
     """Gera relatório de RNCs otimizado para impressão"""
@@ -61,6 +120,10 @@ def print_rnc_report():
         
         return_db_connection(conn)
         
+        # Aplicar formatação brasileira nos valores
+        rncs_list = format_rnc_list_values(rncs_list)
+        stats = format_stats_values(stats)
+        
         # Renderizar template baseado no formato
         if format_type == 'summary':
             return render_template('reports/print_summary.html', 
@@ -92,6 +155,9 @@ def reports_menu():
     """Menu de seleção de relatórios"""
     if 'user_id' not in session:
         return redirect(url_for('auth_bp.login'))
+    # Somente usuários com permissão de visualizar relatórios podem acessar o menu
+    if not has_permission(session['user_id'], 'view_reports'):
+        return redirect(url_for('print_reports.date_selection')) if has_permission(session['user_id'], 'can_print_reports') else ("Acesso negado", 403)
     
     return render_template('reports/reports_menu.html')
 
@@ -100,6 +166,9 @@ def date_selection():
     """Página de seleção de datas para relatórios"""
     if 'user_id' not in session:
         return redirect(url_for('auth_bp.login'))
+    # Requer ao menos a permissão de visualizar relatórios
+    if not has_permission(session['user_id'], 'view_reports') and not has_permission(session['user_id'], 'can_print_reports'):
+        return "Acesso negado", 403
     
     return render_template('reports/date_selection.html')
 
@@ -108,6 +177,9 @@ def generate_report():
     """Gera relatório de RNCs finalizados"""
     if 'user_id' not in session:
         return redirect(url_for('auth_bp.login'))
+    # Exigir permissão de visualização de relatórios (ou permissão de impressão)
+    if not has_permission(session['user_id'], 'view_reports') and not has_permission(session['user_id'], 'can_print_reports'):
+        return "Acesso negado", 403
     
     # Obter parâmetros da URL
     start_date = request.args.get('start_date')
@@ -188,7 +260,7 @@ def generate_report():
                 AND DATE(r.created_at) BETWEEN ? AND ?
                 ORDER BY group_name, r.department, r.created_at DESC
             """
-            template = 'reports/by_sector_report_simple.html'
+            template = 'reports/by_sector_report_simple_NEW.html'
             stats = calculate_sector_stats_period(cursor, start_date, end_date)
             
         else:
@@ -202,6 +274,10 @@ def generate_report():
         rncs_list = [dict(zip(columns, rnc)) for rnc in rncs]
         
         return_db_connection(conn)
+        
+        # Aplicar formatação brasileira nos valores
+        rncs_list = format_rnc_list_values(rncs_list)
+        stats = format_stats_values(stats)
         
         # Renderizar template do relatório
         return render_template(template, 

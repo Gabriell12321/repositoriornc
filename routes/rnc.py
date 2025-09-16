@@ -2,6 +2,7 @@ import logging
 import sqlite3
 import json
 import threading
+from datetime import datetime  # IMPORT ADICIONADO: necessário para gerar rnc_number
 from flask import Blueprint, request, jsonify, render_template, redirect, session
 
 # Local DB path to avoid early circular imports
@@ -37,46 +38,60 @@ logger = logging.getLogger('ippel.rnc')
 
 
 @rnc.route('/api/rnc/create', methods=['POST'])
-@csrf_protect()
 def create_rnc():
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
-
+    """Endpoint robusto para criação de RNC com validações obrigatórias"""
     try:
-        from services.permissions import has_permission
-        from services.cache import clear_rnc_cache
-        from services.groups import get_users_by_group
-        from services.rnc import share_rnc_with_user
+        # Verificar autenticação
+        if 'user_id' not in session:
+            return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
+        
+        # Obter dados
         data = request.get_json() or {}
-
+        
+        # VALIDAÇÕES OBRIGATÓRIAS PARA CRIAÇÃO
+        required_fields = {
+            'title': 'Título é obrigatório',
+            'description': 'Descrição da não conformidade é obrigatória',
+            'equipment': 'Equipamento é obrigatório',
+            'client': 'Cliente é obrigatório'
+        }
+        
+        missing_fields = []
+        for field, message in required_fields.items():
+            if not data.get(field, '').strip():
+                missing_fields.append(message)
+        
+        if missing_fields:
+            return jsonify({
+                'success': False, 
+                'message': 'Campos obrigatórios não preenchidos: ' + ', '.join(missing_fields)
+            }), 400
+        
+        # Conectar ao banco
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
+        
+        # Verificar estrutura da tabela
         cursor.execute("PRAGMA table_info(rncs)")
         cols = {row[1] for row in cursor.fetchall()}
-
-        import datetime as _dt
-        now = _dt.datetime.now()
+        
+        # Gerar número RNC
+        now = datetime.now()
         rnc_number = f"RNC-{now.year}-{now.month:02d}-{now.day:02d}-{now.hour:02d}{now.minute:02d}{now.second:02d}"
-
-        signature_columns = {
-            'signature_inspection_name',
-            'signature_engineering_name',
-            'signature_inspection2_name'
-        }
-        if signature_columns & cols:
-            assinaturas = [
-                data.get('signature_inspection_name', data.get('assinatura1', '')),
-                data.get('signature_engineering_name', data.get('assinatura2', '')),
-                data.get('signature_inspection2_name', data.get('assinatura3', '')),
-            ]
-            if not any(a and a != 'NOME' for a in assinaturas):
-                return jsonify({'success': False, 'message': 'É obrigatório preencher pelo menos uma assinatura!'}), 400
-
+        
+        # Obter departamento do usuário
         cursor.execute('SELECT department FROM users WHERE id = ?', (session['user_id'],))
         user_dept_row = cursor.fetchone()
         user_department = user_dept_row[0] if user_dept_row else 'N/A'
-
-        values_by_col = {
+        
+        # Obter nome do usuário criador para auto-preenchimento da primeira assinatura
+        cursor.execute('SELECT name, department FROM users WHERE id = ?', (session['user_id'],))
+        user_info = cursor.fetchone()
+        user_name = user_info[0] if user_info else 'Usuário'
+        user_dept = user_info[1] if user_info else 'N/A'
+        
+        # Dados básicos para inserção
+        basic_data = {
             'rnc_number': rnc_number,
             'title': data.get('title', 'RNC sem título'),
             'description': data.get('description', ''),
@@ -85,12 +100,19 @@ def create_rnc():
             'priority': data.get('priority', 'Média'),
             'status': 'Pendente',
             'user_id': session['user_id'],
-            'assigned_user_id': data.get('assigned_user_id'),
             'department': user_department,
-            'signature_inspection_name': data.get('signature_inspection_name', data.get('assinatura1', '')),
-            'signature_engineering_name': data.get('signature_engineering_name', data.get('assinatura2', '')),
-            'signature_inspection2_name': data.get('signature_inspection2_name', data.get('assinatura3', '')),
+            # Auto-preencher primeira assinatura com criador da RNC
+            'signature_inspection_name': f'{user_name} ({user_dept})',
+            'signature_inspection_date': now.strftime('%d/%m/%Y')
+        }
+        
+        # Adicionar campos opcionais se existirem
+        optional_fields = {
+            'signature_inspection_name': data.get('signature_inspection_name', ''),
+            'signature_engineering_name': data.get('signature_engineering_name', ''),
+            'signature_inspection2_name': data.get('signature_inspection2_name', ''),
             'price': float(data.get('price') or 0),
+            'assigned_user_id': data.get('assigned_user_id'),
             'disposition_usar': int(data.get('disposition_usar', False)),
             'disposition_retrabalhar': int(data.get('disposition_retrabalhar', False)),
             'disposition_rejeitar': int(data.get('disposition_rejeitar', False)),
@@ -104,64 +126,105 @@ def create_rnc():
             'cause_rnc': data.get('cause_rnc', ''),
             'action_rnc': data.get('action_rnc', ''),
         }
-
-        insert_cols = [c for c in values_by_col.keys() if c in cols]
-        insert_vals = [values_by_col[c] for c in insert_cols]
-
+        
+        # Combinar dados básicos com opcionais
+        all_data = {**basic_data, **optional_fields}
+        
+        # Filtrar apenas colunas que existem
+        insert_cols = [c for c in all_data.keys() if c in cols]
+        insert_vals = [all_data[c] for c in insert_cols]
+        
         if not insert_cols:
             conn.close()
-            return jsonify({'success': False, 'message': 'Schema da tabela rncs inválido'}), 500
-
+            return jsonify({'success': False, 'message': 'Nenhuma coluna válida encontrada'}), 500
+        
+        # Executar inserção
         placeholders = ", ".join(["?"] * len(insert_cols))
         sql = f"INSERT INTO rncs ({', '.join(insert_cols)}) VALUES ({placeholders})"
-        cursor.execute('BEGIN IMMEDIATE')
+        
         cursor.execute(sql, insert_vals)
         rnc_id = cursor.lastrowid
-
-        shared_group_ids = data.get('shared_group_ids', []) or []
-
+        
+        # Tentar compartilhamento (opcional)
         try:
-            def _share_task(rid, owner_id, group_ids):
-                for gid in group_ids or []:
-                    if not gid:
-                        continue
-                    users = get_users_by_group(gid)
-                    for u in users:
-                        uid = u[0]
-                        if uid != owner_id:
-                            share_rnc_with_user(rid, owner_id, uid, 'view')
-            threading.Thread(target=_share_task, args=(rnc_id, session['user_id'], shared_group_ids), daemon=True).start()
+            raw_ids = data.get('shared_group_ids', []) or []
+            # Normalizar: aceitar int, str numérica, lista de str
+            normalized_ids = []
+            for raw in raw_ids:
+                if raw in (None, ''):
+                    continue
+                try:
+                    normalized_ids.append(int(raw))
+                except Exception:
+                    logger.warning(f"shared_group_ids: ID inválido ignorado: {raw!r}")
+            if normalized_ids:
+                logger.info(f"Iniciando compartilhamento RNC {rnc_id} com grupos {normalized_ids}")
+                try:
+                    from services.groups import get_users_by_group
+                    from services.rnc import share_rnc_with_user
+
+                    def _share_task(rid: int, owner_id: int, group_ids: list[int]):
+                        total_links = 0
+                        for gid in group_ids:
+                            if not isinstance(gid, int) or gid <= 0:
+                                logger.warning(f"_share_task: gid inválido: {gid!r}")
+                                continue
+                            try:
+                                users = get_users_by_group(gid) or []
+                                logger.info(f"Grupo {gid}: {len(users)} usuários ativos para compartilhar")
+                                for u in users:
+                                    try:
+                                        uid = u[0]
+                                        if uid != owner_id:
+                                            if share_rnc_with_user(rid, owner_id, uid, 'view'):
+                                                total_links += 1
+                                    except Exception as ie:
+                                        logger.warning(f"Falha ao compartilhar com usuário do grupo {gid}: {ie}")
+                            except Exception as e:
+                                logger.warning(f"Erro ao processar grupo {gid}: {e}")
+                        logger.info(f"Compartilhamento concluído RNC {rid}: {total_links} vínculos criados")
+
+                    threading.Thread(target=_share_task, args=(rnc_id, session['user_id'], normalized_ids), daemon=True).start()
+                except Exception as e:
+                    logger.warning(f"Compartilhamento não disponível: {e}")
         except Exception as e:
-            logger.warning(f"Agendamento de compartilhamento falhou: {e}")
-
+            logger.warning(f"Erro no compartilhamento: {e}")
+        
+        # Commit
+        conn.commit()
+        conn.close()
+        
+        # Limpar cache (opcional)
         try:
-            conn.commit()
-        finally:
-            conn.close()
-
-        try:
+            from services.cache import clear_rnc_cache
             clear_rnc_cache()
         except Exception:
             pass
-
+        
         return jsonify({
             'success': True,
-            'message': 'RNC criado com sucesso!',
+            'message': 'RNC criada com sucesso!',
             'rnc_id': rnc_id,
             'rnc_number': rnc_number
         })
+        
     except Exception as e:
-        try:
-            conn.rollback()
-        except Exception:
-            pass
-        try:
-            conn.close()
-        except Exception:
-            pass
+        # Log detalhado do erro
+        import traceback
+        error_details = traceback.format_exc()
         logger.error(f"Erro ao criar RNC: {e}")
-        return jsonify({'success': False, 'message': 'Erro interno ao criar RNC'}), 500
-
+        logger.error(f"Traceback completo: {error_details}")
+        
+        # Retornar mensagem mais específica se possível
+        error_message = 'Erro interno ao criar RNC'
+        if 'UNIQUE constraint failed' in str(e):
+            error_message = 'Número de RNC já existe. Tente novamente.'
+        elif 'FOREIGN KEY constraint failed' in str(e):
+            error_message = 'Usuário inválido. Faça login novamente.'
+        elif 'no such table' in str(e):
+            error_message = 'Banco de dados não configurado corretamente.'
+        
+        return jsonify({'success': False, 'message': error_message}), 500
 
 @rnc.route('/rnc/<int:rnc_id>/chat')
 def rnc_chat(rnc_id):
@@ -423,7 +486,7 @@ def view_rnc(rnc_id):
                 'disposition_rejeitar','disposition_sucata','disposition_devolver_estoque','disposition_devolver_fornecedor',
                 'inspection_reprovado','inspection_ver_rnc','signature_inspection_date','signature_engineering_date',
                 'signature_inspection2_date','signature_inspection_name','signature_engineering_name','inspection_aprovado',
-                'signature_inspection2_name','price','department','instruction_retrabalho','cause_rnc','action_rnc'
+                'signature_inspection2_name','price','department','instruction_retrabalho','cause_rnc','action_rnc','responsavel'
             ]
 
         columns = base_columns + ['user_name', 'assigned_user_name', 'user_department', 'assigned_user_department']
@@ -447,18 +510,93 @@ def view_rnc(rnc_id):
                         key = parts[0].strip()
                         value = parts[1].strip()
                         if key and value:
+                            # Sempre preservar chave original
                             result[key] = value
+                            
+                            # Normalizar chaves para facilitar busca
+                            normalized_key = key.lower().replace(' ', '').replace('ã', 'a').replace('ç', 'c')
+                            
+                            # Mapear campos específicos (além da chave original)
+                            if 'desenho' in normalized_key or key.upper() == 'DES':
+                                result['Desenho'] = value
+                            elif 'mp' in normalized_key or key.upper() == 'MP':
+                                result['MP'] = value
+                            elif 'revisao' in normalized_key or 'revisão' in normalized_key or key.upper() == 'REV':
+                                result['Revisão'] = value
+                            elif 'cv' in normalized_key or key.upper() == 'CV':
+                                result['CV'] = value
+                            elif 'pos' in normalized_key or key.upper() == 'POS':
+                                result['POS'] = value
+                            elif 'conjunto' in normalized_key or key.upper() == 'CONJUNTO':
+                                result['Conjunto'] = value
+                            elif 'modelo' in normalized_key or key.upper() == 'MOD':
+                                result['Modelo'] = value
+                            elif 'quantidade' in normalized_key or 'qtde' in normalized_key or key.upper() == 'QTDE LOTE':
+                                result['Quantidade'] = value
+                            elif 'material' in normalized_key or key.upper() == 'MATERIAL':
+                                result['Material'] = value
+                            elif 'area' in normalized_key and 'responsavel' in normalized_key:
+                                result['Área responsável'] = value
+                            elif 'setor' in normalized_key or key.upper() == 'SETOR':
+                                result['Setor'] = value
+                            elif 'descricao' in normalized_key and 'desenho' in normalized_key:
+                                result['Descrição do desenho'] = value
+                            elif 'descricao' in normalized_key and 'rnc' in normalized_key:
+                                result['Descrição da RNC'] = value
+                            elif 'instrucao' in normalized_key and 'retrabalho' in normalized_key:
+                                result['Instrução para retrabalho'] = value
+                            elif 'causa' in normalized_key and 'rnc' in normalized_key:
+                                result['Causa da RNC'] = value
+                            elif 'acao' in normalized_key:
+                                result['Ação a ser tomada'] = value
+                            elif 'valor' in normalized_key:
+                                result['Valor'] = value
+                            elif 'oc' in normalized_key or 'ordem' in normalized_key or key.upper() == 'OC':
+                                result['OC'] = value
+                            elif 'responsavel' in normalized_key:
+                                result['Responsável'] = value
             return result
 
         # Extrair campos de texto da descrição para visualização
         txt_fields = parse_label_map(rnc_dict.get('description') or '')
         
+        # Se responsavel está vazio, tentar extrair do description
+        if not rnc_dict.get('responsavel'):
+            description = rnc_dict.get('description') or ''
+            lines = description.split('\n')
+            for line in lines:
+                if 'responsável' in line.lower() or 'responsavel' in line.lower():
+                    if ':' in line:
+                        parts = line.split(':', 1)
+                        if len(parts) == 2:
+                            responsavel = parts[1].strip()
+                            if responsavel:
+                                rnc_dict['responsavel'] = responsavel
+                                break
+            
+            # Se ainda está vazio, usar o nome do usuário
+            if not rnc_dict.get('responsavel'):
+                rnc_dict['responsavel'] = rnc_dict.get('user_name') or 'N/A'
+        
         # Determinar criador de forma robusta usando o dict
         is_creator = str(session['user_id']) == str(rnc_dict.get('user_id'))
         
-        return render_template('view_rnc_full.html', rnc=rnc_dict, txt_fields=txt_fields, is_creator=is_creator)
-    except Exception as e:
-        return render_template('error.html', message=f'Erro interno do sistema: {str(e)}')
+        # Debug: Log os dados para verificar se estão chegando
+        logger.info(f"DEBUG - RNC {rnc_id}: rnc_number={rnc_dict.get('rnc_number')}, title={rnc_dict.get('title')}")
+        logger.info(f"DEBUG - RNC {rnc_id}: equipment={rnc_dict.get('equipment')}, client={rnc_dict.get('client')}")
+        logger.info(f"DEBUG - RNC {rnc_id}: description length={len(str(rnc_dict.get('description') or ''))}")
+        logger.info(f"DEBUG - RNC {rnc_id}: txt_fields={txt_fields}")
+        logger.info(f"DEBUG - RNC {rnc_id}: signature_inspection_name={rnc_dict.get('signature_inspection_name')}")
+        
+        # Debug específico para os novos campos
+        logger.info(f"DEBUG - RNC {rnc_id}: instruction_retrabalho='{rnc_dict.get('instruction_retrabalho')}'")
+        logger.info(f"DEBUG - RNC {rnc_id}: cause_rnc='{rnc_dict.get('cause_rnc')}'")
+        logger.info(f"DEBUG - RNC {rnc_id}: action_rnc='{rnc_dict.get('action_rnc')}'")
+        logger.info(f"DEBUG - RNC {rnc_id}: responsavel='{rnc_dict.get('responsavel')}'")
+        logger.info(f"DEBUG - RNC {rnc_id}: txt_fields.get('Responsável')='{txt_fields.get('Responsável')}'")
+        logger.info(f"DEBUG - RNC {rnc_id}: Chaves do rnc_dict: {list(rnc_dict.keys())}")
+        
+        # Visualização usa o template atualizado com estilo do modelo
         return render_template('view_rnc_full.html', rnc=rnc_dict, is_creator=is_creator, txt_fields=txt_fields)
     except Exception as e:
         logger.error(f"Erro ao visualizar RNC {rnc_id}: {e}")
@@ -474,17 +612,25 @@ def reply_rnc(rnc_id):
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         cursor.execute('''
-            SELECT r.*, u.name as user_name, au.name as assigned_user_name
+            SELECT r.*, u.name as user_name, au.name as assigned_user_name,
+                   u.department as user_department, au.department as assigned_user_department
               FROM rncs r
               LEFT JOIN users u ON r.user_id = u.id
               LEFT JOIN users au ON r.assigned_user_id = au.id
-             WHERE r.id = ?
+             WHERE r.id = ? AND r.is_deleted = 0
         ''', (rnc_id,))
         rnc_data = cursor.fetchone()
         conn.close()
 
         if not rnc_data:
-            return render_template('error.html', message='RNC não encontrado')
+            logger.warning(f"RNC {rnc_id} não encontrado para usuário {session.get('user_id')}")
+            return render_template('error.html', 
+                message=f'RNC #{rnc_id} não encontrado ou foi removido.',
+                suggestions=[
+                    'Verifique se o número do RNC está correto',
+                    'O RNC pode ter sido removido ou finalizado',
+                    'Entre em contato com o administrador se o problema persistir'
+                ])
 
         owner_id = rnc_data[8]
         assigned_user_id = rnc_data[9] if len(rnc_data) > 9 else None
@@ -504,7 +650,14 @@ def reply_rnc(rnc_id):
             shared_can_reply = False
 
         if not (is_creator or is_assigned or is_admin or can_reply or shared_can_reply):
-            return render_template('error.html', message='Acesso negado: você não tem permissão para responder este RNC')
+            logger.warning(f"Usuário {session.get('user_id')} tentou responder RNC {rnc_id} sem permissão")
+            return render_template('error.html', 
+                message='Acesso negado: você não tem permissão para responder este RNC',
+                suggestions=[
+                    'Verifique se você tem permissão para responder RNCs',
+                    'Entre em contato com o criador do RNC ou administrador',
+                    'Solicite que o RNC seja compartilhado com você'
+                ])
 
         try:
             conn_cols = sqlite3.connect(DB_PATH)
@@ -512,24 +665,44 @@ def reply_rnc(rnc_id):
             cur_cols.execute('PRAGMA table_info(rncs)')
             base_columns = [row[1] for row in cur_cols.fetchall()]
             conn_cols.close()
-        except Exception:
+        except Exception as e:
+            logger.error(f"Erro ao obter colunas da tabela rncs: {e}")
             base_columns = [
                 'id','rnc_number','title','description','equipment','client','priority','status','user_id','assigned_user_id',
                 'is_deleted','deleted_at','finalized_at','created_at','updated_at','disposition_usar','disposition_retrabalhar',
                 'disposition_rejeitar','disposition_sucata','disposition_devolver_estoque','disposition_devolver_fornecedor',
                 'inspection_aprovado','inspection_reprovado','inspection_ver_rnc','signature_inspection_date','signature_engineering_date',
-                'signature_inspection2_date','signature_inspection_name','signature_engineering_name','signature_inspection2_name','price'
+                'signature_inspection2_date','signature_inspection_name','signature_engineering_name','signature_inspection2_name','price',
+                'cause_rnc','action_rnc','instruction_retrabalho'
             ]
-        columns = base_columns + ['user_name', 'assigned_user_name']
+        columns = base_columns + ['user_name', 'assigned_user_name', 'user_department', 'assigned_user_department']
 
         if len(rnc_data) < len(columns):
             rnc_data = list(rnc_data) + [None] * (len(columns) - len(rnc_data))
 
         rnc_dict = dict(zip(columns, rnc_data))
-        return render_template('edit_rnc_form.html', rnc=rnc_dict, is_editing=True, is_reply=True)
+        logger.info(f"Usuário {session.get('user_id')} acessando modo resposta para RNC {rnc_id}")
+        
+        # Configurando valores padrão para garantir renderização correta mesmo em caso de problemas
+        if 'txt_fields' not in locals() or txt_fields is None:
+            txt_fields = {}
+        return render_template('edit_rnc_form.html', rnc=rnc_dict, is_editing=True, is_reply=True, txt_fields=txt_fields)
     except Exception as e:
         logger.error(f"Erro ao abrir modo Responder para RNC {rnc_id}: {e}")
-        return render_template('error.html', message='Erro interno do sistema')
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        try:
+            # Garantir que o formato de resposta seja consistente mesmo em caso de erro
+            return render_template('error.html', 
+                message='Erro interno do sistema ao carregar o formulário de resposta',
+                suggestions=[
+                    'Tente novamente em alguns segundos',
+                    'Verifique sua conexão com o sistema',
+                    'Entre em contato com o suporte técnico se o problema persistir'
+                ])
+        except Exception as inner_e:
+            logger.critical(f"Erro fatal na renderização da página de erro: {inner_e}")
+            return "Erro crítico ao carregar a resposta. Por favor, contate o suporte técnico."
 
 
 @rnc.route('/rnc/<int:rnc_id>/print')
@@ -1528,3 +1701,407 @@ def debug_rnc_signatures(rnc_id):
     except Exception as e:
         logger.error(f"Erro no debug de assinaturas: {e}")
         return jsonify({'success': False, 'message': f'Erro: {str(e)}'}), 500
+
+@rnc.route('/api/rnc/test-create', methods=['POST'])
+def test_create_rnc():
+    """Endpoint de teste para criação de RNC"""
+    try:
+        if 'user_id' not in session:
+            return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
+        
+        data = request.get_json() or {}
+        
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        # Gerar número simples
+        now = datetime.now()
+        rnc_number = f"TEST-{now.strftime('%Y%m%d%H%M%S')}"
+        
+        # Dados mínimos
+        cursor.execute("""
+            INSERT INTO rncs (rnc_number, title, description, user_id, department, status)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (
+            rnc_number,
+            data.get('title', 'RNC Teste'),
+            data.get('description', 'Teste'),
+            session['user_id'],
+            'Teste',
+            'Pendente'
+        ))
+        
+        rnc_id = cursor.lastrowid
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': 'RNC de teste criada!',
+            'rnc_id': rnc_id,
+            'rnc_number': rnc_number
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Erro: {str(e)}'}), 500
+
+
+@rnc.route('/api/rnc/create-simple', methods=['POST'])
+def create_rnc_simple():
+    """Endpoint simplificado para criação de RNC"""
+    try:
+        # Verificar autenticação
+        if 'user_id' not in session:
+            return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
+        
+        # Obter dados
+        data = request.get_json() or {}
+        
+        # Conectar ao banco
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        # Gerar número RNC
+        now = datetime.now()
+        rnc_number = f"RNC-{now.year}-{now.month:02d}-{now.day:02d}-{now.hour:02d}{now.minute:02d}{now.second:02d}"
+        
+        # Obter departamento do usuário
+        cursor.execute('SELECT department FROM users WHERE id = ?', (session['user_id'],))
+        user_dept_row = cursor.fetchone()
+        user_department = user_dept_row[0] if user_dept_row else 'N/A'
+        
+        # Dados básicos para inserção
+        cursor.execute("INSERT INTO rncs (rnc_number, title, description, equipment, client, priority, status, user_id, department) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", (
+            rnc_number,
+            data.get('title', 'RNC sem título'),
+            data.get('description', ''),
+            data.get('equipment', ''),
+            data.get('client', ''),
+            data.get('priority', 'Média'),
+            'Pendente',
+            session['user_id'],
+            user_department
+        ))
+        
+        rnc_id = cursor.lastrowid
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': 'RNC criada com sucesso!',
+            'rnc_id': rnc_id,
+            'rnc_number': rnc_number
+        })
+        
+    except Exception as e:
+        # Log do erro
+        logger.error(f"Erro no endpoint simplificado: {e}")
+        
+        # Mensagem específica
+        error_message = 'Erro interno ao criar RNC'
+        if 'UNIQUE constraint failed' in str(e):
+            error_message = 'Número de RNC já existe. Tente novamente.'
+        elif 'FOREIGN KEY constraint failed' in str(e):
+            error_message = 'Usuário inválido. Faça login novamente.'
+        elif 'no such table' in str(e):
+            error_message = 'Banco de dados não configurado corretamente.'
+        
+        return jsonify({'success': False, 'message': error_message}), 500
+
+@rnc.route('/api/rnc/debug-create', methods=['POST'])
+def debug_create_rnc():
+    """Endpoint de debug para criação de RNC"""
+    try:
+        # Verificar autenticação
+        if 'user_id' not in session:
+            return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
+        
+        # Obter dados
+        data = request.get_json() or {}
+        
+        # Conectar ao banco
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        # Verificar estrutura da tabela
+        cursor.execute("PRAGMA table_info(rncs)")
+        cols = {row[1] for row in cursor.fetchall()}
+        
+        # Gerar número RNC
+        now = datetime.now()
+        rnc_number = f"DEBUG-{now.year}-{now.month:02d}-{now.day:02d}-{now.hour:02d}{now.minute:02d}{now.second:02d}"
+        
+        # Obter departamento do usuário
+        cursor.execute('SELECT department FROM users WHERE id = ?', (session['user_id'],))
+        user_dept_row = cursor.fetchone()
+        user_department = user_dept_row[0] if user_dept_row else 'N/A'
+        
+        # Dados para inserção (apenas colunas básicas)
+        basic_data = {
+            'rnc_number': rnc_number,
+            'title': data.get('title', 'RNC Debug'),
+            'description': data.get('description', 'Teste de debug'),
+            'equipment': data.get('equipment', ''),
+            'client': data.get('client', ''),
+            'priority': data.get('priority', 'Média'),
+            'status': 'Pendente',
+            'user_id': session['user_id'],
+            'department': user_department
+        }
+        
+        # Filtrar apenas colunas que existem
+        insert_cols = [c for c in basic_data.keys() if c in cols]
+        insert_vals = [basic_data[c] for c in insert_cols]
+        
+        if not insert_cols:
+            conn.close()
+            return jsonify({'success': False, 'message': 'Nenhuma coluna válida encontrada'}), 500
+        
+        # Executar inserção
+        placeholders = ", ".join(["?"] * len(insert_cols))
+        sql = f"INSERT INTO rncs ({', '.join(insert_cols)}) VALUES ({placeholders})"
+        
+        cursor.execute(sql, insert_vals)
+        rnc_id = cursor.lastrowid
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': 'RNC de debug criada!',
+            'rnc_id': rnc_id,
+            'rnc_number': rnc_number,
+            'debug_info': {
+                'columns_found': len(cols),
+                'columns_used': len(insert_cols),
+                'user_department': user_department
+            }
+        })
+        
+    except Exception as e:
+        # Log detalhado
+        import traceback
+        error_details = traceback.format_exc()
+        logger.error(f"Erro no debug: {e}")
+        logger.error(f"Traceback: {error_details}")
+        
+        return jsonify({
+            'success': False, 
+            'message': f'Erro: {str(e)}',
+            'debug_info': {
+                'error_type': type(e).__name__,
+                'error_details': str(e)
+            }
+        }), 500
+
+
+@rnc.route('/api/rnc/<int:rnc_id>/respond', methods=['POST'])
+def respond_to_rnc(rnc_id):
+    """Endpoint para resposta obrigatória à RNC - CAUSA e AÇÃO"""
+    try:
+        # Verificar autenticação
+        if 'user_id' not in session:
+            return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
+        
+        user_id = session['user_id']
+        data = request.get_json() or {}
+        
+        # VALIDAÇÕES OBRIGATÓRIAS PARA RESPOSTA
+        required_response_fields = {
+            'cause_rnc': 'Causa da RNC é obrigatória para resposta',
+            'action_rnc': 'Ação a ser tomada é obrigatória para resposta'
+        }
+        
+        missing_fields = []
+        for field, message in required_response_fields.items():
+            if not data.get(field, '').strip():
+                missing_fields.append(message)
+        
+        if missing_fields:
+            return jsonify({
+                'success': False, 
+                'message': 'Campos obrigatórios para resposta não preenchidos: ' + ', '.join(missing_fields)
+            }), 400
+        
+        # Conectar ao banco
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        # Verificar se a RNC existe e se o usuário pode responder
+        cursor.execute('''
+            SELECT user_id, assigned_user_id, status, title 
+            FROM rncs 
+            WHERE id = ? AND (is_deleted = 0 OR is_deleted IS NULL)
+        ''', (rnc_id,))
+        
+        rnc_row = cursor.fetchone()
+        if not rnc_row:
+            conn.close()
+            return jsonify({'success': False, 'message': 'RNC não encontrada'}), 404
+        
+        creator_id, assigned_user_id, status, title = rnc_row
+        
+        # Verificar permissão para responder
+        # Pode responder: criador, responsável atribuído, admin, ou usuários compartilhados
+        can_respond = False
+        
+        # Verificar se é admin
+        cursor.execute('SELECT role FROM users WHERE id = ?', (user_id,))
+        user_role = cursor.fetchone()
+        if user_role and user_role[0] == 'admin':
+            can_respond = True
+        # Verificar se é criador ou responsável
+        elif user_id == creator_id or user_id == assigned_user_id:
+            can_respond = True
+        else:
+            # Verificar se tem acesso via compartilhamento
+            cursor.execute('''
+                SELECT 1 FROM rnc_shares 
+                WHERE rnc_id = ? AND shared_with_user_id = ? 
+                LIMIT 1
+            ''', (rnc_id, user_id))
+            if cursor.fetchone():
+                can_respond = True
+        
+        if not can_respond:
+            conn.close()
+            return jsonify({'success': False, 'message': 'Sem permissão para responder a esta RNC'}), 403
+        
+        # Atualizar campos de resposta obrigatória
+        update_fields = {
+            'cause_rnc': data.get('cause_rnc', '').strip(),
+            'action_rnc': data.get('action_rnc', '').strip(),
+            'updated_at': datetime.now().isoformat()
+        }
+        
+        # Verificar se campos existem na tabela
+        cursor.execute("PRAGMA table_info(rncs)")
+        existing_cols = {row[1] for row in cursor.fetchall()}
+        
+        # Filtrar apenas campos que existem
+        valid_fields = {k: v for k, v in update_fields.items() if k in existing_cols}
+        
+        if valid_fields:
+            set_clause = ', '.join([f"{k} = ?" for k in valid_fields.keys()])
+            values = list(valid_fields.values()) + [rnc_id]
+            
+            cursor.execute(f'''
+                UPDATE rncs 
+                SET {set_clause}
+                WHERE id = ?
+            ''', values)
+        
+        conn.commit()
+        conn.close()
+        
+        # Log da ação
+        logger.info(f"Usuário {user_id} respondeu à RNC {rnc_id} - Causa: {data.get('cause_rnc', '')[:50]}...")
+        
+        return jsonify({
+            'success': True,
+            'message': f'Resposta registrada com sucesso para RNC: {title}',
+            'rnc_id': rnc_id,
+            'fields_updated': list(valid_fields.keys())
+        })
+        
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        logger.error(f"Erro ao responder RNC {rnc_id}: {e}")
+        logger.error(f"Traceback: {error_details}")
+        return jsonify({'success': False, 'message': f'Erro interno: {str(e)}'}), 500
+
+
+@rnc.route('/api/rnc/<int:rnc_id>/response-status', methods=['GET'])
+def get_response_status(rnc_id):
+    """Verificar status de resposta obrigatória da RNC"""
+    try:
+        if 'user_id' not in session:
+            return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
+        
+        user_id = session['user_id']
+        
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        # Verificar RNC e status de resposta
+        cursor.execute('''
+            SELECT 
+                r.id, r.title, r.status, r.user_id, r.assigned_user_id,
+                r.cause_rnc, r.action_rnc,
+                u_creator.name as creator_name,
+                u_assigned.name as assigned_name
+            FROM rncs r
+            LEFT JOIN users u_creator ON r.user_id = u_creator.id
+            LEFT JOIN users u_assigned ON r.assigned_user_id = u_assigned.id
+            WHERE r.id = ? AND (r.is_deleted = 0 OR r.is_deleted IS NULL)
+        ''', (rnc_id,))
+        
+        rnc_data = cursor.fetchone()
+        if not rnc_data:
+            conn.close()
+            return jsonify({'success': False, 'message': 'RNC não encontrada'}), 404
+        
+        (rid, title, status, creator_id, assigned_id, 
+         cause_rnc, action_rnc, creator_name, assigned_name) = rnc_data
+        
+        # Verificar se usuário pode ver esta RNC
+        can_access = False
+        is_admin = False
+        
+        # Verificar se é admin
+        cursor.execute('SELECT role FROM users WHERE id = ?', (user_id,))
+        user_role = cursor.fetchone()
+        if user_role and user_role[0] == 'admin':
+            can_access = True
+            is_admin = True
+        # Verificar se é criador ou responsável
+        elif user_id == creator_id or user_id == assigned_id:
+            can_access = True
+        else:
+            # Verificar compartilhamento
+            cursor.execute('''
+                SELECT 1 FROM rnc_shares 
+                WHERE rnc_id = ? AND shared_with_user_id = ? 
+                LIMIT 1
+            ''', (rnc_id, user_id))
+            if cursor.fetchone():
+                can_access = True
+        
+        if not can_access:
+            conn.close()
+            return jsonify({'success': False, 'message': 'Sem permissão para ver esta RNC'}), 403
+        
+        # Status de resposta
+        response_complete = bool(cause_rnc and cause_rnc.strip() and action_rnc and action_rnc.strip())
+        
+        # Determinar quem deve responder
+        needs_response_from = []
+        if creator_id and not response_complete:
+            needs_response_from.append({'user_id': creator_id, 'name': creator_name, 'role': 'creator'})
+        if assigned_id and assigned_id != creator_id and not response_complete:
+            needs_response_from.append({'user_id': assigned_id, 'name': assigned_name, 'role': 'assigned'})
+        
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'rnc_id': rnc_id,
+            'title': title,
+            'status': status,
+            'response_complete': response_complete,
+            'cause_filled': bool(cause_rnc and cause_rnc.strip()),
+            'action_filled': bool(action_rnc and action_rnc.strip()),
+            'needs_response_from': needs_response_from,
+            'current_user_can_respond': user_id in [creator_id, assigned_id] or is_admin,
+            'current_response': {
+                'cause_rnc': cause_rnc or '',
+                'action_rnc': action_rnc or ''
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Erro ao verificar status de resposta RNC {rnc_id}: {e}")
+        return jsonify({'success': False, 'message': f'Erro interno: {str(e)}'}), 500

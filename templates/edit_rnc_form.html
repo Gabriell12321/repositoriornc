@@ -187,7 +187,7 @@
     <div class="container">
         <script>
             // Flag para saber se é modo Responder
-            const IS_REPLY = {{ 'true' if is_reply else 'false' }};
+            const IS_REPLY = {{ 'true' if is_reply|default(false) else 'false' }};
         </script>
         <!-- Banner de modo de edição -->
         <div class="edit-mode-banner">
@@ -443,15 +443,35 @@
                          <!-- Signature Row -->
              <div style="display: flex;">
                  <div id="assinatura_coluna1" style="width: 33.33%; padding: 15px; text-align: center; font-size: 11px; font-weight: bold; border-right: 2px solid #cccccc; background: #6c757d; color: white; cursor: pointer;" onclick="preencherAssinatura(this)">
-                     <div id="nome_coluna1" style="margin-bottom: 25px;">{{ rnc.signature_inspection_name or 'NOME' }}</div>
+                     <div id="nome_coluna1" style="margin-bottom: 25px;">
+                         {% if rnc.signature_inspection_name and rnc.signature_inspection_name != 'NOME' %}
+                             {{ rnc.signature_inspection_name }}
+                         {% elif rnc.user_name %}
+                             {{ rnc.user_name }}{% if rnc.user_department %} ({{ rnc.user_department }}){% endif %}
+                         {% else %}
+                             NOME
+                         {% endif %}
+                     </div>
                      <div style="border-top: 1px solid #6c757d; padding-top: 8px;">VISTO</div>
                  </div>
                  <div id="assinatura_coluna2" style="width: 33.33%; padding: 15px; text-align: center; font-size: 11px; font-weight: bold; border-right: 2px solid #cccccc; cursor: pointer;" onclick="preencherAssinatura(this)">
-                     <div id="nome_coluna2" style="margin-bottom: 25px;">{{ rnc.signature_engineering_name or 'NOME' }}</div>
+                     <div id="nome_coluna2" style="margin-bottom: 25px;">
+                         {% if rnc.signature_engineering_name and rnc.signature_engineering_name != 'NOME' %}
+                             {{ rnc.signature_engineering_name }}
+                         {% else %}
+                             NOME
+                         {% endif %}
+                     </div>
                      <div style="border-top: 1px solid #6c757d; padding-top: 8px;">VISTO</div>
                  </div>
                  <div id="assinatura_coluna3" style="width: 33.33%; padding: 15px; text-align: center; font-size: 11px; font-weight: bold; cursor: pointer;" onclick="preencherAssinatura(this)">
-                     <div id="nome_coluna3" style="margin-bottom: 25px;">{{ rnc.signature_inspection2_name or 'NOME' }}</div>
+                     <div id="nome_coluna3" style="margin-bottom: 25px;">
+                         {% if rnc.signature_inspection2_name and rnc.signature_inspection2_name != 'NOME' %}
+                             {{ rnc.signature_inspection2_name }}
+                         {% else %}
+                             NOME
+                         {% endif %}
+                     </div>
                      <div style="border-top: 1px solid #6c757d; padding-top: 8px;">VISTO</div>
                  </div>
              </div>
@@ -531,6 +551,44 @@
             
             console.log('📝 Assinaturas encontradas:', assinaturas);
             return assinaturas.some(assinatura => assinatura && assinatura !== 'NOME' && assinatura.trim() !== '');
+        }
+        
+        // Função para preencher datas existentes
+        function preencherDatasExistentes() {
+            console.log('📅 Preenchendo datas existentes...');
+            
+            // Datas das assinaturas vindas do servidor
+            const dates = {
+                insp1: {{ (rnc.signature_inspection_date or '') | tojson }},
+                eng: {{ (rnc.signature_engineering_date or '') | tojson }},
+                insp2: {{ (rnc.signature_inspection2_date or '') | tojson }}
+            };
+            
+            console.log('📅 Datas carregadas:', dates);
+            
+            // Preencher cada data se existir
+            Object.keys(dates).forEach(prefix => {
+                const dateStr = dates[prefix];
+                if (dateStr && dateStr.includes('/')) {
+                    const parts = dateStr.split('/');
+                    if (parts.length === 3) {
+                        const day = parts[0];
+                        const month = parts[1];
+                        const year = parts[2];
+                        
+                        // Preencher os campos
+                        const dayEl = document.getElementById(prefix + '_d');
+                        const monthEl = document.getElementById(prefix + '_m');
+                        const yearEl = document.getElementById(prefix + '_y');
+                        
+                        if (dayEl) dayEl.value = day;
+                        if (monthEl) monthEl.value = month;
+                        if (yearEl) yearEl.value = year;
+                        
+                        console.log(`📅 Data ${prefix} preenchida: ${day}/${month}/${year}`);
+                    }
+                }
+            });
         }
 
         // Função para preencher assinatura automaticamente
@@ -633,10 +691,10 @@
                 equipment: document.getElementById('equipment')?.value ?? {{ (rnc.equipment or "") | tojson }},
                 client: document.getElementById('client')?.value ?? {{ (rnc.client or "") | tojson }},
                 rnc_number: document.getElementById('rnc_number')?.value || {{ rnc.rnc_number | tojson }},
-                signature_inspection_name: document.getElementById('nome_coluna1').textContent,
-                signature_engineering_name: document.getElementById('nome_coluna2').textContent,
-                signature_inspection2_name: document.getElementById('nome_coluna3').textContent,
-                status: (IS_REPLY ? 'Pendente' : undefined),
+                signature_inspection_name: document.getElementById('nome_coluna1')?.textContent || 'NOME',
+                signature_engineering_name: document.getElementById('nome_coluna2')?.textContent || 'NOME',
+                signature_inspection2_name: document.getElementById('nome_coluna3')?.textContent || 'NOME',
+                status: (typeof IS_REPLY !== 'undefined' && IS_REPLY ? 'Pendente' : undefined),
                 // Disposição
                 disposition_usar: document.getElementById('usar')?.checked || false,
                 disposition_retrabalhar: document.getElementById('retrabalhar')?.checked || false,
@@ -689,6 +747,9 @@
         // Carregar informações do usuário quando a página carregar
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 DOM carregado - inicializando...');
+            
+            // Preencher datas existentes
+            preencherDatasExistentes();
             
             try {
                 fetch('/api/user/info', { credentials: 'include' })

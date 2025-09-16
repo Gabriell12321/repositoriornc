@@ -5,6 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Relatório Resumido de RNCs - {{ start_date }} a {{ end_date }}</title>
     <style>
+        :root {
+            --color-primary: #8b1538;
+            --color-accent: #e74c3c;
+            --color-success: #28a745;
+            --color-warning: #ffc107;
+            --color-info: #17a2b8;
+            --color-text: #333333;
+            --color-text-muted: #666666;
+            --color-surface: #f8f9fa;
+            --color-paper: #ffffff;
+        }
         @page {
             margin: 1.5cm;
             size: A4;
@@ -20,15 +31,15 @@
             font-family: 'Arial', sans-serif;
             font-size: 12px;
             line-height: 1.4;
-            color: #333;
-            background: white;
+            color: var(--color-text);
+            background: var(--color-paper);
         }
         
         .header {
             text-align: center;
             margin-bottom: 30px;
             padding-bottom: 20px;
-            border-bottom: 3px solid #8b1538;
+            border-bottom: 3px solid var(--color-primary);
         }
         
         .logo {
@@ -39,20 +50,20 @@
         }
         
         .header h1 {
-            color: #8b1538;
+            color: var(--color-primary);
             font-size: 24px;
             font-weight: bold;
             margin-bottom: 5px;
         }
         
         .header h2 {
-            color: #666;
+            color: var(--color-text-muted);
             font-size: 16px;
             font-weight: normal;
         }
         
         .period {
-            color: #e74c3c;
+            color: var(--color-accent);
             font-size: 14px;
             font-weight: bold;
             margin-top: 10px;
@@ -66,8 +77,8 @@
         }
         
         .stat-card {
-            background: white;
-            border: 2px solid #8b1538;
+            background: var(--color-paper);
+            border: 2px solid var(--color-primary);
             border-radius: 8px;
             padding: 20px;
             text-align: center;
@@ -77,14 +88,14 @@
         .stat-number {
             font-size: 36px;
             font-weight: bold;
-            color: #8b1538;
+            color: var(--color-primary);
             display: block;
             margin-bottom: 5px;
         }
         
         .stat-label {
             font-size: 14px;
-            color: #666;
+            color: var(--color-text-muted);
             font-weight: bold;
         }
         
@@ -96,14 +107,14 @@
         }
         
         .summary-table {
-            background: white;
+            background: var(--color-paper);
             border-radius: 8px;
             overflow: hidden;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
         
         .table-header {
-            background: #8b1538;
+            background: var(--color-primary);
             color: white;
             padding: 15px;
             font-weight: bold;
@@ -126,7 +137,7 @@
         }
         
         .table-row:nth-child(even) {
-            background: #f8f9fa;
+            background: var(--color-surface);
         }
         
         .row-label {
@@ -136,7 +147,7 @@
         
         .row-value {
             font-weight: bold;
-            color: #8b1538;
+            color: var(--color-primary);
         }
         
         .rncs-list {
@@ -144,29 +155,32 @@
         }
         
         .section-title {
-            color: #8b1538;
+            color: var(--color-primary);
             font-size: 18px;
             font-weight: bold;
             margin-bottom: 15px;
             padding-bottom: 5px;
-            border-bottom: 2px solid #e74c3c;
+            border-bottom: 2px solid var(--color-accent);
         }
         
         .rncs-table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 20px;
-            background: white;
+            background: var(--color-paper);
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
         
         .rncs-table th {
-            background: #8b1538;
+            background: var(--color-primary);
             color: white;
             padding: 12px 8px;
             text-align: left;
             font-weight: bold;
             font-size: 11px;
+            position: sticky;
+            top: 0;
+            z-index: 1;
         }
         
         .rncs-table td {
@@ -177,7 +191,7 @@
         }
         
         .rncs-table tr:nth-child(even) {
-            background: #f8f9fa;
+            background: var(--color-surface);
         }
         
         .status-badge {
@@ -189,17 +203,17 @@
         }
         
         .status-pendente {
-            background: #ffc107;
+            background: var(--color-warning);
             color: #000;
         }
         
         .status-finalizado {
-            background: #28a745;
+            background: var(--color-success);
             color: white;
         }
         
         .status-andamento {
-            background: #17a2b8;
+            background: var(--color-info);
             color: white;
         }
         
@@ -225,7 +239,7 @@
             right: 1.5cm;
             text-align: center;
             font-size: 10px;
-            color: #666;
+            color: var(--color-text-muted);
             border-top: 1px solid #ddd;
             padding-top: 10px;
         }
@@ -250,7 +264,7 @@
             .container {
                 max-width: 210mm;
                 margin: 0 auto;
-                background: white;
+                background: var(--color-paper);
                 padding: 30px;
                 box-shadow: 0 0 20px rgba(0,0,0,0.1);
             }

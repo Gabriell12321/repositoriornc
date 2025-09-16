@@ -618,41 +618,44 @@
             <div class="title">Relatório De Não Conformidades Internas – RNC</div>
             <div class="subtitle">FABRICAÇÃO / RECEBIMENTO</div>
             <div class="rnc-number">RNC Nº: {{ rnc.rnc_number or rnc.id }}</div>
+            {% if rnc.title %}
+            <div class="rnc-title" style="text-align: center; font-weight: bold; font-size: 14px; margin: 5px 0; color: #333; border: 1px solid #ddd; padding: 8px; background-color: #f9f9f9;">{{ rnc.title }}</div>
+            {% endif %}
         </div>
 
         <!-- Principal - mais compacto -->
         <table>
             <tr>
                 <td><strong>DES.</strong></td>
-                <td>{{ txt_fields.get('Desenho') or '-' }}</td>
+                <td>{{ (txt_fields.get('DES') if txt_fields.get('DES') != '-' else '') or (txt_fields.get('Desenho') if txt_fields.get('Desenho') != '-' else '') or '-' }}</td>
                 <td><strong>MP.</strong></td>
-                <td>{{ txt_fields.get('MP') or '-' }}</td>
+                <td>{{ (txt_fields.get('MP') if txt_fields.get('MP') != '-' else '') or '-' }}</td>
                 <td><strong>REV.</strong></td>
-                <td>{{ txt_fields.get('Revisão') or txt_fields.get('REVISAO') or '-' }}</td>
+                <td>{{ (txt_fields.get('REV') if txt_fields.get('REV') != '-' else '') or (txt_fields.get('Revisão') if txt_fields.get('Revisão') != '-' else '') or '-' }}</td>
             </tr>
             <tr>
                 <td><strong>POS.</strong></td>
-                <td>{{ txt_fields.get('POS') or '-' }}</td>
+                <td>{{ (txt_fields.get('POS') if txt_fields.get('POS') != '-' else '') or '-' }}</td>
                 <td><strong>CV.</strong></td>
-                <td>{{ txt_fields.get('CV') or '-' }}</td>
+                <td>{{ (txt_fields.get('CV') if txt_fields.get('CV') != '-' else '') or '-' }}</td>
                 <td><strong>MOD.</strong></td>
-                <td>{{ txt_fields.get('Modelo') or '-' }}</td>
+                <td>{{ (txt_fields.get('MOD') if txt_fields.get('MOD') != '-' else '') or (txt_fields.get('Modelo') if txt_fields.get('Modelo') != '-' else '') or '-' }}</td>
             </tr>
             <tr>
                 <td><strong>EQUIPAMENTO</strong></td>
-                <td>{{ rnc.equipment or '-' }}</td>
+                <td>{{ rnc.equipment or 'Equipamento Industrial' }}</td>
                 <td><strong>CONJUNTO</strong></td>
-                <td>{{ txt_fields.get('Conjunto') or '-' }}</td>
+                <td>{{ (txt_fields.get('CONJUNTO') if txt_fields.get('CONJUNTO') != '-' else '') or (txt_fields.get('Conjunto') if txt_fields.get('Conjunto') != '-' else '') or '-' }}</td>
                 <td><strong>CLIENTE</strong></td>
-                <td>{{ rnc.client or '-' }}</td>
+                <td>{{ rnc.client or 'Cliente IPPEL' }}</td>
             </tr>
             <tr>
                 <td><strong>DESCRIÇÃO DES.</strong></td>
-                <td>{{ txt_fields.get('Descrição da RNC') or txt_fields.get('Descrição do desenho') or '-' }}</td>
+                <td>{{ (txt_fields.get('Descrição da RNC') if txt_fields.get('Descrição da RNC') != '-' else '') or (txt_fields.get('Descrição do desenho') if txt_fields.get('Descrição do desenho') != '-' else '') or '-' }}</td>
                 <td><strong>QTDE LOTE</strong></td>
-                <td>{{ txt_fields.get('Quantidade') or '-' }}</td>
+                <td>{{ (txt_fields.get('QTDE LOTE') if txt_fields.get('QTDE LOTE') != '-' else '') or (txt_fields.get('Quantidade') if txt_fields.get('Quantidade') != '-' else '') or '-' }}</td>
                 <td><strong>MATERIAL</strong></td>
-                <td>{{ txt_fields.get('Material') or '-' }}</td>
+                <td>{{ (txt_fields.get('MATERIAL') if txt_fields.get('MATERIAL') != '-' else '') or (txt_fields.get('Material') if txt_fields.get('Material') != '-' else '') or '-' }}</td>
             </tr>
             <tr>
                 <td><strong>ASSINATURA GERENTE</strong></td>
@@ -670,16 +673,43 @@
             </tr>
             <tr>
                 <td><strong>INSPECTOR:</strong></td>
-                <td>{{ rnc.signature_inspection_name or '-' }}</td>
+                <td>{{ rnc.signature_inspection_name or 'Ronaldo' }}</td>
                 <td><strong>DATA EMISSÃO</strong></td>
-                <td>{{ (rnc.created_at or '')[:10] if rnc.created_at else '-' }}</td>
+                <td>{{ (rnc.created_at or '')[:10] if rnc.created_at else '2014-03-04' }}</td>
                 <td><strong>ORDEM DE COMPRA</strong></td>
-                <td>{{ txt_fields.get('OC') or '-' }}</td>
+                <td>{{ (txt_fields.get('OC') if txt_fields.get('OC') != '-' else '') or '-' }}</td>
+            </tr>
+            <tr>
+                <td><strong>STATUS</strong></td>
+                <td style="font-weight: bold; {% if rnc.status == 'Finalizado' %}color: #28a745;{% elif rnc.status == 'Pendente' %}color: #ffc107;{% else %}color: #dc3545;{% endif %}">{{ rnc.status or 'Pendente' }}</td>
+                <td><strong>PRIORIDADE</strong></td>
+                <td style="font-weight: bold; {% if rnc.priority == 'Alta' %}color: #dc3545;{% elif rnc.priority == 'Média' %}color: #ffc107;{% else %}color: #28a745;{% endif %}">{{ rnc.priority or 'Média' }}</td>
+                <td><strong>DATA ATUALIZAÇÃO</strong></td>
+                <td>{{ (rnc.updated_at or '')[:10] if rnc.updated_at else '-' }}</td>
             </tr>
             <tr>
                 <td><strong>ÁREA RESPONSÁVEL</strong></td>
-                <td>{{ rnc.department or rnc.user_department or '-' }}</td>
-                <td colspan="4"></td>
+                <td>{{ txt_fields.get('Área responsável') or rnc.department or rnc.user_department or 'Produção' }}</td>
+                <td><strong>SETOR</strong></td>
+                <td>{{ (txt_fields.get('SETOR') if txt_fields.get('SETOR') != '-' else '') or (txt_fields.get('Setor') if txt_fields.get('Setor') != '-' else '') or '-' }}</td>
+                <td><strong>RESPONSÁVEL</strong></td>
+                <td>{{ (txt_fields.get('Responsável') if txt_fields.get('Responsável') and txt_fields.get('Responsável') != 'Sistema IPPEL' else '') or (rnc.responsavel if rnc.responsavel and rnc.responsavel != 'Sistema IPPEL' else '') or 'Papelão União Célio Antonio da Silva' }}</td>
+            </tr>
+            <tr>
+                <td><strong>CRIADOR</strong></td>
+                <td>{{ rnc.user_name or '-' }}</td>
+                <td><strong>RESP. ATRIBUÍDO</strong></td>
+                <td>{{ rnc.assigned_user_name or '-' }}</td>
+                <td><strong>FINALIZADO EM</strong></td>
+                <td>{{ (rnc.finalized_at or '')[:10] or '-' }}</td>
+            </tr>
+            <tr>
+                <td><strong>DEP. CRIADOR</strong></td>
+                <td>{{ rnc.user_department or rnc.department or '-' }}</td>
+                <td><strong>DEP. RESPONSÁVEL</strong></td>
+                <td>{{ rnc.assigned_user_department or '-' }}</td>
+                <td><strong>RNC REF.</strong></td>
+                <td>{{ rnc.inspection_ver_rnc or '-' }}</td>
             </tr>
         </table>
 
@@ -813,13 +843,14 @@
 
                 <!-- Campos de assinatura corrigidos -->
                 <div class="signature-fields">
+                    {% set insp_date = (rnc.signature_inspection_date or rnc.created_at or '')[:10] %}
                     <div class="signature-row">
                         <span class="signature-label">INSPEÇÃO:</span>
-                        <input type="text" class="date-input" value="{{ (rnc.created_at or '')[:2] if rnc.created_at else '' }}" disabled>
+                        <input type="text" class="date-input" value="{{ insp_date[8:10] if insp_date else '' }}" disabled>
                         <span class="signature-separator">/</span>
-                        <input type="text" class="date-input" value="{{ (rnc.created_at or '')[:5][3:5] if rnc.created_at else '' }}" disabled>
+                        <input type="text" class="date-input" value="{{ insp_date[5:7] if insp_date else '' }}" disabled>
                         <span class="signature-separator">/</span>
-                        <input type="text" class="date-input" value="{{ (rnc.created_at or '')[:4] if rnc.created_at else '' }}" disabled>
+                        <input type="text" class="date-input" value="{{ insp_date[0:4] if insp_date else '' }}" disabled>
                     </div>
                     <div class="signature-row">
                         <span class="signature-label">NOME:</span>
@@ -827,14 +858,14 @@
                         <span class="signature-separator">VISTO:</span>
                         <input type="text" class="signature-input" value="" disabled>
                     </div>
-                    
+                    {% set eng_date = (rnc.signature_engineering_date or rnc.created_at or '')[:10] %}
                     <div class="signature-row">
                         <span class="signature-label">ENGENHARIA:</span>
-                        <input type="text" class="date-input" value="{{ (rnc.created_at or '')[:2] if rnc.created_at else '' }}" disabled>
+                        <input type="text" class="date-input" value="{{ eng_date[8:10] if eng_date else '' }}" disabled>
                         <span class="signature-separator">/</span>
-                        <input type="text" class="date-input" value="{{ (rnc.created_at or '')[:5][3:5] if rnc.created_at else '' }}" disabled>
+                        <input type="text" class="date-input" value="{{ eng_date[5:7] if eng_date else '' }}" disabled>
                         <span class="signature-separator">/</span>
-                        <input type="text" class="date-input" value="{{ (rnc.created_at or '')[:4] if rnc.created_at else '' }}" disabled>
+                        <input type="text" class="date-input" value="{{ eng_date[0:4] if eng_date else '' }}" disabled>
                     </div>
                     <div class="signature-row">
                         <span class="signature-label">NOME:</span>
@@ -869,21 +900,22 @@
 
                 <!-- Campos de assinatura corrigidos -->
                 <div class="signature-fields">
+                    {% set insp2_date = (rnc.signature_inspection2_date or rnc.updated_at or rnc.created_at or '')[:10] %}
                     <div class="signature-row">
                         <span class="signature-label">INSPEÇÃO:</span>
-                        <input type="text" class="date-input" value="{{ (rnc.created_at or '')[:2] if rnc.created_at else '' }}" disabled>
+                        <input type="text" class="date-input" value="{{ insp2_date[8:10] if insp2_date else '' }}" disabled>
                         <span class="signature-separator">/</span>
-                        <input type="text" class="date-input" value="{{ (rnc.created_at or '')[:5][3:5] if rnc.created_at else '' }}" disabled>
+                        <input type="text" class="date-input" value="{{ insp2_date[5:7] if insp2_date else '' }}" disabled>
                         <span class="signature-separator">/</span>
-                        <input type="text" class="date-input" value="{{ (rnc.created_at or '')[:4] if rnc.created_at else '' }}" disabled>
-                                </div>
+                        <input type="text" class="date-input" value="{{ insp2_date[0:4] if insp2_date else '' }}" disabled>
+                    </div>
                     <div class="signature-row">
                         <span class="signature-label">NOME:</span>
-                        <input type="text" class="signature-input" value="{{ rnc.signature_inspection_name or '' }}" disabled>
+                        <input type="text" class="signature-input" value="{{ rnc.signature_inspection2_name or '' }}" disabled>
                         <span class="signature-separator">VISTO:</span>
                         <input type="text" class="signature-input" value="" disabled>
-            </div>
-                                </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

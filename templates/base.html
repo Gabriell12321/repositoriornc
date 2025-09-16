@@ -4,6 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Sistema IPPEL{% endblock %}</title>
+    <!-- Performance: DNS Prefetch and Preconnect for CDNs used across pages -->
+    <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="dns-prefetch" href="//cdnjs.cloudflare.com">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="dns-prefetch" href="//fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+    <link rel="dns-prefetch" href="//fonts.gstatic.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <style>
         * {
             margin: 0;
@@ -39,7 +48,7 @@
             gap: 15px;
         }
 
-                .logo {
+        .logo {
             width: 50px;
             height: 50px;
             border-radius: 10px;
@@ -95,9 +104,8 @@
             margin: 0 auto;
             padding: 20px;
         }
-
-        {% block extra_css %}{% endblock %}
     </style>
+    {% block extra_css %}{% endblock %}
     {% block head %}{% endblock %}
     <link rel="stylesheet" href="{{ asset_url('css/avatar.css') }}">
     <script src="{{ asset_url('js/app.js') }}" defer></script>
@@ -142,11 +150,11 @@
           try{
             const resp = await fetch('/api/user/info', { credentials: 'include' });
             if(!resp.ok) return; const js = await resp.json();
-                        if(js && js.success && js.user){
+            if(js && js.success && js.user){
               __USER_NAME__ = js.user.name;
-                              const av = js.user.avatar || 'ava-ippel';
-                              const prefs = js.user.avatarPrefs || null;
-                            if(window.IPPELAvatar){ IPPELAvatar.applyToHeader(av, prefs); }
+              const av = js.user.avatar || 'ava-ippel';
+              const prefs = js.user.avatarPrefs || null;
+              if(window.IPPELAvatar){ IPPELAvatar.applyToHeader(av, prefs); }
               const nameEl = document.getElementById('userName');
               if(nameEl) nameEl.textContent = js.user.name;
             }

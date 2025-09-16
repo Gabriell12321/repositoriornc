@@ -268,14 +268,14 @@
         <div class="sector-section">
             <div class="sector-header">
                 <span class="sector-name">{{ sector_name }}</span>
-                <span class="sector-total">R$ {{ "%.2f"|format(sector_data.total) }} ({{ sector_data.count }} RNCs)</span>
+                <span class="sector-total">R$ {{ "{:,.2f}".format(sector_data.total).replace(',', 'X').replace('.', ',').replace('X', '.') }} ({{ sector_data.count }} RNCs)</span>
             </div>
             
             <div class="sector-stats">
                 <strong>Estatísticas do Setor:</strong>
                 <br>• Total de RNCs: {{ sector_data.count }}
-                <br>• Valor Total: R$ {{ "%.2f"|format(sector_data.total) }}
-                <br>• Valor Médio por RNC: R$ {{ "%.2f"|format(sector_data.total / sector_data.count) if sector_data.count > 0 else 0 }}
+                <br>• Valor Total: R$ {{ "{:,.2f}".format(sector_data.total).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                <br>• Valor Médio por RNC: R$ {{ "{:,.2f}".format(sector_data.total / sector_data.count).replace(',', 'X').replace('.', ',').replace('X', '.') if sector_data.count > 0 else 0 }}
             </div>
             
             <div class="rnc-list">
@@ -297,7 +297,7 @@
                                 Data: {{ rnc.created_at.split(' ')[0] if rnc.created_at else 'N/A' }}
                             </div>
                         </div>
-                        <div class="rnc-value">R$ {{ "%.2f"|format(rnc.price|float if rnc.price else 0) }}</div>
+                        <div class="rnc-value">{{ rnc.price_formatted if rnc.price_formatted else 'R$ 0,00' }}</div>
                     </div>
                 {% endfor %}
             </div>

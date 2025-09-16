@@ -206,6 +206,10 @@
             </div>
             <div class="actions">
                 <button class="btn btn-secondary" onclick="window.location.href='/dashboard'">← Voltar</button>
+                <!-- Botão de Resposta Obrigatória -->
+                <button class="btn btn-warning" id="responseButton" onclick="openResponseModal()" style="display: none;">
+                    ⚠️ Resposta Obrigatória
+                </button>
                 <button class="btn btn-info" onclick="window.location.href='/rnc/{{ rnc.id }}/reply'">↩️ Responder</button>
                 <button class="btn btn-primary" onclick="window.location.href='/rnc/{{ rnc.id }}/edit'">✏️ Editar</button>
                 <button class="btn btn-warning" onclick="window.open('/rnc/{{ rnc.id }}/print','_blank')">📄 Modelo IPPEL</button>
@@ -244,7 +248,7 @@
                     <div class="label">💰 Preço (R$)</div>
                     <div class="value">
                         {% if rnc.price and rnc.price > 0 %}
-                            {{ '%.2f'|format(rnc.price) }}
+                            R$ {{ "{:,.2f}".format(rnc.price|float).replace(',', 'X').replace('.', ',').replace('X', '.') if rnc.price else '0,00' }}
                         {% else %}
                             <span style="color: #6c757d; font-style: italic;">Não informado</span>
                         {% endif %}
@@ -430,32 +434,42 @@
                 </div>
                 
         <!-- Causa da RNC -->
-        <div class="card">
-            <div class="card-header">🔍 CAUSA DA RNC</div>
-            <div class="card-body">
+        <div class="card" id="causeSection">
+            <div class="card-header" style="background: {% if not rnc.cause_rnc or rnc.cause_rnc == 'Causa a ser investigada' %}#ffc107{% else %}#8b1538{% endif %}; color: {% if not rnc.cause_rnc or rnc.cause_rnc == 'Causa a ser investigada' %}#333{% else %}#fff{% endif %};">
+                🔍 CAUSA DA RNC 
+                {% if not rnc.cause_rnc or rnc.cause_rnc == 'Causa a ser investigada' %}
+                    <span style="float: right; font-size: 10px; background: #dc3545; color: white; padding: 2px 6px; border-radius: 4px;">OBRIGATÓRIO</span>
+                {% endif %}
+            </div>
+            <div class="card-body" style="{% if not rnc.cause_rnc or rnc.cause_rnc == 'Causa a ser investigada' %}border: 3px solid #ffc107;{% endif %}">
                 <div class="value" style="min-height:60px; white-space: pre-wrap;">
                     {% if txt_fields.get('Causa da RNC') or txt_fields.get('CAUSA DA RNC') or txt_fields.get('Causa da rnc') or txt_fields.get('causa da rnc') %}
                         {{ txt_fields.get('Causa da RNC') or txt_fields.get('CAUSA DA RNC') or txt_fields.get('Causa da rnc') or txt_fields.get('causa da rnc') }}
                     {% elif rnc.cause_rnc and rnc.cause_rnc != 'Causa a ser investigada' %}
                         {{ rnc.cause_rnc }}
                     {% else %}
-                        <span style="color: #6c757d; font-style: italic;">🔍 Causa a ser investigada</span>
+                        <span style="color: #ffc107; font-style: italic; font-weight: bold;">⚠️ Resposta obrigatória pendente - Causa a ser investigada</span>
                     {% endif %}
                         </div>
                         </div>
                         </div>
 
         <!-- Ação a ser Tomada -->
-        <div class="card">
-            <div class="card-header">✅ AÇÃO A SER TOMADA</div>
-            <div class="card-body">
+        <div class="card" id="actionSection">
+            <div class="card-header" style="background: {% if not rnc.action_rnc or rnc.action_rnc == 'Ações a serem definidas' %}#ffc107{% else %}#8b1538{% endif %}; color: {% if not rnc.action_rnc or rnc.action_rnc == 'Ações a serem definidas' %}#333{% else %}#fff{% endif %};">
+                ✅ AÇÃO A SER TOMADA 
+                {% if not rnc.action_rnc or rnc.action_rnc == 'Ações a serem definidas' %}
+                    <span style="float: right; font-size: 10px; background: #dc3545; color: white; padding: 2px 6px; border-radius: 4px;">OBRIGATÓRIO</span>
+                {% endif %}
+            </div>
+            <div class="card-body" style="{% if not rnc.action_rnc or rnc.action_rnc == 'Ações a serem definidas' %}border: 3px solid #ffc107;{% endif %}">
                 <div class="value" style="min-height:60px; white-space: pre-wrap;">
                     {% if txt_fields.get('Ação a ser tomada') or txt_fields.get('AÇÃO A SER TOMADA') or txt_fields.get('Acao a ser tomada') or txt_fields.get('ACAO A SER TOMADA') %}
                         {{ txt_fields.get('Ação a ser tomada') or txt_fields.get('AÇÃO A SER TOMADA') or txt_fields.get('Acao a ser tomada') or txt_fields.get('ACAO A SER TOMADA') }}
                     {% elif rnc.action_rnc and rnc.action_rnc != 'Ações a serem definidas' %}
                         {{ rnc.action_rnc }}
                     {% else %}
-                        <span style="color: #6c757d; font-style: italic;">✅ Ações a serem definidas</span>
+                        <span style="color: #ffc107; font-style: italic; font-weight: bold;">⚠️ Resposta obrigatória pendente - Ações a serem definidas</span>
                     {% endif %}
                 </div>
             </div>
@@ -570,5 +584,147 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal de Resposta Obrigatória -->
+    <div id="responseModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center;">
+        <div style="background: white; padding: 30px; border-radius: 15px; width: 90%; max-width: 600px; max-height: 80%; overflow-y: auto;">
+            <h3 style="color: #8b1538; margin-bottom: 20px;">⚠️ Resposta Obrigatória Necessária</h3>
+            
+            <div id="responseContent">
+                <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                    <strong>📋 Campos obrigatórios a preencher:</strong>
+                    <ul id="missingFields" style="margin: 10px 0; padding-left: 20px;">
+                        <!-- Será preenchido dinamicamente -->
+                    </ul>
+                </div>
+
+                <form id="responseForm">
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; font-weight: bold; color: #8b1538; margin-bottom: 8px;">
+                            🔍 Causa da RNC <span style="color: red;">*</span>
+                        </label>
+                        <textarea 
+                            id="cause_rnc" 
+                            name="cause_rnc" 
+                            style="width: 100%; min-height: 100px; padding: 10px; border: 2px solid #8b1538; border-radius: 8px; font-size: 14px;"
+                            placeholder="Descreva a causa raiz da não conformidade..."
+                            required
+                        ></textarea>
+                    </div>
+
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; font-weight: bold; color: #8b1538; margin-bottom: 8px;">
+                            ✅ Ação a ser Tomada <span style="color: red;">*</span>
+                        </label>
+                        <textarea 
+                            id="action_rnc" 
+                            name="action_rnc" 
+                            style="width: 100%; min-height: 100px; padding: 10px; border: 2px solid #8b1538; border-radius: 8px; font-size: 14px;"
+                            placeholder="Descreva as ações corretivas a serem implementadas..."
+                            required
+                        ></textarea>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                        <button type="button" onclick="closeResponseModal()" class="btn btn-secondary">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            💾 Salvar Resposta
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Verificar status de resposta ao carregar a página
+        document.addEventListener('DOMContentLoaded', function() {
+            checkResponseStatus();
+        });
+
+        async function checkResponseStatus() {
+            try {
+                const response = await fetch(`/api/rnc/{{ rnc.id }}/response-status`);
+                const data = await response.json();
+                
+                if (data.success && data.needs_response) {
+                    const btn = document.getElementById('responseButton');
+                    btn.style.display = 'block';
+                    
+                    // Atualizar lista de campos obrigatórios
+                    const missingFields = document.getElementById('missingFields');
+                    missingFields.innerHTML = '';
+                    
+                    if (data.missing_fields) {
+                        data.missing_fields.forEach(field => {
+                            const li = document.createElement('li');
+                            if (field === 'cause_rnc') {
+                                li.textContent = '🔍 Causa da RNC';
+                            } else if (field === 'action_rnc') {
+                                li.textContent = '✅ Ação a ser Tomada';
+                            } else {
+                                li.textContent = field;
+                            }
+                            missingFields.appendChild(li);
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Erro ao verificar status de resposta:', error);
+            }
+        }
+
+        function openResponseModal() {
+            document.getElementById('responseModal').style.display = 'flex';
+        }
+
+        function closeResponseModal() {
+            document.getElementById('responseModal').style.display = 'none';
+        }
+
+        // Submissão do formulário de resposta
+        document.getElementById('responseForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const data = {
+                cause_rnc: formData.get('cause_rnc'),
+                action_rnc: formData.get('action_rnc')
+            };
+
+            try {
+                const response = await fetch(`/api/rnc/{{ rnc.id }}/respond`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('✅ Resposta salva com sucesso!');
+                    closeResponseModal();
+                    // Recarregar a página para mostrar as atualizações
+                    window.location.reload();
+                } else {
+                    alert('❌ Erro ao salvar resposta: ' + (result.message || 'Erro desconhecido'));
+                }
+            } catch (error) {
+                console.error('Erro ao enviar resposta:', error);
+                alert('❌ Erro ao salvar resposta. Tente novamente.');
+            }
+        });
+
+        // Fechar modal clicando fora dele
+        document.getElementById('responseModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeResponseModal();
+            }
+        });
+    </script>
 </body>
 </html> 

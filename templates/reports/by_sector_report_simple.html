@@ -4,55 +4,235 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Relatório RNC por Setor - IPPEL</title>
+    <!-- TEMPLATE ATUALIZADO - NOVO LAYOUT v2.0 -->
     <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
             background: white;
         }
+        
         .header {
-            text-align: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             border-bottom: 2px solid #333;
             padding-bottom: 15px;
             margin-bottom: 30px;
         }
+        
+        .logo {
+            width: 120px;
+            height: auto;
+        }
+        
+        .title-section {
+            text-align: center;
+            flex-grow: 1;
+        }
+        
+        .main-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .date-info {
+            font-size: 16px;
+            color: #666;
+        }
+        
+        .generated-info {
+            text-align: right;
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-bottom: 20px;
+        }
+        
         .sector-section {
             margin-bottom: 30px;
-            border: 1px solid #ddd;
-            padding: 15px;
         }
+        
         .sector-header {
             background: #f0f0f0;
-            padding: 10px;
+            padding: 10px 15px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             font-weight: bold;
             font-size: 16px;
+            border-radius: 4px;
         }
+        
+        .sector-name {
+            color: #333;
+        }
+        
+        .sector-total {
+            color: #333;
+            font-weight: bold;
+        }
+        
+        .sector-subtotal {
+            margin-left: 20px;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #333;
+            font-size: 14px;
+        }
+        
+        .rnc-list {
+            margin-left: 40px;
+        }
+        
         .rnc-item {
-            padding: 5px 0;
-            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px dotted #ddd;
         }
-        .debug-info {
-            background: #f8f9fa;
-            padding: 10px;
-            margin: 10px 0;
-            font-family: monospace;
+        
+        .rnc-item:last-child {
+            border-bottom: none;
+        }
+        
+        .rnc-info {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .rnc-number {
+            font-weight: bold;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+        
+        .rnc-details {
             font-size: 12px;
+            color: #666;
+            margin-top: 2px;
+        }
+        
+        .rnc-value {
+            font-weight: bold;
+            color: #27ae60;
+            font-size: 14px;
+        }
+        
+        .section-divider {
+            height: 1px;
+            background: #ddd;
+            margin: 20px 0;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-style: italic;
+        }
+        
+        /* Botões para impressão */
+        .print-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            z-index: 1000;
+        }
+        
+        .print-button:hover {
+            background: #2980b9;
+        }
+        
+        .back-button {
+            position: fixed;
+            top: 20px;
+            right: 120px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            z-index: 1000;
+        }
+        
+        .back-button:hover {
+            background: #5a6268;
+        }
+        
+        /* Responsivo para impressão */
+        @media print {
+            .print-button, .back-button {
+                display: none;
+            }
+            
+            body {
+                font-size: 12px;
+            }
+            
+            .sector-header {
+                font-size: 14px;
+                padding: 8px 12px;
+            }
+            
+            .rnc-item {
+                font-size: 12px;
+            }
         }
     </style>
 </head>
 <body>
+    <!-- Botões de ação -->
+    <button class="back-button" onclick="window.history.back()">← Voltar</button>
+    <button class="print-button" onclick="window.print()">🖨️ Imprimir</button>
+    
     <div class="header">
-        <h1>RELATÓRIO RNC POR GRUPO</h1>
-        <p>Período: {{ start_date }} a {{ end_date }}</p>
-        <p>Total de RNCs: {{ stats.total_rncs }}</p>
+        <div class="logo">
+            <!-- Logo da empresa aqui -->
+        </div>
+        <div class="title-section">
+            <h1 class="main-title">RELATÓRIO RNC POR SETOR - NOVO LAYOUT</h1>
+            <p class="date-info">{{ start_date.split('-')[1] }}/{{ start_date.split('-')[0] }}</p>
+        </div>
     </div>
     
-    <div class="debug-info">
-        <strong>DEBUG INFO:</strong><br>
-        Total de RNCs recebidas: {{ rncs|length }}<br>
-        Grupos únicos: {{ rncs|map(attribute='group_name')|unique|list|length }}<br>
-        Grupos: {{ rncs|map(attribute='group_name')|unique|list }}<br>
-        Departamentos: {{ rncs|map(attribute='department')|unique|list }}
+    <div class="generated-info">
+        <p>Gerado em: {{ generated_at.strftime('%d/%m/%Y às %H:%M') }}</p>
+        <p>Período: {{ start_date }} a {{ end_date }}</p>
+        <p>Total de RNCs: {{ stats.total_rncs }}</p>
     </div>
     
     {# Organizar todos os RNCs por grupo #}
@@ -73,43 +253,64 @@
         {% set _ = groups[group].update({'total': groups[group]['total'] + value}) %}
         {% set _ = groups[group].update({'count': groups[group]['count'] + 1}) %}
     {% endfor %}
-    
-    <div class="debug-info">
-        <strong>GRUPOS PROCESSADOS:</strong><br>
-        {% for group_name, group_data in groups.items() %}
-            {{ group_name }}: {{ group_data.count }} RNCs, R$ {{ "%.2f"|format(group_data.total) }}<br>
-        {% endfor %}
-    </div>
-    
+
     {# Renderizar por grupo #}
     {% for group_name, group_data in groups.items() %}
         <div class="sector-section">
             <div class="sector-header">
-                {{ group_name }} - R$ {{ "%.2f"|format(group_data.total) }} ({{ group_data.count }} RNCs)
+                <span class="sector-name">{{ group_name }}</span>
+                <span class="sector-total">R$ {{ "{:,.2f}".format(group_data.total).replace(',', 'X').replace('.', ',').replace('X', '.') }} ({{ group_data.count }} RNCs)</span>
             </div>
-            
+            <div class="sector-subtotal">
+                • Total de RNCs: {{ group_data.count }}
+                <br>• Valor Total: R$ {{ "{:,.2f}".format(group_data.total).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                <br>• Valor Médio por RNC: R$ {{ "{:,.2f}".format(group_data.total / group_data.count).replace(',', 'X').replace('.', ',').replace('X', '.') if group_data.count > 0 else 0 }}
+            </div>
             <div class="rnc-list">
                 {% for rnc in group_data.rncs %}
                     <div class="rnc-item">
-                        <strong>RNC {{ rnc.rnc_number }}</strong> - R$ {{ "%.2f"|format(rnc.price|float if rnc.price else 0) }}
-                        <br>
-                        <small>
-                            Departamento: {{ rnc.department or 'N/A' }} | 
-                            Responsável: {{ rnc.responsavel or 'N/A' }} | 
-                            Status: {{ rnc.status or 'N/A' }} | 
-                            Data: {{ rnc.created_at.split(' ')[0] if rnc.created_at else 'N/A' }}
-                        </small>
+                        <div class="rnc-info">
+                            <div class="rnc-number">RNC {{ rnc.rnc_number }}</div>
+                            <div class="rnc-details">
+                                Departamento: {{ rnc.department or 'N/A' }} | 
+                                Responsável: {{ rnc.responsavel or 'N/A' }} | 
+                                Status: {{ rnc.status or 'N/A' }} | 
+                                Data: {{ rnc.created_at.split(' ')[0] if rnc.created_at else 'N/A' }}
+                            </div>
+                        </div>
+                        <div class="rnc-value">{{ rnc.price_formatted if rnc.price_formatted else 'R$ 0,00' }}</div>
                     </div>
                 {% endfor %}
             </div>
         </div>
+        
+        {% if not loop.last %}
+            <div class="section-divider"></div>
+        {% endif %}
     {% endfor %}
     
     {% if not groups %}
-        <div style="text-align: center; padding: 40px; color: #666;">
+        <div class="no-data">
             <h3>Nenhum RNC encontrado</h3>
             <p>Não há RNCs no período selecionado.</p>
         </div>
     {% endif %}
+    
+    <div class="footer">
+        <p>IPPEL - Sistema de Relatórios de Não Conformidade</p>
+        <p>Relatório gerado automaticamente em {{ generated_at.strftime('%d/%m/%Y às %H:%M:%S') }}</p>
+    </div>
+    
+    <script>
+        // Função para voltar à página anterior
+        function goBack() {
+            window.history.back();
+        }
+        
+        // Função para imprimir o relatório
+        function printReport() {
+            window.print();
+        }
+    </script>
 </body>
 </html>
