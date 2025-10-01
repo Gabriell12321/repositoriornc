@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPPEL - Dashboard de Segurança</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #667eea;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --info: #17a2b8;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Liberation Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .security-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: var(--bg-gradient);
+            color: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .security-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .security-header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .security-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .security-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .security-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .card-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+            margin-right: 15px;
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 16px;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin: 10px 0;
+        }
+
+        .status-enabled {
+            background: rgba(40, 167, 69, 0.1);
+            color: var(--success);
+            border: 1px solid rgba(40, 167, 69, 0.3);
+        }
+
+        .status-disabled {
+            background: rgba(220, 53, 69, 0.1);
+            color: var(--danger);
+            border: 1px solid rgba(220, 53, 69, 0.3);
+        }
+
+        .status-warning {
+            background: rgba(255, 193, 7, 0.1);
+            color: var(--warning);
+            border: 1px solid rgba(255, 193, 7, 0.3);
+        }
+
+        .security-btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 12px 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            margin: 5px 5px 5px 0;
+        }
+
+        .security-btn:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .security-btn.danger {
+            background: var(--danger);
+        }
+
+        .security-btn.danger:hover {
+            background: #c82333;
+        }
+
+        .security-btn.success {
+            background: var(--success);
+        }
+
+        .security-btn.success:hover {
+            background: #218838;
+        }
+
+        .security-btn i {
+            margin-right: 8px;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 500;
+            color: var(--dark);
+        }
+
+        .info-value {
+            color: #666;
+            font-weight: 400;
+        }
+
+        .audit-log {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+
+        .audit-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            margin-bottom: 8px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #dee2e6;
+        }
+
+        .audit-item.high-risk {
+            border-left-color: var(--danger);
+            background: rgba(220, 53, 69, 0.05);
+        }
+
+        .audit-item.medium-risk {
+            border-left-color: var(--warning);
+            background: rgba(255, 193, 7, 0.05);
+        }
+
+        .audit-icon {
+            width: 35px;
+            height: 35px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            background: var(--light);
+            color: var(--dark);
+        }
+
+        .audit-content {
+            flex: 1;
+        }
+
+        .audit-action {
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 4px;
+        }
+
+        .audit-details {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .audit-time {
+            font-size: 0.8rem;
+            color: #999;
+            white-space: nowrap;
+        }
+
+        .qr-code-container {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .qr-code-container img {
+            max-width: 200px;
+            border: 2px solid #f0f0f0;
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+
+        .backup-codes {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .backup-code {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+            border: 1px solid #dee2e6;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #999;
+            padding: 5px;
+        }
+
+        .close-btn:hover {
+            color: var(--danger);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--dark);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid transparent;
+        }
+
+        .alert-success {
+            color: #155724;
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+
+        .alert-danger {
+            color: #721c24;
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+
+        .alert-warning {
+            color: #856404;
+            background-color: #fff3cd;
+            border-color: #ffeaa7;
+        }
+
+        @media (max-width: 768px) {
+            .security-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .security-header h1 {
+                font-size: 2rem;
+            }
+            
+            .modal-content {
+                margin: 10% auto;
+                width: 95%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="security-header">
+        <h1><i class="fas fa-shield-alt"></i> Dashboard de Segurança</h1>
+        <p>Gerencie a segurança da sua conta e monitore atividades</p>
+    </div>
+
+    <div class="security-grid">
+        <!-- Card de Autenticação 2FA -->
+        <div class="security-card">
+            <div class="card-header">
+                <div class="card-icon" style="background: var(--info);">
+                    <i class="fas fa-mobile-alt"></i>
+                </div>
+                <div class="card-title">Autenticação de Dois Fatores</div>
+            </div>
+            
+            <div id="2fa-status">
+                <div class="status-indicator status-disabled">
+                    <i class="fas fa-times-circle"></i>
+                    2FA Desabilitado
+                </div>
+                <p style="margin: 15px 0; color: #666;">
+                    Adicione uma camada extra de segurança à sua conta ativando a autenticação de dois fatores.
+                </p>
+                <button class="security-btn success" onclick="setup2FA()">
+                    <i class="fas fa-plus"></i>
+                    Configurar 2FA
+                </button>
+            </div>
+        </div>
+
+        <!-- Card de Sessões Ativas -->
+        <div class="security-card">
+            <div class="card-header">
+                <div class="card-icon" style="background: var(--success);">
+                    <i class="fas fa-laptop"></i>
+                </div>
+                <div class="card-title">Sessões Ativas</div>
+            </div>
+            
+            <div id="sessions-info">
+                <div class="info-item">
+                    <span class="info-label">Sessões Ativas:</span>
+                    <span class="info-value" id="active-sessions-count">1</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Última Atividade:</span>
+                    <span class="info-value" id="last-activity">Agora</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">IP Atual:</span>
+                    <span class="info-value" id="current-ip">192.168.1.100</span>
+                </div>
+            </div>
+            
+            <button class="security-btn" onclick="viewSessions()">
+                <i class="fas fa-list"></i>
+                Ver Todas as Sessões
+            </button>
+        </div>
+
+        <!-- Card de Alteração de Senha -->
+        <div class="security-card">
+            <div class="card-header">
+                <div class="card-icon" style="background: var(--warning);">
+                    <i class="fas fa-key"></i>
+                </div>
+                <div class="card-title">Segurança da Senha</div>
+            </div>
+            
+            <div class="info-item">
+                <span class="info-label">Força da Senha:</span>
+                <span class="info-value">
+                    <span class="status-indicator status-enabled">
+                        <i class="fas fa-check-circle"></i>
+                        Forte
+                    </span>
+                </span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Última Alteração:</span>
+                <span class="info-value">Há 30 dias</span>
+            </div>
+            
+            <button class="security-btn" onclick="changePassword()">
+                <i class="fas fa-edit"></i>
+                Alterar Senha
+            </button>
+        </div>
+
+        <!-- Card de Auditoria de Segurança -->
+        <div class="security-card" style="grid-column: 1 / -1;">
+            <div class="card-header">
+                <div class="card-icon" style="background: var(--danger);">
+                    <i class="fas fa-history"></i>
+                </div>
+                <div class="card-title">Log de Auditoria</div>
+            </div>
+            
+            <div class="audit-log" id="audit-log">
+                <!-- Logs serão carregados aqui -->
+            </div>
+            
+            <button class="security-btn" onclick="loadAuditLog()">
+                <i class="fas fa-refresh"></i>
+                Atualizar Logs
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal para Configuração 2FA -->
+    <div id="2fa-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Configurar Autenticação 2FA</div>
+                <button class="close-btn" onclick="close2FAModal()">&times;</button>
+            </div>
+            
+            <div id="2fa-step-1">
+                <p style="margin-bottom: 20px;">
+                    1. Baixe um app autenticador (Google Authenticator, Authy, etc.)<br>
+                    2. Escaneie o QR code abaixo:
+                </p>
+                
+                <div class="qr-code-container" id="qr-code-container">
+                    <!-- QR Code será inserido aqui -->
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Digite o código do seu app:</label>
+                    <input type="text" class="form-input" id="2fa-verification-code" 
+                           placeholder="000000" maxlength="6">
+                </div>
+                
+                <button class="security-btn success" onclick="verify2FA()">
+                    <i class="fas fa-check"></i>
+                    Verificar e Ativar
+                </button>
+            </div>
+            
+            <div id="2fa-step-2" style="display: none;">
+                <div class="alert alert-success">
+                    <strong>2FA Ativado com Sucesso!</strong><br>
+                    Guarde estes códigos de backup em local seguro:
+                </div>
+                
+                <div class="backup-codes" id="backup-codes">
+                    <!-- Códigos de backup serão inseridos aqui -->
+                </div>
+                
+                <button class="security-btn" onclick="close2FAModal()">
+                    <i class="fas fa-check"></i>
+                    Concluir
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Alteração de Senha -->
+    <div id="password-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Alterar Senha</div>
+                <button class="close-btn" onclick="closePasswordModal()">&times;</button>
+            </div>
+            
+            <form id="password-form">
+                <div class="form-group">
+                    <label class="form-label">Senha Atual:</label>
+                    <input type="password" class="form-input" id="current-password" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Nova Senha:</label>
+                    <input type="password" class="form-input" id="new-password" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Confirmar Nova Senha:</label>
+                    <input type="password" class="form-input" id="confirm-password" required>
+                </div>
+                
+                <button type="submit" class="security-btn success">
+                    <i class="fas fa-save"></i>
+                    Alterar Senha
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Variáveis globais
+        let securityData = {};
+        
+        // Carregar dados de segurança
+        async function loadSecurityData() {
+            try {
+                const response = await fetch('/api/security-status');
+                const data = await response.json();
+                
+                if (data.error) {
+                    console.error('Erro ao carregar dados:', data.error);
+                    return;
+                }
+                
+                securityData = data;
+                updateSecurityUI();
+                
+            } catch (error) {
+                console.error('Erro de rede:', error);
+            }
+        }
+        
+        // Atualizar interface com dados de segurança
+        function updateSecurityUI() {
+            // Atualizar status 2FA
+            const twoFactorStatus = document.getElementById('2fa-status');
+            if (securityData.two_factor && securityData.two_factor.enabled) {
+                twoFactorStatus.innerHTML = `
+                    <div class="status-indicator status-enabled">
+                        <i class="fas fa-check-circle"></i>
+                        2FA Ativado
+                    </div>
+                    <p style="margin: 15px 0; color: #666;">
+                        Sua conta está protegida com autenticação de dois fatores.
+                    </p>
+                    <button class="security-btn danger" onclick="disable2FA()">
+                        <i class="fas fa-times"></i>
+                        Desabilitar 2FA
+                    </button>
+                    <button class="security-btn" onclick="regenerateBackupCodes()">
+                        <i class="fas fa-refresh"></i>
+                        Novos Códigos de Backup
+                    </button>
+                `;
+            }
+            
+            // Atualizar sessões ativas
+            if (securityData.active_sessions) {
+                document.getElementById('active-sessions-count').textContent = securityData.active_sessions;
+            }
+        }
+        
+        // Configurar 2FA
+        async function setup2FA() {
+            try {
+                const response = await fetch('/security/setup-2fa');
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Mostrar QR code
+                    document.getElementById('qr-code-container').innerHTML = 
+                        `<img src="${data.qr_code}" alt="QR Code para 2FA">`;
+                    
+                    // Mostrar modal
+                    document.getElementById('2fa-modal').style.display = 'block';
+                } else {
+                    alert('Erro ao configurar 2FA: ' + data.error);
+                }
+                
+            } catch (error) {
+                alert('Erro de rede: ' + error.message);
+            }
+        }
+        
+        // Verificar código 2FA
+        async function verify2FA() {
+            const code = document.getElementById('2fa-verification-code').value;
+            
+            if (!code || code.length !== 6) {
+                alert('Digite um código de 6 dígitos');
+                return;
+            }
+            
+            try {
+                const csrfResponse = await fetch('/security/csrf-token');
+                const csrfData = await csrfResponse.json();
+                
+                const response = await fetch('/security/enable-2fa', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': csrfData.csrf_token
+                    },
+                    body: JSON.stringify({ token: code })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Mostrar códigos de backup se disponíveis
+                    if (data.backup_codes) {
+                        const backupCodesDiv = document.getElementById('backup-codes');
+                        backupCodesDiv.innerHTML = data.backup_codes
+                            .map(code => `<div class="backup-code">${code}</div>`)
+                            .join('');
+                    }
+                    
+                    // Ir para próximo passo
+                    document.getElementById('2fa-step-1').style.display = 'none';
+                    document.getElementById('2fa-step-2').style.display = 'block';
+                    
+                    // Recarregar dados
+                    loadSecurityData();
+                } else {
+                    alert('Erro: ' + data.error);
+                }
+                
+            } catch (error) {
+                alert('Erro de rede: ' + error.message);
+            }
+        }
+        
+        // Desabilitar 2FA
+        async function disable2FA() {
+            const password = prompt('Digite sua senha para desabilitar 2FA:');
+            if (!password) return;
+            
+            try {
+                const csrfResponse = await fetch('/security/csrf-token');
+                const csrfData = await csrfResponse.json();
+                
+                const response = await fetch('/security/disable-2fa', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': csrfData.csrf_token
+                    },
+                    body: JSON.stringify({ password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('2FA desabilitado com sucesso');
+                    loadSecurityData();
+                } else {
+                    alert('Erro: ' + data.error);
+                }
+                
+            } catch (error) {
+                alert('Erro de rede: ' + error.message);
+            }
+        }
+        
+        // Fechar modal 2FA
+        function close2FAModal() {
+            document.getElementById('2fa-modal').style.display = 'none';
+            document.getElementById('2fa-step-1').style.display = 'block';
+            document.getElementById('2fa-step-2').style.display = 'none';
+            document.getElementById('2fa-verification-code').value = '';
+        }
+        
+        // Alterar senha
+        function changePassword() {
+            document.getElementById('password-modal').style.display = 'block';
+        }
+        
+        // Fechar modal senha
+        function closePasswordModal() {
+            document.getElementById('password-modal').style.display = 'none';
+            document.getElementById('password-form').reset();
+        }
+        
+        // Carregar log de auditoria
+        async function loadAuditLog() {
+            try {
+                const response = await fetch('/security/security-audit?days=7');
+                const data = await response.json();
+                
+                if (data.events) {
+                    const auditLogDiv = document.getElementById('audit-log');
+                    auditLogDiv.innerHTML = data.events.slice(0, 10).map(event => {
+                        const riskClass = event.risk_level === 'HIGH' ? 'high-risk' : 
+                                         event.risk_level === 'MEDIUM' ? 'medium-risk' : '';
+                        
+                        const actionIcon = {
+                            'LOGIN_SUCCESS': 'fas fa-sign-in-alt',
+                            'LOGIN_FAILED': 'fas fa-times',
+                            'LOGOUT': 'fas fa-sign-out-alt',
+                            '2FA_ENABLED': 'fas fa-mobile-alt',
+                            'PASSWORD_CHANGED': 'fas fa-key'
+                        }[event.action] || 'fas fa-info';
+                        
+                        return `
+                            <div class="audit-item ${riskClass}">
+                                <div class="audit-icon">
+                                    <i class="${actionIcon}"></i>
+                                </div>
+                                <div class="audit-content">
+                                    <div class="audit-action">${event.action.replace(/_/g, ' ')}</div>
+                                    <div class="audit-details">
+                                        IP: ${event.ip_address} | 
+                                        ${new Date(event.timestamp).toLocaleString('pt-BR')}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+                
+            } catch (error) {
+                console.error('Erro ao carregar auditoria:', error);
+            }
+        }
+        
+        // Manipular envio do formulário de senha
+        document.getElementById('password-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const currentPassword = document.getElementById('current-password').value;
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            
+            if (newPassword !== confirmPassword) {
+                alert('Nova senha e confirmação não coincidem');
+                return;
+            }
+            
+            try {
+                const csrfResponse = await fetch('/security/csrf-token');
+                const csrfData = await csrfResponse.json();
+                
+                const response = await fetch('/security/change-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': csrfData.csrf_token
+                    },
+                    body: JSON.stringify({
+                        current_password: currentPassword,
+                        new_password: newPassword,
+                        confirm_password: confirmPassword
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('Senha alterada com sucesso!');
+                    closePasswordModal();
+                } else {
+                    alert('Erro: ' + (data.error || 'Erro desconhecido'));
+                }
+                
+            } catch (error) {
+                alert('Erro de rede: ' + error.message);
+            }
+        });
+        
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSecurityData();
+            loadAuditLog();
+            
+            // Fechar modals ao clicar fora
+            window.onclick = function(event) {
+                const modals = document.querySelectorAll('.modal');
+                modals.forEach(modal => {
+                    if (event.target === modal) {
+                        modal.style.display = 'none';
+                    }
+                });
+            };
+        });
+    </script>
+</body>
+</html>

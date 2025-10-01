@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sistema IPPEL{% endblock %}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .header {
+            background: white;
+            padding: 15px 20px;
+            border-bottom: 2px solid #e9ecef;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+                .logo {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            object-fit: contain;
+            background: transparent;
+            padding: 0;
+            border: none;
+        }
+        
+        .logo:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: 700;
+            color: #007bff;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .user-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .logout-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: #c82333;
+            transform: translateY(-1px);
+        }
+
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        {% block extra_css %}{% endblock %}
+    </style>
+    {% block head %}{% endblock %}
+    <link rel="stylesheet" href="{{ asset_url('css/avatar.css') }}">
+    <script src="{{ asset_url('js/app.js') }}" defer></script>
+    <script src="{{ asset_url('js/avatar.js') }}" defer></script>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="logo-section">
+                <!-- SQI à esquerda -->
+                <img src="{{ url_for('static', filename='LOGOSQI.jpg') }}" alt="SQI Logo" class="logo">
+                <!-- IPPEL à direita -->
+                <img src="/IPPELLOGO.jpg" 
+                     alt="IPPEL Logo" 
+                     class="logo apply-logo"
+                     data-logo-primary="/IPPELLOGO.jpg"
+                     data-logo-fallback1="/IPPELLOGO.jpg"
+                     data-logo-fallback2="{{ url_for('static', filename='LOGOSQI.jpg') }}"
+                     onerror="if(this.dataset.try1!=='1'){this.dataset.try1='1'; this.src=this.dataset.logoFallback1;} else if(this.dataset.try2!=='1'){this.dataset.try2='1'; this.src=this.dataset.logoFallback2;} else {this.style.display='none';}">
+                <div class="logo-text">IPPEL</div>
+            </div>
+            <div class="user-info">
+                <div id="userAvatar" class="user-avatar initial ava ava-ippel" title="Clique para trocar seu avatar" data-initial="1" role="button" tabindex="0" onclick="if(window.IPPELAvatar){ IPPELAvatar.show(); } else { window.__OPEN_AVATAR_ON_READY__=true; }" onkeydown="if(event.key==='Enter'||event.key===' '){ event.preventDefault(); if(window.IPPELAvatar){ IPPELAvatar.show(); } else { window.__OPEN_AVATAR_ON_READY__=true; }}">U</div>
+                <span class="user-name" id="userName">Sistema IPPEL</span>
+                <button class="logout-btn" onclick="(function(){ try { const base = window.location.origin.replace(/^https:/,'http:'); fetch(base + '/api/logout', { credentials: 'include' }).finally(() => { window.location.href = '/'; }); } catch(e){ window.location.href = '/'; } })()">🚪 Sair</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        {% block content %}{% endblock %}
+    </div>
+
+    <div id="avatarModal"></div>
+
+    <script>
+      // Quando carregar informações do usuário, aplicar avatar
+      (function(){
+        const orig = (window.IPPELApp && IPPELApp.loadUserInfo) ? IPPELApp.loadUserInfo : null;
+        window.__USER_NAME__ = null;
+        async function patched(){
+          try{
+            const resp = await fetch('/api/user/info', { credentials: 'include' });
+            if(!resp.ok) return; const js = await resp.json();
+                        if(js && js.success && js.user){
+              __USER_NAME__ = js.user.name;
+                              const av = js.user.avatar || 'ava-ippel';
+                              const prefs = js.user.avatarPrefs || null;
+                            if(window.IPPELAvatar){ IPPELAvatar.applyToHeader(av, prefs); }
+              const nameEl = document.getElementById('userName');
+              if(nameEl) nameEl.textContent = js.user.name;
+            }
+          }catch(e){}
+        }
+        document.addEventListener('DOMContentLoaded', patched);
+      })();
+    </script>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

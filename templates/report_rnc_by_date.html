@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório de RNCs por Data</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        .logo {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .logo img {
+            max-height: 100px;
+        }
+        .report-header {
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .summary {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+        .summary div {
+            margin-bottom: 5px;
+        }
+        .print-button {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .print-button button {
+            padding: 10px 15px;
+            background-color: #17a2b8;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        @media print {
+            .print-button {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="logo">
+        <img src="/IPPELLOGO.jpg" alt="Logo IPPEL">
+    </div>
+    
+    <div class="report-header">
+        <h1>Relatório de RNCs por Período</h1>
+        <h2>{{ start_date }} a {{ end_date }}</h2>
+    </div>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Nº RNC</th>
+                <th>Data</th>
+                <th>Título</th>
+                <th>Cliente</th>
+                <th>Equipamento</th>
+                <th>Valor</th>
+                <th>Responsável</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for rnc in rncs %}
+            <tr>
+                <td>{{ rnc.rnc_number }}</td>
+                <td>{{ rnc.created_at }}</td>
+                <td>{{ rnc.title }}</td>
+                <td>{{ rnc.client }}</td>
+                <td>{{ rnc.equipment }}</td>
+                <td>{{ rnc.price }}</td>
+                <td>{{ rnc.user_name }}</td>
+                <td>{{ 'Finalizado' if rnc.finalized_at else 'Ativo' }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="8" style="text-align: center;">Nenhuma RNC encontrada para este período.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="summary">
+        <div><strong>Total de RNCs no período:</strong> {{ total_count }}</div>
+        <div><strong>RNCs ativas:</strong> {{ active_count }}</div>
+        <div><strong>RNCs finalizadas:</strong> {{ finalized_count }}</div>
+    </div>
+    
+    <div class="print-button">
+        <button onclick="window.print()">🖨️ Imprimir Relatório</button>
+    </div>
+</body>
+</html>

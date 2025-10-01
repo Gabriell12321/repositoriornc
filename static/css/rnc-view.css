@@ -1,0 +1,367 @@
+/* CSS adicional para a visualização da RNC */
+
+/* Melhorias nos badges de status */
+.status-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-pendente {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+.status-andamento {
+    background: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #b8e6f0;
+}
+
+.status-finalizada {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+/* Melhorias nos cards de informação */
+.info-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.info-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, transparent 0%, rgba(193, 39, 45, 0.05) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.info-card:hover::before {
+    opacity: 1;
+}
+
+/* Melhorias nos campos de texto */
+.text-field-content {
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.text-field-content:hover {
+    border-color: var(--primary-red);
+    box-shadow: 0 2px 8px rgba(193, 39, 45, 0.1);
+}
+
+/* Melhorias nas assinaturas */
+.signature-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.signature-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary-red) 0%, var(--secondary-red) 100%);
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.signature-card:hover::after {
+    transform: scaleX(1);
+}
+
+/* Melhorias nos status cards */
+.status-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.status-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(40, 167, 69, 0.1) 0%, transparent 70%);
+    transform: scale(0);
+    transition: transform 0.3s ease;
+}
+
+.status-card.active::before {
+    transform: scale(1);
+}
+
+/* Animações adicionais */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.status-card.active {
+    animation: pulse 2s infinite;
+}
+
+/* Melhorias nos botões */
+.btn {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.6s ease, height 0.6s ease;
+}
+
+.btn:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+/* Melhorias no header */
+.rnc-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary-red) 0%, var(--secondary-red) 50%, var(--accent-blue) 100%);
+}
+
+/* Scrollbar personalizada */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--light-gray);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--primary-red);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--secondary-red);
+}
+
+/* Melhorias na responsividade */
+@media (max-width: 480px) {
+    .rnc-header {
+        padding: 25px 15px;
+    }
+    
+    .rnc-title {
+        font-size: 1.8rem;
+    }
+    
+    .rnc-content {
+        padding: 20px 15px;
+    }
+    
+    .info-grid {
+        gap: 15px;
+    }
+    
+    .info-card {
+        padding: 20px;
+    }
+    
+    .signatures-grid {
+        gap: 15px;
+    }
+    
+    .signature-card {
+        padding: 20px;
+    }
+}
+
+/* Melhorias para impressão */
+@media print {
+    .status-card.active {
+        animation: none;
+    }
+    
+    .info-card:hover {
+        transform: none;
+        box-shadow: none;
+    }
+    
+    .signature-card:hover::after {
+        transform: none;
+    }
+}
+
+/* Estados de loading */
+.loading {
+    position: relative;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    margin: -8px 0 0 -8px;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Tooltips melhorados */
+.tooltip::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: var(--text-dark);
+    margin-bottom: -5px;
+}
+
+/* Efeitos de foco para acessibilidade */
+.btn:focus,
+.info-card:focus,
+.signature-card:focus,
+.status-card:focus {
+    outline: 2px solid var(--primary-red);
+    outline-offset: 2px;
+}
+
+/* Melhorias nos campos vazios */
+.info-value.empty::before {
+    content: '⚠️ ';
+    margin-right: 5px;
+}
+
+/* Indicadores de prioridade */
+.priority-high {
+    border-left-color: var(--danger-red);
+}
+
+.priority-medium {
+    border-left-color: var(--warning-orange);
+}
+
+.priority-low {
+    border-left-color: var(--success-green);
+}
+
+/* Melhorias nos ícones */
+.section-title i {
+    transition: transform 0.3s ease;
+}
+
+.section-title:hover i {
+    transform: scale(1.1) rotate(5deg);
+}
+
+/* Efeitos de profundidade */
+.rnc-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.rnc-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 25px 80px rgba(0,0,0,0.15);
+}
+
+/* Melhorias nos controles */
+.controls-container {
+    transition: all 0.3s ease;
+}
+
+.print-controls:hover .controls-container {
+    transform: translateY(-2px);
+}
+
+/* Estados de erro */
+.error-state {
+    border-color: var(--danger-red);
+    background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
+}
+
+.error-state .info-label {
+    color: var(--danger-red);
+}
+
+/* Estados de sucesso */
+.success-state {
+    border-color: var(--success-green);
+    background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%);
+}
+
+.success-state .info-label {
+    color: var(--success-green);
+}
+
+/* Melhorias na tipografia */
+.info-label {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-weight: 600;
+}
+
+.info-value {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-weight: 500;
+}
+
+/* Efeitos de transição suaves */
+* {
+    transition: all 0.2s ease;
+}
+
+/* Melhorias nos campos de texto longos */
+.text-field-content {
+    position: relative;
+}
+
+.text-field-content::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, var(--primary-red) 0%, var(--secondary-red) 100%);
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.text-field:hover .text-field-content::after {
+    transform: scaleX(1);
+}

@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar RNC - {{ rnc.rnc_number }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Liberation Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+            background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 30%, #dddddd 70%, #d0d0d0 100%);
+            padding: 0;
+            margin: 0;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 100vw;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #ffffff 0%, #fdfdfd 50%, #fafafa 100%);
+            padding: 35px;
+            box-shadow: 0 32px 64px rgba(0, 0, 0, 0.18);
+            border-radius: 0;
+            overflow-y: auto;
+            border-top: 8px solid #6c757d;
+            position: relative;
+        }
+
+        .header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: none;
+            padding-bottom: 0;
+            position: relative;
+        }
+
+        .logos {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .logo-ippel {
+            width: 120px;
+            height: 120px;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .logo-ippel:hover {
+            transform: scale(1.05);
+        }
+
+        .title-section {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .main-title {
+            font-size: 30px;
+            font-weight: 800;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #6c757d 0%, #495057 30%, #343a40 70%, #212529 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 1.5px;
+            position: relative;
+            text-align: center;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #6c757d;
+            font-weight: 600;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+        }
+
+        .form-code {
+            font-size: 12px;
+            color: #6c757d;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .rnc-number {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .field-label {
+            background: #6c757d;
+            color: white;
+            padding: 8px;
+            font-weight: bold;
+            font-size: 11px;
+            text-align: center;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 8px;
+            border: 2px solid #cccccc;
+            border-radius: 5px;
+            font-size: 11px;
+            background: white;
+        }
+
+        .large-text-area {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .medium-text-area {
+            min-height: 60px;
+            resize: vertical;
+        }
+
+        .item-column {
+            background: #6c757d;
+            color: white;
+            padding: 8px;
+            font-weight: bold;
+            font-size: 11px;
+            text-align: center;
+            width: 60px;
+        }
+
+        .section-title {
+            background: #6c757d;
+            color: white;
+            padding: 8px;
+            font-weight: bold;
+            font-size: 11px;
+            text-align: center;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+
+        table td {
+            border: 1px solid #cccccc;
+        }
+
+        /* Barra de ações moderna */
+        .action-bar { position: fixed; right: 24px; bottom: 24px; display: flex; gap: 12px; z-index: 1200; }
+        .action-btn { display: inline-flex; align-items: center; gap: 10px; height: 48px; padding: 0 18px; border-radius: 9999px; border: none; cursor: pointer; color: #fff; font-weight: 600; letter-spacing: .2px; box-shadow: 0 8px 24px rgba(0,0,0,.15); transition: transform .15s ease, box-shadow .2s ease, filter .2s ease; backdrop-filter: saturate(120%); }
+        .action-btn .icon { font-size: 1.1rem; display: inline-flex; }
+        .action-btn:hover { transform: translateY(-2px); box-shadow: 0 14px 32px rgba(0,0,0,.18); filter: brightness(1.05); }
+        .dashboard-btn { background: linear-gradient(135deg, #6c757d 0%, #495057 100%); }
+        .save-btn { background: linear-gradient(90deg, #6c757d 0%, #495057 100%); }
+
+        .edit-mode-banner {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+            color: white;
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(108, 117, 125, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <script>
+            // Flag para saber se é modo Responder
+            const IS_REPLY = {{ 'true' if is_reply else 'false' }};
+        </script>
+        <!-- Banner de modo de edição -->
+        <div class="edit-mode-banner">
+            ✏️ MODO DE EDIÇÃO - RNC: {{ rnc.rnc_number }}
+        </div>
+
+        <!-- Header with Logo -->
+        <div class="header">
+            <div class="logos" style="display:flex; gap:12px; align-items:center;">
+                <img src="{{ url_for('static', filename='LOGOSQI.jpg') }}" alt="SQI Logo" style="width: 120px; height: 120px; border-radius: 15px; object-fit: contain; background: transparent; padding: 0; border: none;">
+                <img src="/IPPELLOGO.jpg" alt="IPPEL Logo" class="apply-logo" style="width: 120px; height: 120px; border-radius: 15px; object-fit: contain; background: transparent; padding: 0; border: none;"
+                     data-logo-primary="/IPPELLOGO.jpg"
+                     data-logo-fallback1="/IPPELLOGO.jpg"
+                     data-logo-fallback2="{{ url_for('static', filename='LOGOSQI.jpg') }}"
+                     onerror="if(this.dataset.try1!=='1'){this.dataset.try1='1'; this.src=this.dataset.logoFallback1;} else if(this.dataset.try2!=='1'){this.dataset.try2='1'; this.src=this.dataset.logoFallback2;} else {this.style.display='none';}">
+            </div>
+            <div style="position: absolute; top: 20px; right: 30px; font-size: 12px; color: #6c757d; font-weight: 500; z-index: 10;">
+                v2.0 | Sistema Premium
+            </div>
+        </div>
+
+        <!-- Title Section -->
+        <div class="title-section">
+            <div style="margin-bottom: 10px;">
+                <div style="width: 60px; height: 2px; background: linear-gradient(90deg, transparent, #6c757d, transparent); margin: 0 auto;"></div>
+            </div>
+            <div class="main-title">Relatório De Não Conformidades Internas – RNC</div>
+            <div class="subtitle">FABRICAÇÃO / RECEBIMENTO</div>
+        </div>
+
+        <!-- Form Code -->
+        <div class="form-code">FQ – 002</div>
+
+        <!-- RNC Number -->
+        <div class="rnc-number">
+            <label style="font-weight: 600; color: #495057; margin-right: 10px;">RNC Nº.:</label>
+            <input type="text" id="rnc_number" name="rnc_number" value="{{ rnc.rnc_number }}" 
+                   style="border: 2px solid #cccccc; border-radius: 5px; padding: 8px; width: 200px; font-weight: 600;">
+        </div>
+
+        <!-- Main Information Table -->
+        <table>
+            <tr>
+                <td class="field-label" style="width: 40%;">DES.</td>
+                <td class="field-label" style="width: 15%;">MP.</td>
+                <td class="field-label" style="width: 15%;">REV.</td>
+                <td class="field-label" style="width: 15%;">POS.</td>
+                <td class="field-label" style="width: 15%;">CV.</td>
+            </tr>
+            <tr>
+                <td><input type="text" id="title" class="input-field" value="{{ txt_fields.get('Desenho') or rnc.title or '' }}"></td>
+                <td><input type="text" class="input-field" value="{{ txt_fields.get('MP') or '' }}"></td>
+                <td><input type="text" class="input-field" value="{{ txt_fields.get('Revisão') or txt_fields.get('REVISAO') or '' }}"></td>
+                <td><input type="text" class="input-field" value="{{ txt_fields.get('POS') or '' }}"></td>
+                <td><input type="text" class="input-field" value="{{ txt_fields.get('CV') or '' }}"></td>
+            </tr>
+        </table>
+
+        <table>
+            <tr>
+                <td class="field-label" style="width: 50%;">EQUIPAMENTO</td>
+                <td class="field-label" style="width: 30%;">CONJUNTO</td>
+                <td class="field-label" style="width: 20%;">MOD.</td>
+            </tr>
+            <tr>
+                <td><input type="text" id="equipment" class="input-field" value="{{ rnc.equipment or '' }}"></td>
+                <td><input type="text" class="input-field" value="{{ txt_fields.get('Conjunto') or '' }}"></td>
+                <td><input type="text" class="input-field" value="{{ txt_fields.get('Modelo') or '' }}"></td>
+            </tr>
+        </table>
+
+        <table>
+            <tr>
+                <td class="field-label" style="width: 40%;">DESCRIÇÃO DES.</td>
+                <td class="field-label" style="width: 20%;">QTDE LOTE</td>
+                <td class="field-label" style="width: 20%;">CLIENTE</td>
+                <td class="field-label" style="width: 20%;">MATERIAL</td>
+            </tr>
+            <tr>
+                <td><input type="text" class="input-field" value="{{ txt_fields.get('Descrição da RNC') or txt_fields.get('Descrição do desenho') or '' }}"></td>
+                <td><input type="text" class="input-field" value="{{ txt_fields.get('Quantidade') or '' }}"></td>
+                <td><input type="text" id="client" class="input-field" value="{{ rnc.client or '' }}"></td>
+                <td><input type="text" class="input-field" value="{{ txt_fields.get('Material') or '' }}"></td>
+            </tr>
+        </table>
+
+        <table>
+            <tr>
+                <td class="field-label" style="width: 25%;">ASSINATURA GERENTE</td>
+                <td class="field-label" style="width: 25%;">ASSINATURA LÍDER SETOR</td>
+                <td class="field-label" style="width: 25%;">ORDEM DE COMPRA</td>
+                <td class="field-label" style="width: 25%;">NOME RESP.</td>
+            </tr>
+            <tr>
+                <td><input type="text" id="assinatura_gerente" class="input-field" value="{{ rnc.signature_engineering_name or rnc.user_name or '' }}"></td>
+                <td><input type="text" class="input-field" value="{{ rnc.signature_inspection2_name or '' }}"></td>
+                <td><input type="text" class="input-field" value="{{ txt_fields.get('OC') or '' }}"></td>
+                <td><input type="text" id="nome_responsavel" class="input-field" value="{{ rnc.user_name or '' }}"></td>
+            </tr>
+        </table>
+
+        <table>
+            <tr>
+                <td class="field-label" style="width: 35%;">INSPETOR:</td>
+                <td class="field-label" style="width: 20%;">DATA EMISSÃO</td>
+                <td class="field-label" style="width: 30%;">ÁREA RESPONSÁVEL</td>
+                <td class="field-label" style="width: 15%;">ASS. RESP.</td>
+            </tr>
+            <tr>
+                <td><input type="text" class="input-field" value="{{ rnc.signature_inspection_name or '' }}"></td>
+                <td><input type="text" class="input-field" value="{{ (rnc.created_at or '')[:10] if rnc.created_at else '' }}"></td>
+                <td><input type="text" class="input-field" value="{{ rnc.department or rnc.user_department or '' }}"></td>
+                <td><input type="text" class="input-field" value="{{ rnc.user_name or '' }}"></td>
+            </tr>
+        </table>
+
+        <!-- Description Section -->
+        <table>
+            <tr>
+                <td class="item-column">ITEM</td>
+                <td class="section-title">DESCRIÇÃO DA NÃO CONFORMIDADE</td>
+            </tr>
+            <tr>
+                <td style="width: 60px;"></td>
+                <td><textarea id="description" name="description" class="input-field large-text-area" placeholder="Descreva a não conformidade identificada...">{{ txt_fields.get('Descrição da RNC', '') or txt_fields.get('Descrição do desenho', '') or rnc.description or '' }}</textarea></td>
+            </tr>
+        </table>
+
+        <!-- Instruction Section -->
+        <table>
+            <tr>
+                <td class="item-column">ITEM</td>
+                <td class="section-title">INSTRUÇÃO PARA RETRABALHO</td>
+            </tr>
+            <tr>
+                <td style="width: 60px;"></td>
+                <td><textarea id="instruction_retrabalho" class="input-field medium-text-area" placeholder="Instruções detalhadas para correção...">{{ rnc.instruction_retrabalho or '' }}</textarea></td>
+            </tr>
+        </table>
+
+        <!-- Cause Section -->
+        <table>
+            <tr>
+                <td class="item-column">ITEM</td>
+                <td class="section-title">CAUSA DA RNC</td>
+            </tr>
+            <tr>
+                <td style="width: 60px;"></td>
+                <td><textarea id="cause_rnc" class="input-field medium-text-area" placeholder="Análise da causa raiz...">{{ rnc.cause_rnc or '' }}</textarea></td>
+            </tr>
+        </table>
+
+        <!-- Action Section -->
+        <table>
+            <tr>
+                <td class="item-column">ITEM</td>
+                <td class="section-title">AÇÃO A SER TOMADA</td>
+            </tr>
+            <tr>
+                <td style="width: 60px;"></td>
+                <td><textarea id="action_rnc" class="input-field medium-text-area" placeholder="Ações corretivas e preventivas...">{{ rnc.action_rnc or '' }}</textarea></td>
+            </tr>
+        </table>
+
+        <!-- Header Banner -->
+        <div style="width: 100%; background: #6c757d; color: white; text-align: center; padding: 12px 0; margin-bottom: 0; border-radius: 8px 8px 0 0; font-weight: bold; font-size: 14px; display: flex;">
+            <div style="width: 50%; text-align: center; border-right: 2px solid white;">DISPOSIÇÃO DO MATERIAL NÃO-CONFORME</div>
+            <div style="width: 50%; text-align: center;">INSPEÇÃO DO RETRABALHO</div>
+        </div>
+
+        <!-- Main Content Section -->
+        <div style="border: 2px solid #cccccc; border-top: none; border-radius: 0 0 8px 8px; background: white; display: flex;">
+            <!-- Left Section: Disposição do Material -->
+            <div style="width: 50%; padding: 15px; border-right: 1px solid #cccccc;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px; font-weight: bold;">
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" id="usar" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #6c757d;" {% if rnc.disposition_usar %}checked{% endif %}>
+                        <label for="usar">USAR COMO ESTÁ</label>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" id="retrabalhar" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #6c757d;" {% if rnc.disposition_retrabalhar %}checked{% endif %}>
+                        <label for="retrabalhar">RETRABALHAR</label>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" id="rejeitar" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #6c757d;" {% if rnc.disposition_rejeitar %}checked{% endif %}>
+                        <label for="rejeitar">REJEITAR</label>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" id="sucata" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #6c757d;" {% if rnc.disposition_sucata %}checked{% endif %}>
+                        <label for="sucata">SUCATA</label>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" id="devolver_estoque" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #6c757d;" {% if rnc.disposition_devolver_estoque %}checked{% endif %}>
+                        <label for="devolver_estoque">DEVOLVER AO ESTOQUE</label>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" id="devolver_fornecedor" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #6c757d;" {% if rnc.disposition_devolver_fornecedor %}checked{% endif %}>
+                        <label for="devolver_fornecedor">DEVOLVER AO FORNECEDOR</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Section: Inspeção do Retrabalho -->
+            <div style="width: 50%; padding: 15px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px; font-weight: bold;">
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" id="aprovado" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #28a745;" {% if rnc.inspection_aprovado %}checked{% endif %}>
+                        <label for="aprovado">APROVADO</label>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" id="reprovado" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #dc3545;" {% if rnc.inspection_reprovado %}checked{% endif %}>
+                        <label for="reprovado">REPROVADO</label>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" id="ver-rnc" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #ffc107;" {% if rnc.inspection_ver_rnc %}checked{% endif %}>
+                        <label for="ver-rnc">VER RNC. Nº:</label>
+                        <input type="text" id="ver_rnc_input" value="{{ rnc.inspection_ver_rnc or '' }}" style="border: none; border-bottom: 2px solid #6c757d; width: 120px; margin-left: 8px; font-size: 11px; padding: 2px; background: transparent;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Signature Section -->
+        <div style="margin-top: 15px; border: 2px solid #cccccc; border-radius: 4px; background: white;">
+            <!-- Date Row -->
+            <div style="display: flex; border-bottom: 2px solid #cccccc;">
+                <div style="width: 33.33%; padding: 8px; text-align: center; font-size: 10px; font-weight: bold; border-right: 2px solid #cccccc;">
+                    <span>INSPEÇÃO: </span>
+                    <input id="insp1_d" type="text" style="border: none; border-bottom: 1px solid #000; width: 20px; text-align: center; font-size: 10px;" placeholder="__">
+                    <span>/</span>
+                    <input id="insp1_m" type="text" style="border: none; border-bottom: 1px solid #000; width: 20px; text-align: center; font-size: 10px;" placeholder="__">
+                    <span>/</span>
+                    <input id="insp1_y" type="text" style="border: none; border-bottom: 1px solid #000; width: 40px; text-align: center; font-size: 10px;" placeholder="____">
+                </div>
+                <div style="width: 33.33%; padding: 8px; text-align: center; font-size: 10px; font-weight: bold; border-right: 2px solid #cccccc;">
+                    <span>INSPEÇÃO: </span>
+                    <input id="eng_d" type="text" style="border: none; border-bottom: 1px solid #000; width: 20px; text-align: center; font-size: 10px;" placeholder="__">
+                    <span>/</span>
+                    <input id="eng_m" type="text" style="border: none; border-bottom: 1px solid #000; width: 20px; text-align: center; font-size: 10px;" placeholder="__">
+                    <span>/</span>
+                    <input id="eng_y" type="text" style="border: none; border-bottom: 1px solid #000; width: 40px; text-align: center; font-size: 10px;" placeholder="____">
+                </div>
+                <div style="width: 33.33%; padding: 8px; text-align: center; font-size: 10px; font-weight: bold;">
+                    <span>INSPEÇÃO: </span>
+                    <input id="insp2_d" type="text" style="border: none; border-bottom: 1px solid #000; width: 20px; text-align: center; font-size: 10px;" placeholder="__">
+                    <span>/</span>
+                    <input id="insp2_m" type="text" style="border: none; border-bottom: 1px solid #000; width: 20px; text-align: center; font-size: 10px;" placeholder="__">
+                    <span>/</span>
+                    <input id="insp2_y" type="text" style="border: none; border-bottom: 1px solid #000; width: 40px; text-align: center; font-size: 10px;" placeholder="____">
+                </div>
+            </div>
+
+                         <!-- Signature Row -->
+             <div style="display: flex;">
+                 <div id="assinatura_coluna1" style="width: 33.33%; padding: 15px; text-align: center; font-size: 11px; font-weight: bold; border-right: 2px solid #cccccc; background: #6c757d; color: white; cursor: pointer;" onclick="preencherAssinatura(this)">
+                     <div id="nome_coluna1" style="margin-bottom: 25px;">{{ rnc.signature_inspection_name or 'NOME' }}</div>
+                     <div style="border-top: 1px solid #6c757d; padding-top: 8px;">VISTO</div>
+                 </div>
+                 <div id="assinatura_coluna2" style="width: 33.33%; padding: 15px; text-align: center; font-size: 11px; font-weight: bold; border-right: 2px solid #cccccc; cursor: pointer;" onclick="preencherAssinatura(this)">
+                     <div id="nome_coluna2" style="margin-bottom: 25px;">{{ rnc.signature_engineering_name or 'NOME' }}</div>
+                     <div style="border-top: 1px solid #6c757d; padding-top: 8px;">VISTO</div>
+                 </div>
+                 <div id="assinatura_coluna3" style="width: 33.33%; padding: 15px; text-align: center; font-size: 11px; font-weight: bold; cursor: pointer;" onclick="preencherAssinatura(this)">
+                     <div id="nome_coluna3" style="margin-bottom: 25px;">{{ rnc.signature_inspection2_name or 'NOME' }}</div>
+                     <div style="border-top: 1px solid #6c757d; padding-top: 8px;">VISTO</div>
+                 </div>
+             </div>
+        </div>
+    </div>
+
+    <!-- Barra de ações moderna -->
+    <div class="action-bar">
+        <button class="action-btn dashboard-btn" title="Voltar ao Dashboard" onclick="window.location.href='/dashboard'">
+            🏠
+            <span class="label">Dashboard</span>
+        </button>
+        <button class="action-btn save-btn" title="Salvar Alterações" onclick="salvarAlteracoes()">
+            💾
+            <span class="label">Salvar</span>
+        </button>
+    </div>
+</div>
+
+<script>
+        console.log('🔧 Script carregado - verificando funções...');
+        
+        // Cache do usuário atual para uso em assinaturas
+        let __CURRENT_USER_NAME = null;
+        let __CURRENT_USER_DEPT = null;
+        
+        // Função para mostrar notificações
+        function mostrarNotificacao(mensagem, tipo = 'success') {
+            console.log('📢 Notificação:', mensagem, tipo);
+            const notificacao = document.createElement('div');
+            
+            let background, shadow;
+            if (tipo === 'error') {
+                background = 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)';
+                shadow = 'rgba(220, 53, 69, 0.3)';
+            } else {
+                background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
+                shadow = 'rgba(40, 167, 69, 0.3)';
+            }
+            
+            notificacao.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${background};
+                color: white;
+                padding: 12px 20px;
+                border-radius: 8px;
+                box-shadow: 0 4px 15px ${shadow};
+                z-index: 3000;
+                animation: slideInRight 0.3s ease-out;
+                font-size: 14px;
+                font-weight: 500;
+            `;
+            
+            notificacao.textContent = mensagem;
+            document.body.appendChild(notificacao);
+            
+            setTimeout(() => {
+                notificacao.style.animation = 'slideOutRight 0.3s ease-in';
+                setTimeout(() => {
+                    if (document.body.contains(notificacao)) {
+                        document.body.removeChild(notificacao);
+                    }
+                }, 300);
+            }, 3000);
+        }
+
+        // Função para verificar se há pelo menos uma assinatura
+        function verificarAssinaturas() {
+            console.log('🔍 Verificando assinaturas...');
+            const assinaturas = [
+                document.getElementById('nome_coluna1')?.textContent || '',
+                document.getElementById('nome_coluna2')?.textContent || '',
+                document.getElementById('nome_coluna3')?.textContent || ''
+            ];
+            
+            console.log('📝 Assinaturas encontradas:', assinaturas);
+            return assinaturas.some(assinatura => assinatura && assinatura !== 'NOME' && assinatura.trim() !== '');
+        }
+
+        // Função para preencher assinatura automaticamente
+        function preencherAssinatura(elemento) {
+            console.log('✍️ Preenchendo assinatura...');
+            const nomeElement = elemento.querySelector('div[id^="nome_coluna"]');
+            // Se já existe assinatura, não permitir remover (travado)
+            if (nomeElement && nomeElement.textContent && nomeElement.textContent.trim() !== '' && nomeElement.textContent !== 'NOME') {
+                mostrarNotificacao('Assinatura já registrada.');
+                return;
+            }
+            
+            fetch('/api/user/info')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const nomeUsuario = data.user.name;
+                        const departamento = data.user.department;
+                        
+                        if (nomeElement) {
+                            nomeElement.textContent = `${nomeUsuario} (${departamento})`;
+                            
+                            elemento.style.transform = 'scale(1.02)';
+                            elemento.style.transition = 'transform 0.2s ease';
+                            
+                            setTimeout(() => {
+                                elemento.style.transform = 'scale(1)';
+                            }, 200);
+                            
+                            mostrarNotificacao('✅ Assinatura preenchida automaticamente!');
+                            // Preencher data correspondente e travar inputs
+                            const hoje = new Date();
+                            const d = String(hoje.getDate()).padStart(2,'0');
+                            const m = String(hoje.getMonth()+1).padStart(2,'0');
+                            const y = String(hoje.getFullYear());
+                            if (elemento.id === 'assinatura_coluna1') {
+                                setDateInputs('insp1', d, m, y);
+                            } else if (elemento.id === 'assinatura_coluna2') {
+                                setDateInputs('eng', d, m, y);
+                            } else if (elemento.id === 'assinatura_coluna3') {
+                                setDateInputs('insp2', d, m, y);
+                            }
+                        }
+                    } else {
+                        mostrarNotificacao('❌ Erro: Usuário não autenticado', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao buscar informações do usuário:', error);
+                    mostrarNotificacao('❌ Erro ao preencher assinatura', 'error');
+                });
+        }
+
+        function setDateInputs(prefix, d, m, y) {
+            const di = document.getElementById(prefix + '_d');
+            const mi = document.getElementById(prefix + '_m');
+            const yi = document.getElementById(prefix + '_y');
+            if (di && mi && yi) {
+                di.value = d; mi.value = m; yi.value = y;
+                di.readOnly = true; mi.readOnly = true; yi.readOnly = true;
+                di.style.pointerEvents='none'; mi.style.pointerEvents='none'; yi.style.pointerEvents='none';
+            }
+        }
+
+        // Função para salvar alterações
+        function salvarAlteracoes() {
+            console.log('💾 Função salvarAlteracoes chamada!');
+            
+            // Verificar se há pelo menos uma assinatura
+            if (!verificarAssinaturas()) {
+                mostrarNotificacao('❌ É obrigatório preencher pelo menos uma assinatura!', 'error');
+                return;
+            }
+
+            // Normalizar: se data foi preenchida e nome ficou 'NOME', completar com usuário atual
+            (function normalizeSignatures(){
+                const s = [
+                    {prefix:'insp1', id:'nome_coluna1'},
+                    {prefix:'eng', id:'nome_coluna2'},
+                    {prefix:'insp2', id:'nome_coluna3'}
+                ];
+                s.forEach(({prefix,id})=>{
+                    const nameEl = document.getElementById(id);
+                    const di = document.getElementById(prefix+'_d');
+                    const mi = document.getElementById(prefix+'_m');
+                    const yi = document.getElementById(prefix+'_y');
+                    const dateFilled = (di?.value||'')!=='' || (mi?.value||'')!=='' || (yi?.value||'')!=='';
+                    const hasName = nameEl && nameEl.textContent && nameEl.textContent.trim()!=='' && nameEl.textContent!=='NOME';
+                    if (dateFilled && !hasName) {
+                        if (nameEl && __CURRENT_USER_NAME) {
+                            nameEl.textContent = __CURRENT_USER_NAME + (__CURRENT_USER_DEPT ? ' ('+__CURRENT_USER_DEPT+')' : '');
+                        }
+                    }
+                });
+            })();
+
+            const formData = {
+                title: document.getElementById('title')?.value ?? {{ (rnc.title or "") | tojson }},
+                description: document.getElementById('description')?.value ?? {{ (rnc.description or "") | tojson }},
+                equipment: document.getElementById('equipment')?.value ?? {{ (rnc.equipment or "") | tojson }},
+                client: document.getElementById('client')?.value ?? {{ (rnc.client or "") | tojson }},
+                rnc_number: document.getElementById('rnc_number')?.value || {{ rnc.rnc_number | tojson }},
+                signature_inspection_name: document.getElementById('nome_coluna1').textContent,
+                signature_engineering_name: document.getElementById('nome_coluna2').textContent,
+                signature_inspection2_name: document.getElementById('nome_coluna3').textContent,
+                status: (IS_REPLY ? 'Pendente' : undefined),
+                // Disposição
+                disposition_usar: document.getElementById('usar')?.checked || false,
+                disposition_retrabalhar: document.getElementById('retrabalhar')?.checked || false,
+                disposition_rejeitar: document.getElementById('rejeitar')?.checked || false,
+                disposition_sucata: document.getElementById('sucata')?.checked || false,
+                disposition_devolver_estoque: document.getElementById('devolver_estoque')?.checked || false,
+                disposition_devolver_fornecedor: document.getElementById('devolver_fornecedor')?.checked || false,
+                // Inspeção retrabalho
+                inspection_aprovado: document.getElementById('aprovado')?.checked || false,
+                inspection_reprovado: document.getElementById('reprovado')?.checked || false,
+                inspection_ver_rnc: document.getElementById('ver_rnc_input')?.value || '',
+                // Datas de assinatura (concatenadas dd/mm/aaaa)
+                signature_inspection_date: [document.getElementById('insp1_d')?.value||'', document.getElementById('insp1_m')?.value||'', document.getElementById('insp1_y')?.value||''].join('/'),
+                signature_engineering_date: [document.getElementById('eng_d')?.value||'', document.getElementById('eng_m')?.value||'', document.getElementById('eng_y')?.value||''].join('/'),
+                signature_inspection2_date: [document.getElementById('insp2_d')?.value||'', document.getElementById('insp2_m')?.value||'', document.getElementById('insp2_y')?.value||''].join('/'),
+                // Seções textuais
+                instruction_retrabalho: document.getElementById('instruction_retrabalho')?.value || '',
+                cause_rnc: document.getElementById('cause_rnc')?.value || '',
+                action_rnc: document.getElementById('action_rnc')?.value || ''
+            };
+
+            console.log('📤 Enviando dados:', formData);
+
+            fetch('/api/rnc/{{ rnc.id }}/update', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    try { localStorage.removeItem('dashboardCacheV1'); } catch(e){}
+                    mostrarNotificacao('✅ Alterações salvas com sucesso!');
+                    setTimeout(() => {
+                        const ts = Date.now();
+                        window.location.href = '/rnc/{{ rnc.id }}?_t=' + ts;
+                    }, 1000);
+                } else {
+                    mostrarNotificacao('❌ Erro ao salvar alterações: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao salvar:', error);
+                mostrarNotificacao('❌ Erro ao salvar alterações', 'error');
+            });
+        }
+
+        // Carregar informações do usuário quando a página carregar
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 DOM carregado - inicializando...');
+            
+            try {
+                fetch('/api/user/info', { credentials: 'include' })
+                    .then(r => r.json())
+                    .then(d => {
+                        if (d && d.success && d.user) {
+                            __CURRENT_USER_NAME = d.user.name || null;
+                            __CURRENT_USER_DEPT = d.user.department || null;
+                            console.log('👤 Usuário carregado:', __CURRENT_USER_NAME, __CURRENT_USER_DEPT);
+                        }
+                    })
+                    .catch(() => {});
+            } catch(_) {}
+
+            // Auto-resize textareas
+            document.querySelectorAll('textarea').forEach(textarea => {
+                textarea.addEventListener('input', function() {
+                    this.style.height = 'auto';
+                    this.style.height = this.scrollHeight + 'px';
+                });
+            });
+
+            // Preencher data de emissão automaticamente
+            const dataEmissao = document.getElementById('data_emissao');
+            if (dataEmissao && !dataEmissao.value) {
+                const hoje = new Date();
+                const dia = hoje.getDate().toString().padStart(2, '0');
+                const mes = (hoje.getMonth() + 1).toString().padStart(2, '0');
+                const ano = hoje.getFullYear();
+                dataEmissao.value = `${dia}/${mes}/${ano}`;
+            }
+            
+            console.log('✅ Inicialização concluída!');
+            console.log('🔍 Funções disponíveis:', {
+                'salvarAlteracoes': typeof salvarAlteracoes,
+                'verificarAssinaturas': typeof verificarAssinaturas,
+                'mostrarNotificacao': typeof mostrarNotificacao,
+                'preencherAssinatura': typeof preencherAssinatura
+            });
+        });
+
+        // Animações CSS
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideInRight {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOutRight {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        console.log('🔧 Script carregado completamente!');
+    </script>
+</body>
+</html> 

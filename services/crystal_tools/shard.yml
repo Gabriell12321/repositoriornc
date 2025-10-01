@@ -1,0 +1,16 @@
+name: crystal_tools
+version: 0.1.0
+license: MIT
+
+authors:
+  - IPPEL <dev@ippel.local>
+
+targets:
+  crystal_tools:
+    main: src/server.cr
+
+dependencies:
+  kemal:
+    github: kemalcr/kemal
+
+crystal: ">= 1.8.0"

@@ -1,0 +1,2 @@
+This project expects gradle/wrapper/gradle-wrapper.jar. If it's missing, gradlew.bat will try to download version 8.9 automatically.
+If download is blocked, install Gradle and run 'gradle wrapper' to regenerate the wrapper files.

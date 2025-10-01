@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório RNC por Operador - IPPEL</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: white;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #333;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .logo {
+            width: 120px;
+            height: auto;
+        }
+        
+        .title-section {
+            text-align: center;
+            flex-grow: 1;
+        }
+        
+        .main-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .date-info {
+            font-size: 16px;
+            color: #666;
+        }
+        
+        .generated-info {
+            text-align: right;
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-bottom: 20px;
+        }
+        
+        .department-section {
+            margin-bottom: 30px;
+        }
+        
+        .department-header {
+            background: #f0f0f0;
+            padding: 10px 15px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .department-name {
+            color: #333;
+        }
+        
+        .department-total {
+            color: #333;
+            font-weight: bold;
+        }
+        
+        .department-subtotal {
+            margin-left: 20px;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .employee-list {
+            margin-left: 40px;
+        }
+        
+        .employee-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 0;
+        }
+        
+        .employee-name {
+            color: #333;
+            font-size: 14px;
+        }
+        
+        .employee-value {
+            color: #333;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .section-divider {
+            height: 1px;
+            background: #333;
+            margin: 20px 0;
+            width: 100%;
+        }
+        
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+            text-align: center;
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+        
+        .page-break {
+            page-break-before: always;
+        }
+        
+        @media print {
+            .no-print {
+                display: none;
+            }
+            
+            body {
+                font-size: 11px;
+            }
+            
+            .main-title {
+                font-size: 20px;
+            }
+            
+            .department-header {
+                font-size: 14px;
+                padding: 8px 12px;
+            }
+            
+            .employee-item {
+                font-size: 12px;
+            }
+        }
+        
+        .print-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            z-index: 1000;
+        }
+        
+        .print-button:hover {
+            background: #2980b9;
+        }
+        
+        .back-button {
+            position: fixed;
+            top: 20px;
+            right: 120px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            z-index: 1000;
+        }
+        
+        .back-button:hover {
+            background: #5a6268;
+        }
+        
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <button class="print-button no-print" onclick="window.print()">🖨️ Imprimir</button>
+    <button class="back-button no-print" onclick="window.location.href='/reports/menu'">📊 Novo Relatório</button>
+    
+    <div class="header">
+        <img src="/IPPELLOGO.jpg" alt="IPPEL Logo" class="logo">
+        <div class="title-section">
+            <h1 class="main-title">RELATÓRIO RNC POR DATA</h1>
+            <p class="date-info">{{ start_date.split('-')[1] }}/{{ start_date.split('-')[0] }}</p>
+        </div>
+    </div>
+    
+    <div class="generated-info">
+        <p>Gerado em: {{ generated_at.strftime('%d/%m/%Y às %H:%M') }}</p>
+        <p>Período: {{ start_date }} a {{ end_date }}</p>
+        <p>Total de RNCs: {{ stats.total_rncs }}</p>
+    </div>
+    
+    {# Organizar todos os RNCs por departamento e funcionário #}
+    {% set departments = {} %}
+    
+    {# Processar todos os RNCs #}
+    {% for rnc in rncs %}
+        {% set dept = rnc.department or 'Sem Departamento' %}
+        {% set employee = rnc.responsavel or 'Sistema' %}
+        {% set value = rnc.price|float if rnc.price else 0 %}
+        
+        {# Inicializar departamento se não existir #}
+        {% if dept not in departments %}
+            {% set _ = departments.update({dept: {'employees': {}, 'total': 0}}) %}
+        {% endif %}
+        
+        {# Adicionar funcionário se não existir #}
+        {% if employee not in departments[dept]['employees'] %}
+            {% set _ = departments[dept]['employees'].update({employee: 0}) %}
+        {% endif %}
+        
+        {# Somar valor #}
+        {% set _ = departments[dept]['employees'].update({employee: departments[dept]['employees'][employee] + value}) %}
+        {% set _ = departments[dept].update({'total': departments[dept]['total'] + value}) %}
+    {% endfor %}
+    
+    {# Renderizar por departamento #}
+    {% for dept_name, dept_data in departments.items() %}
+        <div class="department-section">
+            <div class="department-header">
+                <span class="department-name">{{ dept_name }}</span>
+                <span class="department-total">R$ {{ "%.2f"|format(dept_data.total) }}</span>
+            </div>
+            <div class="department-subtotal">
+                R$ {{ "%.2f"|format(dept_data.total) }}
+            </div>
+            <div class="employee-list">
+                {% for employee_name, employee_value in dept_data.employees.items() %}
+                    <div class="employee-item">
+                        <span class="employee-name">{{ employee_name }}</span>
+                        <span class="employee-value">R$ {{ "%.2f"|format(employee_value) }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        {% if not loop.last %}
+            <div class="section-divider"></div>
+        {% endif %}
+    {% endfor %}
+    
+    {% if not departments %}
+        <div class="no-data">
+            <h3>Nenhum RNC encontrado</h3>
+            <p>Não há RNCs no período selecionado.</p>
+        </div>
+    {% endif %}
+    
+    <div class="footer">
+        <p>IPPEL - Sistema de Relatórios de Não Conformidade</p>
+        <p>Relatório gerado automaticamente pelo sistema</p>
+        <p>Página 1 de 1</p>
+    </div>
+</body>
+</html>

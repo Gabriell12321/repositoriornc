@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório de RNCs Finalizados - IPPEL</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: white;
+        }
+        
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #2c3e50;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .logo {
+            width: 120px;
+            height: auto;
+            margin-bottom: 10px;
+        }
+        
+        .title {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 16px;
+            color: #7f8c8d;
+            margin-bottom: 5px;
+        }
+        
+        .generated-info {
+            text-align: right;
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-bottom: 20px;
+        }
+        
+        .stats-section {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+        
+        .section-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 5px;
+        }
+        
+        .rnc-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+            font-size: 12px;
+        }
+        
+        .rnc-table th {
+            background: #2c3e50;
+            color: white;
+            padding: 12px 8px;
+            text-align: left;
+            font-weight: bold;
+        }
+        
+        .rnc-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #dee2e6;
+            vertical-align: top;
+        }
+        
+        .rnc-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        
+        .rnc-table tr:hover {
+            background: #e9ecef;
+        }
+        
+        .priority-high {
+            background: #dc3545;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+        
+        .priority-medium {
+            background: #ffc107;
+            color: #212529;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+        
+        .priority-low {
+            background: #28a745;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+        
+        .department-badge {
+            background: #6c757d;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+        }
+        
+        .price {
+            font-weight: bold;
+            color: #28a745;
+        }
+        
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+            text-align: center;
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+        
+        .page-break {
+            page-break-before: always;
+        }
+        
+        @media print {
+            .no-print {
+                display: none;
+            }
+            
+            body {
+                font-size: 11px;
+            }
+            
+            .rnc-table {
+                font-size: 10px;
+            }
+            
+            .rnc-table th,
+            .rnc-table td {
+                padding: 6px 4px;
+            }
+        }
+        
+        .print-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            z-index: 1000;
+        }
+        
+        .print-button:hover {
+            background: #2980b9;
+        }
+        
+        .back-button {
+            position: fixed;
+            top: 20px;
+            right: 120px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            z-index: 1000;
+        }
+        
+        .back-button:hover {
+            background: #5a6268;
+        }
+    </style>
+</head>
+<body>
+    <button class="print-button no-print" onclick="window.print()">🖨️ Imprimir</button>
+    <button class="back-button no-print" onclick="window.location.href='/reports/generate'">📅 Novo Período</button>
+    
+    <div class="header">
+        <img src="/IPPELLOGO.jpg" alt="IPPEL Logo" class="logo">
+        <h1 class="title">Relatório de RNCs Finalizados</h1>
+        <p class="subtitle">Sistema de Relatórios de Não Conformidade</p>
+        <p class="subtitle">IPPEL - Indústria de Produtos Plásticos</p>
+    </div>
+    
+    <div class="generated-info">
+        <p>Gerado em: {{ generated_at.strftime('%d/%m/%Y às %H:%M') }}</p>
+        <p>Período: {{ start_date }} a {{ end_date }}</p>
+        <p>Total de RNCs Finalizados: {{ stats.total_finalized }}</p>
+    </div>
+    
+    <div class="stats-section">
+        <h2 class="section-title">📊 Resumo Estatístico</h2>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">{{ stats.total_finalized }}</div>
+                <div class="stat-label">Total Finalizados</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-number">R$ {{ "%.2f"|format(stats.total_value) }}</div>
+                <div class="stat-label">Valor Total</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-number">{{ stats.by_department|length }}</div>
+                <div class="stat-label">Departamentos</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-number">{{ stats.by_priority|length }}</div>
+                <div class="stat-label">Níveis de Prioridade</div>
+            </div>
+        </div>
+        
+        {% if stats.by_department %}
+        <h3>Por Departamento:</h3>
+        <ul style="list-style: none; padding: 0;">
+            {% for dept, count in stats.by_department.items() %}
+            <li style="display: inline-block; margin: 5px 10px; padding: 5px 10px; background: #e9ecef; border-radius: 3px;">
+                <strong>{{ dept or 'Não informado' }}</strong>: {{ count }} RNCs
+            </li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        
+        {% if stats.by_priority %}
+        <h3>Por Prioridade:</h3>
+        <ul style="list-style: none; padding: 0;">
+            {% for priority, count in stats.by_priority.items() %}
+            <li style="display: inline-block; margin: 5px 10px; padding: 5px 10px; background: #e9ecef; border-radius: 3px;">
+                <strong>{{ priority or 'Não informado' }}</strong>: {{ count }} RNCs
+            </li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    </div>
+    
+    <div class="section-title">📋 Lista de RNCs Finalizados</div>
+    
+    {% if rncs %}
+    <table class="rnc-table">
+        <thead>
+            <tr>
+                <th>Nº RNC</th>
+                <th>Título</th>
+                <th>Cliente</th>
+                <th>Equipamento</th>
+                <th>Prioridade</th>
+                <th>Departamento</th>
+                <th>Criado por</th>
+                <th>Data Finalização</th>
+                <th>Valor (R$)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for rnc in rncs %}
+            <tr>
+                <td><strong>{{ rnc.rnc_number or rnc.id }}</strong></td>
+                <td>{{ rnc.title or 'Sem título' }}</td>
+                <td>{{ rnc.client or 'Não informado' }}</td>
+                <td>{{ rnc.equipment or 'Não informado' }}</td>
+                <td>
+                    {% if rnc.priority == 'Alta' %}
+                        <span class="priority-high">ALTA</span>
+                    {% elif rnc.priority == 'Média' %}
+                        <span class="priority-medium">MÉDIA</span>
+                    {% elif rnc.priority == 'Baixa' %}
+                        <span class="priority-low">BAIXA</span>
+                    {% else %}
+                        <span class="priority-medium">{{ rnc.priority or 'N/A' }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="department-badge">{{ rnc.creator_department or 'Não informado' }}</span>
+                </td>
+                <td>{{ rnc.creator_name or 'Sistema' }}</td>
+                <td>{{ rnc.finalized_at.split(' ')[0] if rnc.finalized_at else 'N/A' }}</td>
+                <td class="price">{{ "%.2f"|format(rnc.price|float) if rnc.price else '0.00' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div style="text-align: center; padding: 40px; background: #f8f9fa; border-radius: 8px;">
+        <h3>Nenhum RNC Finalizado Encontrado</h3>
+        <p>Não há RNCs com status "Finalizado" no sistema.</p>
+    </div>
+    {% endif %}
+    
+    <div class="footer">
+        <p>IPPEL - Sistema de Relatórios de Não Conformidade</p>
+        <p>Relatório gerado automaticamente pelo sistema</p>
+        <p>Página 1 de 1</p>
+    </div>
+</body>
+</html>
