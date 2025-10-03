@@ -2,6 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts'
 import { TrendUp, TrendDown, Users, Calculator, CurrencyDollar, FileText } from '@phosphor-icons/react'
 import { ErrorBoundary } from './ErrorBoundary'
+import ChartWrapper from './ChartWrapper'
 
 const monthlyRevenue = [
   { month: 'Jan', value: 65000 },
@@ -55,13 +56,6 @@ const kpiData = [
 ]
 
 export default function DashboardHome() {
-  // Add a safety check for the charts
-  const isClient = typeof window !== 'undefined'
-  
-  if (!isClient) {
-    return <div>Loading...</div>
-  }
-
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -113,36 +107,43 @@ export default function DashboardHome() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="w-full h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
+              <ChartWrapper>
+                <ResponsiveContainer width="100%" height={300}>
                   <LineChart data={monthlyRevenue} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                     <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                     <XAxis 
                       dataKey="month" 
-                      tick={{ fontSize: 12 }}
+                      tick={{ fontSize: 12, fill: '#6b7280' }}
                       axisLine={{ stroke: '#e5e7eb' }}
+                      tickLine={{ stroke: '#e5e7eb' }}
                     />
                     <YAxis 
-                      tick={{ fontSize: 12 }}
+                      tick={{ fontSize: 12, fill: '#6b7280' }}
                       axisLine={{ stroke: '#e5e7eb' }}
+                      tickLine={{ stroke: '#e5e7eb' }}
                       tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`}
                     />
                     <Tooltip 
                       formatter={(value: number) => [`R$ ${value.toLocaleString()}`, 'Receita']}
                       labelStyle={{ color: '#374151' }}
-                      contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}
+                      contentStyle={{ 
+                        backgroundColor: '#ffffff', 
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                      }}
                     />
                     <Line 
                       type="monotone" 
                       dataKey="value" 
                       stroke="#d42c2c" 
-                      strokeWidth={2}
-                      dot={{ fill: '#d42c2c', strokeWidth: 2, r: 3 }}
-                      activeDot={{ r: 5, stroke: '#d42c2c', strokeWidth: 2, fill: '#ffffff' }}
+                      strokeWidth={3}
+                      dot={{ fill: '#d42c2c', strokeWidth: 2, r: 4 }}
+                      activeDot={{ r: 6, stroke: '#d42c2c', strokeWidth: 2, fill: '#ffffff' }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
-              </div>
+              </ChartWrapper>
             </CardContent>
           </Card>
         </ErrorBoundary>
@@ -157,29 +158,40 @@ export default function DashboardHome() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="w-full h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
+              <ChartWrapper>
+                <ResponsiveContainer width="100%" height={300}>
                   <PieChart margin={{ top: 20, right: 20, left: 20, bottom: 20 }}>
                     <Pie
                       data={clientsByService}
                       cx="50%"
                       cy="50%"
-                      outerRadius={80}
+                      outerRadius={90}
+                      innerRadius={30}
                       dataKey="value"
                       label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                       labelLine={false}
                     >
                       {clientsByService.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} stroke="#ffffff" strokeWidth={2} />
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={entry.color} 
+                          stroke="#ffffff" 
+                          strokeWidth={2}
+                        />
                       ))}
                     </Pie>
                     <Tooltip 
                       formatter={(value: number) => [value, 'Clientes']}
-                      contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}
+                      contentStyle={{ 
+                        backgroundColor: '#ffffff', 
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                      }}
                     />
                   </PieChart>
                 </ResponsiveContainer>
-              </div>
+              </ChartWrapper>
             </CardContent>
           </Card>
         </ErrorBoundary>

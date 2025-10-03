@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import LoginForm from './components/LoginForm'
 import Dashboard from './components/Dashboard'
 import { FullPageLoading } from './components/LoadingSpinner'
+import RateLimitDetector from './components/RateLimitDetector'
 import { useKV } from '@github/spark/hooks'
 
 function App() {
@@ -29,31 +30,33 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen">
-      <AnimatePresence mode="wait">
-        {!currentUser ? (
-          <motion.div
-            key="login"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-          >
-            <LoginForm onLogin={handleLogin} />
-          </motion.div>
-        ) : (
-          <motion.div
-            key="dashboard"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3 }}
-          >
-            <Dashboard user={currentUser} onLogout={handleLogout} />
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+    <RateLimitDetector>
+      <div className="min-h-screen">
+        <AnimatePresence mode="wait">
+          {!currentUser ? (
+            <motion.div
+              key="login"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <LoginForm onLogin={handleLogin} />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="dashboard"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Dashboard user={currentUser} onLogout={handleLogout} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </RateLimitDetector>
   )
 }
 
