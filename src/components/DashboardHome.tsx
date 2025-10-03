@@ -55,6 +55,13 @@ const kpiData = [
 ]
 
 export default function DashboardHome() {
+  // Add a safety check for the charts
+  const isClient = typeof window !== 'undefined'
+  
+  if (!isClient) {
+    return <div>Loading...</div>
+  }
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -106,34 +113,36 @@ export default function DashboardHome() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={monthlyRevenue} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                  <XAxis 
-                    dataKey="month" 
-                    tick={{ fontSize: 12 }}
-                    axisLine={{ stroke: '#e5e7eb' }}
-                  />
-                  <YAxis 
-                    tick={{ fontSize: 12 }}
-                    axisLine={{ stroke: '#e5e7eb' }}
-                    tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`}
-                  />
-                  <Tooltip 
-                    formatter={(value: number) => [`R$ ${value.toLocaleString()}`, 'Receita']}
-                    labelStyle={{ color: '#374151' }}
-                    contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="value" 
-                    stroke="#d42c2c" 
-                    strokeWidth={3}
-                    dot={{ fill: '#d42c2c', strokeWidth: 2, r: 4 }}
-                    activeDot={{ r: 6, stroke: '#d42c2c', strokeWidth: 2, fill: '#ffffff' }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              <div className="w-full h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={monthlyRevenue} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                    <XAxis 
+                      dataKey="month" 
+                      tick={{ fontSize: 12 }}
+                      axisLine={{ stroke: '#e5e7eb' }}
+                    />
+                    <YAxis 
+                      tick={{ fontSize: 12 }}
+                      axisLine={{ stroke: '#e5e7eb' }}
+                      tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`}
+                    />
+                    <Tooltip 
+                      formatter={(value: number) => [`R$ ${value.toLocaleString()}`, 'Receita']}
+                      labelStyle={{ color: '#374151' }}
+                      contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="value" 
+                      stroke="#d42c2c" 
+                      strokeWidth={2}
+                      dot={{ fill: '#d42c2c', strokeWidth: 2, r: 3 }}
+                      activeDot={{ r: 5, stroke: '#d42c2c', strokeWidth: 2, fill: '#ffffff' }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
             </CardContent>
           </Card>
         </ErrorBoundary>
@@ -148,27 +157,29 @@ export default function DashboardHome() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
-                  <Pie
-                    data={clientsByService}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={100}
-                    dataKey="value"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    labelLine={false}
-                  >
-                    {clientsByService.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} stroke="#ffffff" strokeWidth={2} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    formatter={(value: number) => [value, 'Clientes']}
-                    contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+              <div className="w-full h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart margin={{ top: 20, right: 20, left: 20, bottom: 20 }}>
+                    <Pie
+                      data={clientsByService}
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      dataKey="value"
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      labelLine={false}
+                    >
+                      {clientsByService.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} stroke="#ffffff" strokeWidth={2} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      formatter={(value: number) => [value, 'Clientes']}
+                      contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
             </CardContent>
           </Card>
         </ErrorBoundary>
