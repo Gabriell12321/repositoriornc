@@ -69,21 +69,23 @@ export default function LoginInterface() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1 text-center">
-          <div className="flex items-center justify-center mb-4">
-            <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
-              <Building size={28} className="text-primary-foreground" />
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-primary/5 flex items-center justify-center p-4">
+      <Card className="w-full max-w-lg shadow-2xl border-0 bg-gradient-to-br from-card/95 to-card/90 backdrop-blur-sm">
+        <CardHeader className="space-y-4 text-center pb-8">
+          <div className="flex items-center justify-center mb-6">
+            <div className="w-16 h-16 bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform duration-300">
+              <Building size={32} className="text-primary-foreground" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">4M Contabilidade</CardTitle>
-          <p className="text-muted-foreground">Entre com suas credenciais</p>
+          <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            4M Contabilidade
+          </CardTitle>
+          <p className="text-lg text-muted-foreground">Entre com suas credenciais</p>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="username">Usuário</Label>
+        <CardContent className="px-8 pb-8">
+          <form onSubmit={handleLogin} className="space-y-6">
+            <div className="space-y-3">
+              <Label htmlFor="username" className="text-sm font-semibold text-foreground">Usuário</Label>
               <Input
                 id="username"
                 type="text"
@@ -91,10 +93,11 @@ export default function LoginInterface() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
+                className="h-12 text-base border-2 focus:border-primary transition-all duration-300 bg-background/50"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
+            <div className="space-y-3">
+              <Label htmlFor="password" className="text-sm font-semibold text-foreground">Senha</Label>
               <Input
                 id="password"
                 type="password"
@@ -102,11 +105,12 @@ export default function LoginInterface() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                className="h-12 text-base border-2 focus:border-primary transition-all duration-300 bg-background/50"
               />
             </div>
             <Button 
               type="submit" 
-              className="w-full" 
+              className="w-full h-12 text-base font-semibold bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]" 
               disabled={isLoading}
             >
               {isLoading ? 'Entrando...' : 'Entrar'}
@@ -115,15 +119,15 @@ export default function LoginInterface() {
           
           {/* Debug info */}
           {users && users.length > 0 && (
-            <div className="mt-4 p-3 bg-muted rounded-lg">
-              <p className="text-xs text-muted-foreground mb-2">
+            <div className="mt-6 p-4 bg-secondary/50 rounded-xl border border-border/30">
+              <p className="text-sm text-muted-foreground mb-3 font-medium">
                 <strong>Usuários disponíveis:</strong>
               </p>
-              <div className="space-y-1">
+              <div className="space-y-2">
                 {users.map(user => (
-                  <div key={user.id} className="text-xs">
-                    <strong>{user.username}</strong> - {user.name} ({user.role}) 
-                    {user.username === 'elvio' && <span className="text-green-600"> - Admin disponível</span>}
+                  <div key={user.id} className="text-sm bg-background/30 p-2 rounded-lg">
+                    <strong className="text-foreground">{user.username}</strong> - {user.name} ({user.role}) 
+                    {user.username === 'elvio' && <span className="text-emerald-600 font-semibold"> - Admin disponível</span>}
                   </div>
                 ))}
               </div>

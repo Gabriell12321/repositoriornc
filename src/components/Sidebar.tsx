@@ -43,29 +43,29 @@ const menuItems = [
 export default function Sidebar({ activeModule, onModuleChange, user, onLogout }: SidebarProps) {
   return (
     <motion.div 
-      className="w-64 bg-card border-r border-border flex flex-col"
+      className="w-64 bg-gradient-to-b from-card via-card to-muted/10 backdrop-blur-sm border-r border-border/50 flex flex-col shadow-xl"
       initial={{ x: -100, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
     >
       {/* Header */}
       <motion.div 
-        className="p-6 border-b border-border"
+        className="p-6 border-b border-border/30"
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.4, delay: 0.1 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
       >
         <div className="flex items-center space-x-3">
           <motion.div 
-            className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center"
+            className="w-12 h-12 bg-gradient-to-br from-primary to-accent rounded-xl flex items-center justify-center shadow-lg"
             whileHover={{ scale: 1.05, rotate: 5 }}
             whileTap={{ scale: 0.95 }}
           >
-            <Building size={24} className="text-primary-foreground" />
+            <Building size={26} className="text-primary-foreground" />
           </motion.div>
           <div>
-            <h1 className="font-bold text-lg text-foreground">4M</h1>
-            <p className="text-xs text-muted-foreground">Contabilidade</p>
+            <h1 className="font-bold text-xl text-foreground bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">4M</h1>
+            <p className="text-sm text-muted-foreground font-medium">Contabilidade</p>
           </div>
         </div>
       </motion.div>
@@ -88,16 +88,19 @@ export default function Sidebar({ activeModule, onModuleChange, user, onLogout }
               >
                 <Button
                   variant={isActive ? "default" : "ghost"}
-                  className={`w-full justify-start text-left h-10 transition-all duration-200 ${
-                    isActive ? 'bg-primary text-primary-foreground shadow-md' : 'text-foreground hover:bg-secondary'
+                  className={`w-full justify-start text-left h-11 transition-all duration-300 group ${
+                    isActive 
+                      ? 'bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-lg transform scale-[1.02]' 
+                      : 'text-foreground hover:bg-secondary/70 hover:shadow-sm hover:transform hover:scale-[1.01]'
                   }`}
                   onClick={() => onModuleChange(item.id)}
                 >
                   <motion.div
                     animate={isActive ? { scale: 1.1 } : { scale: 1 }}
-                    transition={{ duration: 0.2 }}
+                    transition={{ duration: 0.3 }}
+                    className="group-hover:scale-110 transition-transform duration-200"
                   >
-                    <Icon size={18} className="mr-3" />
+                    <Icon size={20} className="mr-3" />
                   </motion.div>
                   <span className="text-sm font-medium">{item.label}</span>
                 </Button>

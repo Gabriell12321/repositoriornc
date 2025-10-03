@@ -57,11 +57,13 @@ const kpiData = [
 
 export default function DashboardHome() {
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-8 space-y-8 bg-gradient-to-br from-background via-background/95 to-muted/10 min-h-screen">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-muted-foreground">Visão geral dos indicadores da 4M Contabilidade</p>
+      <div className="space-y-2">
+        <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+          Dashboard
+        </h1>
+        <p className="text-lg text-muted-foreground">Visão geral dos indicadores da 4M Contabilidade</p>
       </div>
 
       {/* KPI Cards */}
@@ -69,22 +71,25 @@ export default function DashboardHome() {
         {kpiData.map((kpi, index) => {
           const Icon = kpi.icon
           return (
-            <Card key={index} className="relative overflow-hidden">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
+            <Card key={index} className="relative overflow-hidden group hover:shadow-2xl transition-all duration-500 hover:scale-[1.02]">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                <CardTitle className="text-sm font-semibold text-muted-foreground">
                   {kpi.title}
                 </CardTitle>
-                <Icon size={20} className="text-muted-foreground" />
+                <div className="p-2 rounded-lg bg-gradient-to-br from-primary/10 to-accent/10 group-hover:from-primary/20 group-hover:to-accent/20 transition-all duration-300">
+                  <Icon size={22} className="text-primary" />
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-foreground">{kpi.value}</div>
-                <div className="flex items-center text-xs">
+                <div className="text-3xl font-bold text-foreground mb-2">{kpi.value}</div>
+                <div className="flex items-center text-sm">
                   {kpi.trend === 'up' ? (
-                    <TrendUp size={16} className="text-green-600 mr-1" />
+                    <TrendUp size={18} className="text-emerald-600 mr-1" />
                   ) : (
-                    <TrendDown size={16} className="text-red-600 mr-1" />
+                    <TrendDown size={18} className="text-red-500 mr-1" />
                   )}
-                  <span className={kpi.trend === 'up' ? 'text-green-600' : 'text-red-600'}>
+                  <span className={`font-semibold ${kpi.trend === 'up' ? 'text-emerald-600' : 'text-red-500'}`}>
                     {kpi.change}
                   </span>
                   <span className="text-muted-foreground ml-1">{kpi.description}</span>
@@ -96,51 +101,67 @@ export default function DashboardHome() {
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Revenue Chart */}
         <ErrorBoundary>
-          <Card>
-            <CardHeader>
-              <CardTitle>Receita Mensal</CardTitle>
-              <CardDescription>
+          <Card className="hover:shadow-xl transition-all duration-500 group">
+            <CardHeader className="pb-6">
+              <CardTitle className="text-xl font-semibold text-foreground group-hover:text-primary transition-colors duration-300">
+                Receita Mensal
+              </CardTitle>
+              <CardDescription className="text-base">
                 Evolução da receita nos últimos 6 meses
               </CardDescription>
             </CardHeader>
             <CardContent>
               <ChartWrapper>
-                <ResponsiveContainer width="100%" height={300}>
+                <ResponsiveContainer width="100%" height={320}>
                   <LineChart data={monthlyRevenue} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                    <defs>
+                      <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#d42c2c" stopOpacity={0.1}/>
+                        <stop offset="95%" stopColor="#d42c2c" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" opacity={0.2} stroke="#e2e8f0" />
                     <XAxis 
                       dataKey="month" 
-                      tick={{ fontSize: 12, fill: '#6b7280' }}
-                      axisLine={{ stroke: '#e5e7eb' }}
-                      tickLine={{ stroke: '#e5e7eb' }}
+                      tick={{ fontSize: 13, fill: '#64748b', fontWeight: 500 }}
+                      axisLine={{ stroke: '#e2e8f0', strokeWidth: 1 }}
+                      tickLine={{ stroke: '#e2e8f0' }}
                     />
                     <YAxis 
-                      tick={{ fontSize: 12, fill: '#6b7280' }}
-                      axisLine={{ stroke: '#e5e7eb' }}
-                      tickLine={{ stroke: '#e5e7eb' }}
+                      tick={{ fontSize: 13, fill: '#64748b', fontWeight: 500 }}
+                      axisLine={{ stroke: '#e2e8f0', strokeWidth: 1 }}
+                      tickLine={{ stroke: '#e2e8f0' }}
                       tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`}
                     />
                     <Tooltip 
                       formatter={(value: number) => [`R$ ${value.toLocaleString()}`, 'Receita']}
-                      labelStyle={{ color: '#374151' }}
+                      labelStyle={{ color: '#1e293b', fontWeight: 600 }}
                       contentStyle={{ 
                         backgroundColor: '#ffffff', 
-                        border: '1px solid #e5e7eb',
-                        borderRadius: '8px',
-                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '12px',
+                        boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+                        padding: '12px'
                       }}
                     />
                     <Line 
                       type="monotone" 
                       dataKey="value" 
-                      stroke="#d42c2c" 
-                      strokeWidth={3}
-                      dot={{ fill: '#d42c2c', strokeWidth: 2, r: 4 }}
-                      activeDot={{ r: 6, stroke: '#d42c2c', strokeWidth: 2, fill: '#ffffff' }}
+                      stroke="url(#lineGradient)" 
+                      strokeWidth={4}
+                      dot={{ fill: '#d42c2c', strokeWidth: 3, r: 5 }}
+                      activeDot={{ r: 7, stroke: '#d42c2c', strokeWidth: 3, fill: '#ffffff' }}
+                      fill="url(#revenueGradient)"
                     />
+                    <defs>
+                      <linearGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="#d42c2c"/>
+                        <stop offset="100%" stopColor="#e84545"/>
+                      </linearGradient>
+                    </defs>
                   </LineChart>
                 </ResponsiveContainer>
               </ChartWrapper>
@@ -150,43 +171,47 @@ export default function DashboardHome() {
 
         {/* Service Distribution */}
         <ErrorBoundary>
-          <Card>
-            <CardHeader>
-              <CardTitle>Distribuição por Serviço</CardTitle>
-              <CardDescription>
+          <Card className="hover:shadow-xl transition-all duration-500 group">
+            <CardHeader className="pb-6">
+              <CardTitle className="text-xl font-semibold text-foreground group-hover:text-primary transition-colors duration-300">
+                Distribuição por Serviço
+              </CardTitle>
+              <CardDescription className="text-base">
                 Quantidade de clientes por tipo de serviço
               </CardDescription>
             </CardHeader>
             <CardContent>
               <ChartWrapper>
-                <ResponsiveContainer width="100%" height={300}>
+                <ResponsiveContainer width="100%" height={320}>
                   <PieChart margin={{ top: 20, right: 20, left: 20, bottom: 20 }}>
                     <Pie
                       data={clientsByService}
                       cx="50%"
                       cy="50%"
-                      outerRadius={90}
-                      innerRadius={30}
+                      outerRadius={100}
+                      innerRadius={40}
                       dataKey="value"
                       label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                       labelLine={false}
+                      stroke="#ffffff"
+                      strokeWidth={3}
                     >
                       {clientsByService.map((entry, index) => (
                         <Cell 
                           key={`cell-${index}`} 
                           fill={entry.color} 
-                          stroke="#ffffff" 
-                          strokeWidth={2}
                         />
                       ))}
                     </Pie>
                     <Tooltip 
                       formatter={(value: number) => [value, 'Clientes']}
+                      labelStyle={{ color: '#1e293b', fontWeight: 600 }}
                       contentStyle={{ 
                         backgroundColor: '#ffffff', 
-                        border: '1px solid #e5e7eb',
-                        borderRadius: '8px',
-                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '12px',
+                        boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+                        padding: '12px'
                       }}
                     />
                   </PieChart>

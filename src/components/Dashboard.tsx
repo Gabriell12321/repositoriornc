@@ -72,7 +72,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   }
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen bg-gradient-to-br from-background via-background to-muted/20">
       <Sidebar 
         activeModule={activeModule}
         onModuleChange={handleModuleChange}
@@ -87,8 +87,8 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             transition={{ 
-              duration: 0.3,
-              ease: "easeInOut"
+              duration: 0.4,
+              ease: [0.25, 0.46, 0.45, 0.94]
             }}
             className="h-full"
           >
