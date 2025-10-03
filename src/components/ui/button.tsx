@@ -50,7 +50,10 @@ function Button({
   return (
     <Comp
       data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
+      className={cn(
+        buttonVariants({ variant, size, className }),
+        "transform active:scale-95 hover:scale-105 transition-all duration-150 ease-out hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0"
+      )}
       {...props}
     />
   )
