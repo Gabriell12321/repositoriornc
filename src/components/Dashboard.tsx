@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import Sidebar from './Sidebar'
 import DashboardHome from './DashboardHome'
 import ModuleClientes from './modules/ModuleClientes'
@@ -66,16 +67,34 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     }
   }
 
+  const handleModuleChange = (module: ModuleType) => {
+    setActiveModule(module)
+  }
+
   return (
     <div className="flex h-screen bg-background">
       <Sidebar 
         activeModule={activeModule}
-        onModuleChange={setActiveModule}
+        onModuleChange={handleModuleChange}
         user={user}
         onLogout={onLogout}
       />
       <main className="flex-1 overflow-auto">
-        {renderModule()}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeModule}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ 
+              duration: 0.3,
+              ease: "easeInOut"
+            }}
+            className="h-full"
+          >
+            {renderModule()}
+          </motion.div>
+        </AnimatePresence>
       </main>
     </div>
   )
