@@ -1,15 +1,14 @@
 import React from 'react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Warning } from '@phosphor-icons/react'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+
+interface ErrorBoundaryProps {
+  children: React.ReactNode
+}
 
 interface ErrorBoundaryState {
   hasError: boolean
   error?: Error
-}
-
-interface ErrorBoundaryProps {
-  children: React.ReactNode
 }
 
 export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
@@ -23,26 +22,21 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('Error caught by boundary:', error, errorInfo)
+    console.error('ErrorBoundary caught an error:', error, errorInfo)
   }
 
   render() {
     if (this.state.hasError) {
       return (
         <div className="min-h-screen bg-background flex items-center justify-center p-4">
-          <Card className="w-full max-w-md shadow-xl">
-            <CardHeader className="text-center space-y-4">
-              <div className="mx-auto w-16 h-16 bg-destructive/10 rounded-xl flex items-center justify-center">
-                <Warning size={32} className="text-destructive" />
-              </div>
-              <div>
-                <CardTitle className="text-xl font-bold text-foreground">
-                  Ops! Algo deu errado
-                </CardTitle>
-              </div>
+          <Card className="max-w-md">
+            <CardHeader>
+              <CardTitle className="text-destructive">
+                Ops! Algo deu errado
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-muted-foreground text-center">
+              <p className="text-muted-foreground text-sm">
                 Ocorreu um erro inesperado. Tente recarregar a página.
               </p>
               <Button 
