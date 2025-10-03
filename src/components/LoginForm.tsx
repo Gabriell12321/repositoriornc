@@ -17,13 +17,17 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
     e.preventDefault()
     setIsLoading(true)
     
-    // Simulate authentication
+    // Authenticate with specific credentials
     setTimeout(() => {
-      const userData = {
-        name: username || 'Contador',
-        role: username.toLowerCase().includes('admin') ? 'Administrador' : 'Contador'
+      if (username === 'elvio' && password === 'admin123') {
+        const userData = {
+          name: 'Elvio',
+          role: 'Administrador'
+        }
+        onLogin(userData)
+      } else {
+        alert('Credenciais inválidas. Verifique seu usuário e senha.')
       }
-      onLogin(userData)
       setIsLoading(false)
     }, 1000)
   }
@@ -80,10 +84,6 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
               {isLoading ? 'Entrando...' : 'Entrar'}
             </Button>
           </form>
-          <div className="mt-6 text-center text-sm text-muted-foreground">
-            <p>Usuários demo: admin, contador, usuario</p>
-            <p>Qualquer senha funciona</p>
-          </div>
         </CardContent>
       </Card>
     </div>
