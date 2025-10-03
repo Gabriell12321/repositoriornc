@@ -203,15 +203,11 @@ export default function ModuleCadastro() {
 
     setDocuments(current => 
       (current || []).map(doc => 
-        doc.id === editingItem 
+        doc.id === editingItem
           ? { 
               ...doc, 
-              clienteId: formData.clienteId || doc.clienteId,
-              clienteNome: formData.clienteNome || doc.clienteNome,
-              numero: formData.numero || doc.numero,
-              dataVencimento: formData.dataVencimento || doc.dataVencimento,
-              dataEmissao: formData.dataEmissao || doc.dataEmissao,
-              status: formData.status as 'pendente' | 'em-andamento' | 'concluido' | 'vencido' || doc.status,
+              ...formData, 
+              dataUltimaAtualizacao: new Date().toISOString().split('T')[0],
               observacoes: formData.observacoes || doc.observacoes,
               arquivo: formData.arquivo || doc.arquivo
             }
