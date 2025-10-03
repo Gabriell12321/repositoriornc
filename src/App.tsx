@@ -1,24 +1,102 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import LoginForm from './components/LoginForm'
 import Dashboard from './components/Dashboard'
+import RateLimitWarning from './components/RateLimitWarning'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { FullPageLoading } from './components/LoadingSpinner'
 import { useKV } from '@github/spark/hooks'
+
+// Utility para controle de rate limiting simples
+class SimpleRateLimit {
+  private requests: number[] = []
+  private maxRequests: number
+  private windowMs: number
+
+  constructor(maxRequests: number = 5, windowMs: number = 60000) {
+    this.maxRequests = maxRequests
+    this.windowMs = windowMs
+  }
+
+  canMakeRequest(): boolean {
+    const now = Date.now()
+    // Remove requests outside the time window
+    this.requests = this.requests.filter(timestamp => now - timestamp < this.windowMs)
+    return this.requests.length < this.maxRequests
+  }
+
+  recordRequest(): void {
+    this.requests.push(Date.now())
+  }
+
+  getWaitTime(): number {
+    if (this.requests.length === 0) return 0
+    const oldestRequest = Math.min(...this.requests)
+    return Math.max(0, this.windowMs - (Date.now() - oldestRequest))
+  }
+
+  reset(): void {
+    this.requests = []
+  }
+}
 
 function App() {
   const [currentUser, setCurrentUser] = useKV<{name: string, role: string} | null>('current-user', null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [retryCount, setRetryCount] = useState(0)
+  
+  const rateLimiter = useRef(new SimpleRateLimit(3, 30000)) // Max 3 requests per 30 seconds
+  const initRef = useRef(false)
+  const maxRetries = 3
 
-  // Add initialization delay to prevent rapid API calls
+  // Safe initialization with rate limiting
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false)
-    }, 1000)
+    if (initRef.current) return
+    initRef.current = true
 
-    return () => clearTimeout(timer)
-  }, [])
+    const initialize = async () => {
+      try {
+        if (!rateLimiter.current.canMakeRequest()) {
+          const waitTime = rateLimiter.current.getWaitTime()
+          setError(`Muitas tentativas. Aguarde ${Math.ceil(waitTime / 1000)} segundos.`)
+          setIsLoading(false)
+          return
+        }
+
+        rateLimiter.current.recordRequest()
+        
+        // Add delay with jitter to prevent thundering herd
+        const baseDelay = 1000 + Math.random() * 2000
+        const retryDelay = Math.min(baseDelay * Math.pow(1.5, retryCount), 10000)
+        
+        await new Promise(resolve => setTimeout(resolve, retryDelay))
+        
+        setIsLoading(false)
+        setError(null)
+        setRetryCount(0)
+      } catch (err) {
+        console.error('Initialization error:', err)
+        
+        if (retryCount < maxRetries && rateLimiter.current.canMakeRequest()) {
+          setRetryCount(prev => prev + 1)
+          setError(`Conectando... (tentativa ${retryCount + 1}/${maxRetries})`)
+          
+          // Exponential backoff for retries
+          const retryDelay = Math.min(2000 * Math.pow(2, retryCount), 15000)
+          setTimeout(() => {
+            initRef.current = false
+            initialize()
+          }, retryDelay)
+        } else {
+          setError('Não foi possível conectar. Tente novamente em alguns minutos.')
+          setIsLoading(false)
+        }
+      }
+    }
+
+    initialize()
+  }, [retryCount])
 
   const handleLogin = useCallback((userData: {name: string, role: string}) => {
     try {
@@ -41,45 +119,45 @@ function App() {
   }, [setCurrentUser])
 
   const handleRetry = useCallback(() => {
+    if (!rateLimiter.current.canMakeRequest()) {
+      const waitTime = rateLimiter.current.getWaitTime()
+      setError(`Muitas tentativas. Aguarde ${Math.ceil(waitTime / 1000)} segundos.`)
+      return
+    }
+
     setError(null)
     setIsLoading(true)
+    setRetryCount(0)
+    initRef.current = false
     
-    // Add a small delay before retrying to prevent rapid requests
+    // Small delay before retry
     setTimeout(() => {
-      setIsLoading(false)
-    }, 2000)
+      if (initRef.current === false) {
+        initRef.current = true
+        // Trigger re-initialization
+        window.location.reload()
+      }
+    }, 1000)
   }, [])
 
   if (isLoading) {
-    return <FullPageLoading message="Iniciando sistema..." />
+    const message = retryCount > 0 
+      ? `Reconectando... (${retryCount}/${maxRetries})`
+      : "Iniciando sistema..."
+    return <FullPageLoading message={message} />
   }
 
   if (error) {
+    const canRetry = rateLimiter.current.canMakeRequest() && retryCount < maxRetries
+    const waitTime = rateLimiter.current.getWaitTime()
+    
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <motion.div 
-          className="text-center space-y-4 max-w-md"
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.3 }}
-        >
-          <div className="space-y-2">
-            <h2 className="text-xl font-semibold text-destructive">Ops! Algo deu errado</h2>
-            <p className="text-muted-foreground text-sm">{error}</p>
-            <p className="text-muted-foreground text-xs">
-              Se o problema persistir, aguarde alguns minutos antes de tentar novamente.
-            </p>
-          </div>
-          <motion.button 
-            onClick={handleRetry}
-            className="px-6 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors duration-200"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            Tentar Novamente
-          </motion.button>
-        </motion.div>
-      </div>
+      <RateLimitWarning
+        message={error}
+        waitTime={waitTime}
+        onRetry={handleRetry}
+        canRetry={canRetry}
+      />
     )
   }
 
