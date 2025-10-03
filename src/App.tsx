@@ -1,12 +1,12 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import LoginForm from './components/LoginForm'
+import { useKV } from '@github/spark/hooks'
 import Dashboard from './components/Dashboard'
+import LoginInterface from './components/LoginInterface'
 import { FullPageLoading } from './components/LoadingSpinner'
 import RateLimitDetector from './components/RateLimitDetector'
-import { useKV } from '@github/spark/hooks'
 
-function App() {
+export default function App() {
   const [currentUser, setCurrentUser] = useKV<{name: string, role: string} | null>('current-user', null)
   const [isLoading, setIsLoading] = useState(true)
 
@@ -14,50 +14,43 @@ function App() {
     const timer = setTimeout(() => {
       setIsLoading(false)
     }, 500)
+
     return () => clearTimeout(timer)
   }, [])
 
-  const handleLogin = useCallback((userData: {name: string, role: string}) => {
-    setCurrentUser(userData)
-  }, [setCurrentUser])
-
-  const handleLogout = useCallback(() => {
+  const handleLogout = () => {
     setCurrentUser(null)
-  }, [setCurrentUser])
+  }
 
   if (isLoading) {
-    return <FullPageLoading message="Iniciando sistema..." />
+    return <FullPageLoading message="Carregando sistema..." />
   }
 
   return (
     <RateLimitDetector>
-      <div className="min-h-screen">
-        <AnimatePresence mode="wait">
-          {!currentUser ? (
-            <motion.div
-              key="login"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-            >
-              <LoginForm onLogin={handleLogin} />
-            </motion.div>
-          ) : (
-            <motion.div
-              key="dashboard"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.3 }}
-            >
-              <Dashboard user={currentUser} onLogout={handleLogout} />
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+      <AnimatePresence mode="wait">
+        {!currentUser ? (
+          <motion.div
+            key="login"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <LoginInterface />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="dashboard"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Dashboard user={currentUser} onLogout={handleLogout} />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </RateLimitDetector>
   )
 }
-
-export default App
