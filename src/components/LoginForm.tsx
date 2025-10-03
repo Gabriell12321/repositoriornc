@@ -17,33 +17,17 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Prevent multiple rapid submissions
     if (isLoading) return
-    
     setIsLoading(true)
     
-    try {
-      // Add delay to prevent rate limiting issues
-      await new Promise(resolve => setTimeout(resolve, 800))
-      
-      if (username === 'elvio' && password === 'admin123') {
-        const userData = {
-          name: 'Elvio',
-          role: 'Administrador'
-        }
-        onLogin(userData)
-      } else {
-        // Show error message instead of alert
-        setIsLoading(false)
-        // You might want to add an error state here instead of alert
-        setTimeout(() => {
-          alert('Credenciais inválidas. Verifique seu usuário e senha.')
-        }, 100)
+    if (username === 'elvio' && password === 'admin123') {
+      const userData = {
+        name: 'Elvio',
+        role: 'Administrador'
       }
-    } catch (error) {
-      console.error('Login error:', error)
+      onLogin(userData)
+    } else {
       setIsLoading(false)
-      alert('Erro durante o login. Tente novamente.')
     }
   }
 

@@ -81,8 +81,8 @@ export default function ModuleRecepcao() {
 
   const [isDocDialogOpen, setIsDocDialogOpen] = useState(false)
   const [isClientDialogOpen, setIsClientDialogOpen] = useState(false)
-  const [selectedDoc, setSelectedDoc] = useState<PendingDocument | null>(null)
-  const [selectedClient, setSelectedClient] = useState<NewClient | null>(null)
+  const [selectedDoc, setSelectedDoc] = useState<string | null>(null)
+  const [selectedClient, setSelectedClient] = useState<string | null>(null)
 
   const [newDocForm, setNewDocForm] = useState({
     clientName: '',
@@ -99,6 +99,17 @@ export default function ModuleRecepcao() {
     company: '',
     notes: ''
   })
+
+  // Helper functions to find selected objects
+  const getSelectedDoc = () => {
+    if (!selectedDoc) return null
+    return (pendingDocs || []).find(doc => doc.id === selectedDoc) || null
+  }
+
+  const getSelectedClient = () => {
+    if (!selectedClient) return null
+    return (newClients || []).find(client => client.id === selectedClient) || null
+  }
 
   const addPendingDocument = () => {
     if (!newDocForm.clientName || !newDocForm.documentType || !newDocForm.dueDate) {
@@ -365,7 +376,7 @@ export default function ModuleRecepcao() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => setSelectedDoc(doc)}
+                            onClick={() => setSelectedDoc(doc.id)}
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
@@ -504,7 +515,7 @@ export default function ModuleRecepcao() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => setSelectedClient(client)}
+                            onClick={() => setSelectedClient(client.id)}
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
@@ -582,44 +593,48 @@ export default function ModuleRecepcao() {
           <DialogHeader>
             <DialogTitle>Detalhes do Documento</DialogTitle>
           </DialogHeader>
-          {selectedDoc && (
+          {selectedDoc && (() => {
+            const doc = getSelectedDoc()
+            if (!doc) return null
+            return (
             <div className="space-y-4">
               <div>
                 <Label>Cliente</Label>
-                <p className="text-sm text-muted-foreground">{selectedDoc.clientName}</p>
+                <p className="text-sm text-muted-foreground">{doc.clientName}</p>
               </div>
               <div>
                 <Label>Documento</Label>
-                <p className="text-sm text-muted-foreground">{selectedDoc.documentType}</p>
+                <p className="text-sm text-muted-foreground">{doc.documentType}</p>
               </div>
               <div>
                 <Label>Prazo</Label>
-                <p className="text-sm text-muted-foreground">{new Date(selectedDoc.dueDate).toLocaleDateString('pt-BR')}</p>
+                <p className="text-sm text-muted-foreground">{new Date(doc.dueDate).toLocaleDateString('pt-BR')}</p>
               </div>
               <div>
                 <Label>Prioridade</Label>
                 <p className="text-sm">
-                  <Badge variant={getPriorityColor(selectedDoc.priority) as any}>
-                    {selectedDoc.priority}
+                  <Badge variant={getPriorityColor(doc.priority) as any}>
+                    {doc.priority}
                   </Badge>
                 </p>
               </div>
               <div>
                 <Label>Status</Label>
                 <p className="text-sm">
-                  <Badge variant={getStatusColor(selectedDoc.status) as any}>
-                    {selectedDoc.status.replace('_', ' ')}
+                  <Badge variant={getStatusColor(doc.status) as any}>
+                    {doc.status.replace('_', ' ')}
                   </Badge>
                 </p>
               </div>
-              {selectedDoc.description && (
+              {doc.description && (
                 <div>
                   <Label>Observações</Label>
-                  <p className="text-sm text-muted-foreground">{selectedDoc.description}</p>
+                  <p className="text-sm text-muted-foreground">{doc.description}</p>
                 </div>
               )}
             </div>
-          )}
+            )
+          })()}
         </DialogContent>
       </Dialog>
 
@@ -629,44 +644,48 @@ export default function ModuleRecepcao() {
           <DialogHeader>
             <DialogTitle>Detalhes do Cliente</DialogTitle>
           </DialogHeader>
-          {selectedClient && (
+          {selectedClient && (() => {
+            const client = getSelectedClient()
+            if (!client) return null
+            return (
             <div className="space-y-4">
               <div>
                 <Label>Nome</Label>
-                <p className="text-sm text-muted-foreground">{selectedClient.name}</p>
+                <p className="text-sm text-muted-foreground">{client.name}</p>
               </div>
               <div>
                 <Label>Email</Label>
-                <p className="text-sm text-muted-foreground">{selectedClient.email}</p>
+                <p className="text-sm text-muted-foreground">{client.email}</p>
               </div>
               <div>
                 <Label>Telefone</Label>
-                <p className="text-sm text-muted-foreground">{selectedClient.phone}</p>
+                <p className="text-sm text-muted-foreground">{client.phone}</p>
               </div>
               <div>
                 <Label>Empresa</Label>
-                <p className="text-sm text-muted-foreground">{selectedClient.company}</p>
+                <p className="text-sm text-muted-foreground">{client.company}</p>
               </div>
               <div>
                 <Label>Data de Cadastro</Label>
-                <p className="text-sm text-muted-foreground">{new Date(selectedClient.dateAdded).toLocaleDateString('pt-BR')}</p>
+                <p className="text-sm text-muted-foreground">{new Date(client.dateAdded).toLocaleDateString('pt-BR')}</p>
               </div>
               <div>
                 <Label>Status</Label>
                 <p className="text-sm">
-                  <Badge variant={getStatusColor(selectedClient.status) as any}>
-                    {selectedClient.status.replace('_', ' ')}
+                  <Badge variant={getStatusColor(client.status) as any}>
+                    {client.status.replace('_', ' ')}
                   </Badge>
                 </p>
               </div>
-              {selectedClient.notes && (
+              {client.notes && (
                 <div>
                   <Label>Observações</Label>
-                  <p className="text-sm text-muted-foreground">{selectedClient.notes}</p>
+                  <p className="text-sm text-muted-foreground">{client.notes}</p>
                 </div>
               )}
             </div>
-          )}
+            )
+          })()}
         </DialogContent>
       </Dialog>
     </div>

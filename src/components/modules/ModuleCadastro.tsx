@@ -59,8 +59,8 @@ export default function ModuleCadastro() {
   const [documents, setDocuments] = useKV<Document[]>('cadastro-documents', [])
   const [clientes, setClientes] = useKV<Cliente[]>('cadastro-clientes', [])
   const [showAddDialog, setShowAddDialog] = useState(false)
-  const [editingItem, setEditingItem] = useState<Document | Cliente | null>(null)
-  const [formData, setFormData] = useState<any>({})
+  const [editingItem, setEditingItem] = useState<string | null>(null)
+  const [formData, setFormData] = useState<{[key: string]: string}>({})
 
   const submodules = [
     {
@@ -139,7 +139,7 @@ export default function ModuleCadastro() {
       numero: formData.numero || '',
       dataVencimento: formData.dataVencimento || '',
       dataEmissao: formData.dataEmissao || new Date().toISOString().split('T')[0],
-      status: formData.status || 'pendente',
+      status: formData.status as 'pendente' | 'em-andamento' | 'concluido' | 'vencido' || 'pendente',
       observacoes: formData.observacoes || '',
       arquivo: formData.arquivo || ''
     }
@@ -159,7 +159,7 @@ export default function ModuleCadastro() {
       telefone: formData.telefone || '',
       endereco: formData.endereco || '',
       tipoEmpresa: formData.tipoEmpresa || '',
-      status: formData.status || 'ativo',
+      status: formData.status as 'ativo' | 'inativo' | 'pendente' || 'ativo',
       dataUltimaAtualizacao: new Date().toISOString().split('T')[0]
     }
 
@@ -170,14 +170,31 @@ export default function ModuleCadastro() {
   }
 
   const handleEditDocument = (doc: Document) => {
-    setEditingItem(doc)
-    setFormData(doc)
+    setEditingItem(doc.id)
+    setFormData({
+      clienteId: doc.clienteId,
+      clienteNome: doc.clienteNome,
+      numero: doc.numero || '',
+      dataVencimento: doc.dataVencimento || '',
+      dataEmissao: doc.dataEmissao || '',
+      status: doc.status,
+      observacoes: doc.observacoes || '',
+      arquivo: doc.arquivo || ''
+    })
     setShowAddDialog(true)
   }
 
   const handleEditCliente = (cliente: Cliente) => {
-    setEditingItem(cliente)
-    setFormData(cliente)
+    setEditingItem(cliente.id)
+    setFormData({
+      nome: cliente.nome,
+      cpfCnpj: cliente.cpfCnpj,
+      email: cliente.email || '',
+      telefone: cliente.telefone || '',
+      endereco: cliente.endereco || '',
+      tipoEmpresa: cliente.tipoEmpresa,
+      status: cliente.status
+    })
     setShowAddDialog(true)
   }
 
@@ -186,8 +203,18 @@ export default function ModuleCadastro() {
 
     setDocuments(current => 
       (current || []).map(doc => 
-        doc.id === editingItem.id 
-          ? { ...doc, ...formData, dataUltimaAtualizacao: new Date().toISOString().split('T')[0] }
+        doc.id === editingItem 
+          ? { 
+              ...doc, 
+              clienteId: formData.clienteId || doc.clienteId,
+              clienteNome: formData.clienteNome || doc.clienteNome,
+              numero: formData.numero || doc.numero,
+              dataVencimento: formData.dataVencimento || doc.dataVencimento,
+              dataEmissao: formData.dataEmissao || doc.dataEmissao,
+              status: formData.status as 'pendente' | 'em-andamento' | 'concluido' | 'vencido' || doc.status,
+              observacoes: formData.observacoes || doc.observacoes,
+              arquivo: formData.arquivo || doc.arquivo
+            }
           : doc
       )
     )
@@ -203,8 +230,18 @@ export default function ModuleCadastro() {
 
     setClientes(current => 
       (current || []).map(cliente => 
-        cliente.id === editingItem.id 
-          ? { ...cliente, ...formData, dataUltimaAtualizacao: new Date().toISOString().split('T')[0] }
+        cliente.id === editingItem 
+          ? { 
+              ...cliente, 
+              nome: formData.nome || cliente.nome,
+              cpfCnpj: formData.cpfCnpj || cliente.cpfCnpj,
+              email: formData.email || cliente.email,
+              telefone: formData.telefone || cliente.telefone,
+              endereco: formData.endereco || cliente.endereco,
+              tipoEmpresa: formData.tipoEmpresa || cliente.tipoEmpresa,
+              status: formData.status as 'ativo' | 'inativo' | 'pendente' || cliente.status,
+              dataUltimaAtualizacao: new Date().toISOString().split('T')[0]
+            }
           : cliente
       )
     )

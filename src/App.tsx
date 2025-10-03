@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import LoginForm from './components/LoginForm'
 import Dashboard from './components/Dashboard'
-import { ErrorBoundary } from './components/ErrorBoundary'
 import { FullPageLoading } from './components/LoadingSpinner'
 import { useKV } from '@github/spark/hooks'
 
@@ -10,30 +9,19 @@ function App() {
   const [currentUser, setCurrentUser] = useKV<{name: string, role: string} | null>('current-user', null)
   const [isLoading, setIsLoading] = useState(true)
 
-  // Simple initialization
   useEffect(() => {
-    // Just a brief loading to show the loading state, then proceed
     const timer = setTimeout(() => {
       setIsLoading(false)
     }, 500)
-
     return () => clearTimeout(timer)
   }, [])
 
   const handleLogin = useCallback((userData: {name: string, role: string}) => {
-    try {
-      setCurrentUser(userData)
-    } catch (err) {
-      console.error('Login error:', err)
-    }
+    setCurrentUser(userData)
   }, [setCurrentUser])
 
   const handleLogout = useCallback(() => {
-    try {
-      setCurrentUser(null)
-    } catch (err) {
-      console.error('Logout error:', err)
-    }
+    setCurrentUser(null)
   }, [setCurrentUser])
 
   if (isLoading) {
@@ -41,7 +29,7 @@ function App() {
   }
 
   return (
-    <ErrorBoundary>
+    <div className="min-h-screen">
       <AnimatePresence mode="wait">
         {!currentUser ? (
           <motion.div
@@ -65,7 +53,7 @@ function App() {
           </motion.div>
         )}
       </AnimatePresence>
-    </ErrorBoundary>
+    </div>
   )
 }
 
