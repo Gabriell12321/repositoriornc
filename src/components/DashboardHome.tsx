@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts'
 import { TrendUp, TrendDown, Users, Calculator, CurrencyDollar, FileText } from '@phosphor-icons/react'
+import { ErrorBoundary } from './ErrorBoundary'
 
 const monthlyRevenue = [
   { month: 'Jan', value: 65000 },
@@ -12,10 +13,10 @@ const monthlyRevenue = [
 ]
 
 const clientsByService = [
-  { name: 'Contabilidade', value: 45, color: 'oklch(0.55 0.22 15)' },
-  { name: 'Fiscal', value: 35, color: 'oklch(0.65 0.25 20)' },
-  { name: 'RH', value: 25, color: 'oklch(0.45 0.18 10)' },
-  { name: 'Consultoria', value: 15, color: 'oklch(0.7 0.15 30)' },
+  { name: 'Contabilidade', value: 45, color: '#d42c2c' },
+  { name: 'Fiscal', value: 35, color: '#e84545' },
+  { name: 'RH', value: 25, color: '#a82222' },
+  { name: 'Consultoria', value: 15, color: '#f45656' },
 ]
 
 const kpiData = [
@@ -96,62 +97,81 @@ export default function DashboardHome() {
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Revenue Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Receita Mensal</CardTitle>
-            <CardDescription>
-              Evolução da receita nos últimos 6 meses
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={monthlyRevenue}>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip 
-                  formatter={(value: number) => [`R$ ${value.toLocaleString()}`, 'Receita']}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="value" 
-                  stroke="oklch(0.55 0.22 15)" 
-                  strokeWidth={3}
-                  dot={{ fill: 'oklch(0.55 0.22 15)', strokeWidth: 2, r: 4 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+        <ErrorBoundary>
+          <Card>
+            <CardHeader>
+              <CardTitle>Receita Mensal</CardTitle>
+              <CardDescription>
+                Evolução da receita nos últimos 6 meses
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={monthlyRevenue} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                  <XAxis 
+                    dataKey="month" 
+                    tick={{ fontSize: 12 }}
+                    axisLine={{ stroke: '#e5e7eb' }}
+                  />
+                  <YAxis 
+                    tick={{ fontSize: 12 }}
+                    axisLine={{ stroke: '#e5e7eb' }}
+                    tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`}
+                  />
+                  <Tooltip 
+                    formatter={(value: number) => [`R$ ${value.toLocaleString()}`, 'Receita']}
+                    labelStyle={{ color: '#374151' }}
+                    contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="value" 
+                    stroke="#d42c2c" 
+                    strokeWidth={3}
+                    dot={{ fill: '#d42c2c', strokeWidth: 2, r: 4 }}
+                    activeDot={{ r: 6, stroke: '#d42c2c', strokeWidth: 2, fill: '#ffffff' }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </ErrorBoundary>
 
         {/* Service Distribution */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Distribuição por Serviço</CardTitle>
-            <CardDescription>
-              Quantidade de clientes por tipo de serviço
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={clientsByService}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={100}
-                  dataKey="value"
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                >
-                  {clientsByService.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+        <ErrorBoundary>
+          <Card>
+            <CardHeader>
+              <CardTitle>Distribuição por Serviço</CardTitle>
+              <CardDescription>
+                Quantidade de clientes por tipo de serviço
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+                  <Pie
+                    data={clientsByService}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={100}
+                    dataKey="value"
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    labelLine={false}
+                  >
+                    {clientsByService.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} stroke="#ffffff" strokeWidth={2} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    formatter={(value: number) => [value, 'Clientes']}
+                    contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </ErrorBoundary>
       </div>
 
       {/* Activity Summary */}

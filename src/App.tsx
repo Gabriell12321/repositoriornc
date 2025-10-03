@@ -46,9 +46,9 @@ function App() {
   const [error, setError] = useState<string | null>(null)
   const [retryCount, setRetryCount] = useState(0)
   
-  const rateLimiter = useRef(new SimpleRateLimit(3, 30000)) // Max 3 requests per 30 seconds
+  const rateLimiter = useRef(new SimpleRateLimit(5, 60000)) // Max 5 requests per minute  
   const initRef = useRef(false)
-  const maxRetries = 3
+  const maxRetries = 2
 
   // Safe initialization with rate limiting
   useEffect(() => {
@@ -67,8 +67,8 @@ function App() {
         rateLimiter.current.recordRequest()
         
         // Add delay with jitter to prevent thundering herd
-        const baseDelay = 1000 + Math.random() * 2000
-        const retryDelay = Math.min(baseDelay * Math.pow(1.5, retryCount), 10000)
+        const baseDelay = 500 + Math.random() * 1000 // Reduced from 1000-3000 to 500-1500
+        const retryDelay = Math.min(baseDelay * Math.pow(1.3, retryCount), 8000) // Reduced multiplier and max delay
         
         await new Promise(resolve => setTimeout(resolve, retryDelay))
         
