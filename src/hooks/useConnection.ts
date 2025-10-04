@@ -25,11 +25,11 @@ export function useConnection() {
   const maxRetries = 5
   const baseDelay = 1000
 
-  // Rate limiter configurado para prevenir erro 429
+  // Rate limiter configured with very conservative limits to prevent 429 errors
   const rateLimiter = useRateLimiter({
-    maxRequests: 3,
-    windowMs: 10000, // 10 segundos
-    retryDelay: 2000
+    maxRequests: 2, // Reduced from 3 to 2
+    windowMs: 15000, // Increased from 10 to 15 seconds
+    retryDelay: 5000 // Increased from 2 to 5 seconds
   })
 
   const calculateDelay = useCallback((retryCount: number) => {
@@ -97,12 +97,15 @@ export function useConnection() {
           }
         }
 
-        // Schedule automatic retry
+        // Disable automatic retry to prevent rate limiting
+        // Schedule automatic retry only on explicit user action
+        /*
         const delay = calculateDelay(newRetryCount)
         setTimeout(() => {
           if (!isInitialized.current) return
           connect()
         }, delay)
+        */
 
         return {
           ...prev,
@@ -135,7 +138,9 @@ export function useConnection() {
     rateLimiter.reset()
   }, [rateLimiter])
 
-  // Initialize connection on mount
+  // Initialize connection only when explicitly needed - disable automatic connection
+  // This prevents rate limiting issues from automatic connection attempts
+  /*
   useEffect(() => {
     if (isInitialized.current) return
     isInitialized.current = true
@@ -152,6 +157,7 @@ export function useConnection() {
       isInitialized.current = false
     }
   }, [connect])
+  */
 
   return {
     ...state,

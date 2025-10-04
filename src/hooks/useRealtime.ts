@@ -49,30 +49,8 @@ export function useRealtime() {
     setUpdates([])
   }
 
-  // Simulate real-time updates (in a real app, this would be WebSocket or Server-Sent Events)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      // Simulate metrics update every 30 seconds
-      setMetrics(current => {
-        const defaultMetrics = {
-          totalClientes: 0,
-          clientesAtivos: 0,
-          documentosPendentes: 0,
-          vencimentosProximos: 0,
-          tarefasPendentes: 0,
-          alertasImportantes: 0,
-          lastUpdated: new Date().toISOString()
-        }
-        
-        return {
-          ...(current || defaultMetrics),
-          lastUpdated: new Date().toISOString()
-        }
-      })
-    }, 30000)
-
-    return () => clearInterval(interval)
-  }, [setMetrics])
+  // Remove automatic updates to prevent rate limiting issues
+  // In production, use WebSocket or Server-Sent Events for real-time updates
 
   return {
     metrics,

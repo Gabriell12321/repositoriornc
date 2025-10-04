@@ -32,7 +32,7 @@ export default function RateLimitDetector({ children }: RateLimitDetectorProps) 
       if (checkFor429()) return
     }
 
-    // Simple polling to check for error state
+    // Simple polling to check for error state - reduced frequency to prevent rate limits
     const errorCheckInterval = setInterval(() => {
       if (document.body?.textContent?.includes('something went wrong') ||
           document.body?.textContent?.includes('429')) {
@@ -40,7 +40,7 @@ export default function RateLimitDetector({ children }: RateLimitDetectorProps) 
         setWaitTime(30000)
         clearInterval(errorCheckInterval)
       }
-    }, 2000)
+    }, 5000) // Changed from 2 seconds to 5 seconds
 
     window.addEventListener('error', handlePageError)
     window.addEventListener('unhandledrejection', handlePageError)

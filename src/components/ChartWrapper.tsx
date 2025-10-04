@@ -17,13 +17,11 @@ export default function ChartWrapper({ children, fallback }: ChartWrapperProps) 
     const checkReady = () => {
       if (containerRef.current && document.readyState === 'complete') {
         setIsReady(true)
-      } else {
-        setTimeout(checkReady, 50)
       }
     }
 
-    // Wait a bit more for stability
-    const timer = setTimeout(checkReady, 200)
+    // Single check with longer delay to reduce polling
+    const timer = setTimeout(checkReady, 500)
 
     return () => clearTimeout(timer)
   }, [])

@@ -39,8 +39,8 @@ class RateLimiter {
   }
 }
 
-// Global rate limiter instance
-const globalRateLimiter = new RateLimiter(10, 60000) // 10 requests per minute
+// Global rate limiter instance - more conservative limits to prevent 429 errors
+const globalRateLimiter = new RateLimiter(5, 60000) // Reduced to 5 requests per minute
 
 /**
  * Wrapper for API calls with rate limiting
