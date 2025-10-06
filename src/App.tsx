@@ -18,6 +18,11 @@ export default function App() {
     return () => clearTimeout(timer)
   }, [])
 
+  // Debug logging for currentUser changes
+  useEffect(() => {
+    console.log('App.tsx - currentUser state changed:', currentUser?.username || 'null')
+  }, [currentUser])
+
   const handleLogout = () => {
     logout()
   }
@@ -35,6 +40,21 @@ export default function App() {
 
   return (
     <RateLimitDetector>
+      {/* Temporary debug info */}
+      <div style={{ 
+        position: 'fixed', 
+        top: 0, 
+        right: 0, 
+        zIndex: 9999, 
+        backgroundColor: 'rgba(0,0,0,0.8)', 
+        color: 'white', 
+        padding: '10px',
+        fontSize: '12px',
+        fontFamily: 'monospace'
+      }}>
+        Debug: {currentUser ? `Logged in as ${currentUser.username}` : 'Not logged in'}
+      </div>
+      
       <AnimatePresence mode="wait">
         {!currentUser ? (
           <motion.div

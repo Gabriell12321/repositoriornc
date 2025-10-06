@@ -11,10 +11,13 @@ export function useAuth() {
     console.log('useAuth state update:')
     console.log('  currentUser:', currentUser?.username)
     console.log('  users count:', users?.length)
+    console.log('  currentUser object:', currentUser)
   }, [currentUser, users])
 
   const login = (user: User) => {
+    console.log('=== LOGIN PROCESS START ===')
     console.log('Login called for:', user.username)
+    console.log('Input user object:', user)
     
     const updatedUser = {
       ...user,
@@ -23,7 +26,20 @@ export function useAuth() {
     }
     
     console.log('Setting currentUser to:', updatedUser.username)
-    setCurrentUser(updatedUser)
+    console.log('Updated user object:', updatedUser)
+    
+    try {
+      // Force update with callback to ensure state is set
+      setCurrentUser(updatedUser)
+      console.log('setCurrentUser called successfully')
+    } catch (error) {
+      console.error('Error setting current user:', error)
+    }
+    
+    // Add a small delay to ensure state is set
+    setTimeout(() => {
+      console.log('Current user after timeout should be:', updatedUser.username)
+    }, 100)
     
     // Update in users list
     setUsers(current => 
@@ -31,6 +47,8 @@ export function useAuth() {
         u.id === user.id ? updatedUser : u
       )
     )
+    
+    console.log('=== LOGIN PROCESS END ===')
   }
 
   const hasPermission = (permission: Permission): boolean => {

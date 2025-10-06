@@ -44,11 +44,31 @@ export default function LoginInterface() {
             isActive: true
           }
           user = createUser(elvioAdmin)
+          console.log('Created user:', user)
         }
 
-        console.log('Logging in user:', user.username)
-        login(user)
-        toast.success(`Bem-vindo, ${user.name}!`)
+        console.log('Attempting to login user:', user.username, 'with ID:', user.id)
+        
+        // Ensure we have a valid user object before logging in
+        if (user && user.id) {
+          console.log('About to call login function')
+          login(user)
+          console.log('Login function completed')
+          
+          // Clear form
+          setUsername('')
+          setPassword('')
+          
+          toast.success(`Bem-vindo, ${user.name}!`)
+          
+          // Add a small delay to check if currentUser was set
+          setTimeout(() => {
+            console.log('Login process should be complete now')
+          }, 200)
+        } else {
+          console.error('User creation failed or user has no ID')
+          toast.error('Erro ao criar usuário')
+        }
         return
       }
 
@@ -67,6 +87,7 @@ export default function LoginInterface() {
       console.error('Login error:', error)
       toast.error('Erro ao fazer login')
     } finally {
+      console.log('Setting isLoading to false')
       setIsLoading(false)
     }
   }

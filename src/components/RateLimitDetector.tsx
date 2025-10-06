@@ -40,7 +40,7 @@ export default function RateLimitDetector({ children }: RateLimitDetectorProps) 
         setWaitTime(30000)
         clearInterval(errorCheckInterval)
       }
-    }, 5000) // Changed from 2 seconds to 5 seconds
+    }, 10000) // Changed from 5 seconds to 10 seconds to be less aggressive
 
     window.addEventListener('error', handlePageError)
     window.addEventListener('unhandledrejection', handlePageError)
