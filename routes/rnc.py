@@ -998,13 +998,29 @@ def update_rnc_api(rnc_id):
             cur_shared = conn.cursor()
             cur_shared.execute('SELECT 1 FROM rnc_shares WHERE rnc_id = ? AND shared_with_user_id = ? LIMIT 1', (rnc_id, session['user_id']))
             is_shared_with_user = cur_shared.fetchone() is not None
-        except Exception:
+        except Exception as e:
+            logger.error(f"Erro ao verificar compartilhamento: {e}")
             is_shared_with_user = False
+        
+        # LOGS DETALHADOS PARA DEBUG
+        logger.info(f"=== VERIFICAÇÃO DE PERMISSÕES PARA RESPONDER RNC {rnc_id} ===")
+        logger.info(f"User ID: {session.get('user_id')}")
+        logger.info(f"RNC Owner ID: {rnc_data[8]}")
+        logger.info(f"É criador? {user_is_creator}")
+        logger.info(f"É admin? {has_admin}")
+        logger.info(f"Pode responder (reply_rncs)? {can_reply}")
+        logger.info(f"Foi compartilhado? {is_shared_with_user}")
+        logger.info(f"Permissões do usuário: {session.get('user_role', 'unknown')}")
         
         # PERMISSÕES SIMPLIFICADAS: Admin, criador, quem pode responder ou compartilhado
         if not (has_admin or user_is_creator or can_reply or is_shared_with_user):
-            logger.warning(f"Acesso negado para responder RNC {rnc_id}")
+            logger.warning(f"❌ ACESSO NEGADO - Nenhuma permissão válida encontrada")
+            logger.warning(f"   User: {session.get('user_name')} (ID: {session.get('user_id')})")
+            logger.warning(f"   Role: {session.get('user_role')}")
+            logger.warning(f"   Department: {session.get('user_department')}")
             return jsonify({'success': False, 'message': 'Acesso negado: você não tem permissão para responder este RNC'}), 403
+        
+        logger.info(f"✅ ACESSO PERMITIDO para responder RNC {rnc_id}")
 
         data = request.get_json() or {}
         try:
