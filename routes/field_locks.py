@@ -264,66 +264,130 @@ def update_locks(group_id):
     # Garantir que a coluna context existe
     ensure_context_column()
     
+    conn = None
     try:
+        # Log detalhado para debug
+        logger.info(f"=== INÍCIO UPDATE_LOCKS ===")
+        logger.info(f"Group ID: {group_id}")
+        
         data = request.get_json()
+        logger.info(f"Data recebido: {data}")
+        
+        if not data:
+            logger.error("Nenhum dado JSON recebido")
+            return jsonify({'success': False, 'message': 'Nenhum dado recebido'}), 400
+        
         locks = data.get('locks', {})
         context = data.get('context', 'creation')
         
+        logger.info(f"Context: {context}")
+        logger.info(f"Total de locks: {len(locks)}")
+        
         if context not in ['creation', 'response']:
+            logger.error(f"Contexto inválido: {context}")
             return jsonify({'success': False, 'message': 'Contexto inválido. Use "creation" ou "response"'}), 400
         
         if not isinstance(locks, dict):
+            logger.error(f"Formato inválido de locks: {type(locks)}")
             return jsonify({'success': False, 'message': 'Formato inválido'}), 400
         
-        conn = sqlite3.connect(DB_PATH)
+        logger.info(f"Conectando ao banco: {DB_PATH}")
+        conn = sqlite3.connect(DB_PATH, timeout=10.0)
         cursor = conn.cursor()
         
         # Verificar se o grupo existe
-        cursor.execute('SELECT id FROM groups WHERE id = ?', (group_id,))
-        if not cursor.fetchone():
-            conn.close()
+        cursor.execute('SELECT id, name FROM groups WHERE id = ?', (group_id,))
+        group_row = cursor.fetchone()
+        
+        if not group_row:
+            logger.error(f"Grupo não encontrado: {group_id}")
             return jsonify({'success': False, 'message': 'Grupo não encontrado'}), 404
         
+        logger.info(f"Grupo encontrado: {group_row[1]}")
+        
         updated_count = 0
+        errors = []
         
         for field_name, is_locked in locks.items():
-            # Validar campo
-            if field_name not in AVAILABLE_FIELDS:
-                continue
-            
-            # Converter is_locked para inteiro (0 ou 1)
-            lock_value = 1 if is_locked else 0
-            
-            # Primeiro deletar o registro existente (se houver)
-            cursor.execute("""
-                DELETE FROM field_locks 
-                WHERE group_id = ? AND field_name = ? AND context = ?
-            """, (group_id, field_name, context))
-            
-            # Depois inserir o novo registro
-            cursor.execute("""
-                INSERT INTO field_locks (group_id, field_name, is_locked, context, updated_at)
-                VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
-            """, (group_id, field_name, lock_value, context))
-            
-            updated_count += 1
+            try:
+                # Validar campo
+                if field_name not in AVAILABLE_FIELDS:
+                    logger.warning(f"Campo não reconhecido: {field_name}")
+                    continue
+                
+                # Converter is_locked para inteiro (0 ou 1)
+                lock_value = 1 if is_locked else 0
+                
+                logger.debug(f"Processando campo: {field_name} = {lock_value}")
+                
+                # Primeiro deletar o registro existente (se houver)
+                cursor.execute("""
+                    DELETE FROM field_locks 
+                    WHERE group_id = ? AND field_name = ? AND context = ?
+                """, (group_id, field_name, context))
+                
+                deleted = cursor.rowcount
+                logger.debug(f"  Deletados: {deleted} registros antigos")
+                
+                # Depois inserir o novo registro
+                cursor.execute("""
+                    INSERT INTO field_locks (group_id, field_name, is_locked, context, updated_at)
+                    VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+                """, (group_id, field_name, lock_value, context))
+                
+                updated_count += 1
+                
+            except Exception as field_error:
+                error_msg = f"Erro ao processar campo {field_name}: {str(field_error)}"
+                logger.error(error_msg)
+                errors.append(error_msg)
         
+        if errors:
+            logger.warning(f"Houveram {len(errors)} erros durante o processamento")
+        
+        logger.info(f"Commitando {updated_count} alterações...")
         conn.commit()
-        conn.close()
         
         context_label = '🆕 CRIAÇÃO' if context == 'creation' else '📝 RESPOSTA'
-        logger.info(f"Admin {session.get('user_id')} atualizou {updated_count} bloqueios [{context_label}] para grupo {group_id}")
+        logger.info(f"✅ Admin {session.get('user_id')} atualizou {updated_count} bloqueios [{context_label}] para grupo {group_id}")
+        logger.info(f"=== FIM UPDATE_LOCKS (SUCESSO) ===")
         
         return jsonify({
             'success': True,
             'message': f'{updated_count} bloqueios atualizados',
             'updated_count': updated_count,
-            'context': context
+            'context': context,
+            'errors': errors if errors else None
         })
         
+    except sqlite3.Error as db_error:
+        logger.error(f"❌ ERRO DE BANCO DE DADOS: {db_error}")
+        logger.error(f"=== FIM UPDATE_LOCKS (ERRO DB) ===")
+        return jsonify({
+            'success': False, 
+            'message': f'Erro no banco de dados: {str(db_error)}',
+            'error_type': 'database'
+        }), 500
+        
     except Exception as e:
-        logger.error(f"Erro ao atualizar bloqueios: {e}")
-        return jsonify({'success': False, 'message': str(e)}), 500
+        logger.error(f"❌ ERRO GERAL: {e}")
+        logger.error(f"Tipo do erro: {type(e).__name__}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        logger.error(f"=== FIM UPDATE_LOCKS (ERRO GERAL) ===")
+        return jsonify({
+            'success': False, 
+            'message': f'Erro ao atualizar: {str(e)}',
+            'error_type': type(e).__name__
+        }), 500
+        
+    finally:
+        if conn:
+            try:
+                conn.close()
+                logger.debug("Conexão fechada")
+            except:
+                pass
 
 
 @field_locks_bp.route('/api/locks/<int:group_id>/reset', methods=['POST'])

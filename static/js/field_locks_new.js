@@ -232,36 +232,78 @@ async function saveChanges() {
     }
 
     try {
+        console.log('=== INICIANDO SALVAMENTO ===');
+        console.log('Group ID:', currentGroupId);
+        console.log('Context:', currentContext);
+        
         const locks = {};
         availableFields.forEach(fieldName => {
             locks[fieldName] = fieldLocks[fieldName] || false;
         });
+        
+        console.log('Total de locks:', Object.keys(locks).length);
 
         const contextLabel = currentContext === 'creation' ? '🆕 CRIAÇÃO' : '📝 RESPOSTA';
+        
+        const payload = { 
+            locks: locks,
+            context: currentContext // Enviar contexto atual
+        };
+        
+        console.log('Payload:', JSON.stringify(payload).substring(0, 200) + '...');
         
         const response = await fetch(`/admin/field-locks/api/locks/${currentGroupId}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ 
-                locks: locks,
-                context: currentContext // Enviar contexto atual
-            })
+            body: JSON.stringify(payload)
         });
 
-        const result = await response.json();
+        console.log('Response status:', response.status);
+        console.log('Response ok:', response.ok);
+        
+        let result;
+        try {
+            result = await response.json();
+            console.log('Response data:', result);
+        } catch (parseError) {
+            console.error('Erro ao parsear JSON:', parseError);
+            throw new Error(`Erro ao processar resposta do servidor (Status: ${response.status})`);
+        }
 
         if (response.ok) {
             showAlert(`✅ Configurações [${contextLabel}] salvas com sucesso!`, 'success');
             hasChanges = false;
+            
+            // Mostrar avisos se houver
+            if (result.errors && result.errors.length > 0) {
+                console.warn('Avisos durante salvamento:', result.errors);
+            }
         } else {
-            throw new Error(result.error || 'Erro desconhecido');
+            // Erro do servidor
+            const errorMsg = result.message || result.error || 'Erro desconhecido';
+            const errorType = result.error_type || 'unknown';
+            
+            console.error('Erro do servidor:', {
+                status: response.status,
+                message: errorMsg,
+                type: errorType,
+                full_result: result
+            });
+            
+            throw new Error(`${errorMsg} (${errorType})`);
         }
 
     } catch (error) {
-        console.error('Erro ao salvar:', error);
+        console.error('=== ERRO AO SALVAR ===');
+        console.error('Tipo:', error.name);
+        console.error('Mensagem:', error.message);
+        console.error('Stack:', error.stack);
+        
         showAlert('❌ Erro ao salvar: ' + error.message, 'error');
+    } finally {
+        console.log('=== FIM SALVAMENTO ===');
     }
 }
 
