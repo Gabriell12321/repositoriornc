@@ -410,6 +410,25 @@
             </div>
         </div>
 
+        <!-- Valor/Custo Section -->
+        <table style="margin-top: 15px;">
+            <tr>
+                <td class="field-label" style="width: 30%; background: #6c757d; color: white; font-weight: bold; padding: 10px;">
+                    💰 VALOR / CUSTO ESTIMADO (R$)
+                </td>
+                <td style="padding: 10px;">
+                    <input type="number" 
+                           id="price" 
+                           class="input-field" 
+                           value="{{ rnc.price or '' }}" 
+                           placeholder="0.00" 
+                           step="0.01" 
+                           min="0"
+                           style="width: 200px; font-size: 16px; font-weight: bold; color: #28a745;">
+                </td>
+            </tr>
+        </table>
+
         <!-- Signature Section -->
         <div style="margin-top: 15px; border: 2px solid #cccccc; border-radius: 4px; background: white;">
             <!-- Date Row -->
@@ -676,7 +695,9 @@
                 // Seções textuais
                 instruction_retrabalho: document.getElementById('instruction_retrabalho')?.value || '',
                 cause_rnc: document.getElementById('cause_rnc')?.value || '',
-                action_rnc: document.getElementById('action_rnc')?.value || ''
+                action_rnc: document.getElementById('action_rnc')?.value || '',
+                // Valor/Custo
+                price: document.getElementById('price')?.value || null
             };
 
             console.log('📤 Dados coletados:', formData);
