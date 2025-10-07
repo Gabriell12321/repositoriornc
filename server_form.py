@@ -454,7 +454,7 @@ app.register_blueprint(field_locks_bp)
 
 # JWT: parse Authorization Bearer and attach g.user_id if valid
 @app.before_request
-def _jwt_before_request():
+def _jwt_before_request(): 
     try:
         authz = request.headers.get('Authorization') or ''
         if authz.lower().startswith('bearer '):
