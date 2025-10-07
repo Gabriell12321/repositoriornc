@@ -2925,7 +2925,6 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
                     <a href="/rnc/${rnc.id}" class="action-btn btn-view">👁️ Ver</a>
                     <a href="/rnc/${rnc.id}/chat" class="action-btn btn-chat">💬 Chat</a>
                     <a href="/rnc/${rnc.id}/reply" class="action-btn btn-reply">↩️ Responder</a>
-                    <a href="/rnc/${rnc.id}/edit" class="action-btn btn-edit">✏️ Editar</a>
                     <button onclick="finalizeRNC(${rnc.id})" class="action-btn btn-finalize">✅ Finalizar</button>
                     <button onclick="deleteRNC(${rnc.id})" class="action-btn btn-delete">🗑️ Excluir</button>
                 `;
@@ -2936,10 +2935,6 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
             actions.push(`<button onclick=\"window.location.href='/rnc/${rnc.id}/chat'\" class=\"action-btn btn-chat\">💬 Chat</button>`);
             // Responder: disponível para qualquer usuário autenticado
             actions.push(`<button onclick=\"window.location.href='/rnc/${rnc.id}/reply'\" class=\"action-btn btn-reply\">↩️ Responder</button>`);
-            // Editar: todos se canEditRncs; ou apenas próprios se canEditOwnRncs
-            if (perms.canEditRncs || (perms.canEditOwnRncs && isCreator)) {
-                actions.push(`<button onclick=\"window.location.href='/rnc/${rnc.id}/edit'\" class=\"action-btn btn-edit\">✏️ Editar</button>`);
-            }
             // Finalizar
             if (perms.canFinalizeRnc) {
                 actions.push(`<button onclick="finalizeRNC(${rnc.id})" class="action-btn btn-finalize">✅ Finalizar</button>`);

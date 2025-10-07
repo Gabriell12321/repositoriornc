@@ -923,79 +923,13 @@ def download_rnc_pdf(rnc_id):
         return render_template('error.html', message='Erro interno ao gerar PDF')
 
 
-@rnc.route('/rnc/<int:rnc_id>/edit', methods=['GET', 'POST'])
-def edit_rnc(rnc_id):
-    if 'user_id' not in session:
-        return redirect('/')
-    try:
-        from services.permissions import has_permission
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-        cursor.execute('''
-            SELECT r.*, u.name as user_name, au.name as assigned_user_name
-            FROM rncs r 
-            LEFT JOIN users u ON r.user_id = u.id 
-            LEFT JOIN users au ON r.assigned_user_id = au.id
-            WHERE r.id = ?
-        ''', (rnc_id,))
-        rnc_data = cursor.fetchone()
-        conn.close()
+# ROTA DE EDITAR REMOVIDA - Substituída por /rnc/<id>/reply (Responder)
+# Motivo: Simplificação do sistema - apenas responder é necessário
+# Data: 2025-10-07
 
-        if not rnc_data:
-            return render_template('error.html', message='RNC não encontrado')
-        if not isinstance(rnc_data, (tuple, list)):
-            logger.error(f"Erro: rnc_data não é uma tupla/lista: {type(rnc_data)} - {rnc_data}")
-            return render_template('error.html', message='Erro interno do sistema')
-
-        user_is_creator = rnc_data[8] == session['user_id']
-        can_edit_all = has_permission(session['user_id'], 'edit_all_rncs')
-        can_edit_own = has_permission(session['user_id'], 'edit_own_rnc')
-        if not (can_edit_all or (can_edit_own and user_is_creator)):
-            return render_template('error.html', message='Acesso negado: você não tem permissão para editar este RNC')
-
-        try:
-            conn_cols = sqlite3.connect(DB_PATH)
-            cur_cols = conn_cols.cursor()
-            cur_cols.execute('PRAGMA table_info(rncs)')
-            base_columns = [row[1] for row in cur_cols.fetchall()]
-            conn_cols.close()
-        except Exception:
-            base_columns = [
-                'id','rnc_number','title','description','equipment','client','priority','status','user_id','assigned_user_id',
-                'is_deleted','deleted_at','finalized_at','created_at','updated_at','disposition_usar','disposition_retrabalhar',
-                'disposition_rejeitar','disposition_sucata','disposition_devolver_estoque','disposition_devolver_fornecedor',
-                'inspection_aprovado','inspection_reprovado','inspection_ver_rnc','signature_inspection_date','signature_engineering_date',
-                'signature_inspection2_date','signature_inspection_name','signature_engineering_name','signature_inspection2_name','price'
-            ]
-        columns = base_columns + ['user_name', 'assigned_user_name']
-        if len(rnc_data) < len(columns):
-            rnc_data = list(rnc_data) + [None] * (len(columns) - len(rnc_data))
-        rnc_dict = dict(zip(columns, rnc_data))
-        
-        # Adicionar a função parse_label_map para extrair campos de texto
-        def parse_label_map(text: str):
-            if not text:
-                return {}
-            result = {}
-            lines = text.split('\n')
-            for line in lines:
-                line = line.strip()
-                if ':' in line:
-                    parts = line.split(':', 1)
-                    if len(parts) == 2:
-                        key = parts[0].strip()
-                        value = parts[1].strip()
-                        if key and value:
-                            result[key] = value
-            return result
-        
-        # Extrair campos de texto da descrição
-        txt_fields = parse_label_map(rnc_dict.get('description') or '')
-        
-        return render_template('edit_rnc_form.html', rnc=rnc_dict, txt_fields=txt_fields, is_editing=True)
-    except Exception as e:
-        logger.error(f"Erro ao editar RNC {rnc_id}: {e}")
-        return render_template('error.html', message='Erro interno do sistema')
+# @rnc.route('/rnc/<int:rnc_id>/edit', methods=['GET', 'POST'])
+# def edit_rnc(rnc_id):
+#     [CÓDIGO REMOVIDO - Use /rnc/<id>/reply para editar/responder RNCs]
 
 
 @rnc.route('/api/rnc/<int:rnc_id>/update', methods=['PUT'])
@@ -1034,21 +968,10 @@ def update_rnc_api(rnc_id):
             return jsonify({'success': False, 'message': 'Erro interno do sistema'}), 500
 
         user_is_creator = str(rnc_data[8]) == str(session['user_id'])
-        can_edit_all = has_permission(session['user_id'], 'edit_all_rncs')
-        can_edit_own = has_permission(session['user_id'], 'edit_own_rnc')
         has_admin = has_permission(session['user_id'], 'admin_access')
-        department_match = False
-
-        if has_permission(session['user_id'], 'view_all_departments_rncs'):
-            department_match = True
-        else:
-            cursor.execute('SELECT department FROM rncs WHERE id = ?', (rnc_id,))
-            rnc_dept = cursor.fetchone()
-            if rnc_dept and rnc_dept[0] == 'Engenharia' and has_permission(session['user_id'], 'view_engineering_rncs'):
-                department_match = True
-
         can_reply = has_permission(session['user_id'], 'reply_rncs')
-        # Novo: permitir atualização quando o RNC foi compartilhado com o usuário (qualquer nível)
+        
+        # Verificar se foi compartilhado com o usuário
         is_shared_with_user = False
         try:
             cur_shared = conn.cursor()
@@ -1056,9 +979,11 @@ def update_rnc_api(rnc_id):
             is_shared_with_user = cur_shared.fetchone() is not None
         except Exception:
             is_shared_with_user = False
-        if not (can_edit_all or (can_edit_own and user_is_creator) or has_admin or department_match or can_reply or is_shared_with_user):
-            logger.warning(f"Acesso negado para edição do RNC {rnc_id}")
-            return jsonify({'success': False, 'message': 'Acesso negado: você não tem permissão para editar este RNC'}), 403
+        
+        # PERMISSÕES SIMPLIFICADAS: Admin, criador, quem pode responder ou compartilhado
+        if not (has_admin or user_is_creator or can_reply or is_shared_with_user):
+            logger.warning(f"Acesso negado para responder RNC {rnc_id}")
+            return jsonify({'success': False, 'message': 'Acesso negado: você não tem permissão para responder este RNC'}), 403
 
         data = request.get_json() or {}
         try:
