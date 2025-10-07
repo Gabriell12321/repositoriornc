@@ -4,10 +4,34 @@ let fieldLocks = {};
 let hasChanges = false;
 
 const availableFields = [
-    'title', 'description', 'priority', 'price', 'responsavel', 'inspetor', 
-    'setor', 'area_responsavel', 'equipment', 'client', 'assigned_user_id',
-    'material', 'quantity', 'drawing', 'mp', 'revision', 'position',
-    'cv', 'conjunto', 'modelo', 'description_drawing', 'purchase_order', 'justificativa'
+    // === INFORMAÇÕES PRINCIPAIS DO RNC ===
+    'rnc_number', 'title', 'equipment', 'client', 'description', 'created_at',
+    
+    // === DADOS TÉCNICOS DO PRODUTO ===
+    'mp', 'revision', 'position', 'cv', 'conjunto', 'modelo', 'description_drawing',
+    'quantity', 'material', 'drawing', 'purchase_order',
+    
+    // === RESPONSABILIDADES E SETORES ===
+    'responsavel', 'inspetor', 'setor', 'area_responsavel',
+    
+    // === ASSINATURAS ===
+    'signature_inspection_name', 'signature_engineering_name', 'signature_inspection2_name',
+    
+    // === DATAS DE ASSINATURA ===
+    'signature_inspection_date', 'signature_engineering_date', 'signature_inspection2_date',
+    
+    // === INSTRUÇÕES E ANÁLISES ===
+    'instruction_retrabalho', 'cause_rnc', 'action_rnc',
+    
+    // === DISPOSIÇÃO DO MATERIAL NÃO-CONFORME ===
+    'disposition_usar', 'disposition_retrabalhar', 'disposition_rejeitar',
+    'disposition_sucata', 'disposition_devolver_estoque', 'disposition_devolver_fornecedor',
+    
+    // === INSPEÇÃO DO RETRABALHO ===
+    'inspection_aprovado', 'inspection_reprovado', 'inspection_ver_rnc',
+    
+    // === CAMPOS ADMINISTRATIVOS ===
+    'priority', 'status', 'assigned_user_id', 'price', 'justificativa'
 ];
 
 // Carregar grupos na inicialização

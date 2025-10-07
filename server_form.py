@@ -188,6 +188,7 @@ if HAS_COMPRESS and Compress is not None:
             app.config['COMPRESS_BR_LEVEL'] = 5
         except Exception:
             app.config['COMPRESS_ALGORITHM'] = 'gzip'
+        
         Compress(app)
     except Exception as _compress_err:
         print(f"⚠️ Falha ao inicializar compressão: {_compress_err}")

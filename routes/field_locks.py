@@ -19,62 +19,67 @@ DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 
 # Campos disponíveis para bloqueio (TODOS os campos da tabela RNC)
 AVAILABLE_FIELDS = {
-    # Campos principais
-    'rnc_number': 'Número RNC',
-    'title': 'Título',
-    'description': 'Descrição',
-    'equipment': 'Equipamento',
-    'client': 'Cliente',
-    'priority': 'Prioridade',
-    'status': 'Status',
-    'assigned_user_id': 'Usuário Atribuído',
-    'price': 'Preço',
+    # === INFORMAÇÕES PRINCIPAIS DO RNC ===
+    'rnc_number': '📋 Número RNC',
+    'title': '📝 Título do Equipamento de produção - Linha A',
+    'equipment': '🔧 Equipamento/Sistema',
+    'client': '🏢 Cliente/Departamento',
+    'description': '📄 Descrição da Não Conformidade',
+    'created_at': '📅 Data de Emissão',
     
-    # Disposições
-    'disposition_usar': 'Disposição: Usar',
-    'disposition_retrabalhar': 'Disposição: Retrabalhar',
-    'disposition_rejeitar': 'Disposição: Rejeitar',
-    'disposition_sucata': 'Disposição: Sucata',
-    'disposition_devolver_estoque': 'Disposição: Devolver ao Estoque',
-    'disposition_devolver_fornecedor': 'Disposição: Devolver ao Fornecedor',
+    # === DADOS TÉCNICOS DO PRODUTO ===
+    'mp': '🔢 MP (Matéria Prima)',
+    'revision': '📑 Revisão',
+    'position': '📍 Posição',
+    'cv': '⚙️ CV',
+    'conjunto': '📦 Conjunto',
+    'modelo': '🏭 Modelo',
+    'description_drawing': '✏️ Descrição do Desenho',
+    'quantity': '📊 Quantidade',
+    'material': '🔩 Material',
+    'drawing': '📐 Desenho',
+    'purchase_order': '🛒 Ordem de Compra',
     
-    # Inspeção
-    'inspection_aprovado': 'Inspeção: Aprovado',
-    'inspection_reprovado': 'Inspeção: Reprovado',
-    'inspection_ver_rnc': 'Inspeção: Ver RNC',
+    # === RESPONSABILIDADES E SETORES ===
+    'responsavel': '👤 Responsável pela Detecção',
+    'inspetor': '🔍 Inspetor',
+    'setor': '🏭 Setor',
+    'area_responsavel': '🎯 Área Responsável',
     
-    # Assinaturas e Datas
-    'signature_inspection_date': 'Data Assinatura Inspeção',
-    'signature_engineering_date': 'Data Assinatura Engenharia',
-    'signature_inspection2_date': 'Data Assinatura Inspeção 2',
-    'signature_inspection_name': 'Nome Assinatura Inspeção',
-    'signature_engineering_name': 'Nome Assinatura Engenharia',
-    'signature_inspection2_name': 'Nome Assinatura Inspeção 2',
+    # === ASSINATURAS ===
+    'signature_inspection_name': '✍️ Assinatura: Responsável',
+    'signature_engineering_name': '✍️ Assinatura: Gerente',
+    'signature_inspection2_name': '✍️ Assinatura: Líder',
     
-    # Instruções e Análises
-    'instruction_retrabalho': 'Instrução Retrabalho',
-    'cause_rnc': 'Causa da RNC',
-    'action_rnc': 'Ação da RNC',
+    # === DATAS DE ASSINATURA ===
+    'signature_inspection_date': '📅 Data: Assinatura Inspeção',
+    'signature_engineering_date': '📅 Data: Assinatura Engenharia',
+    'signature_inspection2_date': '📅 Data: Assinatura Inspeção 2',
     
-    # Responsabilidades
-    'responsavel': 'Responsável',
-    'inspetor': 'Inspetor',
-    'setor': 'Setor',
-    'area_responsavel': 'Área Responsável',
+    # === INSTRUÇÕES E ANÁLISES ===
+    'instruction_retrabalho': '🔨 Instrução para Retrabalho',
+    'cause_rnc': '🔎 Causa da RNC',
+    'action_rnc': '⚡ Ação a ser Tomada',
     
-    # Dados Técnicos
-    'material': 'Material',
-    'quantity': 'Quantidade',
-    'drawing': 'Desenho',
-    'mp': 'MP',
-    'revision': 'Revisão',
-    'position': 'Posição',
-    'cv': 'CV',
-    'conjunto': 'Conjunto',
-    'modelo': 'Modelo',
-    'description_drawing': 'Descrição do Desenho',
-    'purchase_order': 'Ordem de Compra',
-    'justificativa': 'Justificativa'
+    # === DISPOSIÇÃO DO MATERIAL NÃO-CONFORME ===
+    'disposition_usar': '✅ Disposição: USAR COMO ESTÁ',
+    'disposition_retrabalhar': '🔄 Disposição: RETRABALHAR',
+    'disposition_rejeitar': '❌ Disposição: REJEITAR',
+    'disposition_sucata': '🗑️ Disposição: SUCATA',
+    'disposition_devolver_estoque': '📦 Disposição: DEVOLVER AO ESTOQUE',
+    'disposition_devolver_fornecedor': '🚚 Disposição: DEVOLVER AO FORNECEDOR',
+    
+    # === INSPEÇÃO DO RETRABALHO ===
+    'inspection_aprovado': '✅ Inspeção: APROVADO',
+    'inspection_reprovado': '❌ Inspeção: REPROVADO',
+    'inspection_ver_rnc': '🔗 Inspeção: VER RNC Nº',
+    
+    # === CAMPOS ADMINISTRATIVOS ===
+    'priority': '⚠️ Nível de Urgência',
+    'status': '📊 Status',
+    'assigned_user_id': '👥 Usuário Atribuído',
+    'price': '💰 Custo Estimado (R$)',
+    'justificativa': '📋 Justificativa'
 }
 
 

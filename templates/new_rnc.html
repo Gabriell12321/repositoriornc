@@ -572,7 +572,7 @@
 
             <!-- Signature Row -->
             <div style="display: flex;">
-                <div id="assinatura_coluna1" style="width: 33.33%; padding: 15px; text-align: center; font-size: 11px; font-weight: bold; border-right: 2px solid #cccccc; background: #6c757d; color: white; cursor: pointer;" onclick="preencherAssinatura(this)">
+                <div id="assinatura_coluna1" style="width: 33.33%; padding: 15px; text-align: center; font-size: 11px; font-weight: bold; border-right: 2px solid #cccccc; background: #ffffff; color: rgb(0, 0, 0); cursor: pointer;" onclick="preencherAssinatura(this)">
                     <div id="nome_coluna1" style="margin-bottom: 25px;">NOME</div>
                     <div style="border-top: 1px solid #6c757d; padding-top: 8px;">VISTO</div>
                 </div>
@@ -752,7 +752,7 @@
                     return;
                 }
 
-                const response = await fetch(`/api/field-locks/group/${__USER_GROUP_ID}/locked-fields`);
+                const response = await fetch(`/admin/field-locks/api/user/locked-fields`);
                 const data = await response.json();
                 
                 if (data.success) {
@@ -982,7 +982,7 @@
         // Função para carregar usuários
         async function loadUsers() {
             try {
-                const response = await fetch('/api/users');
+                const response = await fetch('/api/users/list');
                 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);

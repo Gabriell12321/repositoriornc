@@ -1505,14 +1505,14 @@
                             </div>
                             <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
                                 <select id="evidenciasYearSelect" style="padding:8px 12px; border:none; border-radius:6px; font-size:13px; background:rgba(255,255,255,0.95); cursor:pointer; font-weight:500;">
-                                    <option value="">Todos os Anos</option>
-                                </select>
+                                <option value="">Todos os Anos</option>
+                            </select>
                                 <button onclick="printEvidencias()" style="padding:8px 14px; border:none; border-radius:6px; background:#fff; color:#667eea; cursor:pointer; font-size:13px; font-weight:600; transition:all 0.3s; box-shadow:0 2px 8px rgba(0,0,0,0.15);" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">🖨️ Imprimir</button>
                                 <button onclick="exportEvidenciasCSV()" style="padding:8px 14px; border:none; border-radius:6px; background:#198754; color:#fff; cursor:pointer; font-size:13px; font-weight:600; transition:all 0.3s;" onmouseover="this.style.background='#157347'" onmouseout="this.style.background='#198754'">📥 CSV</button>
                                 <button onclick="refreshEvidencias()" style="padding:8px 14px; border:none; border-radius:6px; background:rgba(255,255,255,0.2); color:#fff; cursor:pointer; font-size:13px; font-weight:600; transition:all 0.3s; backdrop-filter:blur(10px);" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">🔄 Atualizar</button>
-                            </div>
                         </div>
-                        
+                    </div>
+                    
                         <!-- Cards de estatísticas rápidas -->
                         <div id="evidenciasStats" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:10px; margin-top:16px;">
                             <!-- Será preenchido dinamicamente -->
@@ -2334,8 +2334,8 @@
                 if (data.success) {
                     __nextCursor = data.next_cursor || null;
                     __hasMore = !!data.has_more;
-                    rncsData[tab] = data.rncs;
-                    console.log(`✅ RNCs carregados para ${tab}: ${data.rncs.length} itens`);
+                        rncsData[tab] = data.rncs;
+                        console.log(`✅ RNCs carregados para ${tab}: ${data.rncs.length} itens`);
                     
                     // Debug adicional: verificar tipos de dados carregados
                     if (data.rncs.length > 0) {
@@ -3781,8 +3781,8 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
                 // Atualizar contadores após carregamento completo
                 setTimeout(() => {
                     console.log('� Atualizando contadores finais...');
-                    updateCounts();
-                    saveDashboardCache({ user: null, rncs: rncsData });
+                        updateCounts();
+                        saveDashboardCache({ user: null, rncs: rncsData });
                     console.log('✅ Contadores atualizados');
                     
                 }, 300);
@@ -6278,7 +6278,7 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
                         </td>
                         <td style="padding:8px 10px; text-align:center; border:none; border-bottom:1px solid #e9ecef;">
                             <span style="display:inline-block; padding:4px 10px; border-radius:12px; background:${bgColor}; color:${textColor}; font-weight:700; font-size:11px;">
-                                ${item.percentage}%
+                            ${item.percentage}%
                             </span>
                         </td>
                         <td style="padding:8px 10px; text-align:center; border:none; border-bottom:1px solid #e9ecef; font-size:16px;">
@@ -10619,7 +10619,7 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
                                     ]
                                 },
                                 options:{ 
-                                    responsive:true,
+                                    responsive:true, 
                                     maintainAspectRatio:false,
                                     interaction:{mode:'index', intersect:false}, 
                                     stacked:false,
@@ -10761,7 +10761,7 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
                                     ]
                                 },
                                 options:{ 
-                                    responsive:true,
+                                    responsive:true, 
                                     maintainAspectRatio:false,
                                     scales:{ 
                                         y:{ 
