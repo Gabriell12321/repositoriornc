@@ -239,10 +239,10 @@
             </tr>
             <tr>
                 <td><input type="text" id="title" class="input-field" value="{{ txt_fields.get('Desenho') or rnc.title or '' }}"></td>
-                <td><input type="text" class="input-field" value="{{ txt_fields.get('MP') or '' }}"></td>
-                <td><input type="text" class="input-field" value="{{ txt_fields.get('Revisão') or txt_fields.get('REVISAO') or '' }}"></td>
-                <td><input type="text" class="input-field" value="{{ txt_fields.get('POS') or '' }}"></td>
-                <td><input type="text" class="input-field" value="{{ txt_fields.get('CV') or '' }}"></td>
+                <td><input type="text" id="mp" class="input-field" value="{{ txt_fields.get('MP') or '' }}"></td>
+                <td><input type="text" id="revision" class="input-field" value="{{ txt_fields.get('Revisão') or txt_fields.get('REVISAO') or '' }}"></td>
+                <td><input type="text" id="position" class="input-field" value="{{ txt_fields.get('POS') or '' }}"></td>
+                <td><input type="text" id="cv" class="input-field" value="{{ txt_fields.get('CV') or '' }}"></td>
             </tr>
         </table>
 
@@ -254,8 +254,8 @@
             </tr>
             <tr>
                 <td><input type="text" id="equipment" class="input-field" value="{{ rnc.equipment or '' }}"></td>
-                <td><input type="text" class="input-field" value="{{ txt_fields.get('Conjunto') or '' }}"></td>
-                <td><input type="text" class="input-field" value="{{ txt_fields.get('Modelo') or '' }}"></td>
+                <td><input type="text" id="conjunto" class="input-field" value="{{ txt_fields.get('Conjunto') or '' }}"></td>
+                <td><input type="text" id="modelo" class="input-field" value="{{ txt_fields.get('Modelo') or '' }}"></td>
             </tr>
         </table>
 
@@ -267,10 +267,10 @@
                 <td class="field-label" style="width: 20%;">MATERIAL</td>
             </tr>
             <tr>
-                <td><input type="text" class="input-field" value="{{ txt_fields.get('Descrição da RNC') or txt_fields.get('Descrição do desenho') or '' }}"></td>
-                <td><input type="text" class="input-field" value="{{ txt_fields.get('Quantidade') or '' }}"></td>
+                <td><input type="text" id="description_drawing" class="input-field" value="{{ txt_fields.get('Descrição da RNC') or txt_fields.get('Descrição do desenho') or '' }}"></td>
+                <td><input type="text" id="quantity" class="input-field" value="{{ txt_fields.get('Quantidade') or '' }}"></td>
                 <td><input type="text" id="client" class="input-field" value="{{ rnc.client or '' }}"></td>
-                <td><input type="text" class="input-field" value="{{ txt_fields.get('Material') or '' }}"></td>
+                <td><input type="text" id="material" class="input-field" value="{{ txt_fields.get('Material') or '' }}"></td>
             </tr>
         </table>
 
@@ -283,9 +283,9 @@
             </tr>
             <tr>
                 <td><input type="text" id="assinatura_gerente" class="input-field" value="{{ rnc.signature_engineering_name or rnc.user_name or '' }}"></td>
-                <td><input type="text" class="input-field" value="{{ rnc.signature_inspection2_name or '' }}"></td>
-                <td><input type="text" class="input-field" value="{{ txt_fields.get('OC') or '' }}"></td>
-                <td><input type="text" id="nome_responsavel" class="input-field" value="{{ rnc.user_name or '' }}"></td>
+                <td><input type="text" id="signature_inspection2_name" class="input-field" value="{{ rnc.signature_inspection2_name or '' }}"></td>
+                <td><input type="text" id="purchase_order" class="input-field" value="{{ txt_fields.get('OC') or '' }}"></td>
+                <td><input type="text" id="responsavel" class="input-field" value="{{ rnc.user_name or '' }}"></td>
             </tr>
         </table>
 
@@ -297,10 +297,10 @@
                 <td class="field-label" style="width: 15%;">ASS. RESP.</td>
             </tr>
             <tr>
-                <td><input type="text" class="input-field" value="{{ rnc.signature_inspection_name or '' }}"></td>
-                <td><input type="text" class="input-field" value="{{ (rnc.created_at or '')[:10] if rnc.created_at else '' }}"></td>
-                <td><input type="text" class="input-field" value="{{ rnc.department or rnc.user_department or '' }}"></td>
-                <td><input type="text" class="input-field" value="{{ rnc.user_name or '' }}"></td>
+                <td><input type="text" id="inspetor" class="input-field" value="{{ rnc.signature_inspection_name or '' }}"></td>
+                <td><input type="text" id="created_at" class="input-field" value="{{ (rnc.created_at or '')[:10] if rnc.created_at else '' }}"></td>
+                <td><input type="text" id="area_responsavel" class="input-field" value="{{ rnc.department or rnc.user_department or '' }}"></td>
+                <td><input type="text" id="signature_inspection_name" class="input-field" value="{{ rnc.user_name or '' }}"></td>
             </tr>
         </table>
 
@@ -628,15 +628,36 @@
             })();
 
             const formData = {
+                // Informações principais
                 title: document.getElementById('title')?.value ?? {{ (rnc.title or "") | tojson }},
                 description: document.getElementById('description')?.value ?? {{ (rnc.description or "") | tojson }},
                 equipment: document.getElementById('equipment')?.value ?? {{ (rnc.equipment or "") | tojson }},
                 client: document.getElementById('client')?.value ?? {{ (rnc.client or "") | tojson }},
                 rnc_number: document.getElementById('rnc_number')?.value || {{ rnc.rnc_number | tojson }},
-                signature_inspection_name: document.getElementById('nome_coluna1').textContent,
-                signature_engineering_name: document.getElementById('nome_coluna2').textContent,
-                signature_inspection2_name: document.getElementById('nome_coluna3').textContent,
                 status: (IS_REPLY ? 'Pendente' : undefined),
+                
+                // Dados técnicos do produto
+                mp: document.getElementById('mp')?.value || '',
+                revision: document.getElementById('revision')?.value || '',
+                position: document.getElementById('position')?.value || '',
+                cv: document.getElementById('cv')?.value || '',
+                conjunto: document.getElementById('conjunto')?.value || '',
+                modelo: document.getElementById('modelo')?.value || '',
+                description_drawing: document.getElementById('description_drawing')?.value || '',
+                quantity: document.getElementById('quantity')?.value || '',
+                material: document.getElementById('material')?.value || '',
+                purchase_order: document.getElementById('purchase_order')?.value || '',
+                
+                // Responsabilidades
+                responsavel: document.getElementById('responsavel')?.value || '',
+                inspetor: document.getElementById('inspetor')?.value || '',
+                area_responsavel: document.getElementById('area_responsavel')?.value || '',
+                created_at: document.getElementById('created_at')?.value || '',
+                
+                // Assinaturas
+                signature_inspection_name: document.getElementById('nome_coluna1')?.textContent || '',
+                signature_engineering_name: document.getElementById('nome_coluna2')?.textContent || '',
+                signature_inspection2_name: document.getElementById('nome_coluna3')?.textContent || '',
                 // Disposição
                 disposition_usar: document.getElementById('usar')?.checked || false,
                 disposition_retrabalhar: document.getElementById('retrabalhar')?.checked || false,
@@ -724,6 +745,22 @@
             {% if is_reply %}
             try {
                 console.log('🔒 Carregando campos bloqueados para resposta...');
+                
+                // Mapeamento: nome do campo no banco → ID no HTML
+                const fieldIdMap = {
+                    // Disposições
+                    'disposition_usar': 'usar',
+                    'disposition_retrabalhar': 'retrabalhar',
+                    'disposition_rejeitar': 'rejeitar',
+                    'disposition_sucata': 'sucata',
+                    'disposition_devolver_estoque': 'devolver_estoque',
+                    'disposition_devolver_fornecedor': 'devolver_fornecedor',
+                    // Inspeções
+                    'inspection_aprovado': 'aprovado',
+                    'inspection_reprovado': 'reprovado',
+                    'inspection_ver_rnc': 'ver_rnc_input'
+                };
+                
                 fetch('/admin/field-locks/api/user/locked-fields?context=response', { credentials: 'include' })
                     .then(r => r.json())
                     .then(data => {
@@ -733,7 +770,10 @@
                             
                             // Desabilitar campos bloqueados
                             lockedFields.forEach(fieldName => {
-                                const field = document.getElementById(fieldName);
+                                // Verificar se precisa mapear o nome
+                                const actualId = fieldIdMap[fieldName] || fieldName;
+                                const field = document.getElementById(actualId);
+                                
                                 if (field) {
                                     field.disabled = true;
                                     field.style.backgroundColor = '#f0f0f0';
