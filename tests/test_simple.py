@@ -1,33 +1,48 @@
-import requests
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Teste simples para verificar o sistema IPPEL
+"""
 
-s = requests.Session()
-try:
-    # Login
-    response = s.post('http://192.168.3.11:5001/login', data={
-        'email': 'admin@exemplo.com', 
-        'password': 'admin123'
-    })
-    print(f'Login status: {response.status_code}')
+import requests
+import json
+import sqlite3
+
+def test_basic():
+    print("Testando sistema IPPEL...")
     
-    if response.status_code == 200:
-        # Listar RNCs finalizadas
-        response = s.get('http://192.168.3.11:5001/list_rncs?tab=finalized')
-        print(f'List RNCs status: {response.status_code}')
-        
-        if response.status_code == 200:
-            data = response.json()
-            if 'rncs' in data and len(data['rncs']) > 0:
-                rnc = data['rncs'][0]
-                print(f"RNC {rnc.get('rnc_number', 'N/A')}")
-                print(f"  Setor: {rnc.get('setor', 'N/A')}")
-                print(f"  Department: {rnc.get('department', 'N/A')}")
-                print(f"  User Department: {rnc.get('user_department', 'N/A')}")
-            else:
-                print('Nenhuma RNC encontrada')
+    # Teste 1: Conexao com servidor
+    try:
+        response = requests.get("http://192.168.3.11:5001/", timeout=5)
+        print(f"Servidor respondendo: {response.status_code}")
+    except Exception as e:
+        print(f"Erro de conexao: {e}")
+        return False
+    
+    # Teste 2: Banco de dados
+    try:
+        conn = sqlite3.connect('ippel_system.db')
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM rncs")
+        count = cursor.fetchone()[0]
+        print(f"Total de RNCs no banco: {count}")
+        conn.close()
+    except Exception as e:
+        print(f"Erro no banco: {e}")
+        return False
+    
+    # Teste 3: API de RNCs
+    try:
+        response = requests.get("http://192.168.3.11:5001/api/rnc/list", timeout=5)
+        print(f"API RNC status: {response.status_code}")
+        if response.status_code == 401:
+            print("API protegida (correto)")
         else:
-            print(f'Erro na list_rncs: {response.status_code}')
-    else:
-        print(f'Erro no login: {response.status_code}')
-        
-except Exception as e:
-    print(f'Erro: {e}')
+            print(f"Resposta: {response.text[:200]}")
+    except Exception as e:
+        print(f"Erro na API: {e}")
+    
+    return True
+
+if __name__ == "__main__":
+    test_basic()

@@ -1,227 +1,1134 @@
-{% extends "base.html" %}
-
-{% block title %}Novo RNC - Sistema IPPEL{% endblock %}
-
-{% block extra_css %}
-<style>
-    .card {
-        background: white !important;
-        border-radius: 15px !important;
-        padding: 30px !important;
-        box-shadow: 0 8px 32px rgba(128, 128, 128, 0.15) !important;
-        border: 2px solid #808080 !important;
-        max-width: 800px !important;
-        margin: 0 auto !important;
-    }
-
-    .form-group {
-        margin-bottom: 25px !important;
-    }
-
-    .form-label {
-        display: block !important;
-        font-weight: 600 !important;
-        color: #6c757d !important;
-        margin-bottom: 10px !important;
-        font-size: 14px !important;
-    }
-
-    .form-input, .form-select, .form-textarea {
-        width: 100% !important;
-        padding: 15px 20px !important;
-        border: 2px solid #808080 !important;
-        border-radius: 10px !important;
-        font-size: 14px !important;
-        transition: all 0.3s ease !important;
-        background: white !important;
-        color: #495057 !important;
-    }
-
-    .form-input:focus, .form-select:focus, .form-textarea:focus {
-        outline: none !important;
-        border-color: #808080 !important;
-        box-shadow: 0 0 0 3px rgba(128, 128, 128, 0.2) !important;
-        background: white !important;
-        color: #495057 !important;
-    }
-
-    .form-textarea {
-        resize: vertical !important;
-        min-height: 120px !important;
-    }
-
-    .btn {
-        padding: 12px 24px !important;
-        border: 2px solid #808080 !important;
-        border-radius: 10px !important;
-        font-size: 14px !important;
-        font-weight: 600 !important;
-        cursor: pointer !important;
-        transition: all 0.3s ease !important;
-        text-decoration: none !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        gap: 8px !important;
-    }
-
-    .btn-primary {
-        background: #6c757d !important;
-        color: white !important;
-    }
-
-    .btn-primary:hover {
-        background: #5a6268 !important;
-        transform: translateY(-2px) !important;
-        box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4) !important;
-    }
-
-    .btn-secondary {
-        background: #adb5bd !important;
-        color: white !important;
-    }
-
-    .btn-secondary:hover {
-        background: #9fa6ae !important;
-        transform: translateY(-1px) !important;
-        box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3) !important;
-    }
-
-    .form-actions {
-        display: flex !important;
-        gap: 15px !important;
-        margin-top: 30px !important;
-        justify-content: center !important;
-    }
-
-    /* Animação de entrada */
-    .card {
-        animation: slideInUp 0.6s ease-out !important;
-    }
-
-    @keyframes slideInUp {
-        from {
-            opacity: 0;
-            transform: translateY(30px);
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novo RNC - Sistema IPPEL</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        to {
-            opacity: 1;
-            transform: translateY(0);
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Liberation Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+            background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 30%, #dddddd 70%, #d0d0d0 100%);
+            padding: 0;
+            margin: 0;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
         }
-    }
 
-    /* Estilo para o título */
-    .page-title {
-        color: #6c757d !important;
-        font-size: 28px !important;
-        font-weight: 700 !important;
-        text-align: center !important;
-        margin-bottom: 30px !important;
-        position: relative !important;
-    }
+        .container {
+            width: 100vw;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #ffffff 0%, #fdfdfd 50%, #fafafa 100%);
+            padding: 35px;
+            box-shadow: 0 32px 64px rgba(0, 0, 0, 0.18);
+            border-radius: 0;
+            overflow-y: auto;
+            border-top: 8px solid #6c757d;
+            position: relative;
+        }
 
-    .page-title::after {
-        content: '' !important;
-        position: absolute !important;
-        bottom: -10px !important;
-        left: 50% !important;
-        transform: translateX(-50%) !important;
-        width: 80px !important;
-        height: 3px !important;
-        background: #808080 !important;
-        border-radius: 2px !important;
-    }
+        .header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: none;
+            padding-bottom: 0;
+            position: relative;
+        }
 
-    /* Forçar cores em todos os elementos */
-    input, select, textarea {
-        background: white !important;
-        color: #495057 !important;
-        border: 2px solid #808080 !important;
-    }
+        .logos {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            margin: 0 auto;
+        }
 
-    input::placeholder, textarea::placeholder {
-        color: #6c757d !important;
-    }
+        .logo-ippel {
+            width: 120px;
+            height: 120px;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
 
-    select option {
-        background: white !important;
-        color: #495057 !important;
-    }
+        .logo-ippel:hover {
+            transform: scale(1.05);
+        }
 
-    /* Sem autocomplete: lista nativa do navegador */
-</style>
-{% endblock %}
+        .title-section {
+            text-align: center;
+            margin: 20px 0;
+        }
 
-{% block content %}
-<div class="card">
-    <h1 class="page-title">📝 Novo Relatório de Não Conformidade</h1>
-    
-    <form method="POST">
-        <div class="form-group">
-            <label class="form-label" for="title">📋 Título do RNC:</label>
-            <input type="text" id="title" name="title" class="form-input" required>
-        </div>
+        .main-title {
+            font-size: 30px;
+            font-weight: 800;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #6c757d 0%, #495057 30%, #343a40 70%, #212529 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 1.5px;
+            position: relative;
+            text-align: center;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #6c757d;
+            font-weight: 600;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+        }
+
+        .form-code {
+            font-size: 12px;
+            color: #6c757d;
+            text-align: center;
+            margin-bottom: 10px;
+        }
         
-        <div class="form-group">
-            <label class="form-label" for="description">📝 Descrição:</label>
-            <textarea id="description" name="description" class="form-input form-textarea" rows="5" required></textarea>
-        </div>
+        .user-selector-section {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 30px;
+            margin: 20px 0;
+            padding: 20px;
+            background: linear-gradient(145deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+            border: 1px solid #dee2e6;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
         
-        <div class="form-group">
-            <label class="form-label" for="equipment">🔧 Equipamento:</label>
-            <input type="text" id="equipment" name="equipment" class="form-input">
-        </div>
+        .selector-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
         
-        <div class="form-group">
-            <label class="form-label" for="client">🏢 Cliente:</label>
-            <select id="client" name="client" class="form-input form-select">
-                <option value="" selected disabled>Selecione o cliente</option>
-                {% if clients %}
-                  {% for c in clients %}
-                    <option value="{{ c }}">{{ c }}</option>
-                  {% endfor %}
-                {% endif %}
-            </select>
+        .selector-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #495057;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        
+        .selector-dropdown {
+            min-width: 200px;
+            padding: 10px 15px;
+            border: 2px solid #ced4da;
+            border-radius: 10px;
+            background: white;
+            font-size: 14px;
+            font-weight: 500;
+            color: #495057;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        
+        .selector-dropdown:focus {
+            outline: none;
+            border-color: #6c757d;
+            box-shadow: 0 0 0 3px rgba(108, 117, 125, 0.15);
+            transform: translateY(-1px);
+        }
+        
+        .selector-dropdown:hover {
+            border-color: #adb5bd;
+            transform: translateY(-1px);
+        }
+
+        .rnc-number {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .field-label {
+            background: #6c757d;
+            color: white;
+            padding: 8px;
+            font-weight: bold;
+            font-size: 11px;
+            text-align: center;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 8px;
+            border: 2px solid #cccccc;
+            border-radius: 5px;
+            font-size: 11px;
+            background: white;
+        }
+
+        .large-text-area {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .medium-text-area {
+            min-height: 60px;
+            resize: vertical;
+        }
+
+        .item-column {
+            background: #6c757d;
+            color: white;
+            padding: 8px;
+            font-weight: bold;
+            font-size: 11px;
+            text-align: center;
+            width: 60px;
+        }
+
+        .section-title {
+            background: #6c757d;
+            color: white;
+            padding: 8px;
+            font-weight: bold;
+            font-size: 11px;
+            text-align: center;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+
+        table td {
+            border: 1px solid #cccccc;
+        }
+
+        /* Barra de ações moderna */
+        .action-bar { position: fixed; right: 24px; bottom: 24px; display: flex; gap: 12px; z-index: 1200; }
+        .action-btn { display: inline-flex; align-items: center; gap: 10px; height: 48px; padding: 0 18px; border-radius: 9999px; border: none; cursor: pointer; color: #fff; font-weight: 600; letter-spacing: .2px; box-shadow: 0 8px 24px rgba(0,0,0,.15); transition: transform .15s ease, box-shadow .2s ease, filter .2s ease; backdrop-filter: saturate(120%); }
+        .action-btn .icon { font-size: 1.1rem; display: inline-flex; }
+        .action-btn:hover { transform: translateY(-2px); box-shadow: 0 14px 32px rgba(0,0,0,.18); filter: brightness(1.05); }
+        .dashboard-btn { background: linear-gradient(135deg, #6c757d 0%, #495057 100%); }
+        .save-btn { background: linear-gradient(90deg, #28a745 0%, #20c997 100%); }
+
+        .create-mode-banner {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(40, 167, 69, 0.3);
+        }
+
+        /* Estilos para campos bloqueados */
+        .field-blocked {
+            background: repeating-linear-gradient(
+                45deg,
+                #f8f9fa,
+                #f8f9fa 10px,
+                #e9ecef 10px,
+                #e9ecef 20px
+            ) !important;
+            border: 2px solid #dc3545 !important;
+            opacity: 0.7;
+            cursor: not-allowed !important;
+            position: relative;
+            transition: all 0.3s ease !important;
+        }
+
+        .field-blocked::after {
+            content: "🔒";
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #dc3545;
+            font-size: 14px;
+            pointer-events: none;
+            animation: pulse 2s infinite;
+        }
+
+        .field-blocked:hover {
+            box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.3) !important;
+            transform: scale(1.02);
+            animation: shake 0.5s ease-in-out;
+        }
+
+        .field-blocked:focus {
+            animation: shake 0.5s ease-in-out, pulse 1s ease-in-out;
+            box-shadow: 0 0 20px rgba(220, 53, 69, 0.4) !important;
+        }
+
+        /* Animações */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        @keyframes bounceBlock {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 5px rgba(220, 53, 69, 0.2); }
+            50% { box-shadow: 0 0 20px rgba(220, 53, 69, 0.8), 0 0 30px rgba(220, 53, 69, 0.6); }
+        }
+
+        .field-blocked-animation {
+            animation: shake 0.6s ease-in-out, glow 0.8s ease-in-out !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Banner de modo de criação -->
+        <div class="create-mode-banner">
+            ✨ CRIAÇÃO DE NOVA RNC - Sistema IPPEL
         </div>
 
-        <div class="form-group">
-            <label class="form-label" for="price">💲 Preço (R$):</label>
-            <input type="number" id="price" name="price" step="0.01" min="0" placeholder="0,00" class="form-input">
-        </div>
-        
-        <div class="form-group">
-            <label class="form-label" for="priority">⚡ Prioridade:</label>
-            <select id="priority" name="priority" class="form-input form-select">
-                <option value="Baixa">Baixa</option>
-                <option value="Média">Média</option>
-                <option value="Alta">Alta</option>
-                <option value="Crítica">Crítica</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label class="form-label" for="instruction_retrabalho">🔧 Instrução para Retrabalho:</label>
-            <textarea id="instruction_retrabalho" name="instruction_retrabalho" class="form-input form-textarea" rows="3" placeholder="Instruções detalhadas para correção..."></textarea>
+        <!-- Header with Logo -->
+        <div class="header">
+            <div class="logos" style="display:flex; gap:12px; align-items:center;">
+                <img src="{{ url_for('static', filename='LOGOSQI.jpg') }}" alt="SQI Logo" style="width: 120px; height: 120px; border-radius: 15px; object-fit: contain; background: transparent; padding: 0; border: none;">
+                <img src="/IPPELLOGO.jpg" alt="IPPEL Logo" class="apply-logo" style="width: 120px; height: 120px; border-radius: 15px; object-fit: contain; background: transparent; padding: 0; border: none;"
+                     data-logo-primary="/IPPELLOGO.jpg"
+                     data-logo-fallback1="/IPPELLOGO.jpg"
+                     data-logo-fallback2="{{ url_for('static', filename='LOGOSQI.jpg') }}"
+                     onerror="if(this.dataset.try1!=='1'){this.dataset.try1='1'; this.src=this.dataset.logoFallback1;} else if(this.dataset.try2!=='1'){this.dataset.try2='1'; this.src=this.dataset.logoFallback2;} else {this.style.display='none';}">
+            </div>
+            <div style="position: absolute; top: 20px; right: 30px; font-size: 12px; color: #6c757d; font-weight: 500; z-index: 10;">
+                v2.0 | Sistema Premium
+            </div>
         </div>
 
-        <div class="form-group">
-            <label class="form-label" for="cause_rnc">🔍 Causa da RNC:</label>
-            <textarea id="cause_rnc" name="cause_rnc" class="form-input form-textarea" rows="3" placeholder="Análise da causa raiz..."></textarea>
+        <!-- Title Section -->
+        <div class="title-section">
+            <div style="margin-bottom: 10px;">
+                <div style="width: 60px; height: 2px; background: linear-gradient(90deg, transparent, #6c757d, transparent); margin: 0 auto;"></div>
+            </div>
+            <div class="main-title">Relatório De Não Conformidades Internas – RNC</div>
+            <div class="subtitle">FABRICAÇÃO / RECEBIMENTO</div>
         </div>
 
-        <div class="form-group">
-            <label class="form-label" for="action_rnc">⚡ Ação a ser Tomada:</label>
-            <textarea id="action_rnc" name="action_rnc" class="form-input form-textarea" rows="3" placeholder="Ações corretivas e preventivas..."></textarea>
+        <!-- User Selector Section -->
+        <div class="user-selector-section">
+            <div class="selector-group">
+                <label class="selector-label">👥 Grupo</label>
+                <select id="groupSelector" class="selector-dropdown" onchange="onGroupChange()">
+                    <option value="">Selecionar Grupo...</option>
+                </select>
+            </div>
+            <div class="selector-group">
+                <label class="selector-label">👤 Usuário</label>
+                <select id="userSelector" class="selector-dropdown" onchange="onUserChange()">
+                    <option value="">Selecionar Usuário...</option>
+                </select>
+            </div>
         </div>
-        
-        <div class="form-actions">
-            <button type="submit" class="btn btn-primary">
-                💾 Salvar RNC
+
+        <!-- Form Code -->
+        <div class="form-code">FQ – 002</div>
+
+        <!-- RNC Number -->
+        <div class="rnc-number">
+            <label style="font-weight: 600; color: #495057; margin-right: 10px;">RNC Nº.:</label>
+            <input type="text" id="rnc_number" name="rnc_number" value="[SERÁ GERADO AUTOMATICAMENTE]" 
+                   style="border: 2px solid #cccccc; border-radius: 5px; padding: 8px; width: 300px; font-weight: 600; background: #f8f9fa;" readonly>
+        </div>
+
+        <!-- Main Information Table -->
+        <table>
+            <tr>
+                <td class="field-label" style="width: 40%;">DES.</td>
+                <td class="field-label" style="width: 15%;">MP.</td>
+                <td class="field-label" style="width: 15%;">REV.</td>
+                <td class="field-label" style="width: 15%;">POS.</td>
+                <td class="field-label" style="width: 15%;">CV.</td>
+            </tr>
+            <tr>
+                <td><input type="text" id="title" name="title" class="input-field" placeholder="Título/Desenho" data-field="title"></td>
+                <td><input type="text" name="mp" class="input-field" placeholder="MP" data-field="mp"></td>
+                <td><input type="text" name="revision" class="input-field" placeholder="Revisão" data-field="revision"></td>
+                <td><input type="text" name="position" class="input-field" placeholder="Posição" data-field="position"></td>
+                <td><input type="text" name="cv" class="input-field" placeholder="CV" data-field="cv"></td>
+            </tr>
+        </table>
+
+        <table>
+            <tr>
+                <td class="field-label" style="width: 50%;">EQUIPAMENTO</td>
+                <td class="field-label" style="width: 30%;">CONJUNTO</td>
+                <td class="field-label" style="width: 20%;">MOD.</td>
+            </tr>
+            <tr>
+                <td><input type="text" id="equipment" name="equipment" class="input-field" placeholder="Equipamento" data-field="equipment"></td>
+                <td><input type="text" name="conjunto" class="input-field" placeholder="Conjunto" data-field="conjunto"></td>
+                <td><input type="text" name="modelo" class="input-field" placeholder="Modelo" data-field="modelo"></td>
+            </tr>
+        </table>
+
+        <table>
+            <tr>
+                <td class="field-label" style="width: 40%;">DESCRIÇÃO DES.</td>
+                <td class="field-label" style="width: 20%;">QTDE LOTE</td>
+                <td class="field-label" style="width: 20%;">CLIENTE</td>
+                <td class="field-label" style="width: 20%;">MATERIAL</td>
+            </tr>
+            <tr>
+                <td><input type="text" name="description_drawing" class="input-field" placeholder="Descrição do desenho" data-field="description_drawing"></td>
+                <td><input type="text" name="quantity" class="input-field" placeholder="Quantidade" data-field="quantity"></td>
+                <td><input type="text" id="client" name="client" class="input-field" placeholder="Cliente" data-field="client"></td>
+                <td><input type="text" name="material" class="input-field" placeholder="Material" data-field="material"></td>
+            </tr>
+        </table>
+
+        <table>
+            <tr>
+                <td class="field-label" style="width: 25%;">ASSINATURA GERENTE</td>
+                <td class="field-label" style="width: 25%;">ASSINATURA LÍDER SETOR</td>
+                <td class="field-label" style="width: 25%;">ORDEM DE COMPRA</td>
+                <td class="field-label" style="width: 25%;">NOME RESP.</td>
+            </tr>
+            <tr>
+                <td><input type="text" id="assinatura_gerente" name="assinatura_gerente" class="input-field" placeholder="Assinatura Gerente" data-field="signature_engineering_name"></td>
+                <td><input type="text" name="assinatura_lider" class="input-field" placeholder="Assinatura Líder" data-field="signature_inspection2_name"></td>
+                <td><input type="text" name="purchase_order" class="input-field" placeholder="Ordem de Compra" data-field="purchase_order"></td>
+                <td><input type="text" id="nome_responsavel" name="nome_responsavel" class="input-field" placeholder="Nome Responsável" data-field="responsavel"></td>
+            </tr>
+        </table>
+
+        <table>
+            <tr>
+                <td class="field-label" style="width: 35%;">INSPETOR:</td>
+                <td class="field-label" style="width: 20%;">DATA EMISSÃO</td>
+                <td class="field-label" style="width: 30%;">ÁREA RESPONSÁVEL</td>
+                <td class="field-label" style="width: 15%;">ASS. RESP.</td>
+            </tr>
+            <tr>
+                <td><input type="text" name="inspetor" class="input-field" placeholder="Inspetor" data-field="inspetor"></td>
+                <td><input type="text" id="data_emissao" name="data_emissao" class="input-field" data-field="created_at"></td>
+                <td><input type="text" name="area_responsavel" class="input-field" placeholder="Área Responsável" data-field="area_responsavel"></td>
+                <td><input type="text" name="ass_responsavel" class="input-field" placeholder="Ass. Responsável" data-field="signature_inspection_name"></td>
+            </tr>
+        </table>
+
+        <!-- Description Section -->
+        <table>
+            <tr>
+                <td class="item-column">ITEM</td>
+                <td class="section-title">DESCRIÇÃO DA NÃO CONFORMIDADE</td>
+            </tr>
+            <tr>
+                <td style="width: 60px;"></td>
+                <td><textarea id="description" name="description" class="input-field large-text-area" placeholder="Descreva a não conformidade identificada..." data-field="description"></textarea></td>
+            </tr>
+        </table>
+
+        <!-- Instruction Section -->
+        <table>
+            <tr>
+                <td class="item-column">ITEM</td>
+                <td class="section-title">INSTRUÇÃO PARA RETRABALHO</td>
+            </tr>
+            <tr>
+                <td style="width: 60px;"></td>
+                <td><textarea id="instruction_retrabalho" name="instruction_retrabalho" class="input-field medium-text-area" placeholder="Instruções detalhadas para correção..." data-field="instruction_retrabalho"></textarea></td>
+            </tr>
+        </table>
+
+        <!-- Cause Section -->
+        <table>
+            <tr>
+                <td class="item-column">ITEM</td>
+                <td class="section-title">CAUSA DA RNC</td>
+            </tr>
+            <tr>
+                <td style="width: 60px;"></td>
+                <td><textarea id="cause_rnc" name="cause_rnc" class="input-field medium-text-area" placeholder="Análise da causa raiz..." data-field="cause_rnc"></textarea></td>
+            </tr>
+        </table>
+
+        <!-- Action Section -->
+        <table>
+            <tr>
+                <td class="item-column">ITEM</td>
+                <td class="section-title">AÇÃO A SER TOMADA</td>
+            </tr>
+            <tr>
+                <td style="width: 60px;"></td>
+                <td><textarea id="action_rnc" name="action_rnc" class="input-field medium-text-area" placeholder="Ações corretivas e preventivas..." data-field="action_rnc"></textarea></td>
+            </tr>
+        </table>
+
+        <!-- Header Banner -->
+        <div style="width: 100%; background: #6c757d; color: white; text-align: center; padding: 12px 0; margin-bottom: 0; border-radius: 8px 8px 0 0; font-weight: bold; font-size: 14px; display: flex;">
+            <div style="width: 50%; text-align: center; border-right: 2px solid white;">DISPOSIÇÃO DO MATERIAL NÃO-CONFORME</div>
+            <div style="width: 50%; text-align: center;">INSPEÇÃO DO RETRABALHO</div>
+        </div>
+
+        <!-- Main Content Section -->
+        <div style="border: 2px solid #cccccc; border-top: none; border-radius: 0 0 8px 8px; background: white; display: flex;">
+            <!-- Left Section: Disposição do Material -->
+            <div style="width: 50%; padding: 15px; border-right: 1px solid #cccccc;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px; font-weight: bold;">
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" id="usar" name="disposition_usar" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #6c757d;" data-field="disposition_usar">
+                        <label for="usar">USAR COMO ESTÁ</label>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" id="retrabalhar" name="disposition_retrabalhar" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #6c757d;" data-field="disposition_retrabalhar">
+                        <label for="retrabalhar">RETRABALHAR</label>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" id="rejeitar" name="disposition_rejeitar" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #6c757d;" data-field="disposition_rejeitar">
+                        <label for="rejeitar">REJEITAR</label>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" id="sucata" name="disposition_sucata" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #6c757d;" data-field="disposition_sucata">
+                        <label for="sucata">SUCATA</label>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" id="devolver_estoque" name="disposition_devolver_estoque" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #6c757d;" data-field="disposition_devolver_estoque">
+                        <label for="devolver_estoque">DEVOLVER AO ESTOQUE</label>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" id="devolver_fornecedor" name="disposition_devolver_fornecedor" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #6c757d;" data-field="disposition_devolver_fornecedor">
+                        <label for="devolver_fornecedor">DEVOLVER AO FORNECEDOR</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Section: Inspeção do Retrabalho -->
+            <div style="width: 50%; padding: 15px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px; font-weight: bold;">
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" id="aprovado" name="inspection_aprovado" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #28a745;" data-field="inspection_aprovado">
+                        <label for="aprovado">APROVADO</label>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" id="reprovado" name="inspection_reprovado" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #dc3545;" data-field="inspection_reprovado">
+                        <label for="reprovado">REPROVADO</label>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" id="ver-rnc" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #ffc107;">
+                        <label for="ver-rnc">VER RNC. Nº:</label>
+                        <input type="text" id="ver_rnc_input" name="inspection_ver_rnc" style="border: none; border-bottom: 2px solid #6c757d; width: 120px; margin-left: 8px; font-size: 11px; padding: 2px; background: transparent;" data-field="inspection_ver_rnc">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Signature Section -->
+        <div style="margin-top: 15px; border: 2px solid #cccccc; border-radius: 4px; background: white;">
+            <!-- Date Row -->
+            <div style="display: flex; border-bottom: 2px solid #cccccc;">
+                <div style="width: 33.33%; padding: 8px; text-align: center; font-size: 10px; font-weight: bold; border-right: 2px solid #cccccc;">
+                    <span>INSPEÇÃO: </span>
+                    <input id="insp1_d" type="text" style="border: none; border-bottom: 1px solid #000; width: 20px; text-align: center; font-size: 10px;" placeholder="__">
+                    <span>/</span>
+                    <input id="insp1_m" type="text" style="border: none; border-bottom: 1px solid #000; width: 20px; text-align: center; font-size: 10px;" placeholder="__">
+                    <span>/</span>
+                    <input id="insp1_y" type="text" style="border: none; border-bottom: 1px solid #000; width: 40px; text-align: center; font-size: 10px;" placeholder="____">
+                </div>
+                <div style="width: 33.33%; padding: 8px; text-align: center; font-size: 10px; font-weight: bold; border-right: 2px solid #cccccc;">
+                    <span>INSPEÇÃO: </span>
+                    <input id="eng_d" type="text" style="border: none; border-bottom: 1px solid #000; width: 20px; text-align: center; font-size: 10px;" placeholder="__">
+                    <span>/</span>
+                    <input id="eng_m" type="text" style="border: none; border-bottom: 1px solid #000; width: 20px; text-align: center; font-size: 10px;" placeholder="__">
+                    <span>/</span>
+                    <input id="eng_y" type="text" style="border: none; border-bottom: 1px solid #000; width: 40px; text-align: center; font-size: 10px;" placeholder="____">
+                </div>
+                <div style="width: 33.33%; padding: 8px; text-align: center; font-size: 10px; font-weight: bold;">
+                    <span>INSPEÇÃO: </span>
+                    <input id="insp2_d" type="text" style="border: none; border-bottom: 1px solid #000; width: 20px; text-align: center; font-size: 10px;" placeholder="__">
+                    <span>/</span>
+                    <input id="insp2_m" type="text" style="border: none; border-bottom: 1px solid #000; width: 20px; text-align: center; font-size: 10px;" placeholder="__">
+                    <span>/</span>
+                    <input id="insp2_y" type="text" style="border: none; border-bottom: 1px solid #000; width: 40px; text-align: center; font-size: 10px;" placeholder="____">
+                </div>
+            </div>
+
+            <!-- Signature Row -->
+            <div style="display: flex;">
+                <div id="assinatura_coluna1" style="width: 33.33%; padding: 15px; text-align: center; font-size: 11px; font-weight: bold; border-right: 2px solid #cccccc; background: #6c757d; color: white; cursor: pointer;" onclick="preencherAssinatura(this)">
+                    <div id="nome_coluna1" style="margin-bottom: 25px;">NOME</div>
+                    <div style="border-top: 1px solid #6c757d; padding-top: 8px;">VISTO</div>
+                </div>
+                <div id="assinatura_coluna2" style="width: 33.33%; padding: 15px; text-align: center; font-size: 11px; font-weight: bold; border-right: 2px solid #cccccc; cursor: pointer;" onclick="preencherAssinatura(this)">
+                    <div id="nome_coluna2" style="margin-bottom: 25px;">NOME</div>
+                    <div style="border-top: 1px solid #6c757d; padding-top: 8px;">VISTO</div>
+                </div>
+                <div id="assinatura_coluna3" style="width: 33.33%; padding: 15px; text-align: center; font-size: 11px; font-weight: bold; cursor: pointer;" onclick="preencherAssinatura(this)">
+                    <div id="nome_coluna3" style="margin-bottom: 25px;">NOME</div>
+                    <div style="border-top: 1px solid #6c757d; padding-top: 8px;">VISTO</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Barra de ações moderna -->
+    <div class="action-bar">
+        <button class="action-btn dashboard-btn" title="Voltar ao Dashboard" onclick="window.location.href='/dashboard'">
+            🏠
+            <span class="label">Dashboard</span>
+        </button>
+        <button class="action-btn save-btn" title="Criar RNC" onclick="criarRNC()">
+            ✨
+            <span class="label">Criar RNC</span>
+        </button>
+    </div>
+
+    <!-- Modal para notificação de campo bloqueado -->
+    <div id="blockFieldModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 3000; justify-content: center; align-items: center; backdrop-filter: blur(5px);">
+        <div id="blockModalContent" style="background: white; padding: 30px; border-radius: 15px; max-width: 400px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transform: scale(0.8); opacity: 0; transition: all 0.3s ease;">
+            <div style="font-size: 48px; margin-bottom: 15px; animation: bounceBlock 0.6s ease-in-out;">🔒</div>
+            <h3 style="color: #dc3545; margin-bottom: 15px; font-weight: 700;">Campo Bloqueado</h3>
+            <p id="blockFieldMessage" style="color: #6c757d; margin-bottom: 20px; line-height: 1.5;"></p>
+            <button onclick="fecharModalBloqueio()" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);" 
+                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(220, 53, 69, 0.4)'"
+                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(220, 53, 69, 0.3)'">
+                Entendi
             </button>
-            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
-                ❌ Cancelar
-            </a>
         </div>
-    </form>
-</div>
-{% endblock %} 
-{% block scripts %}{% endblock %}
+    </div>
+
+    <script>
+        console.log('🔧 Script carregado - verificando funções...');
+        
+        // Cache do usuário atual para uso em assinaturas
+        let __CURRENT_USER_NAME = null;
+        let __CURRENT_USER_DEPT = null;
+        let __USER_GROUP_ID = null;
+        let __LOCKED_FIELDS = [];
+        
+        // Função para mostrar notificações
+        function mostrarNotificacao(mensagem, tipo = 'success') {
+            console.log('📢 Notificação:', mensagem, tipo);
+            const notificacao = document.createElement('div');
+            
+            let background, shadow;
+            if (tipo === 'error') {
+                background = 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)';
+                shadow = 'rgba(220, 53, 69, 0.3)';
+            } else if (tipo === 'info') {
+                background = 'linear-gradient(135deg, #17a2b8 0%, #138496 100%)';
+                shadow = 'rgba(23, 162, 184, 0.3)';
+            } else {
+                background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
+                shadow = 'rgba(40, 167, 69, 0.3)';
+            }
+            
+            notificacao.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${background};
+                color: white;
+                padding: 12px 20px;
+                border-radius: 8px;
+                box-shadow: 0 4px 15px ${shadow};
+                z-index: 3000;
+                animation: slideInRight 0.3s ease-out;
+                font-size: 14px;
+                font-weight: 500;
+            `;
+            
+            notificacao.textContent = mensagem;
+            document.body.appendChild(notificacao);
+            
+            setTimeout(() => {
+                notificacao.style.animation = 'slideOutRight 0.3s ease-in';
+                setTimeout(() => {
+                    if (document.body.contains(notificacao)) {
+                        document.body.removeChild(notificacao);
+                    }
+                }, 300);
+            }, 3000);
+        }
+
+        // Função para verificar se há pelo menos uma assinatura
+        function verificarAssinaturas() {
+            console.log('🔍 Verificando assinaturas...');
+            const assinaturas = [
+                document.getElementById('nome_coluna1')?.textContent || '',
+                document.getElementById('nome_coluna2')?.textContent || '',
+                document.getElementById('nome_coluna3')?.textContent || ''
+            ];
+            
+            console.log('📝 Assinaturas encontradas:', assinaturas);
+            return assinaturas.some(assinatura => assinatura && assinatura !== 'NOME' && assinatura.trim() !== '');
+        }
+
+        // Função para preencher assinatura automaticamente
+        function preencherAssinatura(elemento) {
+            console.log('✍️ Preenchendo assinatura...');
+            const nomeElement = elemento.querySelector('div[id^="nome_coluna"]');
+            
+            // Se já existe assinatura, não permitir remover (travado)
+            if (nomeElement && nomeElement.textContent && nomeElement.textContent.trim() !== '' && nomeElement.textContent !== 'NOME') {
+                mostrarNotificacao('Assinatura já registrada.');
+                return;
+            }
+            
+            fetch('/api/user/info')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const nomeUsuario = data.user.name;
+                        const departamento = data.user.department;
+                        
+                        if (nomeElement) {
+                            nomeElement.textContent = `${nomeUsuario} (${departamento})`;
+                            
+                            elemento.style.transform = 'scale(1.02)';
+                            elemento.style.transition = 'transform 0.2s ease';
+                            
+                            setTimeout(() => {
+                                elemento.style.transform = 'scale(1)';
+                            }, 200);
+                            
+                            mostrarNotificacao('✅ Assinatura preenchida automaticamente!');
+                            // Preencher data correspondente e travar inputs
+                            const hoje = new Date();
+                            const d = String(hoje.getDate()).padStart(2,'0');
+                            const m = String(hoje.getMonth()+1).padStart(2,'0');
+                            const y = String(hoje.getFullYear());
+                            if (elemento.id === 'assinatura_coluna1') {
+                                setDateInputs('insp1', d, m, y);
+                            } else if (elemento.id === 'assinatura_coluna2') {
+                                setDateInputs('eng', d, m, y);
+                            } else if (elemento.id === 'assinatura_coluna3') {
+                                setDateInputs('insp2', d, m, y);
+                            }
+                        }
+                    } else {
+                        mostrarNotificacao('❌ Erro: Usuário não autenticado', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao buscar informações do usuário:', error);
+                    mostrarNotificacao('❌ Erro ao preencher assinatura', 'error');
+                });
+        }
+
+        function setDateInputs(prefix, d, m, y) {
+            const di = document.getElementById(prefix + '_d');
+            const mi = document.getElementById(prefix + '_m');
+            const yi = document.getElementById(prefix + '_y');
+            if (di && mi && yi) {
+                di.value = d; mi.value = m; yi.value = y;
+                di.readOnly = true; mi.readOnly = true; yi.readOnly = true;
+                di.style.pointerEvents='none'; mi.style.pointerEvents='none'; yi.style.pointerEvents='none';
+            }
+        }
+
+        // Função para carregar campos bloqueados
+        async function carregarCamposBloqueados() {
+            try {
+                if (!__USER_GROUP_ID) {
+                    console.log('❌ Grupo do usuário não definido');
+                    return;
+                }
+
+                const response = await fetch(`/api/field-locks/group/${__USER_GROUP_ID}/locked-fields`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    __LOCKED_FIELDS = data.locked_fields || [];
+                    console.log('🔒 Campos bloqueados carregados:', __LOCKED_FIELDS);
+                    aplicarBloqueiosCampos();
+                } else {
+                    console.log('⚠️ Nenhum campo bloqueado ou erro:', data.message);
+                }
+            } catch (error) {
+                console.error('❌ Erro ao carregar campos bloqueados:', error);
+            }
+        }
+
+        // Função para aplicar bloqueios visuais
+        function aplicarBloqueiosCampos() {
+            __LOCKED_FIELDS.forEach(field => {
+                const elementos = document.querySelectorAll(`[data-field="${field}"]`);
+                elementos.forEach(elemento => {
+                    elemento.classList.add('field-blocked');
+                    elemento.disabled = true;
+                    elemento.title = `Campo bloqueado para seu grupo de usuário`;
+                    
+                    // Adicionar evento para mostrar modal com animação
+                    elemento.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        triggerBlockAnimation(elemento);
+                        mostrarModalBloqueio(field);
+                    });
+                    
+                    elemento.addEventListener('focus', (e) => {
+                        e.preventDefault();
+                        e.target.blur();
+                        triggerBlockAnimation(elemento);
+                        mostrarModalBloqueio(field);
+                    });
+
+                    // Animação especial para textarea e select
+                    elemento.addEventListener('keydown', (e) => {
+                        e.preventDefault();
+                        triggerBlockAnimation(elemento);
+                        mostrarModalBloqueio(field);
+                    });
+
+                    // Animação ao tentar mudar o valor
+                    elemento.addEventListener('input', (e) => {
+                        e.preventDefault();
+                        e.target.value = '';
+                        triggerBlockAnimation(elemento);
+                        mostrarModalBloqueio(field);
+                    });
+                });
+            });
+        }
+
+        // Função para trigger da animação de bloqueio
+        function triggerBlockAnimation(elemento) {
+            elemento.classList.remove('field-blocked-animation');
+            setTimeout(() => {
+                elemento.classList.add('field-blocked-animation');
+                setTimeout(() => {
+                    elemento.classList.remove('field-blocked-animation');
+                }, 800);
+            }, 10);
+        }
+
+        // Função para mostrar modal de campo bloqueado
+        function mostrarModalBloqueio(fieldName) {
+            const modal = document.getElementById('blockFieldModal');
+            const modalContent = document.getElementById('blockModalContent');
+            const message = document.getElementById('blockFieldMessage');
+            
+            message.textContent = `O campo "${fieldName}" está bloqueado para seu grupo de usuário. Entre em contato com o administrador para alterar as permissões.`;
+            
+            modal.style.display = 'flex';
+            
+            // Animação de entrada
+            setTimeout(() => {
+                modalContent.style.transform = 'scale(1)';
+                modalContent.style.opacity = '1';
+            }, 10);
+        }
+
+        // Função para fechar modal de bloqueio
+        function fecharModalBloqueio() {
+            const modal = document.getElementById('blockFieldModal');
+            const modalContent = document.getElementById('blockModalContent');
+            
+            // Animação de saída
+            modalContent.style.transform = 'scale(0.8)';
+            modalContent.style.opacity = '0';
+            
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 300);
+        }
+
+        // Função para criar RNC
+        function criarRNC() {
+            console.log('✨ Função criarRNC chamada!');
+            
+            // Verificar se há pelo menos uma assinatura
+            if (!verificarAssinaturas()) {
+                mostrarNotificacao('❌ É obrigatório preencher pelo menos uma assinatura!', 'error');
+                return;
+            }
+
+            // Verificar campos bloqueados
+            const formData = {};
+            let camposBloqueadosViolados = [];
+            
+            // Coletar dados do formulário
+            const campos = [
+                'title', 'description', 'equipment', 'client', 'mp', 'revision', 'position', 'cv',
+                'conjunto', 'modelo', 'description_drawing', 'quantity', 'material', 'purchase_order',
+                'responsavel', 'inspetor', 'area_responsavel', 'instruction_retrabalho', 'cause_rnc', 'action_rnc'
+            ];
+
+            campos.forEach(campo => {
+                const elemento = document.querySelector(`[data-field="${campo}"]`);
+                if (elemento) {
+                    const valor = elemento.value || '';
+                    if (valor && __LOCKED_FIELDS.includes(campo)) {
+                        camposBloqueadosViolados.push(campo);
+                    }
+                    formData[campo] = valor;
+                }
+            });
+
+            // Verificar violação de campos bloqueados
+            if (camposBloqueadosViolados.length > 0) {
+                mostrarNotificacao(`❌ Os seguintes campos estão bloqueados: ${camposBloqueadosViolados.join(', ')}`, 'error');
+                return;
+            }
+
+            // Coletar assinaturas
+            formData.signature_inspection_name = document.getElementById('nome_coluna1').textContent !== 'NOME' ? document.getElementById('nome_coluna1').textContent : '';
+            formData.signature_engineering_name = document.getElementById('nome_coluna2').textContent !== 'NOME' ? document.getElementById('nome_coluna2').textContent : '';
+            formData.signature_inspection2_name = document.getElementById('nome_coluna3').textContent !== 'NOME' ? document.getElementById('nome_coluna3').textContent : '';
+            
+            // Coletar disposições
+            formData.disposition_usar = document.getElementById('usar')?.checked || false;
+            formData.disposition_retrabalhar = document.getElementById('retrabalhar')?.checked || false;
+            formData.disposition_rejeitar = document.getElementById('rejeitar')?.checked || false;
+            formData.disposition_sucata = document.getElementById('sucata')?.checked || false;
+            formData.disposition_devolver_estoque = document.getElementById('devolver_estoque')?.checked || false;
+            formData.disposition_devolver_fornecedor = document.getElementById('devolver_fornecedor')?.checked || false;
+            
+            // Coletar inspeções
+            formData.inspection_aprovado = document.getElementById('aprovado')?.checked || false;
+            formData.inspection_reprovado = document.getElementById('reprovado')?.checked || false;
+            formData.inspection_ver_rnc = document.getElementById('ver_rnc_input')?.value || '';
+            
+            // Coletar datas de assinatura
+            formData.signature_inspection_date = [document.getElementById('insp1_d')?.value||'', document.getElementById('insp1_m')?.value||'', document.getElementById('insp1_y')?.value||''].join('/');
+            formData.signature_engineering_date = [document.getElementById('eng_d')?.value||'', document.getElementById('eng_m')?.value||'', document.getElementById('eng_y')?.value||''].join('/');
+            formData.signature_inspection2_date = [document.getElementById('insp2_d')?.value||'', document.getElementById('insp2_m')?.value||'', document.getElementById('insp2_y')?.value||''].join('/');
+
+            console.log('📤 Enviando dados:', formData);
+
+            fetch('/api/rnc/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    try { localStorage.removeItem('dashboardCacheV1'); } catch(e){}
+                    mostrarNotificacao('✅ RNC criada com sucesso!');
+                    setTimeout(() => {
+                        window.location.href = '/dashboard';
+                    }, 1500);
+                } else {
+                    mostrarNotificacao('❌ Erro ao criar RNC: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao criar RNC:', error);
+                mostrarNotificacao('❌ Erro ao criar RNC', 'error');
+            });
+        }
+
+        // Variáveis globais para controle
+        let selectedGroupId = null;
+        let selectedUserId = null;
+        let allGroups = [];
+        let allUsers = [];
+
+        // Função para carregar grupos
+        async function loadGroups() {
+            try {
+                const response = await fetch('/api/groups');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    allGroups = data.groups;
+                    const groupSelector = document.getElementById('groupSelector');
+                    groupSelector.innerHTML = '<option value="">Selecionar Grupo...</option>';
+                    
+                    allGroups.forEach(group => {
+                        const option = document.createElement('option');
+                        option.value = group.id;
+                        option.textContent = group.name;
+                        groupSelector.appendChild(option);
+                    });
+                    
+                    console.log(`✅ ${allGroups.length} grupos carregados`);
+                } else {
+                    console.error('Erro na resposta da API de grupos:', data.message);
+                    mostrarNotificacao('❌ Erro ao carregar grupos: ' + data.message, 'error');
+                }
+            } catch (error) {
+                console.error('Erro ao carregar grupos:', error);
+                mostrarNotificacao('❌ Erro ao conectar com servidor para carregar grupos', 'error');
+            }
+        }
+
+        // Função para carregar usuários
+        async function loadUsers() {
+            try {
+                const response = await fetch('/api/users');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    allUsers = data.users;
+                    updateUserSelector();
+                    console.log(`✅ ${allUsers.length} usuários carregados`);
+                } else {
+                    console.error('Erro na resposta da API de usuários:', data.message);
+                    mostrarNotificacao('❌ Erro ao carregar usuários: ' + data.message, 'error');
+                }
+            } catch (error) {
+                console.error('Erro ao carregar usuários:', error);
+                mostrarNotificacao('❌ Erro ao conectar com servidor para carregar usuários', 'error');
+                // Ainda assim permitir que o sistema continue funcionando
+                allUsers = [];
+                updateUserSelector();
+            }
+        }
+
+        // Função para atualizar seletor de usuários baseado no grupo
+        function updateUserSelector() {
+            const userSelector = document.getElementById('userSelector');
+            userSelector.innerHTML = '<option value="">Selecionar Usuário...</option>';
+            
+            let usersToShow = allUsers;
+            
+            // Filtrar por grupo se selecionado
+            if (selectedGroupId) {
+                usersToShow = allUsers.filter(user => user.group_id == selectedGroupId);
+            }
+            
+            usersToShow.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.id;
+                option.textContent = `${user.name} (${user.department || 'Sem departamento'})`;
+                userSelector.appendChild(option);
+            });
+        }
+
+        // Função chamada quando grupo é alterado
+        function onGroupChange() {
+            const groupSelector = document.getElementById('groupSelector');
+            selectedGroupId = groupSelector.value;
+            
+            // Resetar seleção de usuário
+            selectedUserId = null;
+            document.getElementById('userSelector').value = '';
+            
+            updateUserSelector();
+            
+            if (selectedGroupId) {
+                const selectedGroup = allGroups.find(g => g.id == selectedGroupId);
+                mostrarNotificacao(`👥 Grupo selecionado: ${selectedGroup.name}`, 'info');
+            }
+        }
+
+        // Função chamada quando usuário é alterado
+        function onUserChange() {
+            const userSelector = document.getElementById('userSelector');
+            selectedUserId = userSelector.value;
+            
+            if (selectedUserId) {
+                const selectedUser = allUsers.find(u => u.id == selectedUserId);
+                mostrarNotificacao(`👤 Usuário selecionado: ${selectedUser.name}`, 'info');
+            }
+        }
+
+        // Carregar informações do usuário quando a página carregar
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 DOM carregado - inicializando...');
+            
+            // Carregar grupos e usuários
+            loadGroups();
+            loadUsers();
+            
+            try {
+                fetch('/api/user/info', { credentials: 'include' })
+                    .then(r => r.json())
+                    .then(d => {
+                        if (d && d.success && d.user) {
+                            __CURRENT_USER_NAME = d.user.name || null;
+                            __CURRENT_USER_DEPT = d.user.department || null;
+                            __USER_GROUP_ID = d.user.group_id || null;
+                            console.log('👤 Usuário carregado:', __CURRENT_USER_NAME, __CURRENT_USER_DEPT, 'Grupo:', __USER_GROUP_ID);
+                            
+                            // Auto-selecionar grupo e usuário atual
+                            if (__USER_GROUP_ID) {
+                                selectedGroupId = __USER_GROUP_ID;
+                                document.getElementById('groupSelector').value = __USER_GROUP_ID;
+                                updateUserSelector();
+                                carregarCamposBloqueados();
+                            }
+                        }
+                    })
+                    .catch(() => {});
+            } catch(_) {}
+
+            // Auto-resize textareas
+            document.querySelectorAll('textarea').forEach(textarea => {
+                textarea.addEventListener('input', function() {
+                    this.style.height = 'auto';
+                    this.style.height = this.scrollHeight + 'px';
+                });
+            });
+
+            // Preencher data de emissão automaticamente
+            const dataEmissao = document.getElementById('data_emissao');
+            if (dataEmissao && !dataEmissao.value) {
+                const hoje = new Date();
+                const dia = hoje.getDate().toString().padStart(2, '0');
+                const mes = (hoje.getMonth() + 1).toString().padStart(2, '0');
+                const ano = hoje.getFullYear();
+                dataEmissao.value = `${dia}/${mes}/${ano}`;
+            }
+            
+            console.log('✅ Inicialização concluída!');
+        });
+
+        // Fechar modal ao clicar fora
+        document.addEventListener('click', function(e) {
+            const modal = document.getElementById('blockFieldModal');
+            if (e.target === modal) {
+                fecharModalBloqueio();
+            }
+        });
+
+        // Animações CSS
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideInRight {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOutRight {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        console.log('🔧 Script carregado completamente!');
+    </script>
+</body>
+</html>

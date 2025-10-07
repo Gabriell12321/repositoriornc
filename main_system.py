@@ -274,6 +274,60 @@ def ensure_clients_table():
     except Exception as e:
         logger.error(f"Erro ao garantir tabela clients: {e}")
 
+def migrate_users_table():
+    """Migrar tabela users para adicionar campos necessários"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        # Verificar se precisa adicionar group_id
+        cursor.execute("PRAGMA table_info(users)")
+        columns = [column[1] for column in cursor.fetchall()]
+        
+        if 'group_id' not in columns:
+            logger.info("Adicionando campo group_id à tabela users")
+            cursor.execute('ALTER TABLE users ADD COLUMN group_id INTEGER')
+        
+        if 'active' not in columns:
+            logger.info("Adicionando campo active à tabela users")
+            cursor.execute('ALTER TABLE users ADD COLUMN active BOOLEAN DEFAULT 1')
+        
+        # Garantir que existe pelo menos um grupo padrão
+        cursor.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='groups'")
+        if cursor.fetchone()[0] == 0:
+            logger.info("Criando tabela groups")
+            cursor.execute('''
+                CREATE TABLE groups (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL UNIQUE,
+                    description TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+        
+        # Inserir grupo padrão se não existir
+        cursor.execute("SELECT COUNT(*) FROM groups")
+        if cursor.fetchone()[0] == 0:
+            logger.info("Criando grupos padrão")
+            default_groups = [
+                ('Administradores', 'Acesso completo ao sistema'),
+                ('Engenharia', 'Equipe de engenharia'),
+                ('Qualidade', 'Equipe de controle de qualidade'),
+                ('Operadores', 'Operadores de produção'),
+                ('Gerentes', 'Gerentes de área com permissões elevadas')
+            ]
+            
+            for name, desc in default_groups:
+                cursor.execute("INSERT OR IGNORE INTO groups (name, description) VALUES (?, ?)", (name, desc))
+        
+        conn.commit()
+        conn.close()
+        logger.info("Migração da tabela users concluída com sucesso")
+        
+    except Exception as e:
+        logger.error(f"Erro ao migrar tabela users: {e}")
+
 class RNCSystem:
     def __init__(self, db_path: str):
         self.db_path = db_path
@@ -900,6 +954,245 @@ def get_rnc_list_api():
         }), 500
 
 
+@app.route('/api/rnc/random')
+def get_random_rnc_api():
+    """API para buscar uma RNC aleatória"""
+    try:
+        if not current_user.is_authenticated:
+            return jsonify({
+                'success': False,
+                'message': 'Usuário não autenticado'
+            }), 401
+        
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        # Buscar uma RNC aleatória do banco
+        cursor.execute("""
+            SELECT id, titulo_rnc, descricao, equipamento_sistema, cliente_departamento,
+                   mp, revisao, posicao, cv, conjunto, modelo, descricao_desenho,
+                   quantidade, material, ordem_compra, responsavel_deteccao, inspetor,
+                   area_setor, instrucao_retrabalho, analise_causa_raiz, plano_acao,
+                   nivel_urgencia, custo_estimado, created_at
+            FROM rncs 
+            ORDER BY RANDOM() 
+            LIMIT 1
+        """)
+        
+        row = cursor.fetchone()
+        conn.close()
+        
+        if row:
+            rnc_data = {
+                'id': row[0],
+                'titulo_rnc': row[1] or '',
+                'descricao': row[2] or '',
+                'equipamento_sistema': row[3] or '',
+                'cliente_departamento': row[4] or '',
+                'mp': row[5] or '',
+                'revisao': row[6] or '',
+                'posicao': row[7] or '',
+                'cv': row[8] or '',
+                'conjunto': row[9] or '',
+                'modelo': row[10] or '',
+                'descricao_desenho': row[11] or '',
+                'quantidade': row[12] or '',
+                'material': row[13] or '',
+                'ordem_compra': row[14] or '',
+                'responsavel_deteccao': row[15] or '',
+                'inspetor': row[16] or '',
+                'area_setor': row[17] or '',
+                'instrucao_retrabalho': row[18] or '',
+                'analise_causa_raiz': row[19] or '',
+                'plano_acao': row[20] or '',
+                'nivel_urgencia': row[21] or '',
+                'custo_estimado': row[22] or '',
+                'created_at': row[23] or ''
+            }
+            
+            return jsonify({
+                'success': True,
+                'rnc': rnc_data,
+                'message': f'RNC #{rnc_data["id"]} carregada com sucesso'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': 'Nenhuma RNC encontrada no banco de dados'
+            }), 404
+            
+    except Exception as e:
+        logger.error(f"Erro ao buscar RNC aleatória: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'Erro interno: {str(e)}'
+        }), 500
+
+
+@app.route('/api/clients/import', methods=['POST'])
+def import_clients_from_rnc_data():
+    """API para importar clientes dos dados RNC"""
+    try:
+        if not current_user.is_authenticated:
+            return jsonify({
+                'success': False,
+                'message': 'Usuário não autenticado'
+            }), 401
+        
+        # Verificar se usuário é admin
+        if not hasattr(current_user, 'is_admin') or not current_user.is_admin:
+            return jsonify({
+                'success': False,
+                'message': 'Acesso negado. Apenas administradores podem importar clientes.'
+            }), 403
+        
+        # Ler dados do arquivo
+        file_path = os.path.join(os.path.dirname(__file__), 'DADOS PUXAR RNC', 'DADOS PUXAR RNC.txt')
+        logger.info(f"Tentando ler arquivo: {file_path}")
+        
+        if not os.path.exists(file_path):
+            logger.error(f"Arquivo não encontrado: {file_path}")
+            return jsonify({
+                'success': False,
+                'message': f'Arquivo de dados não encontrado: {file_path}'
+            }), 404
+        
+        clients_set = set()
+        
+        with open(file_path, 'r', encoding='utf-8', errors='ignore') as file:
+            lines = file.readlines()
+            
+            # Pular o cabeçalho
+            for line in lines[1:]:
+                if line.strip():
+                    parts = line.split('\t')
+                    if len(parts) >= 12:  # Verificar se tem colunas suficientes
+                        cliente = parts[11].strip()  # Coluna CLIENTE
+                        if cliente and cliente != 'CLIENTE' and len(cliente) > 1:
+                            # Limpar o nome do cliente
+                            cliente = ' '.join(cliente.split())
+                            if cliente:
+                                clients_set.add(cliente)
+        
+        # Conectar ao banco e inserir clientes
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        # Criar tabela se não existir
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS clients (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL UNIQUE,
+                description TEXT,
+                contact_info TEXT,
+                active BOOLEAN DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        
+        inserted_count = 0
+        updated_count = 0
+        
+        clients_list = sorted(list(clients_set))
+        
+        for client_name in clients_list:
+            try:
+                # Verificar se cliente já existe
+                cursor.execute("SELECT id FROM clients WHERE name = ?", (client_name,))
+                existing = cursor.fetchone()
+                
+                if existing:
+                    # Atualizar cliente existente
+                    cursor.execute("""
+                        UPDATE clients 
+                        SET updated_at = CURRENT_TIMESTAMP,
+                            active = 1
+                        WHERE name = ?
+                    """, (client_name,))
+                    updated_count += 1
+                else:
+                    # Inserir novo cliente
+                    cursor.execute("""
+                        INSERT INTO clients (name, description, active, created_at, updated_at)
+                        VALUES (?, ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                    """, (client_name, f"Cliente importado dos dados RNC"))
+                    inserted_count += 1
+                    
+            except sqlite3.IntegrityError:
+                continue  # Cliente já existe
+            except Exception as e:
+                logger.error(f"Erro ao inserir cliente '{client_name}': {e}")
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Importação concluída! {inserted_count} novos clientes inseridos, {updated_count} atualizados.',
+            'inserted': inserted_count,
+            'updated': updated_count,
+            'total_found': len(clients_list),
+            'clients': clients_list[:10]  # Retornar apenas os primeiros 10 para preview
+        })
+        
+    except Exception as e:
+        logger.error(f"Erro ao importar clientes: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'Erro interno: {str(e)}'
+        }), 500
+
+
+@app.route('/api/clients', methods=['GET'])
+def get_clients_api():
+    """API para listar todos os clientes"""
+    try:
+        if not current_user.is_authenticated:
+            return jsonify({
+                'success': False,
+                'message': 'Usuário não autenticado'
+            }), 401
+        
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT id, name, description, contact_info, active, created_at, updated_at
+            FROM clients 
+            WHERE active = 1
+            ORDER BY name
+        """)
+        
+        rows = cursor.fetchall()
+        conn.close()
+        
+        clients = []
+        for row in rows:
+            clients.append({
+                'id': row[0],
+                'name': row[1],
+                'description': row[2] or '',
+                'contact_info': row[3] or '',
+                'active': bool(row[4]),
+                'created_at': row[5],
+                'updated_at': row[6]
+            })
+        
+        return jsonify({
+            'success': True,
+            'clients': clients,
+            'total': len(clients)
+        })
+        
+    except Exception as e:
+        logger.error(f"Erro ao listar clientes: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'Erro interno: {str(e)}'
+        }), 500
+
+
 @app.route('/api/admin/groups', methods=['GET'])
 def api_get_groups():
     """Retornar lista de grupos para seleção no formulário.
@@ -929,6 +1222,84 @@ def api_get_groups():
     except Exception as e:
         logger.error(f"Erro ao listar grupos: {e}")
         return jsonify({'success': False, 'message': 'Erro interno do sistema'}), 500
+
+
+@app.route('/api/groups', methods=['GET'])
+def api_get_groups_simple():
+    """Endpoint simplificado para listar grupos"""
+    try:
+        if not current_user.is_authenticated:
+            return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
+
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, name, description FROM groups ORDER BY name")
+        rows = cursor.fetchall()
+        conn.close()
+
+        groups_list = [
+            {
+                'id': row[0],
+                'name': row[1],
+                'description': row[2] or ''
+            }
+            for row in rows
+        ]
+
+        return jsonify(groups_list)  # Retorna array diretamente para compatibilidade com frontend
+    except Exception as e:
+        logger.error(f"Erro ao listar grupos: {e}")
+        return jsonify({'success': False, 'message': 'Erro interno do sistema'}), 500
+
+
+@app.route('/api/users', methods=['GET'])
+def api_get_users():
+    """Endpoint para listar usuários (operators)"""
+    try:
+        if not current_user.is_authenticated:
+            logger.warning("Tentativa de acesso não autenticado ao /api/users")
+            return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
+
+        logger.info(f"Usuário {current_user.id} acessando /api/users")
+        
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        # Verificar se a tabela operators existe
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='operators'")
+        if not cursor.fetchone():
+            logger.error("Tabela 'operators' não encontrada no banco de dados")
+            conn.close()
+            return jsonify({'success': False, 'message': 'Tabela de usuários não encontrada'}), 500
+        
+        cursor.execute("""
+            SELECT o.id, o.name, o.number, o.group_id, g.name as group_name
+            FROM operators o
+            LEFT JOIN groups g ON o.group_id = g.id
+            WHERE o.is_active = 1
+            ORDER BY o.name
+        """)
+        rows = cursor.fetchall()
+        conn.close()
+
+        logger.info(f"Encontrados {len(rows)} usuários ativos")
+
+        users_list = [
+            {
+                'id': row[0],
+                'name': row[1] or '',
+                'number': row[2] or '',
+                'username': row[1] or '',  # usando name como username
+                'group_id': row[3],
+                'group_name': row[4] or 'Sem grupo'
+            }
+            for row in rows
+        ]
+
+        return jsonify(users_list)  # Retorna array diretamente para compatibilidade com frontend
+    except Exception as e:
+        logger.error(f"Erro ao listar usuários: {e}")
+        return jsonify({'success': False, 'message': f'Erro interno: {str(e)}'}), 500
 
 
 @app.route('/api/logout')
@@ -1733,6 +2104,9 @@ def get_indicadores_data():
 if __name__ == '__main__':
     # Inicializar banco de dados
     init_database()
+    
+    # Executar migrações necessárias
+    migrate_users_table()
     
     # Iniciar backup automático do banco (imediato e a cada 8 minutos)
     try:

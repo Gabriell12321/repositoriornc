@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔐 Permissões de Campos RNC - IPPEL</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 2.2em;
+        }
+
+        .header p {
+            color: #7f8c8d;
+            font-size: 1.1em;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 25px;
+        }
+
+        .sidebar {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            height: fit-content;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .group-list {
+            list-style: none;
+        }
+
+        .group-item {
+            padding: 15px;
+            margin: 8px 0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .group-item:hover {
+            background: #f8f9fa;
+            transform: translateX(5px);
+        }
+
+        .group-item.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-color: #5a6fd8;
+        }
+
+        .group-name {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .group-desc {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        .content-area {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 100px 50px;
+            color: #7f8c8d;
+            font-size: 1.2em;
+        }
+
+        .actions-bar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60, #229954);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(39, 174, 96, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(243, 156, 18, 0.4);
+        }
+
+        /* INÍCIO: Estilos idênticos ao formulário RNC real */
+        .rnc-form-preview {
+            background: white;
+            border-radius: 8px;
+            padding: 0;
+            margin-top: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            max-width: 100%;
+            overflow-x: auto;
+        }
+
+        .form-header {
+            background: #6c757d;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px 8px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+        }
+
+        .rnc-number {
+            background: white;
+            color: #6c757d;
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-size: 14px;
+        }
+
+        .form-grid {
+            display: grid;
+            gap: 1px;
+            background: #6c757d;
+        }
+
+        .form-row-grid {
+            display: grid;
+            gap: 1px;
+        }
+
+        .row-5-cols {
+            grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+        }
+
+        .row-3-cols {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+
+        .row-4-cols {
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+        }
+
+        .field-cell {
+            background: white;
+            position: relative;
+            min-height: 60px;
+            display: flex;
+            flex-direction: column;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .field-cell:hover {
+            transform: scale(1.02);
+            z-index: 10;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .field-cell.unlocked {
+            background: linear-gradient(135deg, #d4edda, #ffffff);
+            border: 2px solid #28a745 !important;
+        }
+
+        .field-cell.locked {
+            background: linear-gradient(135deg, #f8d7da, #ffffff);
+            border: 2px solid #dc3545 !important;
+            opacity: 0.9;
+        }
+
+        .field-header {
+            background: #6c757d;
+            color: white;
+            padding: 8px 12px;
+            font-size: 11px;
+            font-weight: bold;
+            text-align: center;
+            position: relative;
+            min-height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .field-input {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: transparent;
+            font-size: 13px;
+            color: #495057;
+            display: flex;
+            align-items: center;
+            min-height: 40px;
+        }
+
+        .field-status {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+            color: white;
+            z-index: 5;
+        }
+
+        .field-status.unlocked {
+            background: #28a745;
+        }
+
+        .field-status.locked {
+            background: #dc3545;
+        }
+
+        .description-section {
+            background: #6c757d;
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+            font-weight: bold;
+            margin-top: 1px;
+        }
+
+        .description-field {
+            background: white;
+            min-height: 120px;
+            padding: 15px;
+            border: none;
+            resize: none;
+            font-family: inherit;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .description-field:hover {
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .description-field.unlocked {
+            background: linear-gradient(135deg, #d4edda, #ffffff);
+            border: 2px solid #28a745;
+        }
+
+        .description-field.locked {
+            background: linear-gradient(135deg, #f8d7da, #ffffff);
+            border: 2px solid #dc3545;
+            opacity: 0.9;
+        }
+
+        .action-buttons {
+            background: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 0 0 8px 8px;
+            border-top: 1px solid #6c757d;
+        }
+
+        .btn-dashboard, .btn-save {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 20px;
+            font-weight: bold;
+            margin: 0 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-dashboard {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-save {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-dashboard:hover, .btn-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        /* FIM: Estilos idênticos ao formulário RNC real */
+
+        .legend {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: bold;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            border: 2px solid #ddd;
+        }
+
+        .legend-color.unlocked {
+            background: linear-gradient(135deg, #d4edda, #ffffff);
+            border-color: #28a745;
+        }
+
+        .legend-color.locked {
+            background: linear-gradient(135deg, #f8d7da, #ffffff);
+            border-color: #dc3545;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .row-5-cols {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .row-4-cols {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .row-3-cols {
+                grid-template-columns: 1fr;
+            }
+
+            .actions-bar {
+                flex-direction: column;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .row-5-cols,
+            .row-4-cols,
+            .row-3-cols {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔐 Gerenciar Permissões de Campos RNC</h1>
+            <p>Clique nos campos abaixo para bloquear/desbloquear o acesso por grupo - Interface idêntica ao formulário real</p>
+        </div>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <h3>👥 Grupos</h3>
+                <input type="text" class="search-box" id="groupSearch" placeholder="Buscar grupo...">
+                <ul class="group-list" id="groupList">
+                    <!-- Grupos serão carregados via JavaScript -->
+                </ul>
+            </div>
+
+            <div class="content-area">
+                <div id="loading" class="loading">
+                    <p>📋 Selecione um grupo para configurar as permissões</p>
+                </div>
+
+                <div id="groupContent" style="display: none;">
+                    <h3 id="groupTitle">Configurações do Grupo</h3>
+                    
+                    <div class="actions-bar">
+                        <button class="btn btn-success" onclick="saveChanges()">💾 Salvar Alterações</button>
+                        <button class="btn btn-primary" onclick="unlockAll()">🔓 Liberar Todos</button>
+                        <button class="btn btn-warning" onclick="lockAll()">🔒 Bloquear Todos</button>
+                        <button class="btn btn-danger" onclick="resetGroup()">🗑️ Resetar Grupo</button>
+                    </div>
+
+                    <div id="alerts"></div>
+
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-color unlocked"></div>
+                            <span>🔓 Campo Liberado (clique para bloquear)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color locked"></div>
+                            <span>🔒 Campo Bloqueado (clique para liberar)</span>
+                        </div>
+                    </div>
+
+                    <!-- FORMULÁRIO RNC IDÊNTICO AO REAL -->
+                    <div class="rnc-form-preview">
+                        <!-- Cabeçalho do formulário -->
+                        <div class="form-header">
+                            <span>FORMULÁRIO RNC - CONFIGURAÇÃO DE PERMISSÕES POR GRUPO</span>
+                            <div class="rnc-number">RNC Nº: EXEMPLO-001</div>
+                        </div>
+
+                        <!-- Grid principal do formulário - EXATAMENTE IGUAL AO REAL -->
+                        <div class="form-grid">
+                            <!-- Primeira linha: 5 colunas -->
+                            <div class="form-row-grid row-5-cols">
+                                <div class="field-cell" data-field="mp">
+                                    <div class="field-header">MP</div>
+                                    <div class="field-input">Código MP</div>
+                                    <div class="field-status"></div>
+                                </div>
+                                <div class="field-cell" data-field="revision">
+                                    <div class="field-header">REV.</div>
+                                    <div class="field-input">Revisão</div>
+                                    <div class="field-status"></div>
+                                </div>
+                                <div class="field-cell" data-field="position">
+                                    <div class="field-header">POS.</div>
+                                    <div class="field-input">Posição</div>
+                                    <div class="field-status"></div>
+                                </div>
+                                <div class="field-cell" data-field="cv">
+                                    <div class="field-header">CV</div>
+                                    <div class="field-input">CV</div>
+                                    <div class="field-status"></div>
+                                </div>
+                                <div class="field-cell" data-field="drawing">
+                                    <div class="field-header">DESENHO</div>
+                                    <div class="field-input">Nº Desenho</div>
+                                    <div class="field-status"></div>
+                                </div>
+                            </div>
+
+                            <!-- Segunda linha: 3 colunas -->
+                            <div class="form-row-grid row-3-cols">
+                                <div class="field-cell" data-field="equipment">
+                                    <div class="field-header">EQUIPAMENTO</div>
+                                    <div class="field-input">Nome do equipamento</div>
+                                    <div class="field-status"></div>
+                                </div>
+                                <div class="field-cell" data-field="conjunto">
+                                    <div class="field-header">CONJUNTO</div>
+                                    <div class="field-input">Nome do conjunto</div>
+                                    <div class="field-status"></div>
+                                </div>
+                                <div class="field-cell" data-field="modelo">
+                                    <div class="field-header">MOD.</div>
+                                    <div class="field-input">Modelo</div>
+                                    <div class="field-status"></div>
+                                </div>
+                            </div>
+
+                            <!-- Terceira linha: 4 colunas -->
+                            <div class="form-row-grid row-4-cols">
+                                <div class="field-cell" data-field="description_drawing">
+                                    <div class="field-header">DESCRIÇÃO DES.</div>
+                                    <div class="field-input">Descrição do desenho</div>
+                                    <div class="field-status"></div>
+                                </div>
+                                <div class="field-cell" data-field="quantity">
+                                    <div class="field-header">QTDE LOTE</div>
+                                    <div class="field-input">Quantidade</div>
+                                    <div class="field-status"></div>
+                                </div>
+                                <div class="field-cell" data-field="client">
+                                    <div class="field-header">CLIENTE</div>
+                                    <div class="field-input">Nome do cliente</div>
+                                    <div class="field-status"></div>
+                                </div>
+                                <div class="field-cell" data-field="material">
+                                    <div class="field-header">MATERIAL</div>
+                                    <div class="field-input">Tipo de material</div>
+                                    <div class="field-status"></div>
+                                </div>
+                            </div>
+
+                            <!-- Quarta linha: 4 colunas -->
+                            <div class="form-row-grid row-4-cols">
+                                <div class="field-cell" data-field="responsavel">
+                                    <div class="field-header">ASSINATURA GERENTE</div>
+                                    <div class="field-input">Nome do gerente</div>
+                                    <div class="field-status"></div>
+                                </div>
+                                <div class="field-cell" data-field="inspetor">
+                                    <div class="field-header">ASSINATURA LÍDER SETOR</div>
+                                    <div class="field-input">Nome do líder</div>
+                                    <div class="field-status"></div>
+                                </div>
+                                <div class="field-cell" data-field="purchase_order">
+                                    <div class="field-header">ORDEM DE COMPRA</div>
+                                    <div class="field-input">Nº da ordem</div>
+                                    <div class="field-status"></div>
+                                </div>
+                                <div class="field-cell" data-field="title">
+                                    <div class="field-header">NOME RESP.</div>
+                                    <div class="field-input">Nome do responsável</div>
+                                    <div class="field-status"></div>
+                                </div>
+                            </div>
+
+                            <!-- Quinta linha: 4 colunas -->
+                            <div class="form-row-grid row-4-cols">
+                                <div class="field-cell" data-field="setor">
+                                    <div class="field-header">SETOR:</div>
+                                    <div class="field-input">Nome do setor</div>
+                                    <div class="field-status"></div>
+                                </div>
+                                <div class="field-cell" data-field="price">
+                                    <div class="field-header">DATA EMISSÃO</div>
+                                    <div class="field-input">03/10/2025</div>
+                                    <div class="field-status"></div>
+                                </div>
+                                <div class="field-cell" data-field="area_responsavel">
+                                    <div class="field-header">ÁREA RESPONSÁVEL</div>
+                                    <div class="field-input">Área/localização</div>
+                                    <div class="field-status"></div>
+                                </div>
+                                <div class="field-cell" data-field="assigned_user_id">
+                                    <div class="field-header">ASS. RESP.</div>
+                                    <div class="field-input">Assinatura responsável</div>
+                                    <div class="field-status"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Seção de descrição -->
+                        <div class="description-section">
+                            DESCRIÇÃO DA NÃO CONFORMIDADE
+                        </div>
+                        <div class="field-cell description-field" data-field="description">
+                            <div class="field-input">
+                                <div style="color: #6c757d; font-style: italic;">
+                                    Descreva a não conformidade identificada...
+                                </div>
+                            </div>
+                            <div class="field-status"></div>
+                        </div>
+
+                        <!-- Botões de ação -->
+                        <div class="action-buttons">
+                            <button class="btn-dashboard">🏠 Dashboard</button>
+                            <button class="btn-save">💾 Salvar RNC</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentGroupId = null;
+        let fieldLocks = {};
+        let hasChanges = false;
+
+        // Campos disponíveis no sistema - EXATOS DO FORMULÁRIO REAL
+        const availableFields = [
+            'mp', 'revision', 'position', 'cv', 'drawing',
+            'equipment', 'conjunto', 'modelo',
+            'description_drawing', 'quantity', 'client', 'material',
+            'responsavel', 'inspetor', 'purchase_order', 'title',
+            'setor', 'price', 'area_responsavel', 'assigned_user_id',
+            'description'
+        ];
+
+        // Carregar grupos na inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            loadGroups();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // Search functionality
+            document.getElementById('groupSearch').addEventListener('input', function(e) {
+                filterGroups(e.target.value);
+            });
+
+            // Field click handlers
+            document.querySelectorAll('.field-cell').forEach(field => {
+                field.addEventListener('click', function() {
+                    if (currentGroupId) {
+                        toggleField(this.dataset.field);
+                    }
+                });
+            });
+
+            // Warning on page leave if there are unsaved changes
+            window.addEventListener('beforeunload', function(e) {
+                if (hasChanges) {
+                    e.preventDefault();
+                    e.returnValue = 'Você tem alterações não salvas. Deseja continuar?';
+                }
+            });
+        }
+
+        async function loadGroups() {
+            try {
+                const response = await fetch('/admin/field-locks/api/groups');
+                const groups = await response.json();
+                
+                const groupList = document.getElementById('groupList');
+                groupList.innerHTML = '';
+                
+                groups.forEach(group => {
+                    const li = document.createElement('li');
+                    li.className = 'group-item';
+                    li.onclick = () => selectGroup(group.id, group.name);
+                    
+                    li.innerHTML = `
+                        <div class="group-name">${group.name}</div>
+                        <div class="group-desc">${group.description || 'Sem descrição'}</div>
+                    `;
+                    
+                    groupList.appendChild(li);
+                });
+                
+            } catch (error) {
+                console.error('Erro ao carregar grupos:', error);
+                showAlert('Erro ao carregar grupos: ' + error.message, 'error');
+            }
+        }
+
+        function filterGroups(searchTerm) {
+            const groups = document.querySelectorAll('.group-item');
+            const term = searchTerm.toLowerCase();
+            
+            groups.forEach(group => {
+                const text = group.textContent.toLowerCase();
+                group.style.display = text.includes(term) ? 'block' : 'none';
+            });
+        }
+
+        async function selectGroup(groupId, groupName) {
+            // Verificar se há mudanças não salvas
+            if (hasChanges) {
+                const confirm = window.confirm('Você tem alterações não salvas. Deseja continuar sem salvar?');
+                if (!confirm) return;
+            }
+
+            currentGroupId = groupId;
+            
+            // Atualizar UI
+            document.querySelectorAll('.group-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            event.target.closest('.group-item').classList.add('active');
+            
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('groupContent').style.display = 'block';
+            document.getElementById('groupTitle').textContent = `Configurações do Grupo: ${groupName}`;
+            
+            // Carregar configurações do grupo
+            await loadGroupSettings(groupId);
+        }
+
+        async function loadGroupSettings(groupId) {
+            try {
+                const response = await fetch(`/admin/field-locks/api/locks/${groupId}`);
+                const locks = await response.json();
+                
+                // Resetar fieldLocks
+                fieldLocks = {};
+                
+                // Configurar locks baseado na resposta
+                locks.forEach(lock => {
+                    fieldLocks[lock.field_name] = lock.is_locked;
+                });
+                
+                // Atualizar interface visual
+                updateFieldDisplay();
+                hasChanges = false;
+                
+            } catch (error) {
+                console.error('Erro ao carregar configurações:', error);
+                showAlert('Erro ao carregar configurações: ' + error.message, 'error');
+            }
+        }
+
+        function updateFieldDisplay() {
+            availableFields.forEach(fieldName => {
+                const fieldElement = document.querySelector(`[data-field="${fieldName}"]`);
+                if (!fieldElement) return;
+                
+                const statusElement = fieldElement.querySelector('.field-status');
+                
+                const isLocked = fieldLocks[fieldName] || false;
+                
+                // Atualizar classes
+                fieldElement.className = `field-cell ${isLocked ? 'locked' : 'unlocked'}`;
+                statusElement.className = `field-status ${isLocked ? 'locked' : 'unlocked'}`;
+                statusElement.textContent = isLocked ? '🔒' : '🔓';
+            });
+        }
+
+        function toggleField(fieldName) {
+            fieldLocks[fieldName] = !fieldLocks[fieldName];
+            updateFieldDisplay();
+            hasChanges = true;
+        }
+
+        async function saveChanges() {
+            if (!currentGroupId) {
+                showAlert('Selecione um grupo primeiro', 'error');
+                return;
+            }
+
+            try {
+                const locks = availableFields.map(fieldName => ({
+                    field_name: fieldName,
+                    is_locked: fieldLocks[fieldName] || false
+                }));
+
+                const response = await fetch(`/admin/field-locks/api/locks/${currentGroupId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ locks })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showAlert('✅ Configurações salvas com sucesso!', 'success');
+                    hasChanges = false;
+                } else {
+                    throw new Error(result.error || 'Erro desconhecido');
+                }
+
+            } catch (error) {
+                console.error('Erro ao salvar:', error);
+                showAlert('❌ Erro ao salvar: ' + error.message, 'error');
+            }
+        }
+
+        function unlockAll() {
+            availableFields.forEach(fieldName => {
+                fieldLocks[fieldName] = false;
+            });
+            updateFieldDisplay();
+            hasChanges = true;
+            showAlert('🔓 Todos os campos foram liberados', 'success');
+        }
+
+        function lockAll() {
+            availableFields.forEach(fieldName => {
+                fieldLocks[fieldName] = true;
+            });
+            updateFieldDisplay();
+            hasChanges = true;
+            showAlert('🔒 Todos os campos foram bloqueados', 'success');
+        }
+
+        async function resetGroup() {
+            if (!currentGroupId) {
+                showAlert('Selecione um grupo primeiro', 'error');
+                return;
+            }
+
+            const confirm = window.confirm('Tem certeza que deseja resetar todas as configurações deste grupo?');
+            if (!confirm) return;
+
+            try {
+                const response = await fetch(`/admin/field-locks/api/locks/${currentGroupId}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showAlert('🗑️ Configurações resetadas com sucesso!', 'success');
+                    await loadGroupSettings(currentGroupId);
+                } else {
+                    throw new Error(result.error || 'Erro desconhecido');
+                }
+
+            } catch (error) {
+                console.error('Erro ao resetar:', error);
+                showAlert('❌ Erro ao resetar: ' + error.message, 'error');
+            }
+        }
+
+        function showAlert(message, type) {
+            const alertsContainer = document.getElementById('alerts');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+            
+            alertsContainer.innerHTML = '';
+            alertsContainer.appendChild(alertDiv);
+            
+            // Auto-hide success messages
+            if (type === 'success') {
+                setTimeout(() => {
+                    alertDiv.remove();
+                }, 5000);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -339,11 +339,22 @@
                     {% endif %}
                 </td>
                 <td>
-                    <span class="department-badge">{{ rnc.creator_department or 'Não informado' }}</span>
+                    <span class="department-badge">{{ rnc.setor or rnc.area_responsavel or 'Não informado' }}</span>
                 </td>
-                <td>{{ rnc.creator_name or 'Sistema' }}</td>
-                <td>{{ rnc.finalized_at.split(' ')[0] if rnc.finalized_at else 'N/A' }}</td>
-                <td class="price">{{ "%.2f"|format(rnc.price|float) if rnc.price else '0.00' }}</td>
+                <td>{{ rnc.responsavel or rnc.creator_name or 'Sistema' }}</td>
+                <td>{{ rnc.created_at.split(' ')[0] if rnc.created_at else 'N/A' }}</td>
+                <td class="price">
+                    {% if rnc.price and rnc.price != '0' and rnc.price != '0.0' %}
+                        {% set clean_price = rnc.price|replace('R$', '')|replace(' ', '')|replace(',', '')|replace('"', '')|replace("'", '')|trim %}
+                        {% if clean_price and clean_price != '0' and clean_price != '0.0' %}
+                            {{ "%.2f"|format(clean_price|float) }}
+                        {% else %}
+                            0.00
+                        {% endif %}
+                    {% else %}
+                        0.00
+                    {% endif %}
+                </td>
             </tr>
             {% endfor %}
         </tbody>

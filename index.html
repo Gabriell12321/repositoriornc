@@ -198,6 +198,83 @@
         }
 
         .input-field:hover {
+            background: #c82333 !important;
+            border-color: #c82333 !important;
+            color: white !important;
+        }
+
+        /* === CAMPOS BLOQUEADOS - VISUAL PREMIUM === */
+        .field-blocked {
+            background: linear-gradient(45deg, #e9ecef 25%, #f8f9fa 25%, #f8f9fa 50%, #e9ecef 50%, #e9ecef 75%, #f8f9fa 75%) !important;
+            background-size: 20px 20px !important;
+            border: 2px solid #ff7675 !important;
+            color: #6c757d !important;
+            cursor: not-allowed !important;
+            opacity: 0.7 !important;
+            pointer-events: none !important;
+            position: relative !important;
+            user-select: none !important;
+        }
+
+        .field-blocked::before {
+            content: '🔒';
+            position: absolute;
+            top: 50%;
+            right: 8px;
+            transform: translateY(-50%);
+            font-size: 16px;
+            color: #ff7675;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .field-blocked::after {
+            content: 'Campo bloqueado para seu grupo';
+            position: absolute;
+            background: rgba(255, 118, 117, 0.95);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 15;
+        }
+
+        .field-blocked:hover::after {
+            opacity: 1;
+        }
+
+        /* Checkbox bloqueado */
+        input[type="checkbox"].field-blocked {
+            background: #e9ecef !important;
+            accent-color: #6c757d !important;
+        }
+
+        input[type="checkbox"].field-blocked::before {
+            right: 20px;
+        }
+
+        /* Select bloqueado */
+        select.field-blocked {
+            background: linear-gradient(45deg, #e9ecef 25%, #f8f9fa 25%, #f8f9fa 50%, #e9ecef 50%, #e9ecef 75%, #f8f9fa 75%) !important;
+            background-size: 20px 20px !important;
+        }
+
+        /* Textarea bloqueado */
+        textarea.field-blocked {
+            background: linear-gradient(45deg, #e9ecef 25%, #f8f9fa 25%, #f8f9fa 50%, #e9ecef 50%, #e9ecef 75%, #f8f9fa 75%) !important;
+            background-size: 20px 20px !important;
+            resize: none !important;
+        }
+
+        .input-field:hover {
             background-color: #dc3545 !important;
             transform: translateY(-0.5px) !important;
             box-shadow: 0 2px 6px rgba(220, 53, 69, 0.3) !important;
@@ -2512,8 +2589,247 @@
             loadRncData(rncId);
         }
 
-        // Preencher datas automaticamente (detecção e emissão)
+        });
+
+        // === SISTEMA DE BLOQUEIO DE CAMPOS POR GRUPO ===
+        
+        // Mapeamento de IDs dos campos do formulário para nomes da API
+        const fieldMapping = {
+            'title': 'title',
+            'description': 'description', 
+            'equipment': 'equipment',
+            'client': 'client',
+            'price': 'price',
+            'priority': 'priority',
+            'rnc_number': 'rnc_number',
+            'des_field': 'drawing',
+            'area_responsavel': 'area_responsavel',
+            'data_emissao': 'signature_inspection_date',
+            'assinatura_gerente': 'signature_engineering_name',
+            'nome_responsavel': 'responsavel',
+            'detection_date': 'created_at',
+            'location': 'setor',
+            'detected_by': 'inspetor',
+            'emergency_contact': 'emergency_contact',
+            // Disposições
+            'usar': 'disposition_usar',
+            'retrabalhar': 'disposition_retrabalhar', 
+            'rejeitar': 'disposition_rejeitar',
+            'sucata': 'disposition_sucata',
+            'devolver-estoque': 'disposition_devolver_estoque',
+            'devolver-fornecedor': 'disposition_devolver_fornecedor',
+            // Inspeções
+            'aprovado': 'inspection_aprovado',
+            'reprovado': 'inspection_reprovado'
+        };
+
+        // Carregar permissões de campos do grupo do usuário
+        async function loadUserFieldPermissions() {
+            try {
+                console.log('🔐 Carregando permissões de campos...');
+                
+                // Buscar informações do usuário atual
+                const userResponse = await fetch('/api/user/info');
+                if (!userResponse.ok) {
+                    console.warn('⚠️ Não foi possível obter informações do usuário');
+                    return;
+                }
+                
+                const userData = await userResponse.json();
+                const userGroupId = userData.group_id;
+                
+                if (!userGroupId) {
+                    console.warn('⚠️ Usuário não possui grupo definido');
+                    return;
+                }
+                
+                // Buscar permissões do grupo
+                const permissionsResponse = await fetch(`http://localhost:5001/admin/field-locks/api/locks/${userGroupId}`);
+                if (!permissionsResponse.ok) {
+                    console.warn('⚠️ Não foi possível obter permissões do grupo');
+                    return;
+                }
+                
+                const permissionsData = await permissionsResponse.json();
+                
+                if (permissionsData.success && permissionsData.locks) {
+                    console.log(`🎯 Aplicando permissões do grupo: ${permissionsData.group_name}`);
+                    applyFieldLocks(permissionsData.locks);
+                    
+                    // Mostrar modal se houver campos bloqueados
+                    const blockedFields = getBlockedFieldsList(permissionsData.locks);
+                    if (blockedFields.length > 0) {
+                        showBlockedFieldsModal(blockedFields);
+                    }
+                }
+                
+            } catch (error) {
+                console.error('❌ Erro ao carregar permissões:', error);
+            }
+        }
+
+        // Aplicar bloqueios visuais nos campos
+        function applyFieldLocks(locks) {
+            let blockedCount = 0;
+            
+            Object.entries(fieldMapping).forEach(([fieldId, apiFieldName]) => {
+                const fieldElement = document.getElementById(fieldId);
+                
+                if (fieldElement && locks[apiFieldName] && locks[apiFieldName].is_locked) {
+                    blockField(fieldElement);
+                    blockedCount++;
+                }
+            });
+            
+            console.log(`🔒 ${blockedCount} campos bloqueados aplicados`);
+        }
+
+        // Bloquear um campo específico
+        function blockField(element) {
+            element.classList.add('field-blocked');
+            element.disabled = true;
+            element.readonly = true;
+            
+            // Para checkboxes, também bloquear cliques
+            if (element.type === 'checkbox') {
+                element.onclick = function() { return false; };
+            }
+            
+            // Adicionar título explicativo
+            element.title = 'Este campo está bloqueado para seu grupo de usuário';
+        }
+
+        // Obter lista de campos bloqueados para exibir no modal
+        function getBlockedFieldsList(locks) {
+            const blockedFields = [];
+            
+            Object.entries(fieldMapping).forEach(([fieldId, apiFieldName]) => {
+                if (locks[apiFieldName] && locks[apiFieldName].is_locked) {
+                    const fieldElement = document.getElementById(fieldId);
+                    if (fieldElement) {
+                        const fieldLabel = getFieldLabel(fieldElement);
+                        blockedFields.push(fieldLabel);
+                    }
+                }
+            });
+            
+            return blockedFields;
+        }
+
+        // Obter label amigável para o campo
+        function getFieldLabel(element) {
+            const fieldLabels = {
+                'title': 'Título do RNC',
+                'description': 'Descrição',
+                'equipment': 'Equipamento/Sistema', 
+                'client': 'Cliente/Departamento',
+                'price': 'Custo Estimado',
+                'priority': 'Nível de Urgência',
+                'rnc_number': 'Número RNC',
+                'des_field': 'Descrição',
+                'area_responsavel': 'Área/Localização',
+                'data_emissao': 'Data de Emissão',
+                'assinatura_gerente': 'Assinatura Gerente',
+                'nome_responsavel': 'Nome Responsável',
+                'detection_date': 'Data de Detecção',
+                'location': 'Local',
+                'detected_by': 'Detectado por',
+                'emergency_contact': 'Contato de Emergência',
+                'usar': 'Disposição: Usar',
+                'retrabalhar': 'Disposição: Retrabalhar',
+                'rejeitar': 'Disposição: Rejeitar',
+                'sucata': 'Disposição: Sucata',
+                'devolver-estoque': 'Disposição: Devolver ao Estoque',
+                'devolver-fornecedor': 'Disposição: Devolver ao Fornecedor',
+                'aprovado': 'Inspeção: Aprovado',
+                'reprovado': 'Inspeção: Reprovado'
+            };
+            
+            return fieldLabels[element.id] || element.id;
+        }
+
+        // Modal premium para mostrar campos bloqueados
+        function showBlockedFieldsModal(blockedFields) {
+            // Remove modal anterior se existir
+            const oldModal = document.getElementById('blockedFieldsModal');
+            if (oldModal) oldModal.remove();
+
+            // Cria modal
+            const modal = document.createElement('div');
+            modal.id = 'blockedFieldsModal';
+            modal.style.cssText = `
+                position: fixed;
+                top: 0; left: 0; width: 100vw; height: 100vh;
+                background: rgba(40, 48, 72, 0.85);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                opacity: 0;
+                transition: opacity 0.4s ease;
+            `;
+            
+            modal.innerHTML = `
+                <div style="
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    box-shadow: 0 30px 80px rgba(0,0,0,0.25);
+                    border-radius: 24px;
+                    padding: 36px 32px 28px 32px;
+                    min-width: 340px;
+                    max-width: 90vw;
+                    color: #fff;
+                    text-align: center;
+                    animation: modalFadeIn 0.5s ease;
+                ">
+                    <div style="font-size: 3rem; margin-bottom: 12px; animation: lockBounce 1.2s infinite alternate;">🔒</div>
+                    <h2 style="font-size: 2rem; font-weight: 700; margin-bottom: 8px; letter-spacing: 1px;">Campos Bloqueados</h2>
+                    <p style="font-size: 1.1rem; margin-bottom: 12px;">Os seguintes campos estão bloqueados para seu grupo:</p>
+                    <ul style="list-style: none; padding: 0; margin-bottom: 18px; text-align: left;">
+                        ${blockedFields.map(field => `
+                            <li style="font-size: 1.05rem; margin: 4px 0; display: flex; align-items: center;">
+                                <span style="margin-right: 6px; color: #ffd700; font-size: 1.2em;">🔒</span>
+                                <b>${field}</b>
+                            </li>
+                        `).join('')}
+                    </ul>
+                    <button onclick="document.getElementById('blockedFieldsModal').remove()" style="
+                        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+                        color: #fff;
+                        border: none;
+                        border-radius: 12px;
+                        padding: 10px 32px;
+                        font-size: 1.1rem;
+                        font-weight: 600;
+                        cursor: pointer;
+                        box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+                        transition: background 0.3s;
+                    ">OK</button>
+                </div>
+            `;
+            
+            // Adicionar animações
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes modalFadeIn {
+                    from { transform: scale(0.95); opacity: 0; }
+                    to { transform: scale(1); opacity: 1; }
+                }
+                @keyframes lockBounce {
+                    from { transform: translateY(0); }
+                    to { transform: translateY(-8px); }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            document.body.appendChild(modal);
+            setTimeout(() => { modal.style.opacity = '1'; }, 50);
+        }
+
+        // Carregar permissões quando a página carrega
         document.addEventListener('DOMContentLoaded', function() {
+            // Carregar permissões de campos do usuário
+            loadUserFieldPermissions();
+            
             const detectionDateField = document.getElementById('detection_date');
             if (detectionDateField && !detectionDateField.value) {
                 const todayISO = new Date().toISOString().split('T')[0];

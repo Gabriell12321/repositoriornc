@@ -125,6 +125,7 @@ def generate_report():
         
         if report_type == 'finalized':
             # Relatório de RNCs finalizados
+            # CORRIGIDO: Usar created_at porque finalized_at está NULL para todas as RNCs
             query = """
                 SELECT r.*, u.name as creator_name, u.department as creator_department,
                        au.name as assigned_user_name, au.department as assigned_department
@@ -133,8 +134,8 @@ def generate_report():
                 LEFT JOIN users au ON r.assigned_user_id = au.id
                 WHERE r.is_deleted = 0 
                 AND r.status = 'Finalizado'
-                AND DATE(r.finalized_at) BETWEEN ? AND ?
-                ORDER BY r.finalized_at DESC
+                AND DATE(r.created_at) BETWEEN ? AND ?
+                ORDER BY r.created_at DESC
             """
             template = 'reports/finalized_rncs_report.html'
             stats = calculate_finalized_stats_period(cursor, start_date, end_date)
@@ -243,11 +244,18 @@ def calculate_report_stats(cursor, start_date, end_date):
     stats['by_priority'] = dict(cursor.fetchall())
     
     # RNCs por departamento
+    # CORRIGIDO: Usar area_responsavel da RNC, não u.department do usuário
     cursor.execute("""
-        SELECT u.department, COUNT(*) FROM rncs r
-        LEFT JOIN users u ON r.user_id = u.id
+        SELECT 
+            CASE 
+                WHEN r.area_responsavel IS NOT NULL AND r.area_responsavel != '' THEN r.area_responsavel
+                WHEN r.setor IS NOT NULL AND r.setor != '' THEN r.setor
+                ELSE 'Não informado'
+            END as departamento,
+            COUNT(*) 
+        FROM rncs r
         WHERE r.is_deleted = 0 AND DATE(r.created_at) BETWEEN ? AND ?
-        GROUP BY u.department
+        GROUP BY departamento
     """, (start_date, end_date))
     stats['by_department'] = dict(cursor.fetchall())
     
@@ -276,20 +284,28 @@ def calculate_finalized_stats_period(cursor, start_date, end_date):
     stats = {}
     
     # Total de RNCs finalizados no período
+    # CORRIGIDO: Usar created_at porque finalized_at está NULL
     cursor.execute("""
         SELECT COUNT(*) FROM rncs 
         WHERE is_deleted = 0 AND status = 'Finalizado'
-        AND DATE(finalized_at) BETWEEN ? AND ?
+        AND DATE(created_at) BETWEEN ? AND ?
     """, (start_date, end_date))
     stats['total_finalized'] = cursor.fetchone()[0]
     
     # RNCs finalizados por departamento no período
+    # CORRIGIDO: Usar area_responsavel da RNC, não u.department do usuário
     cursor.execute("""
-        SELECT u.department, COUNT(*) FROM rncs r
-        LEFT JOIN users u ON r.user_id = u.id
+        SELECT 
+            CASE 
+                WHEN r.area_responsavel IS NOT NULL AND r.area_responsavel != '' THEN r.area_responsavel
+                WHEN r.setor IS NOT NULL AND r.setor != '' THEN r.setor
+                ELSE 'Não informado'
+            END as departamento,
+            COUNT(*) 
+        FROM rncs r
         WHERE r.is_deleted = 0 AND r.status = 'Finalizado'
-        AND DATE(r.finalized_at) BETWEEN ? AND ?
-        GROUP BY u.department
+        AND DATE(r.created_at) BETWEEN ? AND ?
+        GROUP BY departamento
     """, (start_date, end_date))
     stats['by_department'] = dict(cursor.fetchall())
     
@@ -297,17 +313,18 @@ def calculate_finalized_stats_period(cursor, start_date, end_date):
     cursor.execute("""
         SELECT priority, COUNT(*) FROM rncs 
         WHERE is_deleted = 0 AND status = 'Finalizado'
-        AND DATE(finalized_at) BETWEEN ? AND ?
+        AND DATE(created_at) BETWEEN ? AND ?
         GROUP BY priority
     """, (start_date, end_date))
     stats['by_priority'] = dict(cursor.fetchall())
     
     # Valor total dos RNCs finalizados no período
+    # CORRIGIDO: Remover 'R$', espaços, vírgulas e aspas do price antes de fazer o CAST
     cursor.execute("""
-        SELECT SUM(CAST(price AS REAL)) FROM rncs 
+        SELECT SUM(CAST(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(price, 'R$', ''), ' ', ''), ',', ''), '"', ''), '''', '') AS REAL)) FROM rncs 
         WHERE is_deleted = 0 AND status = 'Finalizado'
-        AND DATE(finalized_at) BETWEEN ? AND ?
-        AND price IS NOT NULL AND price != ''
+        AND DATE(created_at) BETWEEN ? AND ?
+        AND price IS NOT NULL AND price != '' AND price != '0' AND price != '0.0'
     """, (start_date, end_date))
     result = cursor.fetchone()
     stats['total_value'] = result[0] if result[0] else 0
@@ -342,19 +359,27 @@ def calculate_total_stats_period(cursor, start_date, end_date):
     stats['by_priority'] = dict(cursor.fetchall())
     
     # RNCs por departamento
+    # CORRIGIDO: Usar area_responsavel da RNC, não u.department do usuário
     cursor.execute("""
-        SELECT u.department, COUNT(*) FROM rncs r
-        LEFT JOIN users u ON r.user_id = u.id
+        SELECT 
+            CASE 
+                WHEN r.area_responsavel IS NOT NULL AND r.area_responsavel != '' THEN r.area_responsavel
+                WHEN r.setor IS NOT NULL AND r.setor != '' THEN r.setor
+                ELSE 'Não informado'
+            END as departamento,
+            COUNT(*) 
+        FROM rncs r
         WHERE r.is_deleted = 0 AND DATE(r.created_at) BETWEEN ? AND ?
-        GROUP BY u.department
+        GROUP BY departamento
     """, (start_date, end_date))
     stats['by_department'] = dict(cursor.fetchall())
     
     # Valor total
+    # CORRIGIDO: Remover 'R$', espaços, vírgulas e aspas do price antes de fazer o CAST
     cursor.execute("""
-        SELECT SUM(CAST(price AS REAL)) FROM rncs 
+        SELECT SUM(CAST(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(price, 'R$', ''), ' ', ''), ',', ''), '"', ''), '''', '') AS REAL)) FROM rncs 
         WHERE is_deleted = 0 AND DATE(created_at) BETWEEN ? AND ?
-        AND price IS NOT NULL AND price != ''
+        AND price IS NOT NULL AND price != '' AND price != '0' AND price != '0.0'
     """, (start_date, end_date))
     result = cursor.fetchone()
     stats['total_value'] = result[0] if result[0] else 0
@@ -480,10 +505,11 @@ def calculate_finalized_stats(cursor):
     stats['by_month'] = dict(cursor.fetchall())
     
     # Valor total dos RNCs finalizados
+    # CORRIGIDO: Remover 'R$', espaços, vírgulas e aspas do price antes de fazer o CAST
     cursor.execute("""
-        SELECT SUM(CAST(price AS REAL)) FROM rncs 
+        SELECT SUM(CAST(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(price, 'R$', ''), ' ', ''), ',', ''), '"', ''), '''', '') AS REAL)) FROM rncs 
         WHERE is_deleted = 0 AND status = 'Finalizado'
-        AND price IS NOT NULL AND price != ''
+        AND price IS NOT NULL AND price != '' AND price != '0' AND price != '0.0'
     """)
     result = cursor.fetchone()
     stats['total_value'] = result[0] if result[0] else 0

@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔐 Gerenciar Permissões de Campos RNC</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/field_locks.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛡️ Gerenciar Permissões de Campos RNC</h1>
+            <p>Configure quais campos cada grupo pode editar durante a criação de RNC</p>
+        </div>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <h2>👥 Grupos</h2>
+                <div class="search-box">
+                    <input type="text" id="groupSearch" placeholder="Buscar grupos...">
+                    <span class="search-icon">🔍</span>
+                </div>
+                <ul class="groups-list" id="groupList">
+                    <li class="no-groups">❌ Erro ao carregar grupos</li>
+                </ul>
+            </div>
+
+            <div class="content-area">
+                <div class="loading-state" id="loading">
+                    <div class="loading-icon">👆</div>
+                    <h3>Selecione um grupo</h3>
+                    <p>Escolha um grupo na lista ao lado para configurar as permissões</p>
+                </div>
+
+                <div class="group-content" id="groupContent">
+                    <div class="group-header">
+                        <h2 class="group-title" id="groupTitle">Configurações do Grupo</h2>
+                    </div>
+
+                    <div class="stats-container">
+                        <div class="stat-card">
+                            <div class="stat-number" id="statUnlocked">0</div>
+                            <div class="stat-label">🔓 Campos Liberados</div>
+                        </div>
+                        <div class="stat-card locked">
+                            <div class="stat-number" id="statLocked">0</div>
+                            <div class="stat-label">🔒 Campos Bloqueados</div>
+                        </div>
+                    </div>
+
+                    <div class="actions-bar">
+                        <button class="btn btn-primary" onclick="saveChanges()">
+                            💾 Salvar Alterações
+                        </button>
+                        <button class="btn btn-success" onclick="unlockAll()">
+                            🔓 Liberar Todos
+                        </button>
+                        <button class="btn btn-danger" onclick="lockAll()">
+                            🔒 Bloquear Todos
+                        </button>
+                        <button class="btn btn-warning" onclick="resetGroup()">
+                            🔄 Resetar
+                        </button>
+                    </div>
+
+                    <div class="fields-grid">
+                        <!-- Informações Principais -->
+                        <div class="field-category">
+                            <div class="category-header">
+                                <span class="category-icon info">ℹ️</span>
+                                Informações Principais
+                            </div>
+                            <div class="field-item" data-field="rnc_number">
+                                <span class="field-name">Número RNC</span>
+                                <span class="field-status">🔓</span>
+                            </div>
+                            <div class="field-item" data-field="title">
+                                <span class="field-name">Título</span>
+                                <span class="field-status">🔓</span>
+                            </div>
+                            <div class="field-item" data-field="description">
+                                <span class="field-name">Descrição</span>
+                                <span class="field-status">🔓</span>
+                            </div>
+                            <div class="field-item" data-field="priority">
+                                <span class="field-name">Prioridade</span>
+                                <span class="field-status">🔓</span>
+                            </div>
+                            <div class="field-item" data-field="status">
+                                <span class="field-name">Status</span>
+                                <span class="field-status">🔓</span>
+                            </div>
+                            <div class="field-item" data-field="price">
+                                <span class="field-name">Preço</span>
+                                <span class="field-status">🔓</span>
+                            </div>
+                        </div>
+
+                        <!-- Dados Técnicos -->
+                        <div class="field-category">
+                            <div class="category-header">
+                                <span class="category-icon tech">⚙️</span>
+                                Dados Técnicos
+                            </div>
+                            <div class="field-item" data-field="equipment">
+                                <span class="field-name">Equipamento</span>
+                                <span class="field-status">🔓</span>
+                            </div>
+                            <div class="field-item" data-field="material">
+                                <span class="field-name">Material</span>
+                                <span class="field-status">🔓</span>
+                            </div>
+                            <div class="field-item" data-field="quantity">
+                                <span class="field-name">Quantidade</span>
+                                <span class="field-status">🔓</span>
+                            </div>
+                            <div class="field-item" data-field="drawing">
+                                <span class="field-name">Desenho</span>
+                                <span class="field-status">🔓</span>
+                            </div>
+                            <div class="field-item" data-field="mp">
+                                <span class="field-name">MP</span>
+                                <span class="field-status">🔓</span>
+                            </div>
+                            <div class="field-item" data-field="revision">
+                                <span class="field-name">Revisão</span>
+                                <span class="field-status">🔓</span>
+                            </div>
+                            <div class="field-item" data-field="position">
+                                <span class="field-name">Posição</span>
+                                <span class="field-status">🔓</span>
+                            </div>
+                            <div class="field-item" data-field="cv">
+                                <span class="field-name">CV</span>
+                                <span class="field-status">🔓</span>
+                            </div>
+                            <div class="field-item" data-field="conjunto">
+                                <span class="field-name">Conjunto</span>
+                                <span class="field-status">🔓</span>
+                            </div>
+                            <div class="field-item" data-field="modelo">
+                                <span class="field-name">Modelo</span>
+                                <span class="field-status">🔓</span>
+                            </div>
+                            <div class="field-item" data-field="description_drawing">
+                                <span class="field-name">Descrição do Desenho</span>
+                                <span class="field-status">🔓</span>
+                            </div>
+                            <div class="field-item" data-field="purchase_order">
+                                <span class="field-name">Ordem de Compra</span>
+                                <span class="field-status">🔓</span>
+                            </div>
+                        </div>
+
+                        <!-- Responsabilidades -->
+                        <div class="field-category">
+                            <div class="category-header">
+                                <span class="category-icon resp">👥</span>
+                                Responsabilidades
+                            </div>
+                            <div class="field-item" data-field="assigned_user_id">
+                                <span class="field-name">Usuário Atribuído</span>
+                                <span class="field-status">🔓</span>
+                            </div>
+                            <div class="field-item" data-field="responsavel">
+                                <span class="field-name">Responsável</span>
+                                <span class="field-status">🔓</span>
+                            </div>
+                            <div class="field-item" data-field="inspetor">
+                                <span class="field-name">Inspetor</span>
+                                <span class="field-status">🔓</span>
+                            </div>
+                            <div class="field-item" data-field="setor">
+                                <span class="field-name">Setor</span>
+                                <span class="field-status">🔓</span>
+                            </div>
+                            <div class="field-item" data-field="area_responsavel">
+                                <span class="field-name">Área Responsável</span>
+                                <span class="field-status">🔓</span>
+                            </div>
+                            <div class="field-item" data-field="client">
+                                <span class="field-name">Cliente</span>
+                                <span class="field-status">🔓</span>
+                            </div>
+                        </div>
+
+                        <!-- Disposições -->
+                        <div class="field-category">
+                            <div class="category-header">
+                                <span class="category-icon disp">📋</span>
+                                Disposições
+                            </div>
+                            <div class="field-item" data-field="disposition_usar">
+                                <span class="field-name">Usar</span>
+                                <span class="field-status">🔓</span>
+                            </div>
+                            <div class="field-item" data-field="disposition_retrabalhar">
+                                <span class="field-name">Retrabalhar</span>
+                                <span class="field-status">🔓</span>
+                            </div>
+                            <div class="field-item" data-field="disposition_rejeitar">
+                                <span class="field-name">Rejeitar</span>
+                                <span class="field-status">🔓</span>
+                            </div>
+                            <div class="field-item" data-field="disposition_sucata">
+                                <span class="field-name">Sucata</span>
+                                <span class="field-status">🔓</span>
+                            </div>
+                            <div class="field-item" data-field="disposition_devolver_estoque">
+                                <span class="field-name">Devolver ao Estoque</span>
+                                <span class="field-status">🔓</span>
+                            </div>
+                            <div class="field-item" data-field="disposition_devolver_fornecedor">
+                                <span class="field-name">Devolver ao Fornecedor</span>
+                                <span class="field-status">🔓</span>
+                            </div>
+                        </div>
+
+                        <!-- Inspeção -->
+                        <div class="field-category">
+                            <div class="category-header">
+                                <span class="category-icon insp">🔍</span>
+                                Inspeção
+                            </div>
+                            <div class="field-item" data-field="inspection_aprovado">
+                                <span class="field-name">Aprovado</span>
+                                <span class="field-status">🔓</span>
+                            </div>
+                            <div class="field-item" data-field="inspection_reprovado">
+                                <span class="field-name">Reprovado</span>
+                                <span class="field-status">🔓</span>
+                            </div>
+                            <div class="field-item" data-field="inspection_ver_rnc">
+                                <span class="field-name">Ver RNC</span>
+                                <span class="field-status">🔓</span>
+                            </div>
+                        </div>
+
+                        <!-- Assinaturas -->
+                        <div class="field-category">
+                            <div class="category-header">
+                                <span class="category-icon sign">✍️</span>
+                                Assinaturas
+                            </div>
+                            <div class="field-item" data-field="signature_inspection_name">
+                                <span class="field-name">Nome da Inspeção</span>
+                                <span class="field-status">🔓</span>
+                            </div>
+                            <div class="field-item" data-field="signature_inspection_date">
+                                <span class="field-name">Data da Inspeção</span>
+                                <span class="field-status">🔓</span>
+                            </div>
+                            <div class="field-item" data-field="signature_engineering_name">
+                                <span class="field-name">Nome da Engenharia</span>
+                                <span class="field-status">🔓</span>
+                            </div>
+                            <div class="field-item" data-field="signature_engineering_date">
+                                <span class="field-name">Data da Engenharia</span>
+                                <span class="field-status">🔓</span>
+                            </div>
+                            <div class="field-item" data-field="signature_inspection2_name">
+                                <span class="field-name">Nome da Inspeção 2</span>
+                                <span class="field-status">🔓</span>
+                            </div>
+                            <div class="field-item" data-field="signature_inspection2_date">
+                                <span class="field-name">Data da Inspeção 2</span>
+                                <span class="field-status">🔓</span>
+                            </div>
+                        </div>
+
+                        <!-- Análises -->
+                        <div class="field-category">
+                            <div class="category-header">
+                                <span class="category-icon anal">📊</span>
+                                Análises
+                            </div>
+                            <div class="field-item" data-field="instruction_retrabalho">
+                                <span class="field-name">Instrução de Retrabalho</span>
+                                <span class="field-status">🔓</span>
+                            </div>
+                            <div class="field-item" data-field="cause_rnc">
+                                <span class="field-name">Causa da RNC</span>
+                                <span class="field-status">🔓</span>
+                            </div>
+                            <div class="field-item" data-field="action_rnc">
+                                <span class="field-name">Ação da RNC</span>
+                                <span class="field-status">🔓</span>
+                            </div>
+                            <div class="field-item" data-field="justificativa">
+                                <span class="field-name">Justificativa</span>
+                                <span class="field-status">🔓</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="alerts" id="alerts"></div>
+
+    <script src="{{ url_for('static', filename='js/field_locks.js') }}"></script>
+</body>
+</html>

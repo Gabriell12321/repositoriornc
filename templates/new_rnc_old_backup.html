@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+
+{% block title %}Novo RNC - Sistema IPPEL{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card {
+        background: white !important;
+        border-radius: 15px !important;
+        padding: 30px !important;
+        box-shadow: 0 8px 32px rgba(128, 128, 128, 0.15) !important;
+        border: 2px solid #808080 !important;
+        max-width: 800px !important;
+        margin: 0 auto !important;
+    }
+
+    .form-group {
+        margin-bottom: 25px !important;
+    }
+
+    .form-label {
+        display: block !important;
+        font-weight: 600 !important;
+        color: #6c757d !important;
+        margin-bottom: 10px !important;
+        font-size: 14px !important;
+    }
+
+    .form-input, .form-select, .form-textarea {
+        width: 100% !important;
+        padding: 15px 20px !important;
+        border: 2px solid #808080 !important;
+        border-radius: 10px !important;
+        font-size: 14px !important;
+        transition: all 0.3s ease !important;
+        background: white !important;
+        color: #495057 !important;
+    }
+
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+        outline: none !important;
+        border-color: #808080 !important;
+        box-shadow: 0 0 0 3px rgba(128, 128, 128, 0.2) !important;
+        background: white !important;
+        color: #495057 !important;
+    }
+
+    .form-textarea {
+        resize: vertical !important;
+        min-height: 120px !important;
+    }
+
+    .btn {
+        padding: 12px 24px !important;
+        border: 2px solid #808080 !important;
+        border-radius: 10px !important;
+        font-size: 14px !important;
+        font-weight: 600 !important;
+        cursor: pointer !important;
+        transition: all 0.3s ease !important;
+        text-decoration: none !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+    }
+
+    .btn-primary {
+        background: #6c757d !important;
+        color: white !important;
+    }
+
+    .btn-primary:hover {
+        background: #5a6268 !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4) !important;
+    }
+
+    .btn-secondary {
+        background: #adb5bd !important;
+        color: white !important;
+    }
+
+    .btn-secondary:hover {
+        background: #9fa6ae !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3) !important;
+    }
+
+    .form-actions {
+        display: flex !important;
+        gap: 15px !important;
+        margin-top: 30px !important;
+        justify-content: center !important;
+    }
+
+    /* Animação de entrada */
+    .card {
+        animation: slideInUp 0.6s ease-out !important;
+    }
+
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Estilo para o título */
+    .page-title {
+        color: #6c757d !important;
+        font-size: 28px !important;
+        font-weight: 700 !important;
+        text-align: center !important;
+        margin-bottom: 30px !important;
+        position: relative !important;
+    }
+
+    .page-title::after {
+        content: '' !important;
+        position: absolute !important;
+        bottom: -10px !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        width: 80px !important;
+        height: 3px !important;
+        background: #808080 !important;
+        border-radius: 2px !important;
+    }
+
+    /* Forçar cores em todos os elementos */
+    input, select, textarea {
+        background: white !important;
+        color: #495057 !important;
+        border: 2px solid #808080 !important;
+    }
+
+    input::placeholder, textarea::placeholder {
+        color: #6c757d !important;
+    }
+
+    select option {
+        background: white !important;
+        color: #495057 !important;
+    }
+
+    /* Sem autocomplete: lista nativa do navegador */
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1 class="page-title">📝 Novo Relatório de Não Conformidade</h1>
+    
+    <form method="POST">
+        <div class="form-group">
+            <label class="form-label" for="title">📋 Título do RNC:</label>
+            <input type="text" id="title" name="title" class="form-input" required>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label" for="description">📝 Descrição:</label>
+            <textarea id="description" name="description" class="form-input form-textarea" rows="5" required></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label" for="equipment">🔧 Equipamento:</label>
+            <input type="text" id="equipment" name="equipment" class="form-input">
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label" for="client">🏢 Cliente:</label>
+            <select id="client" name="client" class="form-input form-select">
+                <option value="" selected disabled>Selecione o cliente</option>
+                {% if clients %}
+                  {% for c in clients %}
+                    <option value="{{ c }}">{{ c }}</option>
+                  {% endfor %}
+                {% endif %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="price">💲 Preço (R$):</label>
+            <input type="number" id="price" name="price" step="0.01" min="0" placeholder="0,00" class="form-input">
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label" for="priority">⚡ Prioridade:</label>
+            <select id="priority" name="priority" class="form-input form-select">
+                <option value="Baixa">Baixa</option>
+                <option value="Média">Média</option>
+                <option value="Alta">Alta</option>
+                <option value="Crítica">Crítica</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="department">🏢 Setor:</label>
+            <select id="department" name="department" class="form-input form-select" required>
+                <option value="" disabled selected>Selecione o setor</option>
+                <option value="Engenharia">Engenharia</option>
+                <option value="PCP">PCP</option>
+                <option value="Produção">Produção</option>
+                <option value="Qualidade">Qualidade</option>
+                <option value="Compras">Compras</option>
+                <option value="Administração">Administração</option>
+                <option value="Terceiros">Terceiros</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="responsavel">👤 Responsável:</label>
+            <select id="responsavel" name="responsavel" class="form-input form-select">
+                <option value="" disabled selected>Selecione o responsável</option>
+                <optgroup label="Engenharia">
+                    <option value="Guilherme">Guilherme</option>
+                    <option value="Cíntia">Cíntia</option>
+                    <option value="Fundibem">Fundibem</option>
+                </optgroup>
+                <optgroup label="PCP">
+                    <option value="Fernando">Fernando</option>
+                </optgroup>
+                <optgroup label="Produção">
+                    <option value="Ronaldo">Ronaldo</option>
+                </optgroup>
+                <optgroup label="Compras">
+                    <option value="Marcelo">Marcelo</option>
+                </optgroup>
+                <optgroup label="Administração">
+                    <option value="Alan">Alan</option>
+                </optgroup>
+                <optgroup label="Qualidade">
+                    <option value="Supervisor Qualidade">Supervisor Qualidade</option>
+                </optgroup>
+                <optgroup label="Terceiros">
+                    <option value="Terceiro Responsável">Terceiro Responsável</option>
+                </optgroup>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="instruction_retrabalho">🔧 Instrução para Retrabalho:</label>
+            <textarea id="instruction_retrabalho" name="instruction_retrabalho" class="form-input form-textarea" rows="3" placeholder="Instruções detalhadas para correção..."></textarea>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="cause_rnc">🔍 Causa da RNC:</label>
+            <textarea id="cause_rnc" name="cause_rnc" class="form-input form-textarea" rows="3" placeholder="Análise da causa raiz..."></textarea>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="action_rnc">⚡ Ação a ser Tomada:</label>
+            <textarea id="action_rnc" name="action_rnc" class="form-input form-textarea" rows="3" placeholder="Ações corretivas e preventivas..."></textarea>
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                💾 Salvar RNC
+            </button>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                ❌ Cancelar
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %} 
+{% block scripts %}{% endblock %}

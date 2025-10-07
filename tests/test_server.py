@@ -1,45 +1,60 @@
 #!/usr/bin/env python3
-"""
-Script para testar se o servidor está funcionando
-"""
+# -*- coding: utf-8 -*-
 
-import requests
-import json
+print("=== TESTE DE SERVIDOR IPPEL ===")
 
-def test_server():
-    """Testar se o servidor está funcionando"""
+try:
+    import sys
+    print(f"✅ Python version: {sys.version}")
+except Exception as e:
+    print(f"❌ Erro no sys: {e}")
+
+try:
+    import sqlite3
+    print("✅ SQLite3 disponível")
+except Exception as e:
+    print(f"❌ SQLite3 erro: {e}")
+
+try:
+    import flask
+    print(f"✅ Flask version: {flask.__version__}")
+except Exception as e:
+    print(f"❌ Flask não encontrado: {e}")
+
+try:
+    import flask_login
+    print(f"✅ Flask-Login disponível")
+except Exception as e:
+    print(f"❌ Flask-Login não encontrado: {e}")
+
+print("\n=== TENTANDO INICIAR SERVIDOR SIMPLES ===")
+
+try:
+    from flask import Flask
+    app = Flask(__name__)
     
-    # URL do servidor
-    base_url = "http://192.168.2.114:5001"
+    @app.route('/')
+    def home():
+        return '''
+        <h1>🚀 SERVIDOR IPPEL FUNCIONANDO!</h1>
+        <p>✅ Flask está funcionando corretamente</p>
+        <p>📧 Sistema RNC IPPEL - Porta 5001</p>
+        <p><a href="/status">Verificar Status</a></p>
+        '''
     
-    try:
-        # Testar se o servidor está respondendo
-        print("🔍 Testando conexão com o servidor...")
-        response = requests.get(f"{base_url}/", timeout=5)
-        
-        if response.status_code == 200:
-            print("✅ Servidor está respondendo!")
-        else:
-            print(f"⚠️ Servidor respondeu com status {response.status_code}")
-            
-        # Testar a rota de listar RNCs
-        print("\n📋 Testando rota de listar RNCs...")
-        list_response = requests.get(f"{base_url}/api/rnc/list?tab=active")
-        
-        print(f"📊 Status Code: {list_response.status_code}")
-        print(f"📄 Response Headers: {dict(list_response.headers)}")
-        
-        if list_response.status_code == 200:
-            data = list_response.json()
-            print(f"✅ Rota funcionando! RNCs encontrados: {len(data.get('rncs', []))}")
-        else:
-            print(f"❌ Erro na rota: {list_response.text}")
-            
-    except requests.exceptions.ConnectionError:
-        print("❌ Erro de conexão: Servidor não está rodando ou não acessível")
-        print("💡 Certifique-se de que o servidor está rodando com: python server_form.py")
-    except Exception as e:
-        print(f"❌ Erro inesperado: {e}")
+    @app.route('/status')
+    def status():
+        return {
+            'status': 'online',
+            'message': 'Servidor IPPEL funcionando',
+            'python_version': sys.version,
+            'flask_version': flask.__version__
+        }
+    
+    print("🚀 Iniciando servidor simples na porta 5001...")
+    app.run(host='0.0.0.0', port=5001, debug=True)
 
-if __name__ == "__main__":
-    test_server() 
+except Exception as e:
+    print(f"❌ Erro ao iniciar servidor: {e}")
+    import traceback
+    traceback.print_exc()

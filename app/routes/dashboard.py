@@ -115,11 +115,11 @@ def api_indicadores_detalhados():
 
         cursor.execute(
             f"""
-            SELECT u.department, COUNT(r.id) as total
+            SELECT COALESCE(r.department, u.department) as department, COUNT(r.id) as total
               FROM rncs r
               LEFT JOIN users u ON r.user_id = u.id
              WHERE r.is_deleted = 0 {type_filter}
-             GROUP BY u.department
+             GROUP BY department
              ORDER BY total DESC
             """
         )
@@ -332,11 +332,11 @@ def api_indicadores():
 
         cursor.execute(
             """
-            SELECT u.department as setor, COUNT(r.id) as total
+            SELECT COALESCE(r.department, u.department) as setor, COUNT(r.id) as total
               FROM rncs r
               LEFT JOIN users u ON r.user_id = u.id
-             WHERE r.is_deleted = 0 AND u.department IS NOT NULL
-             GROUP BY u.department
+             WHERE r.is_deleted = 0 AND COALESCE(r.department, u.department) IS NOT NULL
+             GROUP BY setor
              ORDER BY total DESC
             """
         )
@@ -374,7 +374,9 @@ def api_indicadores():
                 """
                 SELECT COUNT(*) FROM rncs r
                   LEFT JOIN users u ON r.user_id = u.id
-                 WHERE r.is_deleted = 0 AND u.department = ? AND r.finalized_at IS NOT NULL
+                 WHERE r.is_deleted = 0 
+                   AND COALESCE(r.department, u.department) = ? 
+                   AND r.finalized_at IS NOT NULL
                 """,
                 (setor,),
             )

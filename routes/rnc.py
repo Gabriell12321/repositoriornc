@@ -47,7 +47,22 @@ def create_rnc():
         from services.cache import clear_rnc_cache
         from services.groups import get_users_by_group
         from services.rnc import share_rnc_with_user
+        from routes.field_locks import get_user_locked_fields
         data = request.get_json() or {}
+
+        # Validar campos bloqueados
+        locked_fields = get_user_locked_fields(session['user_id'])
+        if locked_fields:
+            attempted_fields = []
+            for field in locked_fields:
+                if field in data and data[field] is not None and data[field] != '':
+                    attempted_fields.append(field)
+            
+            if attempted_fields:
+                return jsonify({
+                    'success': False,
+                    'message': f'Os seguintes campos estão bloqueados para seu grupo: {", ".join(attempted_fields)}'
+                }), 403
 
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
@@ -250,6 +265,12 @@ def list_rncs():
 
         conn = get_db_connection()
         cursor = conn.cursor()
+        
+        # Obter departamento do usuário para filtro adicional
+        cursor.execute('SELECT department FROM users WHERE id = ?', (user_id,))
+        user_dept_row = cursor.fetchone()
+        user_department = user_dept_row[0] if user_dept_row else None
+        
         # Build query with cursor-based pagination
         view_all_active = has_permission(user_id, 'view_all_rncs')
         view_all_finalized = has_permission(user_id, 'view_finalized_rncs')
@@ -267,13 +288,45 @@ def list_rncs():
             where.append("r.status = 'Finalizado'")
             if not view_all_finalized:
                 joins.append("LEFT JOIN rnc_shares rs ON rs.rnc_id = r.id")
-                where.append("(r.user_id = ? OR r.assigned_user_id = ? OR rs.shared_with_user_id = ?)")
+                # Adiciona filtro por departamento/área responsável (ENGENHARIA)
+                permission_conditions = [
+                    "r.user_id = ?",
+                    "r.assigned_user_id = ?",
+                    "rs.shared_with_user_id = ?"
+                ]
+                # Se o usuário tem departamento, incluir RNCs da mesma área (LIKE para pegar variações)
+                if user_department:
+                    permission_conditions.append("LOWER(TRIM(r.area_responsavel)) LIKE LOWER(TRIM(?))")
+                    permission_conditions.append("LOWER(TRIM(r.setor)) LIKE LOWER(TRIM(?))")
+                    params.extend([user_id, user_id, user_id, f'%{user_department.strip()}%', f'%{user_department.strip()}%'])
+                else:
+                    params.extend([user_id, user_id, user_id])
+                where.append(f"({' OR '.join(permission_conditions)})")
+                select_prefix = "SELECT DISTINCT"
+        elif tab.lower() in ('engineering', 'engenharia'):
+            # Aba específica de ENGENHARIA: mostrar somente RNCs FINALIZADOS da área/setor Engenharia
+            # Isso antes era tratado como 'active' por não haver ramificação dedicada.
+            where.append("r.status = 'Finalizado'")
+            # Filtra explicitamente por Engenharia (area_responsavel ou setor contém 'engenharia')
+            where.append("(LOWER(TRIM(r.area_responsavel)) LIKE '%engenharia%' OR LOWER(TRIM(r.setor)) LIKE '%engenharia%')")
+            if not view_all_finalized:
+                joins.append("LEFT JOIN rnc_shares rs ON rs.rnc_id = r.id")
+                permission_conditions = [
+                    "r.user_id = ?",
+                    "r.assigned_user_id = ?",
+                    "rs.shared_with_user_id = ?"
+                ]
+                # Se o usuário for de Engenharia (ou outro dept), ainda garantimos visibilidade dos seus próprios + compartilhados
                 params.extend([user_id, user_id, user_id])
+                where.append(f"({' OR '.join(permission_conditions)})")
                 select_prefix = "SELECT DISTINCT"
         else:
-            # default to active
+            # default to active - mostrar apenas RNCs NÃO finalizadas
+            # CORRIGIDO: Filtrar por status mesmo para admin, aba "active" não deve mostrar finalizadas
             where.append("r.status NOT IN ('Finalizado')")
+            
             if not view_all_active:
+                # Usuário normal vê apenas suas RNCs ativas
                 joins.append("LEFT JOIN rnc_shares rs ON rs.rnc_id = r.id")
                 where.append("(r.user_id = ? OR r.assigned_user_id = ? OR rs.shared_with_user_id = ?)")
                 params.extend([user_id, user_id, user_id])
@@ -954,6 +1007,22 @@ def update_rnc_api(rnc_id):
     try:
         from services.permissions import has_permission
         from services.cache import clear_rnc_cache, query_cache, cache_lock
+        from routes.field_locks import get_user_locked_fields
+        
+        # Validar campos bloqueados
+        data = request.get_json() or {}
+        locked_fields = get_user_locked_fields(session['user_id'])
+        if locked_fields:
+            attempted_fields = []
+            for field in locked_fields:
+                if field in data and data[field] is not None and data[field] != '':
+                    attempted_fields.append(field)
+            
+            if attempted_fields:
+                return jsonify({
+                    'success': False,
+                    'message': f'Os seguintes campos estão bloqueados para seu grupo: {", ".join(attempted_fields)}'
+                }), 403
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         cursor.execute('SELECT * FROM rncs WHERE id = ?', (rnc_id,))

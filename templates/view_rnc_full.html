@@ -203,11 +203,11 @@
             margin-top: 1px;
         }
 
-        /* Tabelas ULTRA EXTREMAMENTE compactas */
+        /* Tabelas ULTRA compactas - sem espaços desnecessários */
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 4px;
+            margin-bottom: 3px;
             font-size: 9px;
             border-radius: 1px;
             overflow: hidden;
@@ -216,10 +216,46 @@
 
         table td, table th {
             border: 1px solid var(--border-gray);
-            padding: 1px 3px;
+            padding: 2px 4px;
             text-align: left;
-            vertical-align: top;
+            vertical-align: middle;
+            line-height: 1.2;
+        }
+        
+        table td {
+            height: auto;
+            min-height: 18px;
+        }
+        
+        table td strong {
+            display: inline-block;
+            min-width: fit-content;
         }           
+
+        /* Listras alternadas para as linhas da tabela */
+        table tbody tr:nth-child(odd) {
+            background-color: #f8f9fa !important;
+        }
+        
+        table tbody tr:nth-child(even) {
+            background-color: white !important;
+        }
+        
+        /* Garantir que as células herdem a cor da linha */
+        table tbody tr:nth-child(odd) td {
+            background-color: #f8f9fa !important;
+        }
+        
+        table tbody tr:nth-child(even) td {
+            background-color: white !important;
+        }
+        
+        /* Reduzir espaçamento na linha do MATERIAL */
+        .material-row td {
+            padding: 1px 3px !important;
+            min-height: 14px !important;
+            line-height: 1.1 !important;
+        }
 
         table th {
             background: linear-gradient(135deg, var(--primary-red) 0%, var(--secondary-red) 100%);
@@ -257,25 +293,25 @@
             margin-bottom: 4px;
         }
 
-        /* Campos de texto ULTRA EXTREMAMENTE compactos */
+        /* Campos de texto compactos */
         .text-block {
-            min-height: 20px;
-            padding: 2px;
+            min-height: 24px;
+            padding: 4px 6px;
             word-wrap: break-word;
             background: var(--light-gray);
             border-radius: 1px;
             border: 1px solid var(--border-gray);
             font-size: 9px;
-            line-height: 1.0;
+            line-height: 1.3;
             color: var(--text-dark);
         }
 
-        /* Seção inferior EXTREMAMENTE compacta */
+        /* Seção inferior compacta */
         .bottom-section {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 0;
-            margin-top: 2px;
+            margin-top: 3px;
             border: 1px solid var(--primary-red);
             border-radius: 1px;
             overflow: hidden;
@@ -283,7 +319,7 @@
         }
 
         .disposition-section, .inspection-section {
-            padding: 2px;
+            padding: 4px;
             position: relative;
         }
 
@@ -301,28 +337,28 @@
             color: white;
             text-align: center;
             font-weight: bold;
-            font-size: 7px;
-            padding: 1px;
-            margin: -2px -2px 2px -2px;
+            font-size: 8px;
+            padding: 3px;
+            margin: -4px -4px 4px -4px;
             text-transform: uppercase;
             letter-spacing: 0.1px;
         }
 
-        /* Opções de disposição EXTREMAMENTE compactas */
+        /* Opções de disposição compactas */
         .disposition-options {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 1px;
-            margin-bottom: 2px;
+            gap: 2px;
+            margin-bottom: 4px;
         }
 
         .disposition-option {
             display: flex;
             align-items: center;
-            gap: 1px;
-            font-size: 6px;
+            gap: 3px;
+            font-size: 7px;
             font-weight: 600;
-            padding: 1px;
+            padding: 2px 3px;
             border-radius: 1px;
             transition: all 0.3s ease;
         }
@@ -332,8 +368,8 @@
         }
 
         .disposition-option input[type="checkbox"] {
-            width: 5px;
-            height: 5px;
+            width: 10px;
+            height: 10px;
             accent-color: var(--primary-red);
             flex-shrink: 0;
         }
@@ -345,69 +381,67 @@
             text-overflow: ellipsis;
         }
 
-        /* Campos de assinatura EXTREMAMENTE compactos */
+        /* Campos de assinatura ULTRA compactos - todas as informações em uma linha alinhadas */
         .signature-fields {
-            margin-top: 2px;
+            margin-top: 5px;
+            padding: 0;
         }
 
         .signature-row {
-            display: flex;
+            display: grid;
+            grid-template-columns: 70px 90px 40px 1fr 40px 100px;
             align-items: center;
-            margin-bottom: 1px;
-            gap: 1px;
-            flex-wrap: wrap;
+            margin-bottom: 3px;
+            gap: 5px;
         }
 
         .signature-label {
-            font-size: 6px;
+            font-size: 8px;
             font-weight: 600;
             color: var(--text-dark);
-            min-width: 30px;
-            flex-shrink: 0;
+            text-align: right;
+            padding-right: 3px;
         }
 
         .signature-input {
-            flex: 1;
-            min-width: 45px;
-            height: 8px;
+            height: 18px;
             border: 1px solid var(--border-gray);
-            border-radius: 1px;
-            padding: 1px 2px;
-            font-size: 5px;
+            border-radius: 2px;
+            padding: 2px 5px;
+            font-size: 9px;
             background: white;
         }
 
         .date-input {
-            width: 20px;
-            height: 8px;
+            height: 18px;
             border: 1px solid var(--border-gray);
-            border-radius: 1px;
-            padding: 1px;
-            font-size: 5px;
+            border-radius: 2px;
+            padding: 2px 5px;
+            font-size: 9px;
             background: white;
             text-align: center;
-            flex-shrink: 0;
         }
 
         .signature-separator {
-            margin: 0 1px;
             color: var(--text-muted);
             font-weight: bold;
-            flex-shrink: 0;
+            font-size: 8px;
+            text-align: right;
+            padding-right: 3px;
         }
 
-        /* Checkboxes de aprovação EXTREMAMENTE compactos */
+        /* Checkboxes de aprovação compactos */
         .approval-options {
-            margin-bottom: 2px;
+            margin-bottom: 4px;
         }
 
         .approval-option {
             display: flex;
             align-items: center;
-            gap: 1px;
-            font-size: 6px;
+            gap: 3px;
+            font-size: 7px;
             font-weight: 600;
-            padding: 1px;
+            padding: 2px 3px;
             border-radius: 1px;
             transition: all 0.3s ease;
         }
@@ -417,8 +451,8 @@
         }
 
         .approval-option input[type="checkbox"] {
-            width: 5px;
-            height: 5px;
+            width: 10px;
+            height: 10px;
             accent-color: var(--primary-red);
             flex-shrink: 0;
         }
@@ -427,25 +461,25 @@
             flex: 1;
         }
 
-        /* Campo de referência RNC EXTREMAMENTE compacto */
+        /* Campo de referência RNC compacto */
         .rnc-reference {
-            margin-bottom: 2px;
+            margin-bottom: 4px;
         }
 
         .rnc-reference-label {
-            font-size: 6px;
+            font-size: 7px;
             font-weight: 600;
             color: var(--text-dark);
-            margin-bottom: 1px;
+            margin-bottom: 2px;
         }
 
         .rnc-reference-input {
             width: 100%;
-            height: 8px;
+            height: 18px;
             border: 1px solid var(--border-gray);
-            border-radius: 1px;
-            padding: 1px 2px;
-            font-size: 5px;
+            border-radius: 2px;
+            padding: 2px 4px;
+            font-size: 9px;
             background: white;
         }
 
@@ -620,15 +654,15 @@
             <div class="rnc-number">RNC Nº: {{ rnc.rnc_number or rnc.id }}</div>
         </div>
 
-        <!-- Principal - mais compacto -->
-        <table>
+        <!-- Principal - Layout compacto e balanceado -->
+        <table style="table-layout: auto;">
             <tr>
-                <td><strong>DES.</strong></td>
-                <td>{{ rnc.drawing or '-' }}</td>
-                <td><strong>MP.</strong></td>
-                <td>{{ rnc.mp or '-' }}</td>
-                <td><strong>REV.</strong></td>
-                <td>{{ rnc.revision or '-' }}</td>
+                <td style="width: 12%; white-space: nowrap;"><strong>DES.</strong></td>
+                <td style="width: 21%;">{{ rnc.drawing or '-' }}</td>
+                <td style="width: 10%; white-space: nowrap;"><strong>MP.</strong></td>
+                <td style="width: 21%;">{{ rnc.mp or '-' }}</td>
+                <td style="width: 10%; white-space: nowrap;"><strong>REV.</strong></td>
+                <td style="width: 26%;">{{ rnc.revision or '-' }}</td>
             </tr>
             <tr>
                 <td><strong>POS.</strong></td>
@@ -643,21 +677,25 @@
                 <td>{{ rnc.equipment or '-' }}</td>
                 <td><strong>CONJUNTO</strong></td>
                 <td>{{ rnc.conjunto or '-' }}</td>
-                <td><strong>CLIENTE</strong></td>
-                <td>{{ rnc.client or '-' }}</td>
+                <td colspan="2"></td>
             </tr>
             <tr>
                 <td><strong>DESCRIÇÃO DES.</strong></td>
                 <td>{{ rnc.description_drawing or '-' }}</td>
                 <td><strong>QTDE LOTE</strong></td>
                 <td>{{ rnc.quantity or '-' }}</td>
+                <td><strong>CLIENTE</strong></td>
+                <td>{{ rnc.client or '-' }}</td>
+            </tr>
+            <tr class="material-row">
                 <td><strong>MATERIAL</strong></td>
                 <td>{{ rnc.material or '-' }}</td>
+                <td colspan="4"></td>
             </tr>
             <tr>
                 <td><strong>ASSINATURA GERENTE</strong></td>
                 <td>{{ rnc.signature_engineering_name or '-' }}</td>
-                <td><strong>ASSINATURA LÍDER SETOR</strong></td>
+                <td><strong>ASSINATURA LÍDER</strong></td>
                 <td>{{ rnc.signature_inspection2_name or '-' }}</td>
                 <td><strong>VALOR</strong></td>
                 <td style="font-weight: bold; color: #C1272D;">
@@ -674,20 +712,20 @@
                 </td>
             </tr>
             <tr>
-                <td><strong>INSPECTOR:</strong></td>
+                <td><strong>INSPECTOR</strong></td>
                 <td>{{ rnc.inspetor or rnc.signature_inspection_name or '-' }}</td>
                 <td><strong>DATA EMISSÃO</strong></td>
                 <td>{{ (rnc.created_at or '')[:10] if rnc.created_at else '-' }}</td>
-                <td><strong>ORDEM DE COMPRA</strong></td>
-                <td>{{ rnc.purchase_order or '-' }}</td>
+                <td><strong>NOME RESPONSÁVEL</strong></td>
+                <td>{{ rnc.responsavel or '-' }}</td>
             </tr>
             <tr>
                 <td><strong>ÁREA RESPONSÁVEL</strong></td>
                 <td>{{ rnc.area_responsavel or '-' }}</td>
                 <td><strong>SETOR</strong></td>
                 <td>{{ rnc.setor or '-' }}</td>
-                <td><strong>RESPONSÁVEL</strong></td>
-                <td>{{ rnc.responsavel or '-' }}</td>
+                <td><strong>ASSINATURA RESPONSÁVEL</strong></td>
+                <td>{{ rnc.purchase_order or '-' }}</td>
             </tr>
         </table>
 
@@ -755,54 +793,6 @@
             </tbody>
         </table>
 
-        <!-- Causa - mais compacto -->
-        <table class="section-table">
-            <thead>
-                <tr>
-                    <th style="width:60px;">ITEM</th>
-                    <th colspan="3" class="section-title">CAUSA DA RNC</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td style="width:60px; text-align:center; font-weight:bold; font-size:14px;">3</td>
-                    <td colspan="3"><div class="text-block">{{ rnc.cause_rnc or '-' }}</div></td>
-                </tr>
-            </tbody>
-        </table>
-
-        <!-- Ação - mais compacto -->
-        <table class="section-table">
-            <thead>
-                <tr>
-                    <th style="width:60px;">ITEM</th>
-                    <th colspan="3" class="section-title">AÇÃO A SER TOMADA</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td style="width:60px; text-align:center; font-weight:bold; font-size:14px;">4</td>
-                    <td colspan="3"><div class="text-block">{{ rnc.action_rnc or '-' }}</div></td>
-                </tr>
-            </tbody>
-        </table>
-
-        <!-- Justificativa -->
-        <table class="section-table">
-            <thead>
-                <tr>
-                    <th style="width:60px;">ITEM</th>
-                    <th colspan="3" class="section-title">JUSTIFICATIVA</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td style="width:60px; text-align:center; font-weight:bold; font-size:14px;">5</td>
-                    <td colspan="3"><div class="text-block">{{ rnc.justificativa or '-' }}</div></td>
-                </tr>
-            </tbody>
-        </table>
-
         <!-- Disposição e Inspeção - corrigido e funcionando perfeitamente -->
         <div class="bottom-section">
             <!-- Coluna da Esquerda: Disposição do Material -->
@@ -812,59 +802,54 @@
                 <!-- Opções de disposição em duas colunas -->
                 <div class="disposition-options">
                     <div class="disposition-option">
-                        <input type="checkbox" id="usar" {% if rnc.disposition_usar %}checked{% endif %} disabled>
+                        <input type="checkbox" id="usar" {% if rnc.disposition_usar == 1 or rnc.disposition_usar == True %}checked{% endif %} disabled>
                         <label for="usar">USAR COMO ESTÁ</label>
                     </div>
                     <div class="disposition-option">
-                        <input type="checkbox" id="sucata" {% if rnc.disposition_sucata %}checked{% endif %} disabled>
+                        <input type="checkbox" id="sucata" {% if rnc.disposition_sucata == 1 or rnc.disposition_sucata == True %}checked{% endif %} disabled>
                         <label for="sucata">SUCATA</label>
                     </div>
                     <div class="disposition-option">
-                        <input type="checkbox" id="retrabalhar" {% if rnc.disposition_retrabalhar %}checked{% endif %} disabled>
+                        <input type="checkbox" id="retrabalhar" {% if rnc.disposition_retrabalhar == 1 or rnc.disposition_retrabalhar == True %}checked{% endif %} disabled>
                         <label for="retrabalhar">RETRABALHAR</label>
                     </div>
                     <div class="disposition-option">
-                        <input type="checkbox" id="devolver_estoque" {% if rnc.disposition_devolver_estoque %}checked{% endif %} disabled>
+                        <input type="checkbox" id="devolver_estoque" {% if rnc.disposition_devolver_estoque == 1 or rnc.disposition_devolver_estoque == True %}checked{% endif %} disabled>
                         <label for="devolver_estoque">DEVOLVER AO ESTOQUE</label>
                     </div>
                     <div class="disposition-option">
-                        <input type="checkbox" id="rejeitar" {% if rnc.disposition_rejeitar %}checked{% endif %} disabled>
+                        <input type="checkbox" id="rejeitar" {% if rnc.disposition_rejeitar == 1 or rnc.disposition_rejeitar == True %}checked{% endif %} disabled>
                         <label for="rejeitar">REJEITAR</label>
                     </div>
                     <div class="disposition-option">
-                        <input type="checkbox" id="devolver_fornecedor" {% if rnc.disposition_devolver_fornecedor %}checked{% endif %} disabled>
+                        <input type="checkbox" id="devolver_fornecedor" {% if rnc.disposition_devolver_fornecedor == 1 or rnc.disposition_devolver_fornecedor == True %}checked{% endif %} disabled>
                         <label for="devolver_fornecedor">DEVOLVER AO FORNECEDOR</label>
                     </div>
                 </div>
 
-                <!-- Campos de assinatura corrigidos -->
+                <!-- Campos de assinatura compactos - tudo em uma linha alinhado -->
                 <div class="signature-fields">
                     <div class="signature-row">
                         <span class="signature-label">INSPEÇÃO:</span>
-                        <input type="text" class="date-input" value="{{ (rnc.created_at or '')[:2] if rnc.created_at else '' }}" disabled>
-                        <span class="signature-separator">/</span>
-                        <input type="text" class="date-input" value="{{ (rnc.created_at or '')[:5][3:5] if rnc.created_at else '' }}" disabled>
-                        <span class="signature-separator">/</span>
-                        <input type="text" class="date-input" value="{{ (rnc.created_at or '')[:4] if rnc.created_at else '' }}" disabled>
-                    </div>
-                    <div class="signature-row">
-                        <span class="signature-label">NOME:</span>
+                        <input type="text" class="date-input" value="{{ rnc.signature_inspection_date or '' }}" disabled placeholder="dd/mm/aaaa">
+                        <span class="signature-separator">NOME:</span>
                         <input type="text" class="signature-input" value="{{ rnc.signature_inspection_name or '' }}" disabled>
                         <span class="signature-separator">VISTO:</span>
                         <input type="text" class="signature-input" value="" disabled>
                     </div>
-                    
                     <div class="signature-row">
                         <span class="signature-label">ENGENHARIA:</span>
-                        <input type="text" class="date-input" value="{{ (rnc.created_at or '')[:2] if rnc.created_at else '' }}" disabled>
-                        <span class="signature-separator">/</span>
-                        <input type="text" class="date-input" value="{{ (rnc.created_at or '')[:5][3:5] if rnc.created_at else '' }}" disabled>
-                        <span class="signature-separator">/</span>
-                        <input type="text" class="date-input" value="{{ (rnc.created_at or '')[:4] if rnc.created_at else '' }}" disabled>
+                        <input type="text" class="date-input" value="{{ rnc.signature_engineering_date or '' }}" disabled placeholder="dd/mm/aaaa">
+                        <span class="signature-separator">NOME:</span>
+                        <input type="text" class="signature-input" value="{{ rnc.signature_engineering_name or '' }}" disabled>
+                        <span class="signature-separator">VISTO:</span>
+                        <input type="text" class="signature-input" value="" disabled>
                     </div>
                     <div class="signature-row">
-                        <span class="signature-label">NOME:</span>
-                        <input type="text" class="signature-input" value="{{ rnc.signature_engineering_name or '' }}" disabled>
+                        <span class="signature-label">INSPEÇÃO 2:</span>
+                        <input type="text" class="date-input" value="{{ rnc.signature_inspection2_date or '' }}" disabled placeholder="dd/mm/aaaa">
+                        <span class="signature-separator">NOME:</span>
+                        <input type="text" class="signature-input" value="{{ rnc.signature_inspection2_name or '' }}" disabled>
                         <span class="signature-separator">VISTO:</span>
                         <input type="text" class="signature-input" value="" disabled>
                     </div>
@@ -878,11 +863,11 @@
                 <!-- Opções de aprovação -->
                 <div class="approval-options">
                     <div class="approval-option">
-                        <input type="checkbox" id="aprovado" {% if rnc.inspection_aprovado %}checked{% endif %} disabled>
+                        <input type="checkbox" id="aprovado" {% if rnc.inspection_aprovado == 1 or rnc.inspection_aprovado == True %}checked{% endif %} disabled>
                         <label for="aprovado">APROVADO</label>
                     </div>
                     <div class="approval-option">
-                        <input type="checkbox" id="reprovado" {% if rnc.inspection_reprovado %}checked{% endif %} disabled>
+                        <input type="checkbox" id="reprovado" {% if rnc.inspection_reprovado == 1 or rnc.inspection_reprovado == True %}checked{% endif %} disabled>
                         <label for="reprovado">REPROVADO</label>
                     </div>
                 </div>
@@ -893,23 +878,17 @@
                     <input type="text" class="rnc-reference-input" value="{{ rnc.inspection_ver_rnc or '' }}" disabled>
                 </div>
 
-                <!-- Campos de assinatura corrigidos -->
+                <!-- Campos de assinatura compactos - tudo em uma linha alinhado -->
                 <div class="signature-fields">
                     <div class="signature-row">
                         <span class="signature-label">INSPEÇÃO:</span>
-                        <input type="text" class="date-input" value="{{ (rnc.created_at or '')[:2] if rnc.created_at else '' }}" disabled>
-                        <span class="signature-separator">/</span>
-                        <input type="text" class="date-input" value="{{ (rnc.created_at or '')[:5][3:5] if rnc.created_at else '' }}" disabled>
-                        <span class="signature-separator">/</span>
-                        <input type="text" class="date-input" value="{{ (rnc.created_at or '')[:4] if rnc.created_at else '' }}" disabled>
-                                </div>
-                    <div class="signature-row">
-                        <span class="signature-label">NOME:</span>
-                        <input type="text" class="signature-input" value="{{ rnc.signature_inspection_name or '' }}" disabled>
+                        <input type="text" class="date-input" value="{{ rnc.signature_inspection2_date or '' }}" disabled placeholder="dd/mm/aaaa">
+                        <span class="signature-separator">NOME:</span>
+                        <input type="text" class="signature-input" value="{{ rnc.signature_inspection2_name or '' }}" disabled>
                         <span class="signature-separator">VISTO:</span>
                         <input type="text" class="signature-input" value="" disabled>
-            </div>
-                                </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

@@ -800,9 +800,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 <button class="action-btn btn-primary" onclick="createNewRNC()">
                     ➕ Criar Novo RNC
                 </button>
-                <button class="action-btn btn-info" onclick="window.location.href='/indicadores-dashboard'" style="font-weight: bold; font-size: 14px;">
-                    📊 Indicadores
-                </button>
                 <button class="action-btn btn-secondary" onclick="refreshRNCs()">
                     🔄 Atualizar
                 </button>
@@ -1530,12 +1527,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 statusChart.destroy();
             }
             
+            // Sanitizar valores
+            const sanitizedValues = Object.values(data).map(v => {
+                const num = Number(v);
+                return (isFinite(num) && !isNaN(num)) ? Math.max(0, num) : 0;
+            });
+            
             statusChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
                     labels: Object.keys(data),
                     datasets: [{
-                        data: Object.values(data),
+                        data: sanitizedValues,
                         backgroundColor: [
                             '#ffc107', // Pendente
                             '#17a2b8', // Em Análise
@@ -1571,13 +1574,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 priorityChart.destroy();
             }
             
+            // Sanitizar valores
+            const sanitizedValues = Object.values(data).map(v => {
+                const num = Number(v);
+                return (isFinite(num) && !isNaN(num)) ? Math.max(0, num) : 0;
+            });
+            
             priorityChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: Object.keys(data),
                     datasets: [{
                         label: 'Quantidade',
-                        data: Object.values(data),
+                        data: sanitizedValues,
                         backgroundColor: [
                             '#28a745', // Baixa
                             '#ffc107', // Média
@@ -1600,7 +1609,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         y: {
                             beginAtZero: true,
                             ticks: {
-                                stepSize: 1
+                                stepSize: 1,
+                                callback: function(value) {
+                                    return isFinite(value) ? value : 0;
+                                }
                             }
                         }
                     }
@@ -1616,13 +1628,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 monthlyChart.destroy();
             }
             
+            // Sanitizar valores e filtrar Infinity/NaN
+            const sanitizedValues = Object.values(data).map(v => {
+                const num = Number(v);
+                return (isFinite(num) && !isNaN(num)) ? Math.max(0, num) : 0;
+            });
+            
             monthlyChart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: Object.keys(data),
                     datasets: [{
                         label: 'RNCs Criados',
-                        data: Object.values(data),
+                        data: sanitizedValues,
                         borderColor: '#dc3545',
                         backgroundColor: 'rgba(220, 53, 69, 0.1)',
                         borderWidth: 3,
@@ -1642,7 +1660,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         y: {
                             beginAtZero: true,
                             ticks: {
-                                stepSize: 1
+                                stepSize: 1,
+                                callback: function(value) {
+                                    // Garantir que apenas números finitos sejam exibidos
+                                    return isFinite(value) ? value : 0;
+                                }
                             }
                         }
                     }
@@ -1658,12 +1680,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 userChart.destroy();
             }
             
+            // Sanitizar valores
+            const sanitizedValues = Object.values(data).map(v => {
+                const num = Number(v);
+                return (isFinite(num) && !isNaN(num)) ? Math.max(0, num) : 0;
+            });
+            
             userChart = new Chart(ctx, {
                 type: 'pie',
                 data: {
                     labels: Object.keys(data),
                     datasets: [{
-                        data: Object.values(data),
+                        data: sanitizedValues,
                         backgroundColor: [
                             '#007bff',
                             '#28a745',
@@ -1702,13 +1730,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 weeklyChart.destroy();
             }
             
+            // Sanitizar valores
+            const sanitizedValues = Object.values(data).map(v => {
+                const num = Number(v);
+                return (isFinite(num) && !isNaN(num)) ? Math.max(0, num) : 0;
+            });
+            
             weeklyChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: Object.keys(data),
                     datasets: [{
                         label: 'RNCs Criados',
-                        data: Object.values(data),
+                        data: sanitizedValues,
                         backgroundColor: 'rgba(220, 53, 69, 0.8)',
                         borderColor: '#dc3545',
                         borderWidth: 2,
@@ -1727,7 +1761,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         y: {
                             beginAtZero: true,
                             ticks: {
-                                stepSize: 1
+                                stepSize: 1,
+                                callback: function(value) {
+                                    return isFinite(value) ? value : 0;
+                                }
                             }
                         }
                     }
@@ -1743,12 +1780,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 departmentChart.destroy();
             }
             
+            // Sanitizar valores
+            const sanitizedValues = Object.values(data).map(v => {
+                const num = Number(v);
+                return (isFinite(num) && !isNaN(num)) ? Math.max(0, num) : 0;
+            });
+            
             departmentChart = new Chart(ctx, {
                 type: 'polarArea',
                 data: {
                     labels: Object.keys(data),
                     datasets: [{
-                        data: Object.values(data),
+                        data: sanitizedValues,
                         backgroundColor: [
                             'rgba(220, 53, 69, 0.8)',
                             'rgba(0, 123, 255, 0.8)',
@@ -1871,6 +1914,23 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
+        // Função auxiliar para sanitizar dados numéricos (remover Infinity/NaN)
+        function sanitizeNumber(value, defaultValue = 0) {
+            if (value === null || value === undefined || !isFinite(value) || isNaN(value)) {
+                return defaultValue;
+            }
+            return Number(value);
+        }
+
+        // Função auxiliar para sanitizar objeto de dados (remover Infinity/NaN dos values)
+        function sanitizeChartData(data) {
+            const sanitized = {};
+            for (const [key, value] of Object.entries(data)) {
+                sanitized[key] = sanitizeNumber(value, 0);
+            }
+            return sanitized;
+        }
+
         // Função para processar dados dos gráficos
         function processChartData(rncs) {
             // Dados para gráfico de status
@@ -1899,38 +1959,44 @@ document.addEventListener('DOMContentLoaded', () => {
             rncs.forEach(rnc => {
                 // Status
                 const status = rnc.status || 'Pendente';
-                statusData[status] = (statusData[status] || 0) + 1;
+                statusData[status] = sanitizeNumber((statusData[status] || 0) + 1);
 
                 // Prioridade
                 const priority = rnc.priority || 'Média';
-                priorityData[priority] = (priorityData[priority] || 0) + 1;
+                priorityData[priority] = sanitizeNumber((priorityData[priority] || 0) + 1);
 
                 // Mensal
                 const date = new Date(rnc.created_at);
-                const monthKey = `${date.getMonth() + 1}/${date.getFullYear()}`;
-                monthlyData[monthKey] = (monthlyData[monthKey] || 0) + 1;
+                if (date && !isNaN(date.getTime())) {
+                    const monthKey = `${date.getMonth() + 1}/${date.getFullYear()}`;
+                    monthlyData[monthKey] = sanitizeNumber((monthlyData[monthKey] || 0) + 1);
+                }
 
                 // Semanal
-                const weekKey = `Sem ${Math.ceil((date.getDate() + date.getDay()) / 7)}`;
-                if (weeklyData[weekKey] !== undefined) {
-                    weeklyData[weekKey] = (weeklyData[weekKey] || 0) + 1;
+                if (date && !isNaN(date.getTime())) {
+                    const weekKey = `Sem ${Math.ceil((date.getDate() + date.getDay()) / 7)}`;
+                    if (weeklyData[weekKey] !== undefined) {
+                        weeklyData[weekKey] = sanitizeNumber((weeklyData[weekKey] || 0) + 1);
+                    }
                 }
 
                 // Usuário responsável
                 const user = rnc.user_name || 'Não definido';
-                userData[user] = (userData[user] || 0) + 1;
+                userData[user] = sanitizeNumber((userData[user] || 0) + 1);
 
                 // Departamento (simulado baseado no usuário)
                 const dept = rnc.user_name ? 'Engenharia' : 'Qualidade';
-                departmentData[dept] = (departmentData[dept] || 0) + 1;
+                departmentData[dept] = sanitizeNumber((departmentData[dept] || 0) + 1);
 
                 // RNCs críticos pendentes
                 if (rnc.priority === 'Crítica' && rnc.status !== 'Resolvido' && rnc.status !== 'Fechado') {
                     const daysPending = Math.floor((new Date() - new Date(rnc.created_at)) / (1000 * 60 * 60 * 24));
-                    criticalRNCs.push({
-                        title: rnc.title || rnc.rnc_number,
-                        days: daysPending
-                    });
+                    if (isFinite(daysPending) && !isNaN(daysPending) && daysPending >= 0) {
+                        criticalRNCs.push({
+                            title: rnc.title || rnc.rnc_number,
+                            days: daysPending
+                        });
+                    }
                 }
             });
 
@@ -1938,16 +2004,24 @@ document.addEventListener('DOMContentLoaded', () => {
             criticalRNCs.sort((a, b) => b.days - a.days);
             criticalRNCs.slice(0, 5).forEach(rnc => {
                 criticalData.labels.push(rnc.title);
-                criticalData.values.push(rnc.days);
+                criticalData.values.push(sanitizeNumber(rnc.days));
             });
 
-            // Criar gráficos
-            createStatusChart(statusData);
-            createPriorityChart(priorityData);
-            createMonthlyChart(monthlyData);
-            createUserChart(userData);
-            createWeeklyChart(weeklyData);
-            createDepartmentChart(departmentData);
+            // Sanitizar todos os dados antes de criar gráficos
+            const sanitizedStatusData = sanitizeChartData(statusData);
+            const sanitizedPriorityData = sanitizeChartData(priorityData);
+            const sanitizedMonthlyData = sanitizeChartData(monthlyData);
+            const sanitizedUserData = sanitizeChartData(userData);
+            const sanitizedWeeklyData = sanitizeChartData(weeklyData);
+            const sanitizedDepartmentData = sanitizeChartData(departmentData);
+
+            // Criar gráficos com dados sanitizados
+            createStatusChart(sanitizedStatusData);
+            createPriorityChart(sanitizedPriorityData);
+            createMonthlyChart(sanitizedMonthlyData);
+            createUserChart(sanitizedUserData);
+            createWeeklyChart(sanitizedWeeklyData);
+            createDepartmentChart(sanitizedDepartmentData);
             createEfficiencyChart(efficiencyData);
             createCriticalChart(criticalData);
         }

@@ -7,8 +7,19 @@ import os
 import json
 from datetime import datetime
 
+# Importar blueprint de field_locks
+from routes.field_locks import field_locks_bp
+
 app = Flask(__name__)
 CORS(app)  # Permite requisições do frontend
+
+# Registrar blueprints
+app.register_blueprint(field_locks_bp)
+
+# Rota de teste para verificar se o blueprint está funcionando
+@app.route('/test-blueprint')
+def test_blueprint():
+    return jsonify({'message': 'Blueprint field_locks funcionando!', 'routes': [rule.rule for rule in app.url_map.iter_rules()]})
 
 # Configurações de E-mail
 EMAIL_CONFIG = {
