@@ -581,7 +581,28 @@ def reply_rnc(rnc_id):
             rnc_data = list(rnc_data) + [None] * (len(columns) - len(rnc_data))
 
         rnc_dict = dict(zip(columns, rnc_data))
-        return render_template('edit_rnc_form.html', rnc=rnc_dict, is_editing=True, is_reply=True)
+        
+        # Adicionar função para extrair campos de texto da descrição
+        def parse_label_map(text: str):
+            if not text:
+                return {}
+            result = {}
+            lines = text.split('\n')
+            for line in lines:
+                line = line.strip()
+                if ':' in line:
+                    parts = line.split(':', 1)
+                    if len(parts) == 2:
+                        key = parts[0].strip()
+                        value = parts[1].strip()
+                        if key and value:
+                            result[key] = value
+            return result
+        
+        # Extrair campos de texto da descrição
+        txt_fields = parse_label_map(rnc_dict.get('description') or '')
+        
+        return render_template('edit_rnc_form.html', rnc=rnc_dict, txt_fields=txt_fields, is_editing=True, is_reply=True)
     except Exception as e:
         logger.error(f"Erro ao abrir modo Responder para RNC {rnc_id}: {e}")
         return render_template('error.html', message='Erro interno do sistema')
