@@ -646,77 +646,285 @@
                 });
             })();
 
-            const formData = {
-                // Informações principais
-                title: document.getElementById('title')?.value ?? {{ (rnc.title or "") | tojson }},
-                description: document.getElementById('description')?.value ?? {{ (rnc.description or "") | tojson }},
-                equipment: document.getElementById('equipment')?.value ?? {{ (rnc.equipment or "") | tojson }},
-                client: document.getElementById('client')?.value ?? {{ (rnc.client or "") | tojson }},
-                rnc_number: document.getElementById('rnc_number')?.value || {{ rnc.rnc_number | tojson }},
-                status: (IS_REPLY ? 'Pendente' : undefined),
-                
-                // Dados técnicos do produto
-                mp: document.getElementById('mp')?.value || '',
-                revision: document.getElementById('revision')?.value || '',
-                position: document.getElementById('position')?.value || '',
-                cv: document.getElementById('cv')?.value || '',
-                conjunto: document.getElementById('conjunto')?.value || '',
-                modelo: document.getElementById('modelo')?.value || '',
-                description_drawing: document.getElementById('description_drawing')?.value || '',
-                quantity: document.getElementById('quantity')?.value || '',
-                material: document.getElementById('material')?.value || '',
-                purchase_order: document.getElementById('purchase_order')?.value || '',
-                
-                // Responsabilidades
-                responsavel: document.getElementById('responsavel')?.value || '',
-                inspetor: document.getElementById('inspetor')?.value || '',
-                area_responsavel: document.getElementById('area_responsavel')?.value || '',
-                created_at: document.getElementById('created_at')?.value || '',
-                
-                // Assinaturas
-                signature_inspection_name: document.getElementById('nome_coluna1')?.textContent || '',
-                signature_engineering_name: document.getElementById('nome_coluna2')?.textContent || '',
-                signature_inspection2_name: document.getElementById('nome_coluna3')?.textContent || '',
-                // Disposição
-                disposition_usar: document.getElementById('usar')?.checked || false,
-                disposition_retrabalhar: document.getElementById('retrabalhar')?.checked || false,
-                disposition_rejeitar: document.getElementById('rejeitar')?.checked || false,
-                disposition_sucata: document.getElementById('sucata')?.checked || false,
-                disposition_devolver_estoque: document.getElementById('devolver_estoque')?.checked || false,
-                disposition_devolver_fornecedor: document.getElementById('devolver_fornecedor')?.checked || false,
-                // Inspeção retrabalho
-                inspection_aprovado: document.getElementById('aprovado')?.checked || false,
-                inspection_reprovado: document.getElementById('reprovado')?.checked || false,
-                inspection_ver_rnc: document.getElementById('ver_rnc_input')?.value || '',
-                // Datas de assinatura (concatenadas dd/mm/aaaa)
-                signature_inspection_date: [document.getElementById('insp1_d')?.value||'', document.getElementById('insp1_m')?.value||'', document.getElementById('insp1_y')?.value||''].join('/'),
-                signature_engineering_date: [document.getElementById('eng_d')?.value||'', document.getElementById('eng_m')?.value||'', document.getElementById('eng_y')?.value||''].join('/'),
-                signature_inspection2_date: [document.getElementById('insp2_d')?.value||'', document.getElementById('insp2_m')?.value||'', document.getElementById('insp2_y')?.value||''].join('/'),
-                // Seções textuais
-                instruction_retrabalho: document.getElementById('instruction_retrabalho')?.value || '',
-                cause_rnc: document.getElementById('cause_rnc')?.value || '',
-                action_rnc: document.getElementById('action_rnc')?.value || '',
-                // Valor/Custo
-                price: document.getElementById('price')?.value || null
-            };
-
-            console.log('📤 Dados coletados:', formData);
-
-            // 🔒 FILTRAR CAMPOS BLOQUEADOS ANTES DE ENVIAR
+            // 🔒 PRIMEIRO: DETECTAR TODOS OS CAMPOS BLOQUEADOS
             {% if is_reply %}
-            const disabledFields = Array.from(document.querySelectorAll('input:disabled, select:disabled, textarea:disabled'))
-                .map(el => el.id)
-                .filter(id => id && id.length > 0);
+            const disabledFieldNames = new Set();
             
-            if (disabledFields.length > 0) {
-                console.log('🔒 Removendo campos bloqueados do payload:', disabledFields);
-                disabledFields.forEach(fieldId => {
-                    if (formData.hasOwnProperty(fieldId)) {
-                        delete formData[fieldId];
+            // 1. Detectar inputs/textareas/selects desabilitados diretamente
+            document.querySelectorAll('input:disabled, select:disabled, textarea:disabled').forEach(el => {
+                if (el.id) {
+                    disabledFieldNames.add(el.id);
+                }
+            });
+            
+            console.log('🔒 Campos bloqueados detectados:', Array.from(disabledFieldNames));
+            {% endif %}
+            
+            // 🔒 SEGUNDO: COLETAR APENAS CAMPOS NÃO BLOQUEADOS
+            const formData = {};
+            
+            {% if is_reply %}
+            // Modo RESPOSTA: adicionar apenas se NÃO bloqueado
+            
+            // Informações principais
+            if (!disabledFieldNames.has('title')) {
+                formData.title = document.getElementById('title')?.value ?? {{ (rnc.title or "") | tojson }};
+            }
+            if (!disabledFieldNames.has('description')) {
+                formData.description = document.getElementById('description')?.value ?? {{ (rnc.description or "") | tojson }};
+            }
+            if (!disabledFieldNames.has('equipment')) {
+                formData.equipment = document.getElementById('equipment')?.value ?? {{ (rnc.equipment or "") | tojson }};
+            }
+            if (!disabledFieldNames.has('client')) {
+                formData.client = document.getElementById('client')?.value ?? {{ (rnc.client or "") | tojson }};
+            }
+            if (!disabledFieldNames.has('rnc_number')) {
+                formData.rnc_number = document.getElementById('rnc_number')?.value || {{ rnc.rnc_number | tojson }};
+            }
+            
+            // Dados técnicos do produto
+            if (!disabledFieldNames.has('mp')) {
+                formData.mp = document.getElementById('mp')?.value || '';
+            }
+            if (!disabledFieldNames.has('revision')) {
+                formData.revision = document.getElementById('revision')?.value || '';
+            }
+            if (!disabledFieldNames.has('position')) {
+                formData.position = document.getElementById('position')?.value || '';
+            }
+            if (!disabledFieldNames.has('cv')) {
+                formData.cv = document.getElementById('cv')?.value || '';
+            }
+            if (!disabledFieldNames.has('conjunto')) {
+                formData.conjunto = document.getElementById('conjunto')?.value || '';
+            }
+            if (!disabledFieldNames.has('modelo')) {
+                formData.modelo = document.getElementById('modelo')?.value || '';
+            }
+            if (!disabledFieldNames.has('description_drawing')) {
+                formData.description_drawing = document.getElementById('description_drawing')?.value || '';
+            }
+            if (!disabledFieldNames.has('quantity')) {
+                formData.quantity = document.getElementById('quantity')?.value || '';
+            }
+            if (!disabledFieldNames.has('material')) {
+                formData.material = document.getElementById('material')?.value || '';
+            }
+            if (!disabledFieldNames.has('purchase_order')) {
+                formData.purchase_order = document.getElementById('purchase_order')?.value || '';
+            }
+            
+            // Responsabilidades
+            if (!disabledFieldNames.has('responsavel')) {
+                formData.responsavel = document.getElementById('responsavel')?.value || '';
+            }
+            if (!disabledFieldNames.has('inspetor')) {
+                formData.inspetor = document.getElementById('inspetor')?.value || '';
+            }
+            if (!disabledFieldNames.has('area_responsavel')) {
+                formData.area_responsavel = document.getElementById('area_responsavel')?.value || '';
+            }
+            if (!disabledFieldNames.has('created_at')) {
+                formData.created_at = document.getElementById('created_at')?.value || '';
+            }
+            
+            // Seções textuais
+            if (!disabledFieldNames.has('instruction_retrabalho')) {
+                formData.instruction_retrabalho = document.getElementById('instruction_retrabalho')?.value || '';
+            }
+            if (!disabledFieldNames.has('cause_rnc')) {
+                formData.cause_rnc = document.getElementById('cause_rnc')?.value || '';
+            }
+            if (!disabledFieldNames.has('action_rnc')) {
+                formData.action_rnc = document.getElementById('action_rnc')?.value || '';
+            }
+            
+            // Valor/Custo
+            if (!disabledFieldNames.has('price')) {
+                formData.price = document.getElementById('price')?.value || null;
+            }
+            
+            {% else %}
+            // Modo CRIAÇÃO: coletar todos os campos normalmente
+            formData.title = document.getElementById('title')?.value ?? {{ (rnc.title or "") | tojson }};
+            formData.description = document.getElementById('description')?.value ?? {{ (rnc.description or "") | tojson }};
+            formData.equipment = document.getElementById('equipment')?.value ?? {{ (rnc.equipment or "") | tojson }};
+            formData.client = document.getElementById('client')?.value ?? {{ (rnc.client or "") | tojson }};
+            formData.rnc_number = document.getElementById('rnc_number')?.value || {{ rnc.rnc_number | tojson }};
+            formData.mp = document.getElementById('mp')?.value || '';
+            formData.revision = document.getElementById('revision')?.value || '';
+            formData.position = document.getElementById('position')?.value || '';
+            formData.cv = document.getElementById('cv')?.value || '';
+            formData.conjunto = document.getElementById('conjunto')?.value || '';
+            formData.modelo = document.getElementById('modelo')?.value || '';
+            formData.description_drawing = document.getElementById('description_drawing')?.value || '';
+            formData.quantity = document.getElementById('quantity')?.value || '';
+            formData.material = document.getElementById('material')?.value || '';
+            formData.purchase_order = document.getElementById('purchase_order')?.value || '';
+            formData.responsavel = document.getElementById('responsavel')?.value || '';
+            formData.inspetor = document.getElementById('inspetor')?.value || '';
+            formData.area_responsavel = document.getElementById('area_responsavel')?.value || '';
+            formData.created_at = document.getElementById('created_at')?.value || '';
+            formData.instruction_retrabalho = document.getElementById('instruction_retrabalho')?.value || '';
+            formData.cause_rnc = document.getElementById('cause_rnc')?.value || '';
+            formData.action_rnc = document.getElementById('action_rnc')?.value || '';
+            formData.price = document.getElementById('price')?.value || null;
+            {% endif %}
+
+            {% if is_reply %}
+            // 🔒 ADICIONAR mapeamentos e detectar checkboxes/datas/assinaturas bloqueadas
+            try {
+                const checkboxMap = {
+                    'usar': 'disposition_usar',
+                    'retrabalhar': 'disposition_retrabalhar',
+                    'rejeitar': 'disposition_rejeitar',
+                    'sucata': 'disposition_sucata',
+                    'devolver_estoque': 'disposition_devolver_estoque',
+                    'devolver_fornecedor': 'disposition_devolver_fornecedor',
+                    'aprovado': 'inspection_aprovado',
+                    'reprovado': 'inspection_reprovado'
+                };
+                
+                const dateFieldMap = {
+                    'insp1': 'signature_inspection_date',
+                    'eng': 'signature_engineering_date',
+                    'insp2': 'signature_inspection2_date'
+                };
+                
+                const signatureMap = {
+                    'nome_coluna1': 'signature_inspection_name',
+                    'nome_coluna2': 'signature_engineering_name',
+                    'nome_coluna3': 'signature_inspection2_name'
+                };
+                
+                // Adicionar checkboxes desabilitados ao Set
+                Object.keys(checkboxMap).forEach(checkboxId => {
+                    const checkbox = document.getElementById(checkboxId);
+                    if (checkbox && checkbox.disabled) {
+                        disabledFieldNames.add(checkboxMap[checkboxId]);
                     }
                 });
-                console.log('✅ Payload limpo:', formData);
+                
+                // Adicionar campos de data desabilitados ao Set
+                Object.keys(dateFieldMap).forEach(prefix => {
+                    const d = document.getElementById(prefix + '_d');
+                    const m = document.getElementById(prefix + '_m');
+                    const y = document.getElementById(prefix + '_y');
+                    if ((d && d.disabled) || (m && m.disabled) || (y && y.disabled)) {
+                        disabledFieldNames.add(dateFieldMap[prefix]);
+                    }
+                });
+                
+                // Adicionar assinaturas bloqueadas ao Set
+                Object.keys(signatureMap).forEach(sigId => {
+                    const sigEl = document.getElementById(sigId);
+                    const parent = sigEl?.closest('div');
+                    if (parent && parent.style.cursor === 'not-allowed') {
+                        disabledFieldNames.add(signatureMap[sigId]);
+                    }
+                });
+                
+                console.log('🔒 Total de campos bloqueados:', Array.from(disabledFieldNames));
+                
+                // ADICIONAR APENAS SE NÃO BLOQUEADOS
+                
+                // Assinaturas
+                if (!disabledFieldNames.has('signature_inspection_name')) {
+                    formData.signature_inspection_name = document.getElementById('nome_coluna1')?.textContent || '';
+                }
+                if (!disabledFieldNames.has('signature_engineering_name')) {
+                    formData.signature_engineering_name = document.getElementById('nome_coluna2')?.textContent || '';
+                }
+                if (!disabledFieldNames.has('signature_inspection2_name')) {
+                    formData.signature_inspection2_name = document.getElementById('nome_coluna3')?.textContent || '';
+                }
+                
+                // Datas de assinatura
+                if (!disabledFieldNames.has('signature_inspection_date')) {
+                    formData.signature_inspection_date = [
+                        document.getElementById('insp1_d')?.value||'',
+                        document.getElementById('insp1_m')?.value||'',
+                        document.getElementById('insp1_y')?.value||''
+                    ].join('/');
+                }
+                if (!disabledFieldNames.has('signature_engineering_date')) {
+                    formData.signature_engineering_date = [
+                        document.getElementById('eng_d')?.value||'',
+                        document.getElementById('eng_m')?.value||'',
+                        document.getElementById('eng_y')?.value||''
+                    ].join('/');
+                }
+                if (!disabledFieldNames.has('signature_inspection2_date')) {
+                    formData.signature_inspection2_date = [
+                        document.getElementById('insp2_d')?.value||'',
+                        document.getElementById('insp2_m')?.value||'',
+                        document.getElementById('insp2_y')?.value||''
+                    ].join('/');
+                }
+                
+                // Checkboxes de disposição
+                if (!disabledFieldNames.has('disposition_usar')) {
+                    formData.disposition_usar = document.getElementById('usar')?.checked || false;
+                }
+                if (!disabledFieldNames.has('disposition_retrabalhar')) {
+                    formData.disposition_retrabalhar = document.getElementById('retrabalhar')?.checked || false;
+                }
+                if (!disabledFieldNames.has('disposition_rejeitar')) {
+                    formData.disposition_rejeitar = document.getElementById('rejeitar')?.checked || false;
+                }
+                if (!disabledFieldNames.has('disposition_sucata')) {
+                    formData.disposition_sucata = document.getElementById('sucata')?.checked || false;
+                }
+                if (!disabledFieldNames.has('disposition_devolver_estoque')) {
+                    formData.disposition_devolver_estoque = document.getElementById('devolver_estoque')?.checked || false;
+                }
+                if (!disabledFieldNames.has('disposition_devolver_fornecedor')) {
+                    formData.disposition_devolver_fornecedor = document.getElementById('devolver_fornecedor')?.checked || false;
+                }
+                
+                // Inspeção do retrabalho
+                if (!disabledFieldNames.has('inspection_aprovado')) {
+                    formData.inspection_aprovado = document.getElementById('aprovado')?.checked || false;
+                }
+                if (!disabledFieldNames.has('inspection_reprovado')) {
+                    formData.inspection_reprovado = document.getElementById('reprovado')?.checked || false;
+                }
+                if (!disabledFieldNames.has('inspection_ver_rnc')) {
+                    formData.inspection_ver_rnc = document.getElementById('ver_rnc_input')?.value || '';
+                }
+                
+                // Status
+                if (!disabledFieldNames.has('status')) {
+                    formData.status = 'Pendente';
+                    console.log('✅ Status definido como Pendente (campo permitido)');
+                } else {
+                    console.log('⚠️  Status NÃO adicionado (campo bloqueado)');
+                }
+                
+                console.log('✅ Payload final (apenas campos permitidos):', formData);
+                
+            } catch(e) {
+                console.error('❌ Erro ao filtrar campos bloqueados:', e);
             }
+            {% else %}
+            // Modo criação - enviar todos os campos normalmente
+            formData.signature_inspection_name = document.getElementById('nome_coluna1')?.textContent || '';
+            formData.signature_engineering_name = document.getElementById('nome_coluna2')?.textContent || '';
+            formData.signature_inspection2_name = document.getElementById('nome_coluna3')?.textContent || '';
+            formData.signature_inspection_date = [document.getElementById('insp1_d')?.value||'', document.getElementById('insp1_m')?.value||'', document.getElementById('insp1_y')?.value||''].join('/');
+            formData.signature_engineering_date = [document.getElementById('eng_d')?.value||'', document.getElementById('eng_m')?.value||'', document.getElementById('eng_y')?.value||''].join('/');
+            formData.signature_inspection2_date = [document.getElementById('insp2_d')?.value||'', document.getElementById('insp2_m')?.value||'', document.getElementById('insp2_y')?.value||''].join('/');
+            formData.disposition_usar = document.getElementById('usar')?.checked || false;
+            formData.disposition_retrabalhar = document.getElementById('retrabalhar')?.checked || false;
+            formData.disposition_rejeitar = document.getElementById('rejeitar')?.checked || false;
+            formData.disposition_sucata = document.getElementById('sucata')?.checked || false;
+            formData.disposition_devolver_estoque = document.getElementById('devolver_estoque')?.checked || false;
+            formData.disposition_devolver_fornecedor = document.getElementById('devolver_fornecedor')?.checked || false;
+            formData.inspection_aprovado = document.getElementById('aprovado')?.checked || false;
+            formData.inspection_reprovado = document.getElementById('reprovado')?.checked || false;
+            formData.inspection_ver_rnc = document.getElementById('ver_rnc_input')?.value || '';
+            formData.status = undefined;
             {% endif %}
 
             fetch('/api/rnc/{{ rnc.id }}/update', {
