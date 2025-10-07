@@ -964,9 +964,9 @@ def update_rnc_api(rnc_id):
         from services.cache import clear_rnc_cache, query_cache, cache_lock
         from routes.field_locks import get_user_locked_fields
         
-        # Validar campos bloqueados
+        # Validar campos bloqueados NO CONTEXTO DE RESPOSTA
         data = request.get_json() or {}
-        locked_fields = get_user_locked_fields(session['user_id'])
+        locked_fields = get_user_locked_fields(session['user_id'], context='response')
         if locked_fields:
             attempted_fields = []
             for field in locked_fields:
@@ -974,6 +974,7 @@ def update_rnc_api(rnc_id):
                     attempted_fields.append(field)
             
             if attempted_fields:
+                logger.warning(f"Usuário {session['user_id']} tentou editar campos bloqueados na resposta: {attempted_fields}")
                 return jsonify({
                     'success': False,
                     'message': f'Os seguintes campos estão bloqueados para seu grupo: {", ".join(attempted_fields)}'

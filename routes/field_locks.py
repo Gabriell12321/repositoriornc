@@ -457,10 +457,17 @@ def check_field_lock(group_id, field_name):
         return jsonify({'success': False, 'message': str(e)}), 500
 
 
-def get_user_locked_fields(user_id):
+def get_user_locked_fields(user_id, context='creation'):
     """
     Retorna lista de campos bloqueados para um usuário
-    baseado no grupo dele
+    baseado no grupo dele e no contexto (creation ou response)
+    
+    Args:
+        user_id: ID do usuário
+        context: 'creation' ou 'response' (padrão: 'creation')
+    
+    Returns:
+        Lista de nomes de campos bloqueados
     """
     try:
         conn = sqlite3.connect(DB_PATH)
@@ -476,15 +483,17 @@ def get_user_locked_fields(user_id):
         
         group_id = row[0]
         
-        # Buscar campos bloqueados
+        # Buscar campos bloqueados PARA O CONTEXTO ESPECÍFICO
         cursor.execute("""
             SELECT field_name 
             FROM field_locks 
-            WHERE group_id = ? AND is_locked = 1
-        """, (group_id,))
+            WHERE group_id = ? AND is_locked = 1 AND context = ?
+        """, (group_id, context))
         
         locked_fields = [row[0] for row in cursor.fetchall()]
         conn.close()
+        
+        logger.info(f"Campos bloqueados para user {user_id} no contexto '{context}': {len(locked_fields)} campos")
         
         return locked_fields
         
@@ -495,12 +504,25 @@ def get_user_locked_fields(user_id):
 
 @field_locks_bp.route('/api/user/locked-fields')
 def get_current_user_locked_fields():
-    """Retorna os campos bloqueados para o usuário atual"""
+    """
+    Retorna os campos bloqueados para o usuário atual
+    
+    Query Parameters:
+        context: 'creation' ou 'response' (padrão: 'creation')
+    """
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Não autorizado'}), 401
     
     try:
-        locked_fields = get_user_locked_fields(session['user_id'])
+        # Aceitar contexto via query parameter
+        context = request.args.get('context', 'creation')
+        if context not in ['creation', 'response']:
+            return jsonify({
+                'success': False,
+                'message': 'Contexto inválido. Use "creation" ou "response"'
+            }), 400
+        
+        locked_fields = get_user_locked_fields(session['user_id'], context=context)
         
         # Converter para formato com labels
         locked_with_labels = {}
@@ -511,6 +533,7 @@ def get_current_user_locked_fields():
         return jsonify({
             'success': True,
             'user_id': session['user_id'],
+            'context': context,
             'locked_fields': locked_fields,
             'locked_with_labels': locked_with_labels
         })
@@ -575,15 +598,4 @@ def get_stats():
         
     except Exception as e:
         logger.error(f"Erro ao buscar estatísticas: {e}")
-        return jsonify({'success': False, 'message': str(e)}), 500
-        locked_fields = get_user_locked_fields(session['user_id'])
-        
-        return jsonify({
-            'success': True,
-            'locked_fields': locked_fields,
-            'fields_info': {field: AVAILABLE_FIELDS[field] for field in locked_fields if field in AVAILABLE_FIELDS}
-        })
-        
-    except Exception as e:
-        logger.error(f"Erro ao buscar campos bloqueados: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500

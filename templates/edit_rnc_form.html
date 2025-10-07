@@ -658,7 +658,24 @@
                 action_rnc: document.getElementById('action_rnc')?.value || ''
             };
 
-            console.log('📤 Enviando dados:', formData);
+            console.log('📤 Dados coletados:', formData);
+
+            // 🔒 FILTRAR CAMPOS BLOQUEADOS ANTES DE ENVIAR
+            {% if is_reply %}
+            const disabledFields = Array.from(document.querySelectorAll('input:disabled, select:disabled, textarea:disabled'))
+                .map(el => el.id)
+                .filter(id => id && id.length > 0);
+            
+            if (disabledFields.length > 0) {
+                console.log('🔒 Removendo campos bloqueados do payload:', disabledFields);
+                disabledFields.forEach(fieldId => {
+                    if (formData.hasOwnProperty(fieldId)) {
+                        delete formData[fieldId];
+                    }
+                });
+                console.log('✅ Payload limpo:', formData);
+            }
+            {% endif %}
 
             fetch('/api/rnc/{{ rnc.id }}/update', {
                 method: 'PUT',
@@ -702,6 +719,57 @@
                     })
                     .catch(() => {});
             } catch(_) {}
+
+            // 🔒 CARREGAR CAMPOS BLOQUEADOS (contexto: response)
+            {% if is_reply %}
+            try {
+                console.log('🔒 Carregando campos bloqueados para resposta...');
+                fetch('/admin/field-locks/api/user/locked-fields?context=response', { credentials: 'include' })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data && data.success && data.locked_fields) {
+                            const lockedFields = data.locked_fields;
+                            console.log(`🔒 ${lockedFields.length} campos bloqueados:`, lockedFields);
+                            
+                            // Desabilitar campos bloqueados
+                            lockedFields.forEach(fieldName => {
+                                const field = document.getElementById(fieldName);
+                                if (field) {
+                                    field.disabled = true;
+                                    field.style.backgroundColor = '#f0f0f0';
+                                    field.style.cursor = 'not-allowed';
+                                    field.style.opacity = '0.6';
+                                    field.title = `🔒 Campo bloqueado para seu grupo`;
+                                    
+                                    // Adicionar ícone de cadeado visual
+                                    const parent = field.parentElement;
+                                    if (parent && !parent.querySelector('.lock-icon')) {
+                                        const lockIcon = document.createElement('span');
+                                        lockIcon.className = 'lock-icon';
+                                        lockIcon.innerHTML = ' 🔒';
+                                        lockIcon.style.cssText = 'margin-left: 5px; color: #6c757d; font-size: 14px;';
+                                        const label = parent.querySelector('label');
+                                        if (label) {
+                                            label.appendChild(lockIcon);
+                                        }
+                                    }
+                                    
+                                    console.log(`  ✅ Campo '${fieldName}' bloqueado`);
+                                }
+                            });
+                            
+                            console.log('✅ Campos bloqueados aplicados com sucesso!');
+                        } else {
+                            console.log('ℹ️  Nenhum campo bloqueado encontrado');
+                        }
+                    })
+                    .catch(err => {
+                        console.error('❌ Erro ao carregar campos bloqueados:', err);
+                    });
+            } catch(e) {
+                console.error('❌ Erro ao processar campos bloqueados:', e);
+            }
+            {% endif %}
 
             // Auto-resize textareas
             document.querySelectorAll('textarea').forEach(textarea => {
