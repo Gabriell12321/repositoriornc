@@ -294,14 +294,16 @@ def update_locks(group_id):
             # Converter is_locked para inteiro (0 ou 1)
             lock_value = 1 if is_locked else 0
             
-            # Insert or update com contexto
+            # Primeiro deletar o registro existente (se houver)
             cursor.execute("""
-                INSERT INTO field_locks (group_id, field_name, is_locked, context)
-                VALUES (?, ?, ?, ?)
-                ON CONFLICT(group_id, field_name, context) 
-                DO UPDATE SET 
-                    is_locked = excluded.is_locked,
-                    updated_at = CURRENT_TIMESTAMP
+                DELETE FROM field_locks 
+                WHERE group_id = ? AND field_name = ? AND context = ?
+            """, (group_id, field_name, context))
+            
+            # Depois inserir o novo registro
+            cursor.execute("""
+                INSERT INTO field_locks (group_id, field_name, is_locked, context, updated_at)
+                VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
             """, (group_id, field_name, lock_value, context))
             
             updated_count += 1
