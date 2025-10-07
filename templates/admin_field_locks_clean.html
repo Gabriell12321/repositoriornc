@@ -30,6 +30,22 @@
                 <div id="groupContent" style="display: none;">
                     <h3 id="groupTitle">Configurações do Grupo</h3>
                     
+                    <!-- Abas de Contexto: Criação vs Resposta -->
+                    <div class="context-tabs">
+                        <button class="context-tab active" data-context="creation" onclick="switchContext('creation')">
+                            <span>🆕</span> Permissões de Criação
+                        </button>
+                        <button class="context-tab" data-context="response" onclick="switchContext('response')">
+                            <span>📝</span> Permissões de Resposta
+                        </button>
+                    </div>
+                    
+                    <div class="context-description">
+                        <p id="contextDesc">
+                            <strong>🆕 Permissões de Criação:</strong> Campos que o grupo pode editar ao <strong>criar um novo RNC</strong>
+                        </p>
+                    </div>
+                    
                     <div class="actions-bar">
                         <button class="btn btn-success" onclick="saveChanges()">
                             <span>💾</span> Salvar Alterações

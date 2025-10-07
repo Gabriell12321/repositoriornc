@@ -83,6 +83,45 @@ AVAILABLE_FIELDS = {
 }
 
 
+def ensure_context_column():
+    """Garante que a coluna 'context' existe na tabela field_locks"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        # Verificar se a coluna já existe
+        cursor.execute("PRAGMA table_info(field_locks)")
+        columns = [col[1] for col in cursor.fetchall()]
+        
+        if 'context' not in columns:
+            logger.info("Adicionando coluna 'context' na tabela field_locks...")
+            
+            # Adicionar coluna
+            cursor.execute("ALTER TABLE field_locks ADD COLUMN context TEXT DEFAULT 'creation'")
+            
+            # Criar índices
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_field_locks_context ON field_locks(context)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_field_locks_group_field_context ON field_locks(group_id, field_name, context)")
+            
+            # Duplicar registros existentes para o contexto 'response'
+            cursor.execute("""
+                INSERT INTO field_locks (group_id, field_name, is_locked, context, created_at, updated_at)
+                SELECT group_id, field_name, is_locked, 'response', created_at, updated_at
+                FROM field_locks
+                WHERE context = 'creation'
+            """)
+            
+            conn.commit()
+            logger.info("✅ Coluna 'context' adicionada e dados duplicados com sucesso!")
+        
+        conn.close()
+        return True
+        
+    except Exception as e:
+        logger.error(f"Erro ao criar coluna context: {e}")
+        return False
+
+
 def check_admin():
     """Verifica se o usuário é administrador"""
     # Para desenvolvimento/teste - permitir acesso temporariamente
@@ -151,9 +190,18 @@ def list_fields():
 
 @field_locks_bp.route('/api/locks/<int:group_id>')
 def get_locks(group_id):
-    """Obtém os bloqueios de um grupo específico"""
+    """Obtém os bloqueios de um grupo específico para um contexto"""
     if not check_admin():
         return jsonify({'success': False, 'message': 'Acesso negado'}), 403
+    
+    # Garantir que a coluna context existe
+    ensure_context_column()
+    
+    # Obter contexto da query string (padrão: creation)
+    context = request.args.get('context', 'creation')
+    
+    if context not in ['creation', 'response']:
+        return jsonify({'success': False, 'message': 'Contexto inválido. Use "creation" ou "response"'}), 400
     
     try:
         conn = sqlite3.connect(DB_PATH)
@@ -167,13 +215,13 @@ def get_locks(group_id):
             conn.close()
             return jsonify({'success': False, 'message': 'Grupo não encontrado'}), 404
         
-        # Buscar bloqueios do grupo
+        # Buscar bloqueios do grupo para o contexto específico
         cursor.execute("""
             SELECT field_name, is_locked, created_at, updated_at
             FROM field_locks
-            WHERE group_id = ?
+            WHERE group_id = ? AND context = ?
             ORDER BY field_name
-        """, (group_id,))
+        """, (group_id, context))
         
         locks = {}
         for row in cursor.fetchall():
@@ -198,6 +246,7 @@ def get_locks(group_id):
             'success': True,
             'group_id': group_id,
             'group_name': group[0],
+            'context': context,
             'locks': locks
         })
         
@@ -208,13 +257,20 @@ def get_locks(group_id):
 
 @field_locks_bp.route('/api/locks/<int:group_id>', methods=['POST'])
 def update_locks(group_id):
-    """Atualiza os bloqueios de um grupo"""
+    """Atualiza os bloqueios de um grupo para um contexto específico"""
     if not check_admin():
         return jsonify({'success': False, 'message': 'Acesso negado'}), 403
+    
+    # Garantir que a coluna context existe
+    ensure_context_column()
     
     try:
         data = request.get_json()
         locks = data.get('locks', {})
+        context = data.get('context', 'creation')
+        
+        if context not in ['creation', 'response']:
+            return jsonify({'success': False, 'message': 'Contexto inválido. Use "creation" ou "response"'}), 400
         
         if not isinstance(locks, dict):
             return jsonify({'success': False, 'message': 'Formato inválido'}), 400
@@ -238,27 +294,29 @@ def update_locks(group_id):
             # Converter is_locked para inteiro (0 ou 1)
             lock_value = 1 if is_locked else 0
             
-            # Insert or update
+            # Insert or update com contexto
             cursor.execute("""
-                INSERT INTO field_locks (group_id, field_name, is_locked)
-                VALUES (?, ?, ?)
-                ON CONFLICT(group_id, field_name) 
+                INSERT INTO field_locks (group_id, field_name, is_locked, context)
+                VALUES (?, ?, ?, ?)
+                ON CONFLICT(group_id, field_name, context) 
                 DO UPDATE SET 
                     is_locked = excluded.is_locked,
                     updated_at = CURRENT_TIMESTAMP
-            """, (group_id, field_name, lock_value))
+            """, (group_id, field_name, lock_value, context))
             
             updated_count += 1
         
         conn.commit()
         conn.close()
         
-        logger.info(f"Admin {session.get('user_id')} atualizou {updated_count} bloqueios para grupo {group_id}")
+        context_label = '🆕 CRIAÇÃO' if context == 'creation' else '📝 RESPOSTA'
+        logger.info(f"Admin {session.get('user_id')} atualizou {updated_count} bloqueios [{context_label}] para grupo {group_id}")
         
         return jsonify({
             'success': True,
             'message': f'{updated_count} bloqueios atualizados',
-            'updated_count': updated_count
+            'updated_count': updated_count,
+            'context': context
         })
         
     except Exception as e:

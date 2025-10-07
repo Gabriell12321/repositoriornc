@@ -713,3 +713,160 @@ body::before {
 ::-webkit-scrollbar-thumb:hover {
     background: var(--dark-gradient);
 }
+
+/* ===== ABAS DE CONTEXTO (CRIAÇÃO vs RESPOSTA) ===== */
+.context-tabs {
+    display: flex;
+    gap: 15px;
+    margin: 25px 0;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+    box-shadow: inset 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.context-tab {
+    flex: 1;
+    padding: 18px 30px;
+    border: none;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.5);
+    color: #636e72;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    position: relative;
+    overflow: hidden;
+}
+
+.context-tab span {
+    font-size: 24px;
+    transition: transform 0.3s ease;
+}
+
+.context-tab::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    transition: left 0.5s ease;
+}
+
+.context-tab:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+    background: rgba(255, 255, 255, 0.7);
+}
+
+.context-tab:hover::before {
+    left: 100%;
+}
+
+.context-tab:hover span {
+    transform: scale(1.2);
+}
+
+.context-tab.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 8px 30px rgba(102, 126, 234, 0.4);
+    transform: translateY(-2px);
+}
+
+.context-tab.active span {
+    transform: scale(1.1);
+}
+
+.context-tab[data-context="creation"].active {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    box-shadow: 0 8px 30px rgba(17, 153, 142, 0.4);
+}
+
+.context-tab[data-context="response"].active {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    box-shadow: 0 8px 30px rgba(240, 147, 251, 0.4);
+}
+
+/* Descrição do contexto */
+.context-description {
+    margin: 15px 0 25px;
+    padding: 20px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+    border-radius: 12px;
+    border-left: 5px solid #667eea;
+    animation: slideInDown 0.5s ease;
+}
+
+.context-description p {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.6;
+    color: #2d3436;
+}
+
+.context-description strong {
+    color: #667eea;
+    font-weight: 700;
+}
+
+/* Animação de transição entre contextos */
+@keyframes contextFadeIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.context-switching .rnc-form-preview {
+    animation: contextFadeIn 0.5s ease;
+}
+
+/* Badge indicando contexto ativo */
+.context-badge {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-left: 10px;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.context-badge.creation {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(17, 153, 142, 0.3);
+}
+
+.context-badge.response {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(240, 147, 251, 0.3);
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 6px 25px rgba(0,0,0,0.3);
+    }
+}

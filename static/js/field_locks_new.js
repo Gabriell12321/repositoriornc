@@ -1,5 +1,6 @@
 // JavaScript para interface de permissões de campos RNC
 let currentGroupId = null;
+let currentContext = 'creation'; // Contexto ativo: 'creation' ou 'response'
 let fieldLocks = {};
 let hasChanges = false;
 
@@ -153,7 +154,8 @@ async function selectGroup(groupId, groupName) {
 
 async function loadGroupSettings(groupId) {
     try {
-        const response = await fetch(`/admin/field-locks/api/locks/${groupId}`);
+        // Adicionar parâmetro context na URL
+        const response = await fetch(`/admin/field-locks/api/locks/${groupId}?context=${currentContext}`);
         
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -161,7 +163,7 @@ async function loadGroupSettings(groupId) {
         
         const responseData = await response.json();
         
-        console.log('Lock settings response:', responseData);
+        console.log(`Lock settings response [${currentContext}]:`, responseData);
         
         // Resetar fieldLocks
         fieldLocks = {};
@@ -235,18 +237,23 @@ async function saveChanges() {
             locks[fieldName] = fieldLocks[fieldName] || false;
         });
 
+        const contextLabel = currentContext === 'creation' ? '🆕 CRIAÇÃO' : '📝 RESPOSTA';
+        
         const response = await fetch(`/admin/field-locks/api/locks/${currentGroupId}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ locks })
+            body: JSON.stringify({ 
+                locks: locks,
+                context: currentContext // Enviar contexto atual
+            })
         });
 
         const result = await response.json();
 
         if (response.ok) {
-            showAlert('✅ Configurações salvas com sucesso!', 'success');
+            showAlert(`✅ Configurações [${contextLabel}] salvas com sucesso!`, 'success');
             hasChanges = false;
         } else {
             throw new Error(result.error || 'Erro desconhecido');
@@ -380,4 +387,73 @@ function highlightBlockedFields(blockedFields) {
 
 // Exemplo de integração: chamar showBlockedFieldsModal e highlightBlockedFields quando tentar salvar e houver bloqueio
 window.showBlockedFieldsModal = showBlockedFieldsModal;
+
+// ========== FUNÇÕES DE CONTEXTO (CRIAÇÃO vs RESPOSTA) ==========
+
+/**
+ * Alterna entre os contextos de permissão (Criação e Resposta)
+ */
+async function switchContext(newContext) {
+    if (newContext === currentContext) {
+        return; // Já está no contexto correto
+    }
+    
+    // Verificar se há mudanças não salvas
+    if (hasChanges) {
+        const confirmMessage = `Você tem alterações não salvas no contexto "${currentContext === 'creation' ? 'Criação' : 'Resposta'}". Deseja continuar sem salvar?`;
+        if (!window.confirm(confirmMessage)) {
+            return;
+        }
+    }
+    
+    // Atualizar contexto atual
+    currentContext = newContext;
+    
+    // Atualizar UI das abas
+    document.querySelectorAll('.context-tab').forEach(tab => {
+        if (tab.dataset.context === newContext) {
+            tab.classList.add('active');
+        } else {
+            tab.classList.remove('active');
+        }
+    });
+    
+    // Atualizar descrição do contexto
+    const contextDesc = document.getElementById('contextDesc');
+    if (contextDesc) {
+        if (newContext === 'creation') {
+            contextDesc.innerHTML = '<strong>🆕 Permissões de Criação:</strong> Campos que o grupo pode editar ao <strong>criar um novo RNC</strong>';
+        } else {
+            contextDesc.innerHTML = '<strong>📝 Permissões de Resposta:</strong> Campos que o grupo pode editar ao <strong>responder ou editar um RNC existente</strong>';
+        }
+    }
+    
+    // Adicionar animação de transição
+    const formPreview = document.querySelector('.rnc-form-preview');
+    if (formPreview) {
+        formPreview.parentElement.classList.add('context-switching');
+    }
+    
+    // Recarregar configurações para o novo contexto
+    if (currentGroupId) {
+        await loadGroupSettings(currentGroupId);
+    }
+    
+    // Remover classe de animação
+    setTimeout(() => {
+        if (formPreview) {
+            formPreview.parentElement.classList.remove('context-switching');
+        }
+    }, 500);
+    
+    // Resetar flag de mudanças
+    hasChanges = false;
+    
+    // Mostrar notificação
+    const contextLabel = newContext === 'creation' ? '🆕 CRIAÇÃO' : '📝 RESPOSTA';
+    showAlert(`Contexto alterado para: ${contextLabel}`, 'info');
+}
+
+// Expor função globalmente
+window.switchContext = switchContext;
 window.highlightBlockedFields = highlightBlockedFields;
