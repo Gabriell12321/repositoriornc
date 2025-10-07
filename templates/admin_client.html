@@ -58,6 +58,7 @@
       </div>
       <div class="top-actions">
         <button class="btn btn-ghost" onclick="newClient()">➕ Novo</button>
+        <button class="btn btn-primary" onclick="importClientsFromRNC()">📊 Importar dos Dados RNC</button>
         <button class="btn btn-secondary" onclick="window.location.href='/dashboard'">🏠 Dashboard</button>
       </div>
     </div>
@@ -101,15 +102,23 @@ let selectedId = null;
 
 async function fetchClients(){
   try{
-    const r = await fetch('/api/admin/clients');
+    console.log('🔄 Buscando clientes da API...');
+    const r = await fetch('/api/admin/clients?_=' + Date.now());
+    console.log('📡 Resposta recebida:', r.status, r.statusText);
     const d = await r.json();
+    console.log('📦 Dados JSON:', d);
     if(d.success){
       allClients = d.clients || [];
+      console.log('✅ Total de clientes carregados:', allClients.length);
       renderList();
     }else{
+      console.error('❌ API retornou erro:', d.message);
       alert(d.message || 'Erro ao listar');
     }
-  }catch(e){ console.error(e); alert('Erro de conexão'); }
+  }catch(e){ 
+    console.error('❌ Erro ao buscar clientes:', e); 
+    alert('Erro de conexão: ' + e.message); 
+  }
 }
 
 function avatarLetter(name){
@@ -120,8 +129,13 @@ function renderList(){
   const list = document.getElementById('clientList');
   const term = (document.getElementById('searchBox').value||'').toLowerCase();
   const filtered = allClients.filter(c => c.name.toLowerCase().includes(term));
+  console.log('📝 Renderizando lista:', allClients.length, 'total,', filtered.length, 'filtrados');
   document.getElementById('clientCount').textContent = `${filtered.length} cliente(s)`;
-  if(filtered.length === 0){ list.innerHTML = '<div class="empty">Nenhum cliente cadastrado</div>'; return; }
+  if(filtered.length === 0){ 
+    console.log('⚠️ Nenhum cliente para mostrar');
+    list.innerHTML = '<div class="empty">Nenhum cliente cadastrado</div>'; 
+    return; 
+  }
   list.innerHTML = filtered.map(c => (
     `<div class="item ${c.id===selectedId?'selected':''}" onclick="selectRow(${c.id})">
       <div class="item-left">
@@ -192,6 +206,42 @@ async function deleteClient(e){
 function newClient(){ selectedId=null; document.getElementById('clientName').value=''; renderList(); }
 
 function toast(msg){ const t=document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),2300); }
+
+async function importClientsFromRNC() {
+  if (!confirm('Deseja importar os clientes dos dados RNC? Esta operação pode demorar alguns instantes.')) {
+    return;
+  }
+  
+  const importBtn = event.target;
+  const originalText = importBtn.innerHTML;
+  importBtn.innerHTML = '⏳ Importando...';
+  importBtn.disabled = true;
+  
+  try {
+    const response = await fetch('/api/clients/import', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      toast(`✅ ${data.message}`);
+      fetchClients(); // Recarregar lista
+    } else {
+      toast(`❌ ${data.message}`);
+    }
+    
+  } catch (error) {
+    console.error('Erro ao importar clientes:', error);
+    toast('❌ Erro ao importar clientes dos dados RNC');
+  } finally {
+    importBtn.innerHTML = originalText;
+    importBtn.disabled = false;
+  }
+}
 
 function setBtnPos(e){ const r=e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty('--x',(e.clientX-r.left)+'px'); e.currentTarget.style.setProperty('--y',(e.clientY-r.top)+'px'); }
 

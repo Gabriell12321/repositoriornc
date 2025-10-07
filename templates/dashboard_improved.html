@@ -4,6 +4,44 @@
     <title>IPPEL - Sistema de RNC</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        // Tratamento precoce de erros de extensões do navegador
+        (function() {
+            const originalError = console.error;
+            const originalWarn = console.warn;
+            
+            console.error = function(...args) {
+                const msg = args && args[0] ? String(args[0]) : '';
+                // Silenciar erros conhecidos de extensões (SVG, translateContent, etc)
+                if (msg.includes('attribute d') || 
+                    msg.includes('Expected number') ||
+                    msg.includes('translateContent') ||
+                    msg.includes('tc0.2,0,0.4-0.2,0') ||
+                    msg.includes('jquery.js') ||
+                    msg.includes('SVG') ||
+                    msg.includes('path') ||
+                    msg.includes('d: Expected')) {
+                    return;
+                }
+                return originalError.apply(console, args);
+            };
+            
+            console.warn = function(...args) {
+                const msg = args && args[0] ? String(args[0]) : '';
+                // Silenciar warnings de extensões também
+                if (msg.includes('attribute d') || 
+                    msg.includes('Expected number') ||
+                    msg.includes('translateContent') ||
+                    msg.includes('tc0.2,0,0.4-0.2,0') ||
+                    msg.includes('jquery.js') ||
+                    msg.includes('SVG') ||
+                    msg.includes('path')) {
+                    return;
+                }
+                return originalWarn.apply(console, args);
+            };
+        })();
+    </script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
@@ -44,7 +82,7 @@
             if (btn) btn.classList.add('active');
 
             // Mostrar/ocultar containers conhecidos
-            var containers = { 'active':'rncsContainer', 'engenharia':'rncsContainer', 'finalized':'rncsContainer', 'indicadores':'indicadoresContainer', 'lev1415':'lev1415Container', 'charts':'chartsContainer' };
+            var containers = { 'active':'rncsContainer', 'engenharia':'rncsContainer', 'finalized':'rncsContainer', 'lev1415':'lev1415Container', 'charts':'chartsContainer' };
             Object.keys(containers).forEach(function(key){
               var el = document.getElementById(containers[key]);
               if (el) el.style.display = 'none';
@@ -68,7 +106,7 @@
         };
       })();
     </script>
-    <link rel="preload" as="image" href="/LOGOIPPEL.JPEG" imagesrcset="/LOGOIPPEL.JPEG 1x" imagesizes="100vw">
+    <link rel="preload" as="image" href="{{ asset_url('logo.png') }}" imagesrcset="{{ asset_url('logo.png') }} 1x" imagesizes="100vw">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
@@ -1065,15 +1103,16 @@
         }
         
         /* Definir larguras específicas para cada coluna */
-        .rnc-table th:nth-child(1) { width: 12%; } /* N° RNC */
-        .rnc-table th:nth-child(2) { width: 18%; } /* Título */
-        .rnc-table th:nth-child(3) { width: 12%; } /* Cliente */
-        .rnc-table th:nth-child(4) { width: 12%; } /* Equipamento */
-        .rnc-table th:nth-child(5) { width: 10%; } /* Área Responsável */
-        .rnc-table th:nth-child(6) { width: 10%; } /* Setor */
-        .rnc-table th:nth-child(7) { width: 10%; } /* Responsável */
-        .rnc-table th:nth-child(8) { width: 10%; } /* Data Emissão */
-        .rnc-table th:nth-child(9) { width: 6%; } /* Ações */
+        .rnc-table th:nth-child(1) { width: 8%; } /* ID */
+        .rnc-table th:nth-child(2) { width: 12%; } /* N° RNC */
+        .rnc-table th:nth-child(3) { width: 18%; } /* Título */
+        .rnc-table th:nth-child(4) { width: 12%; } /* Cliente */
+        .rnc-table th:nth-child(5) { width: 12%; } /* Equipamento */
+        .rnc-table th:nth-child(6) { width: 10%; } /* Área Responsável */
+        .rnc-table th:nth-child(7) { width: 10%; } /* Setor */
+        .rnc-table th:nth-child(8) { width: 10%; } /* Responsável */
+        .rnc-table th:nth-child(9) { width: 10%; } /* Data Emissão */
+        .rnc-table th:nth-child(10) { width: 6%; } /* Ações */
         
         .rnc-table tbody tr {
             border-bottom: 1px solid #e9ecef;
@@ -1367,9 +1406,8 @@
                         <span class="count" id="count-active">0</span>
                     </button>
                     {% if user_permissions.canViewEngineeringRncs %}
-                    <button class="tab-button" data-tab="engenharia" onclick="switchTab('engenharia')">
-                        🔧 Engenharia
-                        <span class="count" id="count-engenharia">0</span>
+                    <button class="tab-button" data-tab="setores" onclick="switchTab('setores')">
+                        📊 RNCs Mensais por Setor
                     </button>
                     {% endif %}
                     {% if user_permissions.canViewFinalizedRncs %}
@@ -1379,9 +1417,6 @@
                     </button>
                     {% endif %}
                     {% if user_permissions.canViewCharts %}
-                    <button class="tab-button" data-tab="indicadores" onclick="switchTab('indicadores')">
-                        📈 Indicadores
-                    </button>
                     <button class="tab-button" data-tab="evidencias" onclick="switchTab('evidencias')">
                         📊 Evidências
                     </button>
@@ -1457,138 +1492,89 @@
                     </div>
                 </div>
                 
-                <!-- Aba Indicadores (dados da planilha completa) -->
-                <div id="indicadoresContainer" class="charts-container" style="display:none;">
-                    <div class="charts-header">
-                        <h3>📈 Indicadores de Não Conformidades</h3>
-                        <div class="chart-controls" style="display:flex; gap:8px; align-items:center;">
-                            <button onclick="exportIndicadoresCSV()" style="padding:8px 10px; border:none; border-radius:6px; background:#198754; color:#fff; cursor:pointer;">Exportar CSV</button>
-                            <button onclick="refreshIndicadores()" style="padding:8px 10px; border:none; border-radius:6px; background:linear-gradient(135deg,#dc3545,#b21f35); color:#fff; cursor:pointer;">🔄 Atualizar</button>
-                        </div>
-                    </div>
-                    
-                    <!-- KPIs Principais -->
-                    <div class="kpi-dashboard" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:24px;">
-                        <div class="kpi-card" style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); color:white; padding:20px; border-radius:12px; text-align:center;">
-                            <div style="font-size:32px; font-weight:bold; margin-bottom:8px;" id="totalRncsKpi">652</div>
-                            <div style="font-size:14px; opacity:0.9;">Total de RNCs</div>
-                        </div>
-                        <div class="kpi-card" style="background:linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color:white; padding:20px; border-radius:12px; text-align:center;">
-                            <div style="font-size:32px; font-weight:bold; margin-bottom:8px;" id="totalMetasKpi">912</div>
-                            <div style="font-size:14px; opacity:0.9;">Total de Metas</div>
-                        </div>
-                        <div class="kpi-card" style="background:linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color:white; padding:20px; border-radius:12px; text-align:center;">
-                            <div style="font-size:32px; font-weight:bold; margin-bottom:8px;" id="activeDeptKpi">4</div>
-                            <div style="font-size:14px; opacity:0.9;">Departamentos Ativos</div>
-                        </div>
-                        <div class="kpi-card" style="background:linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color:white; padding:20px; border-radius:12px; text-align:center;">
-                            <div style="font-size:32px; font-weight:bold; margin-bottom:8px;" id="efficiencyKpi">28.5%</div>
-                            <div style="font-size:14px; opacity:0.9;">Eficiência Geral</div>
-                        </div>
-                    </div>
-                    
-                    <!-- Charts Grid -->
-                    <div class="charts-grid">
-                        <div class="chart-card">
-                            <h4>🏭 Performance por Departamento</h4>
-                            <canvas id="indicadoresDeptChart"></canvas>
-                        </div>
-                        <div class="chart-card">
-                            <h4>📈 Tendências Mensais</h4>
-                            <canvas id="indicadoresTrendChart"></canvas>
-                        </div>
-                    </div>
-                    
-                    <div class="charts-grid" style="margin-top:20px;">
-                        <div class="chart-card">
-                            <h4>⚡ Eficiência por Departamento</h4>
-                            <canvas id="indicadoresEfficiencyChart"></canvas>
-                        </div>
-                        <div class="chart-card">
-                            <h4>📊 Distribuição de Metas vs Realizados</h4>
-                            <canvas id="indicadoresMetasChart"></canvas>
-                        </div>
-                    </div>
-                    
-                    <!-- Ranking e Estatísticas -->
-                    <div class="charts-grid" style="margin-top:20px;">
-                        <div class="chart-card">
-                            <h4>🏆 Ranking de Departamentos</h4>
-                            <div id="indicadoresRanking" style="padding:16px;">
-                                <!-- Conteúdo será gerado dinamicamente -->
-                            </div>
-                        </div>
-                        <div class="chart-card">
-                            <h4>📋 Estatísticas Detalhadas</h4>
-                            <div id="indicadoresStats" style="padding:16px; font-size:14px;">
-                                <!-- Conteúdo será gerado dinamicamente -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
+
 
                 <!-- Aba Evidências (Percentuais mensais por responsável) -->
                 <div id="evidenciasContainer" class="charts-container" style="display:none;">
-                    <div class="charts-header">
-                        <h3>📊 Evidências de Indicadores - Percentuais por Mês</h3>
-                        <div class="chart-controls" style="display:flex; gap:8px; align-items:center;">
-                            <select id="evidenciasYearSelect" style="padding:8px; border:1px solid #ccc; border-radius:6px;">
-                                <option value="">Todos os Anos</option>
-                            </select>
-                            <button onclick="exportEvidenciasCSV()" style="padding:8px 10px; border:none; border-radius:6px; background:#198754; color:#fff; cursor:pointer;">Exportar CSV</button>
-                            <button onclick="refreshEvidencias()" style="padding:8px 10px; border:none; border-radius:6px; background:linear-gradient(135deg,#dc3545,#b21f35); color:#fff; cursor:pointer;">🔄 Atualizar</button>
+                    <!-- Cabeçalho com gradiente e estatísticas -->
+                    <div style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius:8px; padding:16px; margin-bottom:16px; color:white; box-shadow:0 4px 15px rgba(102,126,234,0.4);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                            <div>
+                                <h3 style="margin:0 0 4px 0; font-size:18px; font-weight:600;">📊 Evidências - Percentuais por Mês</h3>
+                                <p id="evidenciasSubtitle" style="margin:0; font-size:12px; opacity:0.9;">Relatório de Não Conformidades - Engenharia</p>
+                            </div>
+                            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                                <select id="evidenciasYearSelect" style="padding:8px 12px; border:none; border-radius:6px; font-size:13px; background:rgba(255,255,255,0.95); cursor:pointer; font-weight:500;">
+                                    <option value="">Todos os Anos</option>
+                                </select>
+                                <button onclick="printEvidencias()" style="padding:8px 14px; border:none; border-radius:6px; background:#fff; color:#667eea; cursor:pointer; font-size:13px; font-weight:600; transition:all 0.3s; box-shadow:0 2px 8px rgba(0,0,0,0.15);" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">🖨️ Imprimir</button>
+                                <button onclick="exportEvidenciasCSV()" style="padding:8px 14px; border:none; border-radius:6px; background:#198754; color:#fff; cursor:pointer; font-size:13px; font-weight:600; transition:all 0.3s;" onmouseover="this.style.background='#157347'" onmouseout="this.style.background='#198754'">📥 CSV</button>
+                                <button onclick="refreshEvidencias()" style="padding:8px 14px; border:none; border-radius:6px; background:rgba(255,255,255,0.2); color:#fff; cursor:pointer; font-size:13px; font-weight:600; transition:all 0.3s; backdrop-filter:blur(10px);" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">🔄 Atualizar</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Cards de estatísticas rápidas -->
+                        <div id="evidenciasStats" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:10px; margin-top:16px;">
+                            <!-- Será preenchido dinamicamente -->
                         </div>
                     </div>
                     
-                    <!-- Info do Indicador -->
-                    <div style="background:#f8f9fa; border-radius:8px; padding:12px; margin-bottom:16px; font-size:13px; display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:10px;">
-                        <div><strong>Indicador:</strong> RNC - Relatório de Não Conformidade</div>
-                        <div><strong>Departamento:</strong> Engenharia</div>
-                        <div><strong>Responsável:</strong> Guilherme / Cíntia</div>
-                        <div><strong>Meta:</strong> 30 RNCs/mês</div>
-                        <div><strong>Objetivo:</strong> Apontar quantidade de não conformidades</div>
-                        <div><strong>Parâmetro:</strong> Quando - Melhor</div>
+                    <!-- Info do Indicador (compacta e estilizada) -->
+                    <div class="no-print" style="background:linear-gradient(to right, #f8f9fa, #e9ecef); border-left:4px solid #667eea; border-radius:6px; padding:10px 12px; margin-bottom:12px; font-size:11px; display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:10px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+                        <div><strong style="color:#667eea;">📋 Indicador:</strong> <span style="color:#495057;">RNC - Não Conformidade</span></div>
+                        <div><strong style="color:#667eea;">🏢 Departamento:</strong> <span style="color:#495057;">Engenharia</span></div>
+                        <div><strong style="color:#667eea;">👤 Responsável:</strong> <span style="color:#495057;">Guilherme / Cíntia</span></div>
+                        <div><strong style="color:#667eea;">🎯 Meta:</strong> <span style="color:#495057;">30 RNCs/mês</span></div>
+                        <div><strong style="color:#667eea;">💡 Objetivo:</strong> <span style="color:#495057;">Apontar não conformidades</span></div>
+                        <div><strong style="color:#667eea;">📊 Parâmetro:</strong> <span style="color:#495057;">Quando - Melhor</span></div>
                     </div>
                     
-                    <!-- Tabela de Evidências Mensais -->
-                    <div id="evidenciasTable" style="background:white; border-radius:8px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.1); overflow-x:auto;">
-                        <h4 style="margin:0 0 16px 0; color:#333;">📋 Percentuais de Cumprimento por Mês</h4>
+                    <!-- Tabela de Evidências Mensais (compacta e moderna) -->
+                    <div id="evidenciasTable" style="background:white; border-radius:8px; padding:16px; box-shadow:0 2px 12px rgba(0,0,0,0.08); overflow-x:auto;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                            <h4 style="margin:0; color:#2c3e50; font-size:15px; font-weight:600;">📋 Percentuais de Cumprimento por Mês</h4>
+                            <span id="evidenciasTableCount" style="background:#e9ecef; padding:4px 10px; border-radius:12px; font-size:11px; color:#495057; font-weight:600;"></span>
+                        </div>
                         <div id="evidenciasTableContent">
                             <!-- Conteúdo será gerado dinamicamente -->
                         </div>
                     </div>
                     
-                    <!-- Nova seção: Gráficos por Funcionário -->
-                    <div style="background:white; border-radius:8px; padding:16px; margin-top:20px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+                    <!-- Nova seção: Gráficos por Funcionário (compacto e moderno) -->
+                    <div class="no-print" style="background:white; border-radius:8px; padding:16px; margin-top:12px; box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+                        <!-- Cabeçalho compacto -->
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
-                            <h4 style="margin:0; color:#333;">👥 Desempenho por Funcionário</h4>
-                            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                                <select id="employeeYearSelect" onchange="loadEmployeePerformance()" style="padding:6px 8px; border:1px solid #dee2e6; border-radius:6px;">
+                            <div>
+                                <h4 style="margin:0; color:#2c3e50; font-size:15px; font-weight:600;">👥 Desempenho por Funcionário</h4>
+                                <p style="margin:2px 0 0 0; color:#6c757d; font-size:11px;">Análise individual de produtividade</p>
+                            </div>
+                            <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+                                <select id="employeeYearSelect" onchange="loadEmployeePerformance()" style="padding:6px 10px; border:1px solid #dee2e6; border-radius:6px; font-size:12px; background:#fff; cursor:pointer;">
                                     <option value="">Carregando anos...</option>
                                 </select>
-                                <select id="employeeMonthSelect" onchange="loadEmployeePerformance()" style="padding:6px 8px; border:1px solid #dee2e6; border-radius:6px;">
+                                <select id="employeeMonthSelect" onchange="loadEmployeePerformance()" style="padding:6px 10px; border:1px solid #dee2e6; border-radius:6px; font-size:12px; background:#fff; cursor:pointer;">
                                     <option value="">Carregando meses...</option>
                                 </select>
-                                <button onclick="loadEmployeePerformance()" style="padding:6px 12px; border:none; border-radius:6px; background:linear-gradient(135deg,#dc3545,#b21f35); color:#fff; cursor:pointer;">🔄 Atualizar</button>
-                                <button onclick="forceUpdateSelectors()" style="padding:6px 12px; border:none; border-radius:6px; background:#28a745; color:#fff; cursor:pointer;" title="Forçar atualização dos seletores de ano e mês">📅 Atualizar Seletores</button>
+                                <button onclick="loadEmployeePerformance()" style="padding:6px 12px; border:none; border-radius:6px; background:linear-gradient(135deg,#667eea,#764ba2); color:#fff; cursor:pointer; font-size:12px; font-weight:600; transition:all 0.3s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">🔄</button>
+                                <button onclick="forceUpdateSelectors()" style="padding:6px 12px; border:none; border-radius:6px; background:#28a745; color:#fff; cursor:pointer; font-size:12px; font-weight:600; transition:all 0.3s;" onmouseover="this.style.background='#218838'" onmouseout="this.style.background='#28a745'" title="Forçar atualização dos seletores de ano e mês">📅</button>
                             </div>
                         </div>
                         
-                        <!-- Gráfico de Barras Horizontais com Percentuais -->
-                        <div style="margin-bottom:20px;">
-                            <canvas id="employeePerformanceChart" height="400"></canvas>
+                        <!-- Gráfico de Barras Horizontais com Percentuais (compacto) -->
+                        <div style="margin-bottom:16px; background:#f8f9fa; border-radius:6px; padding:12px;">
+                            <canvas id="employeePerformanceChart" height="250"></canvas>
                         </div>
                         
-                        <!-- Tabela de dados detalhados -->
-                        <div id="employeePerformanceTable" style="margin-top:20px;">
+                        <!-- Tabela de dados detalhados (compacta) -->
+                        <div id="employeePerformanceTable" style="margin-top:16px;">
                             <!-- Será preenchida dinamicamente -->
                         </div>
                     </div>
                     
-                    <!-- Gráfico de Evolução -->
-                    <div style="background:white; border-radius:8px; padding:16px; margin-top:16px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
-                        <h4 style="margin:0 0 16px 0; color:#333;">📈 Evolução dos Percentuais</h4>
-                        <canvas id="evidenciasChart" style="max-height:400px;"></canvas>
+                    <!-- Gráfico de Evolução (compacto) -->
+                    <div class="no-print" style="background:white; border-radius:6px; padding:12px; margin-top:12px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+                        <h4 style="margin:0 0 12px 0; color:#333; font-size:14px;">📈 Evolução dos Percentuais</h4>
+                        <canvas id="evidenciasChart" style="max-height:300px;"></canvas>
                     </div>
                 </div>
 
@@ -1681,43 +1667,75 @@
                 </div>
             </div>
             
-            <!-- Charts específicos da aba Engenharia (acima da tabela) -->
-            <div id="engenhariaCharts" style="display:none; margin:10px 0 18px 0;">
+            <!-- Charts específicos da aba RNCs por Setor (acima da tabela) -->
+            <div id="setoresCharts" style="display:none; margin:10px 0 18px 0;">
+                <!-- Seletor de Setor -->
+                <div style="background:#fff; border-radius:12px; padding:14px 16px; box-shadow:0 2px 10px rgba(0,0,0,0.06); margin-bottom:14px;">
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <label for="setorSelect" style="font-weight:600; font-size:14px; color:#333;">📊 Selecione o Setor:</label>
+                        <select id="setorSelect" style="padding:8px 12px; border:1px solid #ccc; border-radius:8px; font-size:14px; flex:1; max-width:300px;" onchange="loadSetorData()">
+                            <option value="">Selecione...</option>
+                            <option value="engenharia">🔧 Engenharia</option>
+                            <option value="producao">🏭 Produção</option>
+                            <option value="pcp">📋 PCP</option>
+                            <option value="qualidade">✅ Qualidade</option>
+                            <option value="compras">🛒 Compras</option>
+                            <option value="comercial">💼 Comercial</option>
+                            <option value="terceiros">🤝 Terceiros</option>
+                            <optgroup label="Setores de Produção">
+                                <option value="usinagem_plana">🔨 Usinagem Plana</option>
+                                <option value="usin_cilindrica_cnc">⚙️ Usin. Cilíndrica CNC</option>
+                                <option value="usin_cilindrica_convencional">🔧 Usin. Cilíndrica Convencional</option>
+                                <option value="caldeiraria_carbono">🔥 Caldeiraria de Carbono</option>
+                                <option value="caldeiraria_inox">✨ Caldeiraria de Inox</option>
+                                <option value="corte">✂️ Corte</option>
+                                <option value="montagem">🔩 Montagem</option>
+                                <option value="pintura">🎨 Pintura</option>
+                                <option value="balanceamento">⚖️ Balanceamento</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                </div>
+                
                 <!-- Bloco de Informações do Indicador (exibido acima dos gráficos) -->
-                <div id="engIndicadorInfo" style="background:#fff; border-radius:12px; padding:10px 14px; box-shadow:0 2px 8px rgba(0,0,0,0.05); margin-bottom:12px; font-size:12px; line-height:1.3; color:#333; display:flex; flex-wrap:wrap; gap:14px;">
+                <div id="setorIndicadorInfo" style="background:#fff; border-radius:12px; padding:10px 14px; box-shadow:0 2px 8px rgba(0,0,0,0.05); margin-bottom:12px; font-size:12px; line-height:1.3; color:#333; display:none; flex-wrap:wrap; gap:14px;">
                     <div style="min-width:120px;"><strong>Indicador:</strong><br>RNC - Relatório de Não Conformidade</div>
                     <div style="min-width:160px;"><strong>Objetivo:</strong><br>Apontar a quantidade de não conformidades e revisões</div>
-                    <div style="min-width:110px;"><strong>Departamento:</strong><br>Engenharia</div>
+                    <div style="min-width:110px;"><strong>Departamento:</strong><br><span id="setorNome">-</span></div>
                     <div style="min-width:90px;"><strong>Área:</strong><br>Corporativo</div>
-                    <div style="min-width:120px;"><strong>Responsável:</strong><br>Guilherme / Cíntia</div>
-                    <div style="min-width:110px;"><strong>Controle:</strong><br>Alan</div>
-                    <div style="min-width:120px;"><strong>Parâmetro:</strong><br>Quando - Melhor</div>
                     <div style="min-width:80px;"><strong>Unidade:</strong><br>UN</div>
-                    <div style="min-width:70px;"><strong>Meta:</strong><br>30</div>
-                    <div style="min-width:90px;" id="engInfoRealizado"><strong>Realizado:</strong><br><span id="engInfoRealizadoVal">--</span></div>
-                    <div style="min-width:90px;" id="engInfoVariacao"><strong>Variação:</strong><br><span id="engInfoVariacaoVal">--</span></div>
+                    <div style="min-width:70px;"><strong>Meta:</strong><br><span id="setorMeta">30</span></div>
+                    <div style="min-width:90px;" id="setorInfoRealizado"><strong>Realizado:</strong><br><span id="setorInfoRealizadoVal">--</span></div>
+                    <div style="min-width:90px;" id="setorInfoVariacao"><strong>Variação:</strong><br><span id="setorInfoVariacaoVal">--</span></div>
                 </div>
+                
+                <!-- Gráfico Mensal -->
+                <div id="setorChartsContainer" style="display:none;">
                 <div style="background:#fff; border-radius:12px; padding:14px 16px; box-shadow:0 2px 10px rgba(0,0,0,0.06); margin-bottom:14px;">
                     <div style="display:flex; flex-wrap:wrap; gap:10px; justify-content:space-between; align-items:center;">
-                        <h3 style="margin:0; display:flex; align-items:center; gap:8px; font-size:16px; color:#333;">🔧 Engenharia – RNCs Mensais <span style="font-size:11px; font-weight:400; color:#666;">(Barra=Realizado • Verde=Meta 30 • Azul=Acum.)</span></h3>
+                            <h3 style="margin:0; display:flex; align-items:center; gap:8px; font-size:16px; color:#333;">
+                                <span id="setorTitle">📊 RNCs Mensais por Setor</span>
+                                <span style="font-size:11px; font-weight:400; color:#666;">(Barra=Realizado • Verde=Meta • Azul=Acum.)</span>
+                            </h3>
                         <div style="display:flex; gap:6px; align-items:center; font-size:12px;">
-                            <label for="engineeringMonthSelect" style="color:#555;">Mês:</label>
-                            <select id="engineeringMonthSelect" style="padding:4px 6px; border:1px solid #ccc; border-radius:6px; font-size:12px;" onchange="updateEngineeringMonth()">
+                                <label for="setorMonthSelect" style="color:#555;">Mês:</label>
+                                <select id="setorMonthSelect" style="padding:4px 6px; border:1px solid #ccc; border-radius:6px; font-size:12px;" onchange="updateSetorMonth()">
                                 <option value="">Todos</option>
                             </select>
-                            <button onclick="resetEngineeringSelection()" style="padding:4px 8px; border:none; background:linear-gradient(135deg,#dc3545,#b21f35); color:#fff; border-radius:6px; font-size:12px; cursor:pointer;">Reset</button>
+                                <button onclick="resetSetorSelection()" style="padding:4px 8px; border:none; background:linear-gradient(135deg,#dc3545,#b21f35); color:#fff; border-radius:6px; font-size:12px; cursor:pointer;">Reset</button>
                         </div>
                     </div>
-                    <canvas id="engineeringMonthlyChart" height="170"></canvas>
+                        <canvas id="setorMonthlyChart" height="170"></canvas>
                 </div>
                 <div style="background:#fff; border-radius:12px; padding:14px 16px; box-shadow:0 2px 10px rgba(0,0,0,0.06); display:grid; gap:12px;">
                     <h3 style="margin:0; font-size:16px; color:#333;">📊 Acumulado vs Meta</h3>
-                    <canvas id="engineeringAccumChart" height="170"></canvas>
+                        <canvas id="setorAccumChart" height="170"></canvas>
                     <div style="border-top:1px solid #eee; margin-top:8px; padding-top:8px;">
                         <h4 style="margin:0 0 6px 0; font-size:13px; color:#444;">🔍 Detalhe do Mês Selecionado (dias)</h4>
-                        <canvas id="engineeringMonthDetailChart" height="110"></canvas>
+                            <canvas id="setorMonthDetailChart" height="110"></canvas>
                     </div>
-                    <div id="engineeringMonthInfo" style="font-size:12px; color:#555; line-height:1.4;"></div>
+                        <div id="setorMonthInfo" style="font-size:12px; color:#555; line-height:1.4;"></div>
+                    </div>
                 </div>
             </div>
             <!-- Grid de RNCs -->
@@ -1878,6 +1896,22 @@
                     " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 10px 22px rgba(111,66,193,.3)';" onmouseout="this.style.transform=''; this.style.boxShadow='0 8px 20px rgba(111,66,193,.25)';">
                         🔐 Gerenciar Permissões
                     </button>
+                    <button id="manageFieldLocksBtn" onclick="window.location.href='/admin/field-locks/'" style="
+                        padding: 10px;
+                        background: linear-gradient(135deg, #e74c3c, #c0392b);
+                        color: white;
+                        border: none;
+                        border-radius: 10px;
+                        cursor: pointer;
+                        font-size: 14px;
+                        display: none;
+                        align-items: center;
+                        gap: 8px;
+                        box-shadow: 0 8px 20px rgba(231, 76, 60, 0.25);
+                        transition: transform .15s ease, box-shadow .15s ease;
+                    " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 10px 22px rgba(231,76,60,.3)';" onmouseout="this.style.transform=''; this.style.boxShadow='0 8px 20px rgba(231,76,60,.25)';">
+                        🔒 Gerenciar Permissões Criação RNC
+                    </button>
                     <button id="manageClientsBtn" onclick="window.location.href='/admin/clients'" style="
                         padding: 10px;
                         background: #8b1538;
@@ -1950,7 +1984,7 @@
                         border-radius: 10px;
                         cursor: pointer;
                         font-size: 14px;
-                        display: flex;
+                        display: none;
                         align-items: center;
                         gap: 8px;
                         box-shadow: 0 8px 20px rgba(220, 53, 69, 0.25);
@@ -1958,7 +1992,7 @@
                     " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 10px 22px rgba(220,53,69,.3)';" onmouseout="this.style.transform=''; this.style.boxShadow='0 8px 20px rgba(220,53,69,.25)';">
                         📊 Gerar Relatório
                     </button>
-                    <button onclick="window.location.href='/dashboard/expenses'" style="
+                    <button id="expensesReportBtn" onclick="window.location.href='/dashboard/expenses'" style="
                         padding: 10px;
                         background: linear-gradient(135deg, #28a745, #20c997);
                         color: white;
@@ -1966,7 +2000,7 @@
                         border-radius: 10px;
                         cursor: pointer;
                         font-size: 14px;
-                        display: flex;
+                        display: none;
                         align-items: center;
                         gap: 8px;
                         box-shadow: 0 8px 20px rgba(40, 167, 69, 0.25);
@@ -2006,7 +2040,7 @@
                     alert('Erro ao carregar TXT: ' + (e && e.message ? e.message : e));
                 }
             }
-
+            
             function renderLevInfo(d) {
                 const el = document.getElementById('levInfoBody');
                 const ph = document.getElementById('levInfoPlaceholder');
@@ -2150,18 +2184,29 @@
                         const manageUsersBtn = document.getElementById('manageUsersBtn');
                         const manageGroupsBtn = document.getElementById('manageGroupsBtn');
                         const managePermissionsBtn = document.getElementById('managePermissionsBtn');
+                        const manageFieldLocksBtn = document.getElementById('manageFieldLocksBtn');
                         const manageClientsBtn = document.getElementById('manageClientsBtn');
                         const manageAreasBtn = document.getElementById('manageAreasBtn');
                         const manageOperatorsBtn = document.getElementById('manageOperatorsBtn');
                         const manageSectorsBtn = document.getElementById('manageSectorsBtn');
+                        const generateReportBtn = document.getElementById('generateReportBtn');
+                        const expensesReportBtn = document.getElementById('expensesReportBtn');
                         
                         if (manageUsersBtn) manageUsersBtn.style.display = 'flex';
                         if (manageGroupsBtn) manageGroupsBtn.style.display = 'flex';
                         if (managePermissionsBtn) managePermissionsBtn.style.display = 'flex';
+                        if (manageFieldLocksBtn) {
+                            manageFieldLocksBtn.style.display = 'flex';
+                            console.log('✅ Botão Permissões Criação RNC ativado');
+                        } else {
+                            console.log('❌ Botão manageFieldLocksBtn não encontrado');
+                        }
                         if (manageClientsBtn) manageClientsBtn.style.display = 'flex';
                         if (manageAreasBtn) manageAreasBtn.style.display = 'flex';
                         if (manageOperatorsBtn) manageOperatorsBtn.style.display = 'flex';
                         if (manageSectorsBtn) manageSectorsBtn.style.display = 'flex';
+                        if (generateReportBtn) generateReportBtn.style.display = 'flex';
+                        if (expensesReportBtn) expensesReportBtn.style.display = 'flex';
                         
                         console.log('🔐 Usuário tem permissões de administrador');
                     }
@@ -2204,15 +2249,73 @@
     const __PAGE_LIMIT = 50000;
 
     // Carregar RNCs
-    async function loadRNCs(tab = 'active', forceRefresh = false) {
+    async function loadRNCs(tab = 'finalized', forceRefresh = false) {
             console.log(`🔄 Carregando RNCs para aba: ${tab} ${forceRefresh ? '(FORCE REFRESH)' : ''}`);
             currentTab = tab;
             
             try {
-                // Para a aba Engenharia, carregamos dados da aba finalized e filtramos
-                const apiTab = tab === 'engenharia' ? 'finalized' : tab;
+                // Se for aba Setores, não carregar nada até selecionar um setor
+                if (tab === 'setores') {
+                    console.log('📊 Aba setores ativada. Aguardando seleção de setor...');
+                    rncsData[tab] = [];
+                    updateTotalCount(0);
+                    renderRNCs(tab);
+                    return;
+                }
+                
+                // Se for aba Engenharia (legado), redirecionar para setores
+                    if (tab === 'engenharia') {
+                        console.log('🔧 Carregando dados específicos da engenharia...');
+                        try {
+                            const engineeringResponse = await fetch('/api/indicadores/engenharia');
+                        console.log('🔧 [DEBUG] Response status:', engineeringResponse.status);
+                            const engineeringData = await engineeringResponse.json();
+                        console.log('🔧 [DEBUG] Dados recebidos:', engineeringData);
+                            
+                            if (engineeringData.success) {
+                                console.log('📊 Dados da engenharia recebidos:', engineeringData);
+                            console.log('📊 [DEBUG] Total RNCs engenharia:', engineeringData.rncs_count);
+                            
+                            // Construir gráficos
+                                buildEngineeringCharts(engineeringData);
+                            
+                            // IMPORTANTE: Usar APENAS os dados da API de engenharia
+                                rncsData[tab] = engineeringData.rncs || [];
+                            console.log(`✅ ${rncsData[tab].length} RNCs da engenharia carregados`);
+                            
+                            // Atualizar contador no topo da página
+                            updateTotalCount(rncsData[tab].length);
+                            
+                            // Renderizar tabela
+                            renderRNCs(tab);
+                            
+                            // Atualizar TODOS os badges (incluindo engenharia)
+                                    updateCounts();
+                            
+                            // GARANTIR que o badge de engenharia está correto (após updateCounts)
+                                    const badge = document.getElementById('count-engenharia');
+                            if (badge) {
+                                badge.textContent = rncsData[tab].length;
+                                console.log(`✅ Badge de engenharia atualizado para: ${rncsData[tab].length}`);
+                                    }
+                            } else {
+                                console.error('❌ Erro ao carregar dados da engenharia:', engineeringData.message);
+                                rncsData[tab] = [];
+                            updateTotalCount(0);
+                            renderRNCs(tab);
+                            }
+                        } catch (error) {
+                            console.error('❌ Erro na API da engenharia:', error);
+                            rncsData[tab] = [];
+                        updateTotalCount(0);
+                        renderRNCs(tab);
+                    }
+                    return; // Sair da função, não continuar com /api/rnc/list
+                }
+                
+                // Para outras abas, usar /api/rnc/list
+                const apiTab = tab;
                 console.log(`📡 Fazendo requisição para: /api/rnc/list?tab=${apiTab}&limit=${__PAGE_LIMIT}`);
-                // Usar URL relativa para evitar problemas de mixed content/HTTPS
                 const url = `/api/rnc/list?tab=${encodeURIComponent(apiTab)}&limit=${__PAGE_LIMIT}${forceRefresh ? '&_t=' + Date.now() : ''}`;
                 const response = await fetch(url, { 
                     credentials: 'include',
@@ -2231,27 +2334,25 @@
                 if (data.success) {
                     __nextCursor = data.next_cursor || null;
                     __hasMore = !!data.has_more;
-                    // Se for aba Engenharia, filtrar apenas RNCs de Engenharia
-                    if (tab === 'engenharia') {
-                        rncsData[tab] = data.rncs.filter(rnc => 
-                            rnc.user_department && rnc.user_department.toLowerCase().includes('engenharia')
-                        );
-                        console.log(`🔧 RNCs de Engenharia filtrados: ${rncsData[tab].length} de ${data.rncs.length} total`);
-                        // Só construir gráficos se estivermos realmente na aba Engenharia
-                        if (currentTab === 'engenharia') {
-                            try { buildEngineeringCharts(rncsData[tab]); } catch(e){ console.error('Falha ao construir gráficos engenharia', e); }
-                        }
-                    } else {
-                        rncsData[tab] = data.rncs;
-                        console.log(`✅ RNCs carregados para ${tab}: ${data.rncs.length} itens`);
+                    rncsData[tab] = data.rncs;
+                    console.log(`✅ RNCs carregados para ${tab}: ${data.rncs.length} itens`);
+                    
+                    // Debug adicional: verificar tipos de dados carregados
+                    if (data.rncs.length > 0) {
+                        const sample = data.rncs[0];
+                        console.log(`📋 Amostra de dados para ${tab}:`, {
+                            id: sample.id,
+                            status: sample.status,
+                            finalized_at: sample.finalized_at
+                        });
                     }
                     
-                    // Sempre salvar no cache local quando há dados
+                    // Salvar no cache
                     if (data.rncs && data.rncs.length >= 0) {
                         saveDashboardCache({ user: null, rncs: rncsData });
                     }
                     
-                    // Se for a aba finalizados e há filtros ativos, aplicar filtros
+                    // Aplicar filtros se necessário
                     if (tab === 'finalized' && (currentFilters.rncNumber || currentFilters.client || currentFilters.equipment || currentFilters.department)) {
                         console.log(`🔍 Aplicando filtros para aba finalizados`);
                         applyFilters();
@@ -2263,7 +2364,6 @@
                     updateCounts();
                 } else {
                     console.error('❌ Erro ao carregar RNCs:', data.message);
-                    // Se há erro, não renderizar array vazio - manter dados existentes
                     if (!rncsData[tab] || rncsData[tab].length === 0) {
                         try { renderRNCs(tab, []); } catch (_) {}
                     }
@@ -2271,7 +2371,6 @@
                 }
             } catch (error) {
                 console.error('❌ Erro ao carregar RNCs:', error);
-                // Se há erro de rede, não limpar dados existentes
                 if (!rncsData[tab] || rncsData[tab].length === 0) {
                     try { renderRNCs(tab, []); } catch (_) {}
                 }
@@ -2295,7 +2394,19 @@
                     __nextCursor = data.next_cursor || null;
                     __hasMore = !!data.has_more;
                     const chunk = currentTab === 'engenharia'
-                        ? (data.rncs || []).filter(r => r.user_department && r.user_department.toLowerCase().includes('engenharia'))
+                        ? (data.rncs || []).filter(r => {
+                            // Usar o mesmo filtro da função loadRNCs
+                            const isEngineering = (
+                                (r.responsavel && r.responsavel.toLowerCase().includes('guilherme')) ||
+                                (r.responsavel && r.responsavel.toLowerCase().includes('cintia')) ||
+                                (r.responsavel && r.responsavel.toLowerCase().includes('cíntia')) ||
+                                (r.area_responsavel && r.area_responsavel.toLowerCase().includes('engenharia')) ||
+                                (r.department && r.department.toLowerCase().includes('engenharia')) ||
+                                (r.setor && r.setor.toLowerCase().includes('engenharia')) ||
+                                (r.finalized_at !== null && r.finalized_at !== undefined)
+                            );
+                            return isEngineering;
+                        })
                         : (data.rncs || []);
                     rncsData[currentTab] = (rncsData[currentTab] || []).concat(chunk);
                     renderRNCs(currentTab);
@@ -2344,7 +2455,7 @@
                 
                 // 4. Recarregar todas as abas com forceRefresh
                 console.log('📋 Recarregando aba ativa...');
-                await loadRNCs('active', true);
+                await loadRNCs('finalized', true);
                 
                 {% if user_permissions.canViewEngineeringRncs %}
                 console.log('🔧 Recarregando aba engenharia...');
@@ -2515,9 +2626,21 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
         function preloadCriticalData() {
             const promises = [];
             
-            // Preload apenas dados essenciais
+            // Preload dados essenciais de forma sequencial para evitar sobrecarga
             promises.push(loadUserInfo().catch(() => {}));
-            promises.push(loadRNCs('active', false).catch(() => {}));
+            
+            // Carregar dados ativos E finalizados separadamente para garantir dados corretos
+            promises.push(
+                loadRNCs('active', false).then(() => {
+                    console.log('✅ Dados ativos carregados:', rncsData.active?.length || 0);
+                }).catch(() => {})
+            );
+            
+            promises.push(
+                loadRNCs('finalized', false).then(() => {
+                    console.log('✅ Dados finalizados carregados:', rncsData.finalized?.length || 0);
+                }).catch(() => {})
+            );
             
             {% if user_permissions.canViewEngineeringRncs %}
             // Carregar dados de engenharia apenas se o usuário tiver permissão
@@ -2586,6 +2709,9 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
                     <table class="rnc-table">
                         <thead>
                             <tr>
+                                <th class="sortable" onclick="sortTable('id')">
+                                    ID <span class="sort-icon">↕️</span>
+                                </th>
                                 <th class="sortable" onclick="sortTable('rnc_number')">
                                     N° RNC <span class="sort-icon">↕️</span>
                                 </th>
@@ -2626,15 +2752,38 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
         function createRNCTableRow(rnc, tab) {
             const createdDate = rnc.created_at ? new Date(rnc.created_at).toLocaleDateString('pt-BR') : 'N/A';
             
+            // Limpar título removendo "RNC XXXXX - " no início
+            let cleanTitle = rnc.title || '';
+            if (cleanTitle.includes(' - ')) {
+                // Remove a parte "RNC 34461 - " e mantém apenas "Rebobinadeira / ..."
+                const parts = cleanTitle.split(' - ');
+                if (parts.length > 1) {
+                    cleanTitle = parts.slice(1).join(' - ');
+                }
+            }
+            
+            // Limpar número RNC removendo "RNC-" e deixando apenas os números
+            let cleanRncNumber = rnc.rnc_number || '';
+            if (cleanRncNumber.startsWith('RNC-')) {
+                cleanRncNumber = cleanRncNumber.replace('RNC-', '');
+            }
+
+            // Preparar identificação de criador e atribuído
+            const creatorName = rnc.user_name || 'N/I';
+            const assignedName = (rnc.assigned_user_name && rnc.assigned_user_name !== rnc.user_name)
+                ? ` → ${rnc.assigned_user_name}`
+                : '';
+            
             return `
                 <tr class="rnc-table-row" data-rnc-id="${rnc.id}" id="rnc-${rnc.id}">
-                    <td class="rnc-number-cell"><a href="/rnc/${rnc.id}" title="Abrir RNC">${rnc.rnc_number}</a></td>
-                    <td class="rnc-title-cell">${rnc.title}</td>
+                    <td class="rnc-id-cell">${rnc.id}</td>
+                    <td class="rnc-number-cell"><a href="/rnc/${rnc.id}" title="Abrir RNC">${cleanRncNumber}</a></td>
+                    <td class="rnc-title-cell">${cleanTitle}</td>
                     <td class="rnc-client-cell">${rnc.client || 'N/A'}</td>
                     <td class="rnc-equipment-cell">${rnc.equipment || 'N/A'}</td>
                     <td class="rnc-department-cell">${rnc.area_responsavel || 'N/A'}</td>
                     <td class="rnc-setor-cell">${rnc.setor || 'N/A'}</td>
-                    <td class="rnc-user-cell">${rnc.responsavel || 'N/A'}</td>
+                    <td class="rnc-user-cell">${creatorName}${assignedName}</td>
                     <td class="rnc-date-cell">${createdDate}</td>
                     <td class="rnc-actions-cell">
                         <a href="/rnc/${rnc.id}" class="action-btn btn-view" title="Ver RNC">👁️</a>
@@ -2687,7 +2836,7 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
                         </div>
                         <div class="detail-item">
                             <div class="icon">👤</div>
-                            <span>${rnc.user_name || 'N/A'}</span>
+                            <span>${rnc.user_name || rnc.assigned_user_name || 'Sistema'}</span>
                         </div>
                     </div>
                     
@@ -3010,6 +3159,13 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
             const statActiveEl = document.getElementById('stat-active');
             const statFinalizedEl = document.getElementById('stat-finalized');
             
+            // Debug: verificar dados antes de atualizar
+            console.log('🔢 Atualizando contadores:', {
+                active: rncsData.active?.length || 0,
+                finalized: rncsData.finalized?.length || 0,
+                engenharia: rncsData.engenharia?.length || 0
+            });
+            
             if (countActiveEl) countActiveEl.textContent = rncsData.active?.length || 0;
             {% if user_permissions.canViewEngineeringRncs %}
             if (countEngenhariaEl) countEngenhariaEl.textContent = rncsData.engenharia?.length || 0;
@@ -3018,6 +3174,7 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
             {% endif %}
             if (countFinalizedEl) countFinalizedEl.textContent = rncsData.finalized?.length || 0;
             
+            // Corrigir: usar dados corretos para cada contador
             if (statActiveEl) statActiveEl.textContent = rncsData.active?.length || 0;
             if (statFinalizedEl) statFinalizedEl.textContent = rncsData.finalized?.length || 0;
         }
@@ -3313,8 +3470,7 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
             const containers = {
                 'active': 'rncsContainer',
                 'finalized': 'rncsContainer', 
-                'engenharia': 'rncsContainer',
-                'indicadores': 'indicadoresContainer',
+                'setores': 'rncsContainer',
                 'evidencias': 'evidenciasContainer',
                 'lev1415': 'lev1415Container'
             };
@@ -3335,36 +3491,20 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
                 console.log(`👁️ Container ${activeContainerId} exibido`);
             }
             
-            // Esconder gráficos de engenharia se não estiver na aba engenharia
-            const engCharts = document.getElementById('engenhariaCharts');
-            if (engCharts) {
-                if (tab === 'engenharia') {
-                    // Só mostra se estivermos na aba engenharia E houver dados
-                    {% if user_permissions.canViewEngineeringRncs %}
-                    if (rncsData && rncsData.engenharia && rncsData.engenharia.length > 0) {
-                    {% else %}
-                    if (false) {
-                    {% endif %}
-                        engCharts.style.display = 'block';
-                        console.log('📊 Gráficos de engenharia exibidos');
-                    }
+            // Mostrar/ocultar gráficos de setores
+            const setoresCharts = document.getElementById('setoresCharts');
+            if (setoresCharts) {
+                if (tab === 'setores') {
+                    setoresCharts.style.display = 'block';
+                    console.log('📊 Área de setores exibida');
                 } else {
-                    engCharts.style.display = 'none';
-                    console.log('📊 Gráficos de engenharia ocultados (fora da aba engenharia)');
+                    setoresCharts.style.display = 'none';
+                    console.log('📊 Área de setores ocultada');
                 }
             }
             
             // Ações específicas por aba
-            if (tab === 'indicadores') {
-                console.log('📈 Carregando indicadores...');
-                console.log('🔍 Verificando função loadIndicadores:', typeof loadIndicadores);
-                if (typeof loadIndicadores === 'function') {
-                    console.log('✅ Chamando loadIndicadores...');
-                    loadIndicadores();
-                } else {
-                    console.error('❌ Função loadIndicadores não disponível!');
-                }
-            } else if (tab === 'evidencias') {
+            if (tab === 'evidencias') {
                 console.log('📊 Carregando evidências mensais...');
                 if (typeof loadEvidencias === 'function') {
                     loadEvidencias();
@@ -3611,6 +3751,8 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
                         {% if user_permissions.canViewEngineeringRncs %}
                         rncsData.engenharia = dc.rncs.engenharia || [];
                         {% endif %}
+                        // SEMPRE renderizar aba ativa primeiro
+                        currentTab = 'active';
                         renderRNCs('active');
                         updateCounts();
                     }
@@ -3636,25 +3778,18 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
                     startNotificationPolling();
                 }, 100);
                 
-                // Carregar estatísticas de forma lazy (após carregamento principal)
+                // Atualizar contadores após carregamento completo
                 setTimeout(() => {
-                    console.log('📊 Carregando estatísticas adicionais...');
-                    loadRNCs('finalized').then(() => {
-                        updateCounts();
-                        saveDashboardCache({ user: null, rncs: rncsData });
-                        console.log('✅ Estatísticas carregadas');
-                    }).catch(() => {});
+                    console.log('� Atualizando contadores finais...');
+                    updateCounts();
+                    saveDashboardCache({ user: null, rncs: rncsData });
+                    console.log('✅ Contadores atualizados');
+                    
                 }, 300);
                 
-                // Inicializar dados dos indicadores
-                console.log('📈 Inicializando dados dos indicadores...');
-                setTimeout(() => {
-                    if (typeof loadIndicadores === 'function') {
-                        loadIndicadores();
-                    } else {
-                        console.error('❌ Função loadIndicadores não disponível');
-                    }
-                }, 1000); // Delay para garantir que Chart.js está carregado
+                // Garantir que a aba ativa seja mostrada IMEDIATAMENTE
+                console.log('🎯 Forçando exibição da aba ATIVOS...');
+                switchTab('active');
                 
                 // Inicializar seletores de ano e mês para desempenho por funcionário
                 console.log('📅 Inicializando seletores de ano e mês...');
@@ -3957,6 +4092,17 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
         }
         
         // ===== FUNÇÕES PARA GRÁFICOS =====
+        
+        // Função para atualizar contador de RNCs
+        function updateTotalCount(count) {
+            // Atualizar badges de contadores se existirem
+            const badges = document.querySelectorAll('.rnc-count-badge');
+            badges.forEach(badge => {
+                if (badge && currentTab) {
+                    badge.textContent = count;
+                }
+            });
+        }
         
         // ===== SISTEMA DE GRÁFICOS AVANÇADO =====
         let charts = {};
@@ -5719,71 +5865,7 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
             const n = parseFloat(s); return isNaN(n)?0:n;
         }
         
-        // Funções para a aba Indicadores
-        let indicadoresData = null;
-        let indicadoresCharts = {};
-        
-        function loadIndicadores() {
-            console.log('📈 Carregando dados dos indicadores...');
-            console.log('🔍 Verificando se Chart.js está disponível:', typeof Chart);
-            
-            // Verificar se os elementos existem
-            const requiredElements = [
-                'indicadoresDeptChart',
-                'indicadoresTrendChart', 
-                'indicadoresEfficiencyChart',
-                'indicadoresMetasChart'
-            ];
-            
-            let missingElements = [];
-            requiredElements.forEach(id => {
-                const element = document.getElementById(id);
-                if (!element) {
-                    missingElements.push(id);
-                } else {
-                    console.log(`✅ Elemento ${id} encontrado:`, element);
-                }
-            });
-            
-            if (missingElements.length > 0) {
-                console.error('❌ Elementos faltando:', missingElements);
-            }
-            
-            fetch('/api/indicadores')
-                .then(response => {
-                    console.log('📡 Resposta da API:', response.status, response.statusText);
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('📊 Dados dos indicadores recebidos:', data);
-                    indicadoresData = data;
-                    
-                    // Verificar estrutura dos dados
-                    console.log('🔍 Verificando dados recebidos:');
-                    console.log('  KPIs:', data.kpis);
-                    console.log('  Departamentos:', data.departments);
-                    console.log('  Tendências:', data.monthly_trends);
-                    
-                    updateIndicadoresKPIs(data);
-                    
-                    // Aguardar um pouco para garantir que o Chart.js está pronto
-                    setTimeout(() => {
-                        console.log('⏰ Iniciando criação de gráficos após timeout...');
-                        createIndicadoresCharts(data);
-                        updateIndicadoresStats(data);
-                    }, 100);
-                })
-                .catch(error => {
-                    console.error('❌ Erro ao carregar indicadores:', error);
-                    // Carregar dados de fallback
-                    loadIndicadoresFallback();
-                });
-        }
-        // Expor loadIndicadores globalmente
-        window.loadIndicadores = loadIndicadores;
+        // Funções da aba Indicadores removidas - funcionalidade descontinuada
         
         function loadAvailableYears(selectElement) {
             console.log('📅 Carregando anos disponíveis da API...');
@@ -5937,432 +6019,15 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
             });
         }
         
-        function loadIndicadoresFallback() {
-            console.log('📈 Carregando dados de fallback dos indicadores...');
-            
-            // Dados extraídos da planilha INDICADORES
-            const fallbackData = {
-                "kpis": {
-                    "total_rncs": 652,
-                    "total_metas": 912,
-                    "active_departments": 4,
-                    "overall_efficiency": 28.5,
-                    "avg_rncs_per_dept": 163.0
-                },
-                "departments": [
-                    {"department": "ENG", "meta": 360, "realizado": 390.0, "efficiency": 0},
-                    {"department": "PROD", "meta": 360, "realizado": 180, "efficiency": 50.0},
-                    {"department": "FORNECEDOR", "meta": 180, "realizado": 76, "efficiency": 57.78},
-                    {"department": "PCP", "meta": 12, "realizado": 6.0, "efficiency": 50.0}
-                ],
-                "monthly_trends": [
-                    {"month": "JAN", "total": 54.33, "date": "2024-01-01"},
-                    {"month": "FEV", "total": 54.33, "date": "2024-02-01"},
-                    {"month": "MAR", "total": 54.33, "date": "2024-03-01"},
-                    {"month": "ABR", "total": 54.33, "date": "2024-04-01"},
-                    {"month": "MAI", "total": 54.33, "date": "2024-05-01"},
-                    {"month": "JUN", "total": 54.33, "date": "2024-06-01"},
-                    {"month": "JUL", "total": 54.33, "date": "2024-07-01"},
-                    {"month": "AGO", "total": 54.33, "date": "2024-08-01"},
-                    {"month": "SET", "total": 54.33, "date": "2024-09-01"},
-                    {"month": "OUT", "total": 54.33, "date": "2024-10-01"},
-                    {"month": "NOV", "total": 54.33, "date": "2024-11-01"},
-                    {"month": "DEZ", "total": 54.33, "date": "2024-12-01"}
-                ]
-            };
-            
-            indicadoresData = fallbackData;
-            updateIndicadoresKPIs(fallbackData);
-            
-            // Aguardar um pouco para garantir que o Chart.js está pronto
-            setTimeout(() => {
-                console.log('⏰ Iniciando criação de gráficos de fallback após timeout...');
-                createIndicadoresCharts(fallbackData);
-                updateIndicadoresStats(fallbackData);
-            }, 100);
-        }
         
-        function updateIndicadoresKPIs(data) {
-            const kpis = data.kpis || {};
-            
-            document.getElementById('totalRncsKpi').textContent = kpis.total_rncs || '652';
-            document.getElementById('totalMetasKpi').textContent = kpis.total_metas || '912';
-            document.getElementById('activeDeptKpi').textContent = kpis.active_departments || '4';
-            document.getElementById('efficiencyKpi').textContent = (kpis.overall_efficiency || 28.5) + '%';
-        }
-        
-        function createIndicadoresCharts(data) {
-            console.log('📊 Iniciando criação dos gráficos de indicadores...');
-            console.log('📊 Dados recebidos para gráficos:', data);
-            console.log('📊 Tipo dos dados:', typeof data);
-            console.log('📊 Dados é objeto?', data && typeof data === 'object');
-            
-            // Verificar se Chart.js está disponível
-            if (typeof Chart === 'undefined') {
-                console.error('❌ Chart.js não está carregado!');
-                return;
-            }
-            console.log('✅ Chart.js está disponível:', Chart.version);
-            
-            // Verificar se data existe e tem as propriedades necessárias
-            if (!data || typeof data !== 'object') {
-                console.error('❌ Dados inválidos para criação de gráficos:', data);
-                return;
-            }
-            
-            // Destruir gráficos existentes
-            console.log('🧹 Destruindo gráficos existentes...');
-            Object.values(indicadoresCharts).forEach(chart => {
-                if (chart) {
-                    console.log('🗑️ Destruindo gráfico:', chart);
-                    chart.destroy();
-                }
-            });
-            indicadoresCharts = {};
-            
-            // Verificar dados dos departamentos
-            const departments = data.departments || [];
-            console.log(`📊 Departamentos para gráficos:`, departments);
-            console.log(`📊 Número de departamentos: ${departments.length}`);
-            console.log(`📊 Primeiro departamento:`, departments[0]);
-            
-            // Verificar dados de tendências
-            const trends = data.monthly_trends || [];
-            console.log(`📈 Tendências para gráficos:`, trends);
-            console.log(`📈 Número de tendências: ${trends.length}`);
-            console.log(`📈 Primeira tendência:`, trends[0]);
-            
-            try {
-                // Gráfico de Performance por Departamento
-                console.log('📊 Criando gráfico de performance por departamento...');
-                createDepartmentPerformanceChart(departments);
-                
-                // Gráfico de Tendências Mensais
-                console.log('📈 Criando gráfico de tendências mensais...');
-                createMonthlyTrendsChart(trends);
-                
-                // Gráfico de Eficiência
-                console.log('⚡ Criando gráfico de eficiência...');
-                createEfficiencyChart(departments);
-                
-                // Gráfico de Metas vs Realizados
-                console.log('🎯 Criando gráfico de metas vs realizados...');
-                createMetasRealizadosChart(departments);
-                
-                console.log('✅ Todos os gráficos foram criados com sucesso!');
-            } catch (error) {
-                console.error('❌ Erro ao criar gráficos:', error);
-                console.error('❌ Stack trace:', error.stack);
-            }
-        }
-        
-        function createDepartmentPerformanceChart(departments) {
-            console.log('🏭 Criando gráfico de performance por departamento...');
-            console.log('🏭 Dados dos departamentos:', departments);
-            console.log('🏭 Tipo de departments:', typeof departments);
-            console.log('🏭 departments é array?:', Array.isArray(departments));
-            
-                    const ctx = document.getElementById('indicadoresDeptChart');
-                    if (!ctx) {
-                console.error('❌ Elemento indicadoresDeptChart não encontrado!');
-                        return;
-                    }
-            console.log('✅ Elemento canvas encontrado:', ctx);
-            
-            // Verificar se departments é válido e não vazio
-            if (!departments || !Array.isArray(departments)) {
-                console.warn('⚠️ Departments inválido - não é um array:', departments);
-                
-                // Criar gráfico com dados de exemplo
-                console.log('📊 Criando gráfico com dados de exemplo...');
-                        departments = [
-                            {department: 'PRODUÇÃO', meta: 80, realizado: 60, efficiency: 75.0},
-                            {department: 'ENGENHARIA', meta: 70, realizado: 55, efficiency: 78.6},
-                            {department: 'QUALIDADE', meta: 50, realizado: 35, efficiency: 70.0}
-                        ];
-            } else if (departments.length === 0) {
-                console.warn('⚠️ Nenhum departamento fornecido para o gráfico');
-                
-                // Criar gráfico com dados de exemplo
-                console.log('📊 Criando gráfico com dados de exemplo...');
-                departments = [
-                    {department: 'PRODUÇÃO', meta: 80, realizado: 60, efficiency: 75.0},
-                    {department: 'ENGENHARIA', meta: 70, realizado: 55, efficiency: 78.6},
-                    {department: 'QUALIDADE', meta: 50, realizado: 35, efficiency: 70.0}
-                ];
-            } else {
-                console.log('✅ Departamentos válidos recebidos:', departments.length);
-            }
-            
-            const labels = departments.map(d => d.department);
-            const metas = departments.map(d => d.meta);
-            const realizados = departments.map(d => d.realizado);
-            
-            console.log('📊 Labels:', labels);
-            console.log('📊 Metas:', metas);
-            console.log('📊 Realizados:', realizados);
-            
-            try {
-                indicadoresCharts.deptChart = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Meta',
-                            data: metas,
-                            backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                            borderColor: 'rgba(54, 162, 235, 1)',
-                            borderWidth: 1
-                        }, {
-                            label: 'Realizado',
-                            data: realizados,
-                            backgroundColor: 'rgba(255, 99, 132, 0.6)',
-                            borderColor: 'rgba(255, 99, 132, 1)',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                grid: {
-                                    color: 'rgba(0,0,0,0.1)'
-                                }
-                            }
-                        },
-                        plugins: {
-                            legend: {
-                                position: 'top'
-                            }
-                        }
-                    }
-                });
-                console.log('✅ Gráfico de departamentos criado:', indicadoresCharts.deptChart);
-            } catch (error) {
-                console.error('❌ Erro ao criar gráfico de departamentos:', error);
-            }
-        }
-        
-        function createMonthlyTrendsChart(monthlyData) {
-                    const ctx = document.getElementById('indicadoresTrendChart');
-            if (!ctx) return;
-            
-            console.log('📈 Dados mensais recebidos:', monthlyData);
-            console.log('📈 Primeiro item:', monthlyData[0]);
-            
-            // Verificar se monthlyData é válido
-                    if (!monthlyData || !Array.isArray(monthlyData) || monthlyData.length === 0) {
-                console.warn('⚠️ Dados mensais inválidos ou vazios');
-                // Criar dados de exemplo
-                        monthlyData = [
-                    {mes: 'Jan', total: 45},
-                    {mes: 'Fev', total: 52},
-                    {mes: 'Mar', total: 38},
-                    {mes: 'Abr', total: 61},
-                    {mes: 'Mai', total: 47},
-                    {mes: 'Jun', total: 55}
-                ];
-            }
-            
-            // Corrigir o mapeamento: usar 'mes' ao invés de 'month'
-            const labels = monthlyData.map(d => d.mes || d.month || 'N/A');
-            const values = monthlyData.map(d => d.total || 0);
-            
-            console.log('📈 Labels do gráfico:', labels);
-            console.log('📈 Valores do gráfico:', values);
-                    
-                    indicadoresCharts.trendChart = new Chart(ctx, {
-                        type: 'line',
-                        data: {
-                            labels: labels,
-                            datasets: [{
-                                label: 'RNCs por Mês',
-                                data: values,
-                                borderColor: 'rgba(75, 192, 192, 1)',
-                                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                                borderWidth: 2,
-                                fill: true,
-                                tension: 0.4
-                            }]
-                    },
-                    options: {
-                        responsive: true,
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                grid: {
-                                    color: 'rgba(0,0,0,0.1)'
-                                }
-                            }
-                        },
-                        plugins: {
-                            legend: {
-                                position: 'top'
-                            }
-                        }
-                    }
-                });
-            
-                console.log('✅ Gráfico de tendências criado:', indicadoresCharts.trendChart);
-        }
-        
-        function createEfficiencyChart(departments) {
-            const ctx = document.getElementById('indicadoresEfficiencyChart');
-            if (!ctx) return;
-            
-            const labels = departments.map(d => d.department);
-            const efficiencies = departments.map(d => d.efficiency || 0);
-            
-            indicadoresCharts.efficiencyChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: efficiencies,
-                        backgroundColor: [
-                            'rgba(255, 99, 132, 0.8)',
-                            'rgba(54, 162, 235, 0.8)',
-                            'rgba(255, 205, 86, 0.8)',
-                            'rgba(75, 192, 192, 0.8)'
-                        ],
-                        borderColor: [
-                            'rgba(255, 99, 132, 1)',
-                            'rgba(54, 162, 235, 1)',
-                            'rgba(255, 205, 86, 1)',
-                            'rgba(75, 192, 192, 1)'
-                        ],
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'bottom'
-                        }
-                    }
-                }
-            });
-        }
-        
-        function createMetasRealizadosChart(departments) {
-            const ctx = document.getElementById('indicadoresMetasChart');
-            if (!ctx) return;
-            
-            const labels = departments.map(d => d.department);
-            const metas = departments.map(d => d.meta);
-            const realizados = departments.map(d => d.realizado);
-            
-            indicadoresCharts.metasChart = new Chart(ctx, {
-                type: 'radar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Meta',
-                        data: metas,
-                        borderColor: 'rgba(54, 162, 235, 1)',
-                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                        borderWidth: 2
-                    }, {
-                        label: 'Realizado',
-                        data: realizados,
-                        borderColor: 'rgba(255, 99, 132, 1)',
-                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        r: {
-                            beginAtZero: true,
-                            grid: {
-                                color: 'rgba(0,0,0,0.1)'
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            position: 'top'
-                        }
-                    }
-                }
-            });
-        }
-        
-        function updateIndicadoresStats(data) {
-            const departments = data.departments || [];
-            const kpis = data.kpis || {};
-            
-            // Atualizar ranking
-            const ranking = document.getElementById('indicadoresRanking');
-            if (ranking) {
-                const sortedDepts = [...departments].sort((a, b) => (b.efficiency || 0) - (a.efficiency || 0));
-                
-                ranking.innerHTML = sortedDepts.map((dept, index) => {
-                    const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}º`;
-                    return `
-                        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #eee;">
-                            <span style="font-weight:bold;">${medal} ${dept.department}</span>
-                            <span style="color:${dept.efficiency > 50 ? '#28a745' : '#dc3545'};">
-                                ${(dept.efficiency || 0).toFixed(1)}% eficiência
-                            </span>
-                        </div>
-                    `;
-                }).join('');
-            }
-            
-            // Atualizar estatísticas
-            const stats = document.getElementById('indicadoresStats');
-            if (stats) {
-                const totalMeta = departments.reduce((sum, d) => sum + (d.meta || 0), 0);
-                const totalRealizado = departments.reduce((sum, d) => sum + (d.realizado || 0), 0);
-                const avgEfficiency = departments.reduce((sum, d) => sum + (d.efficiency || 0), 0) / departments.length;
-                
-                stats.innerHTML = `
-                    <div style="margin-bottom:12px;">
-                        <strong>📊 Resumo Geral:</strong><br>
-                        • Total de Departamentos: ${departments.length}<br>
-                        • Total de Metas: ${totalMeta.toFixed(0)}<br>
-                        • Total Realizado: ${totalRealizado.toFixed(0)}<br>
-                        • Eficiência Média: ${avgEfficiency.toFixed(1)}%
-                    </div>
-                    <div style="margin-bottom:12px;">
-                        <strong>🎯 Performance:</strong><br>
-                        • Melhor Dept.: ${departments.length > 0 ? departments.reduce((best, curr) => curr.efficiency > best.efficiency ? curr : best).department : 'N/A'}<br>
-                        • Pior Dept.: ${departments.length > 0 ? departments.reduce((worst, curr) => curr.efficiency < worst.efficiency ? curr : worst).department : 'N/A'}<br>
-                        • Variação: ${departments.length > 0 ? (Math.max(...departments.map(d => d.efficiency)) - Math.min(...departments.map(d => d.efficiency))).toFixed(1) : 0}%
-                    </div>
-                `;
-            }
-        }
+        // Todas as funções dos indicadores foram removidas - funcionalidade descontinuada
         
         function refreshIndicadores() {
-            console.log('🔄 Atualizando indicadores...');
-            loadIndicadores();
+            console.log('⚠️ Função removida - funcionalidade de indicadores descontinuada');
         }
         
         function exportIndicadoresCSV() {
-            if (!indicadoresData) {
-                alert('Dados não carregados ainda. Tente novamente em alguns segundos.');
-                return;
-            }
-            
-            const departments = indicadoresData.departments || [];
-            let csv = 'Departamento,Meta,Realizado,Eficiencia\n';
-            
-            departments.forEach(dept => {
-                csv += `${dept.department},${dept.meta},${dept.realizado},${(dept.efficiency || 0).toFixed(2)}%\n`;
-            });
-            
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'indicadores_rncs.csv';
-            a.click();
-            window.URL.revokeObjectURL(url);
+            console.log('⚠️ Função removida - funcionalidade de indicadores descontinuada');
         }
         
         // ================== FUNÇÕES DA ABA EVIDÊNCIAS ==================
@@ -6372,34 +6037,39 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
         function loadEvidencias() {
             console.log('📊 Carregando evidências mensais...');
             
-            // Buscar dados das RNCs de Engenharia para calcular percentuais
-            {% if user_permissions.canViewEngineeringRncs %}
-            if (!rncsData || !rncsData.engenharia) {
+            // Buscar dados das RNCs finalizadas para calcular percentuais
+            // Tentar primeiro dados de engenharia, depois finalizadas, depois todas
+            let sourceData = [];
+            
+            // CORREÇÃO CRÍTICA: Usar TODAS as RNCs finalizadas (3694), não apenas engenharia (2763)
+            if (rncsData && rncsData.finalized && rncsData.finalized.length > 0) {
+                sourceData = rncsData.finalized;
+                console.log('✅ Usando TODAS as RNCs Finalizadas para Evidências:', sourceData.length);
+            } else if (rncsData && rncsData.engenharia && rncsData.engenharia.length > 0) {
+                sourceData = rncsData.engenharia;
+                console.log('⚠️ Fallback: Usando apenas dados de Engenharia:', sourceData.length);
+            } else if (rncsData && rncsData.active && rncsData.active.length > 0) {
+                sourceData = rncsData.active;
+                console.log('⚠️ Fallback: Usando dados de RNCs Ativas:', sourceData.length);
+            } else {
                 console.log('⏳ Aguardando dados de RNCs...');
-                // Se não há dados ainda, aguardar um pouco e tentar novamente
                 setTimeout(loadEvidencias, 1000);
                 return;
             }
-            {% else %}
-            // Usuário não tem permissão para visualizar dados de engenharia
-            console.log('❌ Usuário não tem permissão para visualizar dados de engenharia');
-            return;
-            {% endif %}
             
             try {
-                {% if user_permissions.canViewEngineeringRncs %}
-                const engineeringRncs = rncsData.engenharia || [];
-                {% else %}
-                const engineeringRncs = [];
-                {% endif %}
-                console.log(`📊 Processando ${engineeringRncs.length} RNCs de Engenharia`);
+                const allRncs = sourceData;
+                console.log(`📊 Processando ${allRncs.length} RNCs para Evidências`);
                 
                 // Agrupar por mês/ano e responsável usando finalized_at
                 const byMonth = {};
                 const byResponsible = {};
-                const meta = 30; // Meta mensal
                 
-                engineeringRncs.forEach(rnc => {
+                // CORREÇÃO: Meta dinâmica baseada no histórico real
+                const meta = Math.max(30, Math.ceil(allRncs.length / 12)); // Mínimo 30 ou média mensal
+                console.log(`📊 Meta calculada: ${meta} RNCs/mês (total: ${allRncs.length} RNCs)`)
+                
+                allRncs.forEach(rnc => {
                     const date = rnc.finalized_at || rnc.created_at || rnc.updated_at;
                     if (!date) return;
                     
@@ -6407,7 +6077,8 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
                     if (isNaN(d)) return;
                     
                     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-                    const responsible = rnc.assigned_user_name || rnc.user_name || 'Não Informado';
+                    // CORRIGIDO: Usar o campo 'responsavel' da RNC que contém o nome do responsável
+                    const responsible = rnc.responsavel || rnc.assigned_user_name || rnc.user_name || 'Não Informado';
                     
                     // Agrupar por mês
                     if (!byMonth[key]) {
@@ -6510,17 +6181,63 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
                 return;
             }
             
-            // Criar cabeçalho da tabela
+            // Atualizar contador
+            const countEl = document.getElementById('evidenciasTableCount');
+            if (countEl) {
+                countEl.textContent = `${filteredData.length} ${filteredData.length === 1 ? 'mês' : 'meses'}`;
+            }
+            
+            // Calcular estatísticas
+            let totalRNCs = 0;
+            let totalMeta = 0;
+            let acima = 0;
+            let adequado = 0;
+            let abaixo = 0;
+            
+            filteredData.forEach(item => {
+                totalRNCs += item.count || 0;
+                totalMeta += item.meta || 0;
+                if (item.status === 'acima') acima++;
+                else if (item.status === 'adequado') adequado++;
+                else if (item.status === 'abaixo') abaixo++;
+            });
+            
+            const mediaPercentual = filteredData.length > 0 ? Math.round(filteredData.reduce((sum, item) => sum + (item.percentage || 0), 0) / filteredData.length) : 0;
+            
+            // Atualizar cards de estatísticas
+            const statsEl = document.getElementById('evidenciasStats');
+            if (statsEl) {
+                statsEl.innerHTML = `
+                    <div style="background:rgba(255,255,255,0.15); backdrop-filter:blur(10px); border-radius:8px; padding:12px; border:1px solid rgba(255,255,255,0.2);">
+                        <div style="font-size:11px; opacity:0.85; margin-bottom:4px;">Total RNCs</div>
+                        <div style="font-size:24px; font-weight:700;">${totalRNCs}</div>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.15); backdrop-filter:blur(10px); border-radius:8px; padding:12px; border:1px solid rgba(255,255,255,0.2);">
+                        <div style="font-size:11px; opacity:0.85; margin-bottom:4px;">Meta Total</div>
+                        <div style="font-size:24px; font-weight:700;">${totalMeta}</div>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.15); backdrop-filter:blur(10px); border-radius:8px; padding:12px; border:1px solid rgba(255,255,255,0.2);">
+                        <div style="font-size:11px; opacity:0.85; margin-bottom:4px;">Média %</div>
+                        <div style="font-size:24px; font-weight:700;">${mediaPercentual}%</div>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.15); backdrop-filter:blur(10px); border-radius:8px; padding:12px; border:1px solid rgba(255,255,255,0.2);">
+                        <div style="font-size:11px; opacity:0.85; margin-bottom:4px;">🟢 Acima</div>
+                        <div style="font-size:20px; font-weight:700;">${acima} <span style="font-size:12px; opacity:0.8;">| 🟡 ${adequado} | 🔴 ${abaixo}</span></div>
+                    </div>
+                `;
+            }
+            
+            // Criar cabeçalho da tabela (moderna e compacta)
             let html = `
-                <table style="width:100%; border-collapse:collapse; font-size:13px;">
+                <table style="width:100%; border-collapse:collapse; font-size:11px; border-radius:6px; overflow:hidden;">
                     <thead>
-                        <tr style="background:#f8f9fa; border-bottom:2px solid #dee2e6;">
-                            <th style="padding:12px 8px; text-align:left; border:1px solid #dee2e6;">Mês</th>
-                            <th style="padding:12px 8px; text-align:center; border:1px solid #dee2e6;">RNCs</th>
-                            <th style="padding:12px 8px; text-align:center; border:1px solid #dee2e6;">Meta</th>
-                            <th style="padding:12px 8px; text-align:center; border:1px solid #dee2e6;">Percentual</th>
-                            <th style="padding:12px 8px; text-align:center; border:1px solid #dee2e6;">Status</th>
-                            <th style="padding:12px 8px; text-align:left; border:1px solid #dee2e6;">Responsáveis</th>
+                        <tr style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); color:white;">
+                            <th style="padding:10px 8px; text-align:left; border:none; font-size:11px; font-weight:600;">Mês</th>
+                            <th style="padding:10px 8px; text-align:center; border:none; font-size:11px; font-weight:600;">RNCs</th>
+                            <th style="padding:10px 8px; text-align:center; border:none; font-size:11px; font-weight:600;">Meta</th>
+                            <th style="padding:10px 8px; text-align:center; border:none; font-size:11px; font-weight:600;">%</th>
+                            <th style="padding:10px 8px; text-align:center; border:none; font-size:11px; font-weight:600;">Status</th>
+                            <th style="padding:10px 8px; text-align:left; border:none; font-size:11px; font-weight:600;">Responsáveis</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -6544,31 +6261,51 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
                     responsiblesStr = 'Não informado';
                 }
                 
+                const rowIndex = filteredData.indexOf(item);
+                const isEven = rowIndex % 2 === 0;
+                const rowBg = isEven ? '#ffffff' : '#f8f9fa';
+                
                 html += `
-                    <tr style="border-bottom:1px solid #dee2e6;">
-                        <td style="padding:10px 8px; border:1px solid #dee2e6; font-weight:500;">
+                    <tr style="background:${rowBg}; transition:all 0.2s;" onmouseover="this.style.background='#e7f3ff'" onmouseout="this.style.background='${rowBg}'">
+                        <td style="padding:8px 10px; border:none; border-bottom:1px solid #e9ecef; font-weight:600; font-size:11px; color:#2c3e50;">
                             ${item.monthName} ${item.year}
                         </td>
-                        <td style="padding:10px 8px; text-align:center; border:1px solid #dee2e6;">
+                        <td style="padding:8px 10px; text-align:center; border:none; border-bottom:1px solid #e9ecef; font-size:11px; font-weight:600; color:#495057;">
                             ${item.count}
                         </td>
-                        <td style="padding:10px 8px; text-align:center; border:1px solid #dee2e6;">
+                        <td style="padding:8px 10px; text-align:center; border:none; border-bottom:1px solid #e9ecef; font-size:11px; color:#6c757d;">
                             ${item.meta}
                         </td>
-                        <td style="padding:10px 8px; text-align:center; border:1px solid #dee2e6; background:${bgColor}; color:${textColor}; font-weight:600;">
-                            ${item.percentage}%
+                        <td style="padding:8px 10px; text-align:center; border:none; border-bottom:1px solid #e9ecef;">
+                            <span style="display:inline-block; padding:4px 10px; border-radius:12px; background:${bgColor}; color:${textColor}; font-weight:700; font-size:11px;">
+                                ${item.percentage}%
+                            </span>
                         </td>
-                        <td style="padding:10px 8px; text-align:center; border:1px solid #dee2e6; color:${textColor};">
-                            ${item.status === 'acima' ? '🟢 Acima' : item.status === 'adequado' ? '🟡 Adequado' : '🔴 Abaixo'}
+                        <td style="padding:8px 10px; text-align:center; border:none; border-bottom:1px solid #e9ecef; font-size:16px;">
+                            ${item.status === 'acima' ? '🟢' : item.status === 'adequado' ? '🟡' : '🔴'}
                         </td>
-                        <td style="padding:10px 8px; border:1px solid #dee2e6; font-size:12px; line-height:1.4;">
+                        <td style="padding:8px 10px; border:none; border-bottom:1px solid #e9ecef; font-size:10px; line-height:1.5; color:#495057;">
                             ${responsiblesStr}
                         </td>
                     </tr>
                 `;
             });
             
-            html += '</tbody></table>';
+            // Adicionar rodapé com totais
+            html += `
+                    </tbody>
+                    <tfoot>
+                        <tr style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); color:white; font-weight:700;">
+                            <td style="padding:10px 10px; border:none; font-size:12px;">TOTAL</td>
+                            <td style="padding:10px 10px; text-align:center; border:none; font-size:12px;">${totalRNCs}</td>
+                            <td style="padding:10px 10px; text-align:center; border:none; font-size:12px;">${totalMeta}</td>
+                            <td style="padding:10px 10px; text-align:center; border:none; font-size:12px;">${mediaPercentual}%</td>
+                            <td style="padding:10px 10px; text-align:center; border:none; font-size:11px;">🟢${acima} 🟡${adequado} 🔴${abaixo}</td>
+                            <td style="padding:10px 10px; border:none; font-size:11px;">${filteredData.length} ${filteredData.length === 1 ? 'mês' : 'meses'} analisados</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            `;
             container.innerHTML = html;
         }
         
@@ -6776,6 +6513,244 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
             a.download = `evidencias_rnc_${yearFilter || 'todos_anos'}.csv`;
             a.click();
             window.URL.revokeObjectURL(url);
+        }
+        
+        function printEvidencias() {
+            // Salvar estado atual da página
+            const originalTitle = document.title;
+            const yearFilter = document.getElementById('evidenciasYearSelect')?.value;
+            
+            // Definir título para impressão
+            document.title = `Evidências RNC ${yearFilter || 'Todos os Anos'}`;
+            
+            // Aplicar estilos de impressão
+            const printStyles = document.createElement('style');
+            printStyles.id = 'evidencias-print-styles';
+            printStyles.textContent = `
+                @media print {
+                    body * {
+                        visibility: hidden;
+                    }
+                    
+                    #evidenciasContainer,
+                    #evidenciasContainer * {
+                        visibility: visible;
+                    }
+                    
+                    #evidenciasContainer {
+                        position: absolute;
+                        left: 0;
+                        top: 0;
+                        width: 100%;
+                        padding: 5px;
+                        background: white;
+                        max-width: 190mm; /* Largura A4 retrato */
+                    }
+                    
+                    .no-print {
+                        display: none !important;
+                    }
+                    
+                    .charts-header {
+                        margin-bottom: 5px;
+                        page-break-after: avoid;
+                    }
+                    
+                    .charts-header h3 {
+                        font-size: 14px !important;
+                        margin: 0 !important;
+                        padding: 4px 0 !important;
+                    }
+                    
+                    /* Mostrar cabeçalho com gradiente na impressão */
+                    #evidenciasContainer > div:first-child {
+                        display: block !important;
+                        visibility: visible !important;
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                        page-break-after: avoid;
+                        margin-bottom: 8px !important;
+                        padding: 10px !important;
+                    }
+                    
+                    #evidenciasStats {
+                        display: grid !important;
+                        grid-template-columns: repeat(4, 1fr) !important;
+                        gap: 6px !important;
+                        margin-top: 8px !important;
+                    }
+                    
+                    #evidenciasStats > div {
+                        font-size: 7px !important;
+                        padding: 4px !important;
+                        background: rgba(255,255,255,0.2) !important;
+                        border: 1px solid rgba(255,255,255,0.3) !important;
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                    }
+                    
+                    #evidenciasStats > div > div:first-child {
+                        font-size: 6px !important;
+                    }
+                    
+                    #evidenciasStats > div > div:last-child {
+                        font-size: 14px !important;
+                    }
+                    
+                    #evidenciasTable {
+                        page-break-inside: auto;
+                        box-shadow: none !important;
+                        padding: 4px !important;
+                        margin: 0 !important;
+                        border-radius: 0 !important;
+                    }
+                    
+                    #evidenciasTable h4 {
+                        font-size: 10px !important;
+                        margin: 0 0 4px 0 !important;
+                        padding: 0 !important;
+                    }
+                    
+                    #evidenciasTableCount {
+                        font-size: 8px !important;
+                        padding: 2px 6px !important;
+                    }
+                    
+                    #evidenciasTable table {
+                        font-size: 7px !important;
+                        width: 100%;
+                        border-collapse: collapse;
+                        page-break-inside: auto;
+                    }
+                    
+                    #evidenciasTable thead {
+                        display: table-header-group;
+                    }
+                    
+                    #evidenciasTable tbody tr {
+                        page-break-inside: avoid;
+                        page-break-after: auto;
+                    }
+                    
+                    #evidenciasTable thead tr {
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                        color: white !important;
+                    }
+                    
+                    #evidenciasTable th {
+                        padding: 4px 3px !important;
+                        border: none !important;
+                        font-size: 7px !important;
+                        font-weight: bold !important;
+                        line-height: 1.1 !important;
+                        color: white !important;
+                    }
+                    
+                    #evidenciasTable tbody tr:nth-child(even) {
+                        background: #f8f9fa !important;
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                    }
+                    
+                    #evidenciasTable tbody tr:nth-child(odd) {
+                        background: #ffffff !important;
+                    }
+                    
+                    #evidenciasTable td {
+                        padding: 3px 3px !important;
+                        border: none !important;
+                        border-bottom: 0.5px solid #e9ecef !important;
+                        font-size: 6px !important;
+                        line-height: 1.2 !important;
+                        vertical-align: top !important;
+                    }
+                    
+                    #evidenciasTable td span {
+                        padding: 2px 6px !important;
+                        border-radius: 8px !important;
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                    }
+                    
+                    #evidenciasTable tfoot tr {
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                        color: white !important;
+                    }
+                    
+                    #evidenciasTable tfoot td {
+                        border: none !important;
+                        padding: 4px 3px !important;
+                        font-size: 7px !important;
+                        color: white !important;
+                    }
+                    
+                    /* Ajustar larguras das colunas */
+                    #evidenciasTable td:nth-child(1) { width: 12%; } /* Mês */
+                    #evidenciasTable td:nth-child(2) { width: 8%; }  /* RNCs */
+                    #evidenciasTable td:nth-child(3) { width: 8%; }  /* Meta */
+                    #evidenciasTable td:nth-child(4) { width: 10%; } /* % */
+                    #evidenciasTable td:nth-child(5) { width: 8%; }  /* Status */
+                    #evidenciasTable td:nth-child(6) { width: 54%; } /* Responsáveis */
+                    
+                    /* Resumo por responsável - compacto */
+                    #responsiblesSummary {
+                        margin-top: 8px !important;
+                        page-break-before: auto;
+                    }
+                    
+                    #responsiblesSummary h4 {
+                        font-size: 10px !important;
+                        margin: 4px 0 !important;
+                    }
+                    
+                    #responsiblesSummary .responsible-cards {
+                        display: grid !important;
+                        grid-template-columns: repeat(4, 1fr) !important;
+                        gap: 4px !important;
+                    }
+                    
+                    #responsiblesSummary .responsible-card {
+                        padding: 3px 4px !important;
+                        border: 0.5px solid #999 !important;
+                        border-radius: 2px !important;
+                        font-size: 7px !important;
+                        background: #fafafa !important;
+                    }
+                    
+                    #responsiblesSummary .responsible-card h5 {
+                        font-size: 8px !important;
+                        margin: 0 0 2px 0 !important;
+                    }
+                    
+                    #responsiblesSummary .responsible-card p {
+                        font-size: 9px !important;
+                        margin: 0 !important;
+                    }
+                    
+                    @page {
+                        size: A4 portrait;
+                        margin: 10mm 8mm;
+                    }
+                }
+            `;
+            document.head.appendChild(printStyles);
+            
+            // Aguardar um pouco e imprimir
+            setTimeout(() => {
+                window.print();
+                
+                // Remover estilos de impressão e restaurar título
+                setTimeout(() => {
+                    const styleEl = document.getElementById('evidencias-print-styles');
+                    if (styleEl) styleEl.remove();
+                    document.title = originalTitle;
+                }, 500);
+            }, 300);
         }
         
         function loadLev1415(){
@@ -10517,84 +10492,355 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
         if (typeof buildEngineeringCharts === 'undefined') {
             var engMonthlyChartInstance = null;
             var engAccumChartInstance = null;
-            function buildEngineeringCharts(rncs){
+            function buildEngineeringCharts(apiData){
                 try {
-                    const container = document.getElementById('engenhariaCharts');
-                    if (!container) return;
-                    if (currentTab !== 'engenharia') return; // evita construir fora da aba
+                    console.log('🔧 [DEBUG] buildEngineeringCharts chamado com:', apiData);
+                    console.log('🔧 [DEBUG] currentTab:', currentTab);
+                    
+                    // CORRIGIDO: Usar container de setores que existe no HTML
+                    const container = document.getElementById('setoresCharts');
+                    if (!container) {
+                        console.log('⚠️ Container setoresCharts não encontrado, gráficos não serão exibidos');
+                        return;
+                    }
+                    
                     container.style.display = 'block';
-                    const byMonth = {};
-                    // Agregar SOMENTE pela data de finalização para evitar inflar meses por data de criação/importação
-                    (rncs||[]).forEach(r => {
-                        const raw = r.finalized_at; // usar finalized_at apenas
-                        if(!raw) return; const d = new Date(raw); if(isNaN(d)) return;
-                        const k = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
-                        byMonth[k] = (byMonth[k]||0)+1;
-                    });
-                    // Exibir todos os meses (anos completos) sem limitação
-                    const months = Object.keys(byMonth).sort();
-                    if (!months.length) return;
-                    const shortNames = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
-                    const labels = months.map(m=> shortNames[parseInt(m.split('-')[1])-1]);
-                    const values = months.map(m=> byMonth[m]);
-                    // Detectar outliers (ex: > 3x mediana) e logar para investigação
-                    const sortedVals = [...values].sort((a,b)=>a-b);
-                    const mid = Math.floor(sortedVals.length/2);
-                    const median = sortedVals.length ? (sortedVals.length%2? sortedVals[mid] : (sortedVals[mid-1]+sortedVals[mid])/2) : 0;
-                    values.forEach((v,i)=>{ if(median>0 && v > median*3){ console.warn(`[ENG] Possível outlier no mês ${months[i]}: ${v} (mediana ${median})`); } });
-                    const cumulative = values.reduce((a,v,i)=>{ a.push((a[i-1]||0)+v); return a; },[]);
-                    const goal = 30; const goalArr = values.map(()=>goal); const goalAccum = values.map((_,i)=>goal*(i+1));
-                    // Popular select de meses se ainda não
-                    const sel = document.getElementById('engineeringMonthSelect');
-                    if (sel && sel.options.length <= 1) {
-                        months.forEach((m,idx)=>{
-                            const opt = document.createElement('option');
-                            opt.value = m; opt.textContent = labels[idx] + ' ' + m.split('-')[0];
-                            sel.appendChild(opt);
+                    console.log('✅ Container de gráficos encontrado e exibido');
+                    
+                    console.log('🔧 Construindo gráficos da engenharia com dados da API:', apiData);
+                    
+                    // Verificar se temos dados da API ou dados RNC tradicional
+                    if (apiData && apiData.monthly_trend && apiData.stats) {
+                        // Usar dados da API específica
+                        console.log('📊 Usando dados estruturados da API');
+                        const { monthly_trend, stats } = apiData;
+                        
+                        const months = monthly_trend.map(item => item.month);
+                        const shortNames = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+                        const labels = monthly_trend.map(item => {
+                            const [year, month] = item.month.split('-');
+                            return shortNames[parseInt(month)-1] + '/' + year.slice(-2);
                         });
-                    }
-                    // Guardar dataset bruto para filtros
-                    window._engDataCache = { months, labels, values, cumulative, goal, goalArr, goalAccum };
-                    const c1 = document.getElementById('engineeringMonthlyChart');
-                    if (c1) {
-                        if (engMonthlyChartInstance) engMonthlyChartInstance.destroy();
-                        engMonthlyChartInstance = new Chart(c1.getContext('2d'), {
-                            type:'bar',
-                            data:{ labels, datasets:[
-                                { label:'Realizado', data:values, backgroundColor:'#2b6cb0', borderRadius:4 },
-                                { label:'Meta 30', data:goalArr, type:'line', borderColor:'#28a745', borderWidth:2, pointRadius:0, tension:0, fill:false },
-                                { label:'Acumulado', data:cumulative, type:'line', borderColor:'#0d6efd', backgroundColor:'rgba(13,110,253,0.15)', borderWidth:2, tension:.25, yAxisID:'y2' }
-                            ]},
-                            options:{ responsive:true, interaction:{mode:'index', intersect:false}, stacked:false,
-                                scales:{ y:{ beginAtZero:true, title:{display:true,text:'RNCs / Meta'} }, y2:{ beginAtZero:true, position:'right', grid:{drawOnChartArea:false}, title:{display:true,text:'Acumulado'} } },
-                                plugins:{ legend:{ position:'top' } }
+                        const values = monthly_trend.map(item => item.count);
+                        const cumulative = monthly_trend.map(item => item.accumulated_count);
+                        
+                        // Informações estatísticas
+                        const totalCount = stats.total_rncs || 0;
+                        const finalizedCount = stats.finalized_rncs || 0;
+                        const totalValue = stats.total_value || 0;
+                        
+                        console.log(`📈 Total RNCs: ${totalCount}, Finalizadas: ${finalizedCount}, Valor Total: R$ ${totalValue.toLocaleString()}`);
+                        
+                        const goal = 30; 
+                        const goalArr = values.map(() => goal);
+                        
+                        // Popular select de meses se ainda não
+                        const sel = document.getElementById('engineeringMonthSelect');
+                        if (sel && sel.options.length <= 1) {
+                            months.forEach((m,idx) => {
+                                const opt = document.createElement('option');
+                                opt.value = m; 
+                                opt.textContent = labels[idx];
+                                sel.appendChild(opt);
+                            });
+                        }
+                        
+                        // Guardar dataset para filtros
+                        window._engDataCache = { months, labels, values, cumulative, goal, goalArr };
+                        
+                        // Sanitizar dados para prevenir Infinity/NaN
+                        const sanitizeValues = values.map(v => {
+                            const num = Number(v);
+                            return (isFinite(num) && !isNaN(num)) ? Math.max(0, num) : 0;
+                        });
+                        const sanitizeCumulative = cumulative.map(v => {
+                            const num = Number(v);
+                            return (isFinite(num) && !isNaN(num)) ? Math.max(0, num) : 0;
+                        });
+                        const sanitizeGoalArr = goalArr.map(v => {
+                            const num = Number(v);
+                            return (isFinite(num) && !isNaN(num)) ? Math.max(0, num) : 0;
+                        });
+                        
+                        // Calcular escalas máximas inteligentes
+                        const allValuesY = [...sanitizeValues, ...sanitizeGoalArr].filter(v => v > 0);
+                        const maxValueY = allValuesY.length > 0 ? Math.max(...allValuesY) : 50;
+                        const suggestedMaxY = Math.ceil(maxValueY * 1.15);
+                        
+                        const allValuesY2 = sanitizeCumulative.filter(v => v > 0);
+                        const maxValueY2 = allValuesY2.length > 0 ? Math.max(...allValuesY2) : 100;
+                        const suggestedMaxY2 = Math.ceil(maxValueY2 * 1.15);
+                        
+                        // Gráfico mensal - CORRIGIDO: usar canvas que existe
+                        const c1 = document.getElementById('setorMonthlyChart');
+                        console.log('📊 [DEBUG] Canvas setorMonthlyChart:', c1);
+                        if (c1) {
+                            console.log('✅ Canvas encontrado, criando gráfico mensal...');
+                            // Definir altura fixa para evitar gráfico gigante
+                            c1.style.height = '170px';
+                            c1.style.maxHeight = '170px';
+                            c1.parentElement.style.height = '170px';
+                            c1.parentElement.style.maxHeight = '170px';
+                            if (engMonthlyChartInstance) {
+                                console.log('🗑️ Destruindo gráfico anterior...');
+                                engMonthlyChartInstance.destroy();
                             }
+                            engMonthlyChartInstance = new Chart(c1.getContext('2d'), {
+                                type:'bar',
+                                data:{ 
+                                    labels, 
+                                    datasets:[
+                                        { 
+                                            label:'RNCs Finalizadas', 
+                                            data:sanitizeValues, 
+                                            backgroundColor:'#2b6cb0', 
+                                            borderRadius:4 
+                                        },
+                                        { 
+                                            label:'Meta 30', 
+                                            data:sanitizeGoalArr, 
+                                            type:'line', 
+                                            borderColor:'#28a745', 
+                                            borderWidth:2, 
+                                            pointRadius:0, 
+                                            tension:0, 
+                                            fill:false 
+                                        },
+                                        { 
+                                            label:'Acumulado', 
+                                            data:sanitizeCumulative, 
+                                            type:'line', 
+                                            borderColor:'#0d6efd', 
+                                            backgroundColor:'rgba(13,110,253,0.15)', 
+                                            borderWidth:2, 
+                                            tension:.25, 
+                                            yAxisID:'y2' 
+                                        }
+                                    ]
+                                },
+                                options:{ 
+                                    responsive:true,
+                                    maintainAspectRatio:false,
+                                    interaction:{mode:'index', intersect:false}, 
+                                    stacked:false,
+                                    scales:{ 
+                                        y:{ 
+                                            beginAtZero:true, 
+                                            suggestedMax: suggestedMaxY,
+                                            title:{display:true,text:'RNCs / Meta'},
+                                            ticks: {
+                                                callback: function(value) {
+                                                    return isFinite(value) ? value : 0;
+                                                }
+                                            }
+                                        }, 
+                                        y2:{ 
+                                            beginAtZero:true, 
+                                            suggestedMax: suggestedMaxY2,
+                                            position:'right', 
+                                            grid:{drawOnChartArea:false}, 
+                                            title:{display:true,text:'Acumulado'},
+                                            ticks: {
+                                                callback: function(value) {
+                                                    return isFinite(value) ? value : 0;
+                                                }
+                                            }
+                                        } 
+                                    },
+                                    plugins:{ 
+                                        legend:{ position:'top' },
+                                        tooltip: {
+                                            callbacks: {
+                                                label: function(context) {
+                                                    const value = context.parsed.y;
+                                                    return `${context.dataset.label}: ${isFinite(value) ? value : 0}`;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                        
+                        // Gráfico acumulado - ÚLTIMOS 12 MESES
+                        // CORRIGIDO: Mostrar apenas últimos 12 meses para evitar valores gigantes
+                        const last12Months = monthly_trend.slice(-12);
+                        
+                        // Recalcular acumulado começando do zero para os últimos 12 meses
+                        let accumCount = 0;
+                        const last12Data = last12Months.map((item, idx) => {
+                            accumCount += item.count;
+                            return {
+                                year: item.month.split('-')[0],
+                                month: item.month,
+                                count: item.count,
+                                accumulated: accumCount
+                            };
                         });
-                    }
-                    // ================= ANUALIZAÇÃO DO GRÁFICO ACUMULADO =================
-                    // Agrupar por ano para o gráfico acumulado anual
-                    const byYear = {};
-                    months.forEach((m,i)=>{ const y = m.split('-')[0]; byYear[y] = (byYear[y]||0) + values[i]; });
-                    const years = Object.keys(byYear).sort();
-                    const yearValues = years.map(y=>byYear[y]);
-                    const yearCumulative = yearValues.reduce((a,v,i)=>{ a.push((a[i-1]||0)+v); return a; },[]);
-                    // Meta anual: número de meses existentes naquele ano * goal (respeita anos parciais)
-                    const metaYearValues = years.map(y=> months.filter(m=>m.startsWith(y+'-')).length * goal);
-                    const yearGoalAccum = metaYearValues.reduce((a,v,i)=>{ a.push((a[i-1]||0)+v); return a; },[]);
-                    const c2 = document.getElementById('engineeringAccumChart');
-                    if (c2){
-                        if (engAccumChartInstance) engAccumChartInstance.destroy();
-                        engAccumChartInstance = new Chart(c2.getContext('2d'), {
-                            type:'line',
-                            data:{ labels: years, datasets:[
-                                { label:'Acumulado (Ano)', data:yearCumulative, borderColor:'#0d6efd', backgroundColor:'rgba(13,110,253,0.15)', borderWidth:3, tension:.25, fill:true },
-                                { label:'Meta Acum. (Ano)', data:yearGoalAccum, borderColor:'#28a745', borderDash:[6,4], borderWidth:2, pointRadius:0, tension:0, fill:false }
-                            ]},
-                            options:{ responsive:true, scales:{ y:{ beginAtZero:true } }, plugins:{ legend:{ position:'top' } } }
+                        
+                        // Agrupar por ano (dos últimos 12 meses)
+                        const byYear = {};
+                        last12Data.forEach(item => {
+                            if (!byYear[item.year]) {
+                                byYear[item.year] = {
+                                    count: 0,
+                                    accumulated: 0
+                                };
+                            }
+                            byYear[item.year].count += item.count;
+                            byYear[item.year].accumulated = item.accumulated; // último valor do ano
                         });
+                        
+                        const years = Object.keys(byYear).sort();
+                        const yearCumulative = years.map(y => byYear[y].accumulated);
+                        
+                        // Meta acumulada para os últimos 12 meses
+                        const yearGoalAccum = years.map((y, idx) => {
+                            // Contar quantos meses temos até este ano (nos últimos 12 meses)
+                            let monthsUntilYear = 0;
+                            for (let i = 0; i <= idx; i++) {
+                                const yearKey = years[i];
+                                monthsUntilYear += last12Data.filter(d => d.year === yearKey).length;
+                            }
+                            return monthsUntilYear * goal;
+                        });
+                        
+                        // Sanitizar dados acumulados anuais
+                        const sanitizeYearCumulative = yearCumulative.map(v => {
+                            const num = Number(v);
+                            return (isFinite(num) && !isNaN(num)) ? Math.max(0, num) : 0;
+                        });
+                        const sanitizeYearGoalAccum = yearGoalAccum.map(v => {
+                            const num = Number(v);
+                            return (isFinite(num) && !isNaN(num)) ? Math.max(0, num) : 0;
+                        });
+                        
+                        // Calcular escala máxima para gráfico anual
+                        const allYearValues = [...sanitizeYearCumulative, ...sanitizeYearGoalAccum].filter(v => v > 0);
+                        const maxYearValue = allYearValues.length > 0 ? Math.max(...allYearValues) : 100;
+                        const suggestedMaxYear = Math.ceil(maxYearValue * 1.15);
+                        
+                        // Gráfico acumulado - CORRIGIDO: usar canvas que existe
+                        const c2 = document.getElementById('setorAccumChart');
+                        console.log('📊 [DEBUG] Canvas setorAccumChart:', c2);
+                        if (c2){
+                            console.log('✅ Canvas acumulado encontrado, criando gráfico...');
+                            // Definir altura fixa para evitar gráfico gigante
+                            c2.style.height = '170px';
+                            c2.style.maxHeight = '170px';
+                            c2.parentElement.style.height = '170px';
+                            c2.parentElement.style.maxHeight = '170px';
+                            if (engAccumChartInstance) {
+                                console.log('🗑️ Destruindo gráfico acumulado anterior...');
+                                engAccumChartInstance.destroy();
+                            }
+                            engAccumChartInstance = new Chart(c2.getContext('2d'), {
+                                type:'line',
+                                data:{ 
+                                    labels: years, 
+                                    datasets:[
+                                        { 
+                                            label:'Acumulado (Ano)', 
+                                            data:sanitizeYearCumulative, 
+                                            borderColor:'#0d6efd', 
+                                            backgroundColor:'rgba(13,110,253,0.15)', 
+                                            borderWidth:3, 
+                                            tension:.25, 
+                                            fill:true 
+                                        },
+                                        { 
+                                            label:'Meta Acum. (Ano)', 
+                                            data:sanitizeYearGoalAccum, 
+                                            borderColor:'#28a745', 
+                                            borderDash:[6,4], 
+                                            borderWidth:2, 
+                                            pointRadius:0, 
+                                            tension:0, 
+                                            fill:false 
+                                        }
+                                    ]
+                                },
+                                options:{ 
+                                    responsive:true,
+                                    maintainAspectRatio:false,
+                                    scales:{ 
+                                        y:{ 
+                                            beginAtZero:true,
+                                            suggestedMax: suggestedMaxYear,
+                                            ticks: {
+                                                callback: function(value) {
+                                                    return isFinite(value) ? value : 0;
+                                                }
+                                            }
+                                        } 
+                                    }, 
+                                    plugins:{ 
+                                        legend:{ position:'top' },
+                                        tooltip: {
+                                            callbacks: {
+                                                label: function(context) {
+                                                    const value = context.parsed.y;
+                                                    return `${context.dataset.label}: ${isFinite(value) ? value : 0}`;
+                                                }
+                                            }
+                                        }
+                                    } 
+                                }
+                            });
+                            console.log('✅ Gráfico acumulado criado com sucesso!');
+                        }
+                        
+                        console.log('🎉 Gráficos de Engenharia construídos com sucesso!');
+                        
+                    } else {
+                        // Fallback para dados RNC tradicionais (se apiData for array de RNCs)
+                        console.log('📋 Usando dados RNC tradicionais como fallback');
+                        const rncs = Array.isArray(apiData) ? apiData : [];
+                        
+                        const byMonth = {};
+                        rncs.forEach(r => {
+                            const raw = r.finalized_at;
+                            if(!raw) return; 
+                            const d = new Date(raw); 
+                            if(isNaN(d)) return;
+                            const k = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+                            byMonth[k] = (byMonth[k]||0)+1;
+                        });
+                        
+                        const months = Object.keys(byMonth).sort();
+                        if (!months.length) {
+                            console.warn('⚠️ Nenhum dado de engenharia encontrado');
+                            return;
+                        }
+                        
+                        const shortNames = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+                        const labels = months.map(m=> shortNames[parseInt(m.split('-')[1])-1]);
+                        const values = months.map(m=> byMonth[m]);
+                        const cumulative = values.reduce((a,v,i)=>{ a.push((a[i-1]||0)+v); return a; },[]);
+                        const goal = 30; 
+                        const goalArr = values.map(()=>goal);
+                        
+                        window._engDataCache = { months, labels, values, cumulative, goal, goalArr };
+                        
+                        // Construir gráficos com dados tradicionais
+                        const c1 = document.getElementById('engineeringMonthlyChart');
+                        if (c1) {
+                            if (engMonthlyChartInstance) engMonthlyChartInstance.destroy();
+                            engMonthlyChartInstance = new Chart(c1.getContext('2d'), {
+                                type:'bar',
+                                data:{ labels, datasets:[
+                                    { label:'Realizado', data:values, backgroundColor:'#2b6cb0', borderRadius:4 },
+                                    { label:'Meta 30', data:goalArr, type:'line', borderColor:'#28a745', borderWidth:2, pointRadius:0, tension:0, fill:false }
+                                ]},
+                                options:{ responsive:true, scales:{ y:{ beginAtZero:true } }, plugins:{ legend:{ position:'top' } } }
+                            });
+                        }
                     }
+                    
                     updateEngineeringMonthInfo();
-                } catch(e){ console.error('Erro buildEngineeringCharts fallback', e); }
+                } catch(e){ 
+                    console.error('❌ Erro ao construir gráficos da engenharia:', e); 
+                }
             }
             function updateEngineeringMonth(){
                 if(!window._engDataCache) return; const sel=document.getElementById('engineeringMonthSelect'); if(!sel) return;
@@ -10666,6 +10912,497 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
                     const rv=document.getElementById('engInfoRealizadoVal'); if(rv) rv.textContent=total;
                     const vv=document.getElementById('engInfoVariacaoVal'); if(vv) vv.textContent= ((total-metaTotal)>=0?'+':'') + (total-metaTotal);
                 }
+            }
+        }
+        
+        // ================== FUNÇÕES PARA GRÁFICOS POR SETOR ==================
+        // REMOVIDO: variáveis locais, agora usando window.setorMonthlyChart e window.setorAccumChart
+        let setorMonthDetailChart = null;
+        
+        // Mapeamento de nome do setor para exibição
+        const setorNames = {
+            'engenharia': 'Engenharia',
+            'producao': 'Produção',
+            'pcp': 'PCP',
+            'qualidade': 'Qualidade',
+            'compras': 'Compras',
+            'comercial': 'Comercial',
+            'terceiros': 'Terceiros',
+            'usinagem_plana': 'Usinagem Plana',
+            'usin_cilindrica_cnc': 'Usin. Cilíndrica CNC',
+            'usin_cilindrica_convencional': 'Usin. Cilíndrica Convencional',
+            'caldeiraria_carbono': 'Caldeiraria de Carbono',
+            'caldeiraria_inox': 'Caldeiraria de Inox',
+            'corte': 'Corte',
+            'montagem': 'Montagem',
+            'pintura': 'Pintura',
+            'balanceamento': 'Balanceamento'
+        };
+        
+        // Mapeamento de metas por setor
+        const setorMetas = {
+            'engenharia': 30,
+            'producao': 50,
+            'pcp': 20,
+            'qualidade': 15,
+            'compras': 10,
+            'comercial': 10,
+            'terceiros': 25,
+            'usinagem_plana': 20,
+            'usin_cilindrica_cnc': 15,
+            'usin_cilindrica_convencional': 20,
+            'caldeiraria_carbono': 5,
+            'caldeiraria_inox': 2,
+            'corte': 3,
+            'montagem': 2,
+            'pintura': 1,
+            'balanceamento': 1
+        };
+        
+        async function loadSetorData() {
+            const select = document.getElementById('setorSelect');
+            const setor = select ? select.value : '';
+            
+            if (!setor) {
+                console.log('📊 Nenhum setor selecionado');
+                document.getElementById('setorIndicadorInfo').style.display = 'none';
+                document.getElementById('setorChartsContainer').style.display = 'none';
+                return;
+            }
+            
+            console.log(`📊 Carregando dados do setor: ${setor}`);
+            
+            // CRÍTICO: Limpar COMPLETAMENTE cache e gráficos anteriores para evitar acúmulo
+            console.log('🧹 Limpando cache e gráficos anteriores...');
+            window._setorDataCache = null;
+            if (window.setorMonthlyChart) {
+                try {
+                    window.setorMonthlyChart.destroy();
+                } catch (e) {
+                    console.warn('Erro ao destruir gráfico mensal:', e);
+                }
+                window.setorMonthlyChart = null;
+            }
+            if (window.setorAccumChart) {
+                try {
+                    window.setorAccumChart.destroy();
+                } catch (e) {
+                    console.warn('Erro ao destruir gráfico acumulado:', e);
+                }
+                window.setorAccumChart = null;
+            }
+            
+            try {
+                // Buscar dados do setor (usar a mesma API de engenharia como base)
+                let apiEndpoint = '';
+                if (setor === 'engenharia') {
+                    apiEndpoint = '/api/indicadores/engenharia';
+                } else {
+                    // Para outros setores, usar a API genérica com filtro
+                    apiEndpoint = `/api/indicadores/setor?setor=${setor}`;
+                }
+                
+                const response = await fetch(apiEndpoint);
+                const data = await response.json();
+                
+                if (data.success) {
+                    console.log(`✅ Dados do setor ${setor} carregados:`, data);
+                    
+                    // Atualizar informações do indicador
+                    document.getElementById('setorNome').textContent = setorNames[setor] || setor;
+                    document.getElementById('setorMeta').textContent = setorMetas[setor] || 30;
+                    document.getElementById('setorIndicadorInfo').style.display = 'flex';
+                    
+                    // Atualizar título
+                    const icon = document.querySelector(`#setorSelect option[value="${setor}"]`)?.text?.split(' ')[0] || '📊';
+                    document.getElementById('setorTitle').textContent = `${icon} ${setorNames[setor] || setor} – RNCs Mensais`;
+                    
+                    // Construir gráficos
+                    buildSetorCharts(data, setor);
+                    
+                    // Mostrar container de gráficos
+                    document.getElementById('setorChartsContainer').style.display = 'block';
+                } else {
+                    console.error('❌ Erro ao carregar dados do setor:', data.message);
+                    alert(`Erro ao carregar dados: ${data.message}`);
+                }
+            } catch (error) {
+                console.error('❌ Erro ao buscar dados do setor:', error);
+                alert('Erro ao carregar dados do setor. Tente novamente.');
+            }
+        }
+        
+        function buildSetorCharts(apiData, setor) {
+            try {
+                console.log('📊 Construindo gráficos para setor:', setor, apiData);
+                
+                const goal = setorMetas[setor] || 30;
+                const monthlyData = (apiData.monthly_trend || []).slice();
+                // Ordenar por chave YYYY-MM para garantir ordem crescente caso backend venha desordenado
+                monthlyData.sort((a,b)=> (a.month < b.month ? -1 : a.month > b.month ? 1 : 0));
+
+                // Processar dados mensais - USAR APENAS count (valores mensais), NUNCA accumulated_count
+                const months = monthlyData.map(m => m.month);
+                const values = monthlyData.map(m => {
+                    // IMPORTANTE: Usar apenas 'count' que são valores mensais, NÃO usar 'accumulated_count'
+                    const monthlyValue = m.count || 0;
+                    // Validar e sanitizar valor mensal (máximo razoável: 500 RNCs por mês)
+                    return Math.max(0, Math.min(monthlyValue, 500));
+                });
+                
+                // Recalcular acumulado SEMPRE do zero localmente (nunca confiar em accumulated_count da API)
+                let sumTmp = 0;
+                const cumulative = values.map(v => { 
+                    sumTmp += v; 
+                    // Validar acumulado (máximo razoável: 5000 RNCs total)
+                    return Math.min(sumTmp, 5000);
+                });
+                
+                const labels = months.map(m => {
+                    const [year, month] = m.split('-');
+                    const monthNames = ['', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+                    return `${monthNames[parseInt(month)]}/${year.slice(2)}`;
+                });
+                
+                // Sanitizar: garantir que não há NaN/Infinity/negativos
+                for(let i=0; i<values.length; i++) { 
+                    if(!Number.isFinite(values[i]) || values[i]<0) values[i]=0;
+                    if(!Number.isFinite(cumulative[i]) || cumulative[i]<0) cumulative[i]= (i>0?cumulative[i-1]:0)+values[i];
+                }
+                
+                // Log de validação
+                console.log('✅ Valores mensais sanitizados:', values);
+                console.log('✅ Acumulado recalculado:', cumulative);
+                
+                // Metas
+                const goalArr = new Array(months.length).fill(goal);
+                const goalAccum = goalArr.map((_, i) => goal * (i + 1));
+                
+                // Cache para uso posterior
+                window._setorDataCache = {
+                    setor,
+                    months,
+                    labels,
+                    values,
+                    cumulative,
+                    goal,
+                    goalArr,
+                    goalAccum,
+                    apiData
+                };
+                
+                // Atualizar informações
+                updateSetorInfo();
+                
+                // Construir gráfico mensal
+                buildSetorMonthlyChart(labels, values, goalArr, cumulative);
+                
+                // Construir gráfico acumulado
+                buildSetorAccumChart(labels, cumulative, goalAccum);
+                
+                // Popular dropdown de meses
+                const monthSelect = document.getElementById('setorMonthSelect');
+                if (monthSelect) {
+                    monthSelect.innerHTML = '<option value="">Todos</option>';
+                    labels.forEach((label, idx) => {
+                        monthSelect.innerHTML += `<option value="${idx}">${label}</option>`;
+                    });
+                }
+                
+            } catch (error) {
+                console.error('❌ Erro ao construir gráficos do setor:', error);
+            }
+        }
+        
+        function buildSetorMonthlyChart(labels, values, goalArr, cumulative) {
+            const ctx = document.getElementById('setorMonthlyChart');
+            if (!ctx) {
+                console.warn('⚠️ Canvas setorMonthlyChart não encontrado');
+                return;
+            }
+            
+            // Destruir gráfico anterior COMPLETAMENTE
+            if (window.setorMonthlyChart) {
+                try {
+                    window.setorMonthlyChart.destroy();
+                    window.setorMonthlyChart = null;
+                } catch (e) {
+                    console.warn('⚠️ Erro ao destruir gráfico:', e);
+                }
+            }
+            
+            // VALIDAÇÃO CRÍTICA: Sanitizar valores para prevenir crescimento exponencial
+            const sanitizedValues = values.map((v, idx) => {
+                const num = Number(v);
+                if (!isFinite(num) || num < 0 || num > 500) {
+                    console.warn(`⚠️ Valor mensal inválido no índice ${idx}:`, v, '-> corrigido para 0');
+                    return 0;
+                }
+                return num;
+            });
+            
+            const sanitizedGoals = goalArr.map(v => {
+                const num = Number(v);
+                return (isFinite(num) && num >= 0) ? num : 30;
+            });
+            
+            // Debug (desativável)
+            if(!window.DISABLE_SETOR_CHART_DEBUG){
+                console.debug('[SETOR MONTHLY] labels:', labels);
+                console.debug('[SETOR MONTHLY] values ORIGINAIS:', values);
+                console.debug('[SETOR MONTHLY] values SANITIZADOS:', sanitizedValues);
+                console.debug('[SETOR MONTHLY] cumulative:', cumulative);
+                console.debug('[SETOR MONTHLY] goalArr:', sanitizedGoals);
+            }
+            
+            // Usar valores sanitizados
+            window.setorMonthlyChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'RNCs Finalizadas',
+                            data: sanitizedValues,
+                            backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 2
+                        },
+                        {
+                            label: 'Meta',
+                            data: sanitizedGoals,
+                            type: 'line',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            borderWidth: 2,
+                            pointRadius: 4,
+                            fill: false
+                        },
+                        {
+                            label: 'Acumulado',
+                            data: cumulative,
+                            type: 'line',
+                            borderColor: 'rgba(153, 102, 255, 1)',
+                            backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                            borderWidth: 2,
+                            pointRadius: 4,
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: true, position: 'top' },
+                        tooltip: { enabled: true }
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: true, 
+                            title: { display: true, text: 'Quantidade' },
+                            // Limite mais rígido: máximo entre cumul+values com cap absoluto
+                            max: Math.min(Math.max(...cumulative, ...values, ...goalArr) * 1.2, 5000)
+                        }
+                    },
+                    onClick: (event, elements) => {
+                        if (elements.length > 0) {
+                            const idx = elements[0].index;
+                            updateSetorMonth(idx);
+                        }
+                    }
+                }
+            });
+        }
+        
+        function buildSetorAccumChart(labels, cumulative, goalAccum) {
+            const ctx = document.getElementById('setorAccumChart');
+            if (!ctx) return;
+            
+            if (window.setorAccumChart) {
+                window.setorAccumChart.destroy();
+            }
+            
+            // Sanitizar valores para prevenir Infinity/NaN
+            const sanitizeCumulative = (cumulative || []).map(v => {
+                const num = Number(v);
+                return (isFinite(num) && !isNaN(num)) ? Math.max(0, Math.min(num, 5000)) : 0;
+            });
+            
+            const sanitizeGoalAccum = (goalAccum || []).map(v => {
+                const num = Number(v);
+                return (isFinite(num) && !isNaN(num)) ? Math.max(0, num) : 0;
+            });
+            
+            // Calcular escala máxima inteligente
+            const allValues = [...sanitizeCumulative, ...sanitizeGoalAccum].filter(v => v > 0);
+            const maxValue = allValues.length > 0 ? Math.max(...allValues) : 10;
+            const suggestedMax = maxValue > 0 ? Math.ceil(maxValue * 1.15) : 10;
+            
+            window.setorAccumChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels || [],
+                    datasets: [
+                        {
+                            label: 'Acumulado Real',
+                            data: sanitizeCumulative,
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                            borderWidth: 3,
+                            pointRadius: 5,
+                            fill: true
+                        },
+                        {
+                            label: 'Meta Acumulada',
+                            data: sanitizeGoalAccum,
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            pointRadius: 4,
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: true, position: 'top' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.parsed.y;
+                                    return `${context.dataset.label}: ${isFinite(value) ? value : 0}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: true,
+                            max: Math.min(suggestedMax, 5000),
+                            suggestedMax: suggestedMax,
+                            ticks: {
+                                stepSize: Math.max(1, Math.ceil(suggestedMax / 10)),
+                                callback: function(value) {
+                                    return isFinite(value) ? value : 0;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function updateSetorMonth(monthIdx) {
+            if (!window._setorDataCache) return;
+            
+            const { months, labels, values, apiData } = window._setorDataCache;
+            const monthSelect = document.getElementById('setorMonthSelect');
+            if (monthSelect) {
+                monthSelect.value = monthIdx !== undefined ? monthIdx : '';
+            }
+            
+            if (monthIdx !== undefined) {
+                // Atualizar detalhe do mês
+                updateSetorMonthDetail(monthIdx);
+                updateSetorInfo(monthIdx);
+            } else {
+                // Visão geral
+                if (setorMonthDetailChart) {
+                    setorMonthDetailChart.destroy();
+                    setorMonthDetailChart = null;
+                }
+                document.getElementById('setorMonthInfo').innerHTML = '';
+                updateSetorInfo();
+            }
+        }
+        
+        function updateSetorMonthDetail(monthIdx) {
+            if (!window._setorDataCache) return;
+            
+            const { months, apiData } = window._setorDataCache;
+            const monthData = apiData.monthly_trend?.[monthIdx];
+            
+            if (!monthData || !monthData.daily_details) {
+                document.getElementById('setorMonthInfo').innerHTML = '<em>Sem detalhes diários para este mês.</em>';
+                return;
+            }
+            
+            // Preparar dados diários
+            const dailyLabels = monthData.daily_details.map(d => {
+                const day = d.day.toString().padStart(2, '0');
+                return `Dia ${day}`;
+            });
+            const dailyValues = monthData.daily_details.map(d => d.count);
+            
+            // Construir gráfico de detalhes diários
+            const ctx = document.getElementById('setorMonthDetailChart');
+            if (!ctx) return;
+            
+            if (setorMonthDetailChart) {
+                setorMonthDetailChart.destroy();
+            }
+            
+            setorMonthDetailChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: dailyLabels,
+                    datasets: [{
+                        label: 'RNCs por Dia',
+                        data: dailyValues,
+                        backgroundColor: 'rgba(255, 159, 64, 0.7)',
+                        borderColor: 'rgba(255, 159, 64, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                    }
+                }
+            });
+            
+            // Atualizar info
+            const totalDias = dailyValues.reduce((a, b) => a + b, 0);
+            document.getElementById('setorMonthInfo').innerHTML = `
+                <strong>Detalhamento de ${months[monthIdx]}:</strong><br>
+                Total de dias com RNCs: ${monthData.daily_details.length} • Total RNCs: ${totalDias}
+            `;
+        }
+        
+        function updateSetorInfo(monthIdx) {
+            if (!window._setorDataCache) return;
+            
+            const { values, cumulative, goal, goalAccum, labels } = window._setorDataCache;
+            
+            if (monthIdx !== undefined) {
+                const realizado = values[monthIdx];
+                const variacao = realizado - goal;
+                document.getElementById('setorInfoRealizadoVal').textContent = realizado;
+                document.getElementById('setorInfoVariacaoVal').textContent = (variacao >= 0 ? '+' : '') + variacao;
+            } else {
+                const total = cumulative[cumulative.length - 1] || 0;
+                const metaTotal = goalAccum[goalAccum.length - 1] || 0;
+                const variacao = total - metaTotal;
+                document.getElementById('setorInfoRealizadoVal').textContent = total;
+                document.getElementById('setorInfoVariacaoVal').textContent = (variacao >= 0 ? '+' : '') + variacao;
+            }
+        }
+        
+        function resetSetorSelection() {
+            const monthSelect = document.getElementById('setorMonthSelect');
+            if (monthSelect) monthSelect.value = '';
+            
+            if (window._setorDataCache) {
+                updateSetorMonth();
             }
         }
         
@@ -10842,17 +11579,31 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
                 return;
             }
             
+            // Calcular estatísticas
+            const totalEmployees = data.length;
+            const aboveTarget = data.filter(emp => emp.percentage >= 100).length;
+            const belowTarget = data.filter(emp => emp.percentage < 100).length;
+            const avgPercentage = totalEmployees > 0 ? Math.round(data.reduce((sum, emp) => sum + emp.percentage, 0) / totalEmployees) : 0;
+            
             let html = `
-                <h5 style="margin:0 0 12px 0; color:#333;">📋 Dados Detalhados - ${monthName} ${year}</h5>
-                <div style="overflow-x:auto;">
-                    <table style="width:100%; border-collapse:collapse; font-size:13px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+                    <h5 style="margin:0; color:#2c3e50; font-size:14px; font-weight:600;">📋 Dados Detalhados - ${monthName} ${year}</h5>
+                    <div style="display:flex; gap:12px; font-size:11px; color:#6c757d;">
+                        <span>👥 ${totalEmployees} funcionários</span>
+                        <span>✅ ${aboveTarget} acima</span>
+                        <span>❌ ${belowTarget} abaixo</span>
+                        <span>📊 ${avgPercentage}% média</span>
+                    </div>
+                </div>
+                <div style="overflow-x:auto; border-radius:6px; border:1px solid #e9ecef;">
+                    <table style="width:100%; border-collapse:collapse; font-size:12px;">
                         <thead>
-                            <tr style="background:#f8f9fa; border-bottom:2px solid #dee2e6;">
-                                <th style="padding:10px; text-align:left; border:1px solid #dee2e6;">Funcionário</th>
-                                <th style="padding:10px; text-align:center; border:1px solid #dee2e6;">RNCs</th>
-                                <th style="padding:10px; text-align:center; border:1px solid #dee2e6;">Meta</th>
-                                <th style="padding:10px; text-align:center; border:1px solid #dee2e6;">Percentual</th>
-                                <th style="padding:10px; text-align:center; border:1px solid #dee2e6;">Status</th>
+                            <tr style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); color:white;">
+                                <th style="padding:8px 10px; text-align:left; border:none; font-size:11px; font-weight:600;">Funcionário</th>
+                                <th style="padding:8px 10px; text-align:center; border:none; font-size:11px; font-weight:600;">RNCs</th>
+                                <th style="padding:8px 10px; text-align:center; border:none; font-size:11px; font-weight:600;">Meta</th>
+                                <th style="padding:8px 10px; text-align:center; border:none; font-size:11px; font-weight:600;">%</th>
+                                <th style="padding:8px 10px; text-align:center; border:none; font-size:11px; font-weight:600;">Status</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -10861,14 +11612,21 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
             data.forEach((emp, index) => {
                 const statusColor = emp.percentage >= 100 ? '#28a745' : '#dc3545';
                 const statusIcon = emp.percentage >= 100 ? '✅' : '❌';
+                const bgColor = index % 2 === 0 ? '#ffffff' : '#f8f9fa';
+                const percentageBg = emp.percentage >= 100 ? '#d1f2eb' : '#f8d7da';
+                const percentageTextColor = emp.percentage >= 100 ? '#0c5460' : '#721c24';
                 
                 html += `
-                    <tr style="border-bottom:1px solid #dee2e6; ${index % 2 === 0 ? 'background:#f9f9f9;' : ''}">
-                        <td style="padding:8px; border:1px solid #dee2e6; font-weight:500;">${emp.name}</td>
-                        <td style="padding:8px; text-align:center; border:1px solid #dee2e6;">${emp.rncs}</td>
-                        <td style="padding:8px; text-align:center; border:1px solid #dee2e6;">${emp.meta}</td>
-                        <td style="padding:8px; text-align:center; border:1px solid #dee2e6; font-weight:bold; color:${statusColor};">${emp.percentage}%</td>
-                        <td style="padding:8px; text-align:center; border:1px solid #dee2e6; color:${statusColor};">${statusIcon} ${emp.status}</td>
+                    <tr style="background:${bgColor}; transition:all 0.2s;" onmouseover="this.style.background='#e7f3ff'" onmouseout="this.style.background='${bgColor}'">
+                        <td style="padding:8px 10px; border:none; border-bottom:1px solid #e9ecef; font-weight:600; font-size:12px; color:#2c3e50;">${emp.name}</td>
+                        <td style="padding:8px 10px; text-align:center; border:none; border-bottom:1px solid #e9ecef; font-size:12px; font-weight:600; color:#495057;">${emp.rncs}</td>
+                        <td style="padding:8px 10px; text-align:center; border:none; border-bottom:1px solid #e9ecef; font-size:12px; color:#6c757d;">${emp.meta}</td>
+                        <td style="padding:8px 10px; text-align:center; border:none; border-bottom:1px solid #e9ecef;">
+                            <span style="display:inline-block; padding:4px 10px; border-radius:12px; background:${percentageBg}; color:${percentageTextColor}; font-weight:700; font-size:11px;">
+                                ${emp.percentage}%
+                            </span>
+                        </td>
+                        <td style="padding:8px 10px; text-align:center; border:none; border-bottom:1px solid #e9ecef; font-size:16px; color:${statusColor};">${statusIcon}</td>
                     </tr>
                 `;
             });
@@ -10876,11 +11634,6 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
             html += `
                         </tbody>
                     </table>
-                </div>
-                <div style="margin-top:12px; font-size:12px; color:#666;">
-                    📊 Total: ${data.length} funcionários | 
-                    ✅ Acima da meta: ${data.filter(emp => emp.percentage >= 100).length} | 
-                    ❌ Abaixo da meta: ${data.filter(emp => emp.percentage < 100).length}
                 </div>
             `;
             

@@ -2,6 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import sqlite3
+# Nota de manutenção: Em 2025-10-03 houve falha de inicialização
+# (NameError: HAS_COMPRESS) porque a flag era usada antes de garantir definição.
+# Bloco de import de flask_compress agora define HAS_COMPRESS de forma defensiva
+# antes de qualquer uso subsequente.
 import hashlib
 from flask import Flask, request, jsonify, send_from_directory, session, redirect, url_for, render_template, abort, make_response, g
 import socket
@@ -22,14 +26,15 @@ from services.rnc import (
     can_user_access_rnc,
 )
 
-# Importações opcionais com fallback
-try:
-    from flask_compress import Compress
-    HAS_COMPRESS = True
-except ImportError:
-    Compress = None
-    HAS_COMPRESS = False
-    print("⚠️ Flask-Compress não instalado - compressão desabilitada")
+# Importações opcionais com fallback - otimizadas para startup mais rápido
+# Garantir que flags booleanas são sempre definidas antes de qualquer uso
+HAS_COMPRESS = False
+# Importação lazy - só importa quando for usar compressão
+Compress = None
+
+HAS_TALISMAN = False
+# Importação lazy - só importa quando for configurar segurança
+Talisman = None
 
 from werkzeug.middleware.proxy_fix import ProxyFix
 
@@ -37,14 +42,6 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 HAS_LIMITER = False
 def get_remote_address():
     return request.remote_addr if request else '127.0.0.1'
-
-try:
-    from flask_talisman import Talisman
-    HAS_TALISMAN = True
-except ImportError:
-    Talisman = None
-    HAS_TALISMAN = False
-    print("⚠️ Flask-Talisman não instalado - headers de segurança desabilitados")
 
 import re
 import secrets
@@ -105,6 +102,7 @@ from routes.api import api as api_bp
 from routes.auth import auth as auth_bp
 from routes.rnc import rnc as rnc_bp
 from routes.print_reports import print_reports as print_reports_bp
+from routes.field_locks import field_locks_bp
 
 try:
     from flask_socketio import SocketIO, emit, join_room, leave_room  # type: ignore
@@ -161,26 +159,42 @@ try:
 except Exception:
     HAS_LIMITER = False
 
-# Config de compressão (gzip/brotli se disponível)
+# Config de compressão (gzip/brotli se disponível) - lazy loading
+
+
+def setup_compression():
+    global HAS_COMPRESS, Compress
+    if not HAS_COMPRESS:
+        try:
+            from flask_compress import Compress  # type: ignore
+            HAS_COMPRESS = True
+        except ImportError:
+            print("⚠️ Flask-Compress não instalado - compressão desabilitada")
+            return
+    
 if HAS_COMPRESS and Compress is not None:
     try:
-        # Tipos comuns a comprimir
-        app.config['COMPRESS_MIMETYPES'] = [
-            'text/html', 'text/css', 'text/xml', 'application/json',
-            'application/javascript', 'text/javascript', 'image/svg+xml'
-        ]
-        app.config['COMPRESS_LEVEL'] = 6
-        app.config['COMPRESS_MIN_SIZE'] = 1024
-        # Preferir Brotli se lib estiver disponível; caso contrário, usa gzip
-        try:
+        app.config.update(
+            COMPRESS_MIMETYPES=[
+                'text/html','text/css','text/xml','application/json',
+                'application/javascript','text/javascript','image/svg+xml'
+            ],
+            COMPRESS_LEVEL=6,
+            COMPRESS_MIN_SIZE=1024
+        )
+        try:  # Brotli opcional
             import brotli  # type: ignore  # noqa: F401
             app.config['COMPRESS_ALGORITHM'] = 'br'
             app.config['COMPRESS_BR_LEVEL'] = 5
         except Exception:
             app.config['COMPRESS_ALGORITHM'] = 'gzip'
-    except Exception:
-        pass
-    Compress(app)
+        Compress(app)
+    except Exception as _compress_err:
+        print(f"⚠️ Falha ao inicializar compressão: {_compress_err}")
+        HAS_COMPRESS = False
+
+# Compressão será configurada em background para não atrasar startup
+# Thread será iniciado após inicialização completa da aplicação
 
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
@@ -264,7 +278,7 @@ try:
                 'https://cdn.jsdelivr.net',
                 'https://cdnjs.cloudflare.com',
             ],
-            'connect-src': ["'self'"],
+            'connect-src': ["'self'", 'https://cdnjs.cloudflare.com', 'https://cdn.jsdelivr.net'],
             'manifest-src': ["'self'"],
         }
         # Importante: não usar nonces enquanto ainda existem event handlers inline,
@@ -343,7 +357,7 @@ if not HAS_TALISMAN:
                 "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;",
                 "font-src 'self' data: https://fonts.gstatic.com;",
                 "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;",
-                "connect-src 'self';",
+                "connect-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net;",
                 "manifest-src 'self';",
             ])
             resp.headers['Content-Security-Policy'] = policy
@@ -356,10 +370,10 @@ if not HAS_TALISMAN:
                 "object-src 'none';",
                 "form-action 'self';",
                 "img-src 'self' data: blob: https://api.dicebear.com;",
-                "style-src 'self' https://fonts.googleapis.com;",
+                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;",
                 "font-src 'self' data: https://fonts.gstatic.com;",
-                "script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;",
-                "connect-src 'self';",
+                "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;",
+                "connect-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net;",
                 "manifest-src 'self';",
                 "report-uri /csp-report;",
             ])
@@ -416,9 +430,13 @@ def _serve_logo_legacy():
     except Exception:
         abort(404)
 
-# SocketIO (com fallback já preparado acima)
-# Força modo 'threading' para evitar dependências como eventlet/gevent em ambientes Windows/Python 3.13
-socketio = SocketIO(app, async_mode='threading')
+# SocketIO (temporariamente desabilitado para testes)
+try:
+    socketio = SocketIO(app, async_mode='threading')
+    print("✅ SocketIO inicializado")
+except Exception as e:
+    print(f"⚠️ SocketIO falhou: {e}")
+    socketio = None
 
 # Logging básico
 logging.basicConfig(level=logging.INFO)
@@ -431,6 +449,7 @@ app.register_blueprint(api_bp)
 app.register_blueprint(auth_bp)
 app.register_blueprint(rnc_bp)
 app.register_blueprint(print_reports_bp)
+app.register_blueprint(field_locks_bp)
 
 # JWT: parse Authorization Bearer and attach g.user_id if valid
 @app.before_request
@@ -445,6 +464,23 @@ def _jwt_before_request():
                 payload = _jwt.decode_token(token, verify_type=None)
                 g.jwt = payload
                 g.user_id = int(payload.get('sub')) if payload.get('sub') is not None else None
+                
+                # CORRIGIDO: Verificar se o usuário está ativo antes de permitir acesso
+                if g.user_id:
+                    conn = sqlite3.connect(DB_PATH)
+                    cursor = conn.cursor()
+                    cursor.execute('SELECT is_active FROM users WHERE id = ?', (g.user_id,))
+                    user_row = cursor.fetchone()
+                    conn.close()
+                    
+                    # Se usuário não existe ou está inativo, limpar dados da sessão
+                    if not user_row or not user_row[0]:
+                        g.user_id = None
+                        g.jwt = None
+                        if 'user_id' in session:
+                            session.clear()
+                        return
+                
                 # For compatibility with existing permission decorators, mirror into session if absent
                 if g.user_id and 'user_id' not in session:
                     session['user_id'] = g.user_id
@@ -456,6 +492,25 @@ def _jwt_before_request():
                 pass
     except Exception:
         pass
+
+# Middleware para verificar se usuário autenticado via sessão está ativo
+@app.before_request
+def _check_active_user():
+    # Verificar apenas se há user_id na sessão (não JWT)
+    if 'user_id' in session and not hasattr(g, 'user_id'):
+        try:
+            conn = sqlite3.connect(DB_PATH)
+            cursor = conn.cursor()
+            cursor.execute('SELECT is_active FROM users WHERE id = ?', (session['user_id'],))
+            user_row = cursor.fetchone()
+            conn.close()
+            
+            # Se usuário não existe ou está inativo, limpar sessão
+            if not user_row or not user_row[0]:
+                session.clear()
+                return jsonify({'success': False, 'message': 'Usuário desativado'}), 401
+        except Exception:
+            pass
 
 # =============== Optional Julia Analytics proxy ===============
 try:
@@ -848,6 +903,7 @@ online_users = {}
 def get_local_ip():
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.settimeout(2)  # Timeout de 2 segundos para não atrasar o startup
         s.connect(("8.8.8.8", 80))
         local_ip = s.getsockname()[0]
         s.close()
@@ -1072,10 +1128,14 @@ def init_database():
 
     conn.commit()
     conn.close()
+    # Mover ensure_rnc_extra_columns() para background para não atrasar startup
+    def delayed_column_check():
+        time.sleep(5)  # Aguarda 5 segundos após início do servidor
     try:
         ensure_rnc_extra_columns()
     except Exception:
         pass
+    threading.Thread(target=delayed_column_check, daemon=True).start()
 
 def ensure_rnc_extra_columns():
     """Garante que a tabela rncs possua colunas extras usadas no modo Responder/Visualização.
@@ -1146,129 +1206,11 @@ def get_user_by_id(user_id):
         if conn:
             return_db_connection(conn)
 
-def has_permission(user_id, permission):
-    """Verificar se usuário tem determinada permissão baseada no grupo"""
-    try:
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-        
-        # Primeiro, verificar se o usuário é admin (tem todas as permissões)
-        cursor.execute('''
-            SELECT role FROM users WHERE id = ?
-        ''', (user_id,))
-        result = cursor.fetchone()
-        
-        if result and result[0] == 'admin':
-            conn.close()
-            return True
-        
-        # Verificar permissão baseada no grupo
-        cursor.execute('''
-            SELECT gp.permission_value
-            FROM group_permissions gp
-            JOIN users u ON u.group_id = gp.group_id
-            WHERE u.id = ? AND gp.permission_name = ?
-        ''', (user_id, permission))
-        
-        result = cursor.fetchone()
-        conn.close()
-        
-        # Se a permissão foi encontrada e está ativa
-        if result and result[0] == 1:
-            return True
-        
-        # Fallback para sistema de departamento (compatibilidade)
-        return has_department_permission(user_id, permission)
-        
-    except Exception as e:
-        logger.error(f"Erro ao verificar permissão: {e}")
-        return False
-
-def get_user_department(user_id):
-    """Obter o departamento do usuário"""
-    try:
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-        cursor.execute('SELECT department FROM users WHERE id = ?', (user_id,))
-        result = cursor.fetchone()
-        conn.close()
-        return result[0] if result else None
-    except Exception as e:
-        logger.error(f"Erro ao obter departamento do usuário: {e}")
-        return None
-
-def has_department_permission(user_id, action):
-    """
-    Verificar permissões baseadas no departamento do usuário
-    
-    Regras:
-    - Engenharia: acesso somente às RNCs criadas
-    - Administração: acesso a tudo
-    - Produção: acesso somente às RNCs criadas
-    - Qualidade: acesso aos gráficos, relatórios, RNCs finalizadas e criadas
-    - TI: acesso a tudo
-    """
-    try:
-        department = get_user_department(user_id)
-        if not department:
-            return False
-        
-        department = department.lower()
-        
-        # Administração e TI têm acesso total
-        if department in ['administração', 'administracao', 'ti']:
-            return True
-        
-        # Verificar permissões específicas por ação
-        if action == 'view_own_rncs':
-            # Todos os departamentos podem ver RNCs próprias
-            return True
-        
-        elif action == 'view_all_rncs':
-            # Apenas Administração, TI e Qualidade
-            return department in ['administração', 'administracao', 'ti', 'qualidade']
-        
-        elif action == 'view_finalized_rncs':
-            # Administração, TI e Qualidade
-            return department in ['administração', 'administracao', 'ti', 'qualidade']
-        
-        elif action == 'view_charts':
-            # Administração, TI e Qualidade
-            return department in ['administração', 'administracao', 'ti', 'qualidade']
-        
-        elif action == 'view_reports':
-            # Administração, TI e Qualidade
-            return department in ['administração', 'administracao', 'ti', 'qualidade']
-        
-        elif action == 'view_levantamento_14_15':
-            # Apenas Administração, TI e Qualidade podem ver Levantamento 14-15
-            return department in ['administração', 'administracao', 'ti', 'qualidade']
-        
-        elif action == 'admin_access':
-            # Apenas Administração e TI
-            return department in ['administração', 'administracao', 'ti']
-        
-        elif action == 'manage_users':
-            # Apenas Administração e TI
-            return department in ['administração', 'administracao', 'ti']
-        
-        elif action == 'edit_rncs':
-            # Todos podem editar suas próprias RNCs (será verificado depois)
-            return True
-        
-        elif action == 'view_groups_for_assignment':
-            # Todos podem ver grupos para atribuição de RNCs
-            return True
-        
-        elif action == 'view_users_for_assignment':
-            # Todos podem ver usuários para atribuição de RNCs
-            return True
-        
-        return False
-        
-    except Exception as e:
-        logger.error(f"Erro ao verificar permissão de departamento: {e}")
-        return False
+# Removed redundant function definitions since they're already imported from services.permissions
+# The following functions are now used from imports:
+# - has_permission (from services.permissions)
+# - get_user_department (from services.permissions) 
+# - has_department_permission (from services.permissions)
 
 def get_all_users():
     """Buscar todos os usuários ativos"""
@@ -2065,172 +2007,383 @@ def api_monitoring_lockouts():
         except Exception: pass
         return jsonify({'success': False, 'message': 'Erro ao carregar lockouts'}), 500
 
-@app.route('/indicadores-dashboard')
-def indicadores_dashboard():
-    """Dashboard de indicadores protegido por sessão."""
-    if 'user_id' not in session:
-        return redirect('/')
-    
-    # Verificar se o usuário tem permissão para ver relatórios/indicadores
-    if not has_permission(session['user_id'], 'view_reports'):
-        # Redirecionar para dashboard principal se não tiver permissão
-        return redirect('/dashboard?error=access_denied&message=Acesso negado: usuário não tem permissão para visualizar indicadores')
-    
-    return render_template('indicadores_dashboard.html')
+# Rota /indicadores-dashboard removida - funcionalidade descontinuada
 
-@app.route('/api/indicadores-detalhados')
-def api_indicadores_detalhados():
-    """API para dados detalhados dos indicadores"""
+# Rotas e APIs de indicadores removidas completamente - funcionalidade descontinuada
+
+@app.route('/api/indicadores/engenharia')
+def api_indicadores_engenharia():
+    """API específica para dados da engenharia"""
+    # Campos retornados:
+    #  - stats: { total_rncs, finalized_rncs, active_rncs, total_value, avg_value }
+    #  - monthly_trend: lista com { month (YYYY-MM), count, accumulated_count, value, accumulated_value }
+    #  - rncs_count: número total de RNCs (mesmo que stats.total_rncs)
+    #  - rncs: lista simplificada de RNCs para tabela
+    # Observação: Frontend (dashboard_improved.html) usa rncs_count ou stats.finalized_rncs
+    # para preencher badge de Engenharia; patch garante atualização imediata.
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Não autorizado'}), 401
     
-    # Pegar o tipo de indicador (rnc ou garantia)
-    tipo = request.args.get('tipo', 'rnc')
-    print(f"📊 Solicitação de dados para tipo: {tipo}")
-    
     try:
-        # Primeiro tenta importar e usar o script especializado para leitura de Excel
-        try:
-            import sys
-            script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'scripts')
-            if script_path not in sys.path:
-                sys.path.append(script_path)
-            
-            from extract_indicators_by_type import extract_indicators_by_type
-            
-            # Tenta obter dados da planilha
-            excel_data = extract_indicators_by_type(tipo)
-            if excel_data:
-                print(f"✅ Dados extraídos com sucesso da planilha para: {tipo}")
-                
-                # Aplicar formatação aos dados se o módulo estiver disponível
-                if HAS_FORMATTING:
-                    excel_data = format_data_for_dashboard(excel_data)
-                
-                return jsonify({
-                    'success': True,
-                    'source': 'excel',
-                    'totals': excel_data['totals'],
-                    'departments': excel_data['departments'],
-                    'monthlyData': excel_data['monthlyData']
-                })
-            else:
-                print("⚠️ Não foi possível extrair dados da planilha, usando banco de dados")
-        except Exception as excel_error:
-            print(f"⚠️ Erro ao usar script de extração: {excel_error}")
-            
-        # Se falhar a extração do Excel, usa dados do banco
         conn = sqlite3.connect('ippel_system.db')
         cursor = conn.cursor()
         
-        # Não temos coluna "tipo" na tabela rncs, então usamos todos os dados
-        # independentemente do tipo solicitado
-        tipo_filter = ""  # Sem filtro específico, pois o banco não tem coluna tipo
-        
-        # Dados básicos
-        cursor.execute("SELECT COUNT(*) FROM rncs WHERE is_deleted = 0")
-        total_rncs = cursor.fetchone()[0]
-        
-        cursor.execute("SELECT COUNT(*) FROM rncs WHERE status = 'Pendente' AND is_deleted = 0")
-        pendentes = cursor.fetchone()[0]
-        
-        cursor.execute("SELECT COUNT(*) FROM rncs WHERE finalized_at IS NOT NULL AND is_deleted = 0")
-        finalizadas = cursor.fetchone()[0]
-        
-        # Tendência mensal (últimos 12 meses)
-        tendencia_mensal = {}
-        for i in range(12):
-            date = datetime.now() - timedelta(days=30*i)
-            month_key = date.strftime('%Y-%m')
-            cursor.execute("""
-                SELECT COUNT(*) FROM rncs 
-                WHERE strftime('%Y-%m', created_at) = ? AND is_deleted = 0
-            """, (month_key,))
-            count = cursor.fetchone()[0]
-            tendencia_mensal[date.strftime('%b/%Y')] = count
-            count = cursor.fetchone()[0]
-            tendencia_mensal[date.strftime('%b/%Y')] = count
-        
-        # RNCs por departamento (baseado nos usuários)
-        cursor.execute(f"""
-            SELECT u.department, COUNT(r.id) as total
-            FROM rncs r
-            LEFT JOIN users u ON r.user_id = u.id
-            WHERE r.is_deleted = 0 {tipo_filter}
-            GROUP BY u.department
-            ORDER BY total DESC
-        """)
-        por_departamento = dict(cursor.fetchall())
-        
-        # Status das RNCs
-        cursor.execute(f"""
-            SELECT status, COUNT(*) as total
+        # Buscar TODAS as RNCs relacionadas à engenharia
+        # Removido filtro de status para pegar todas as RNCs (finalizadas ou não)
+        cursor.execute("""
+            SELECT 
+                id, rnc_number, title, equipment, client, priority, status,
+                responsavel, setor, area_responsavel, finalized_at, created_at,
+                price
             FROM rncs 
-            WHERE is_deleted = 0 {tipo_filter}
-            GROUP BY status
-            ORDER BY total DESC
+            WHERE (
+                LOWER(TRIM(area_responsavel)) LIKE '%engenharia%'
+                OR LOWER(TRIM(setor)) LIKE '%engenharia%'
+                OR LOWER(TRIM(signature_engineering_name)) LIKE '%engenharia%'
+            )
+            AND (is_deleted = 0 OR is_deleted IS NULL)
+            ORDER BY COALESCE(finalized_at, created_at) DESC
         """)
-        por_status = dict(cursor.fetchall())
         
-        # Taxa de eficiência
-        eficiencia = {
-            'finalizadas': finalizadas,
-            'pendentes': pendentes,
-            'taxa': round((finalizadas / max(total_rncs, 1)) * 100, 1)
-        }
+        rncs_raw = cursor.fetchall()
         
-        # RNCs recentes
-        cursor.execute(f"""
-            SELECT r.rnc_number, r.title, r.status, r.priority, r.created_at, u.name as user_name
-            FROM rncs r
-            LEFT JOIN users u ON r.user_id = u.id
-            WHERE r.is_deleted = 0 {tipo_filter}
-            ORDER BY r.created_at DESC
-            LIMIT 10
-        """)
-        rncs_recentes = []
-        for row in cursor.fetchall():
-            rncs_recentes.append({
-                'numero': row[0],
-                'titulo': row[1],
-                'status': row[2],
-                'prioridade': row[3],
-                'data': row[4],
-                'usuario': row[5] or 'Usuário'
+        # Dados mensais para gráficos (baseado em finalized_at)
+        monthly_data = {}
+        cumulative_data = {}
+        total_value = 0
+        
+        for rnc in rncs_raw:
+            finalized_at = rnc[10]  # finalized_at
+            created_at = rnc[11]    # created_at
+            price_str = rnc[12] or "0"  # price
+            
+            # Converter preço string para float
+            try:
+                if isinstance(price_str, str):
+                    # Remover R$, espaços e vírgulas, substituir vírgula por ponto
+                    price_clean = price_str.replace('R$', '').replace(' ', '').replace(',', '.')
+                    price = float(price_clean) if price_clean else 0.0
+                else:
+                    price = float(price_str) if price_str else 0.0
+            except (ValueError, TypeError):
+                price = 0.0
+                
+            total_value += price
+            
+            # CORREÇÃO: Usar created_at como fallback principal (muitas RNCs não têm finalized_at)
+            date_to_use = finalized_at if finalized_at else created_at
+            if date_to_use and date_to_use != '':
+                try:
+                    # Tentar parse com hora
+                    if isinstance(date_to_use, str):
+                        date_str = date_to_use.strip()
+                        if ' ' in date_str:
+                            # Formato com hora: 2023-01-02 14:30:00
+                            date = datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
+                        else:
+                            # Formato apenas data: 2023-01-02
+                            date = datetime.strptime(date_str, '%Y-%m-%d')
+                    else:
+                        # Se já for datetime
+                        date = date_to_use
+                except Exception as parse_err:
+                    # Fallback: tentar created_at se finalized_at falhar
+                    try:
+                        if created_at:
+                            created_str = str(created_at).strip().split(' ')[0]
+                            date = datetime.strptime(created_str, '%Y-%m-%d')
+                        else:
+                            continue
+                    except:
+                        # Se ambos falharem, pular esta RNC
+                        continue
+                        
+                month_key = date.strftime('%Y-%m')
+                month_label = date.strftime('%b/%Y')
+                
+                if month_key not in monthly_data:
+                    monthly_data[month_key] = {'label': month_label, 'count': 0, 'value': 0, 'finalized': 0, 'active': 0}
+                
+                monthly_data[month_key]['count'] += 1
+                monthly_data[month_key]['value'] += price
+                
+                # Classificar entre finalizadas e ativas
+                status = rnc[6]  # status column
+                if status == 'Finalizado' or finalized_at:
+                    monthly_data[month_key]['finalized'] += 1
+                else:
+                    monthly_data[month_key]['active'] += 1
+        
+        # Ordenar por data e calcular acumulado
+        sorted_months = sorted(monthly_data.keys())
+        accumulated_count = 0
+        accumulated_value = 0
+        
+        monthly_trend = []
+        for month_key in sorted_months:
+            data = monthly_data[month_key]
+            accumulated_count += data['count']
+            accumulated_value += data['value']
+            
+            monthly_trend.append({
+                'month': month_key,
+                'label': data['label'],
+                'count': data['count'],
+                'value': data['value'],
+                'accumulated_count': accumulated_count,
+                'accumulated_value': accumulated_value
             })
+        
+        # Estatísticas gerais - contar finalizadas vs ativas
+        finalized_count = 0
+        active_count = 0
+        
+        for rnc in rncs_raw:
+            status = rnc[6]  # status column
+            finalized_at = rnc[10]  # finalized_at column
+            
+            if status == 'Finalizado' or finalized_at:
+                finalized_count += 1
+            else:
+                active_count += 1
+        
+        stats = {
+            'total_rncs': len(rncs_raw),
+            'finalized_rncs': finalized_count,
+            'active_rncs': active_count,
+            'total_value': total_value,
+            'avg_value': total_value / max(len(rncs_raw), 1) if len(rncs_raw) > 0 else 0,
+            'latest_month': monthly_trend[-1] if monthly_trend else None
+        }
         
         conn.close()
         
         return jsonify({
             'success': True,
-            'data': {
-                'total_rncs': total_rncs,
-                'pendentes': pendentes,
-                'finalizadas': finalizadas,
-                'tendencia_mensal': tendencia_mensal,
-                'por_departamento': por_departamento if por_departamento else {'Geral': total_rncs},
-                'por_status': por_status if por_status else {'Pendente': pendentes, 'Finalizada': finalizadas},
-                'eficiencia': eficiencia,
-                'rncs_recentes': rncs_recentes
-            }
+            'stats': stats,
+            'monthly_trend': monthly_trend,
+            'rncs_count': len(rncs_raw),
+            'rncs': [{
+                'id': r[0],
+                'rnc_number': r[1],
+                'title': r[2],
+                'equipment': r[3],
+                'client': r[4],
+                'priority': r[5],
+                'status': r[6],
+                'responsavel': r[7],
+                'setor': r[8],
+                'area_responsavel': r[9],
+                'finalized_at': r[10],
+                'created_at': r[11],
+                'price': r[12]
+            } for r in rncs_raw]
         })
         
     except Exception as e:
-        print(f"Erro na API de indicadores: {e}")
-        # Dados de fallback
+        try:
+            logger.error(f"Erro na API de engenharia: {e}")
+        except:
+            print(f"Erro na API de engenharia: {e}")
+        return jsonify({'success': False, 'message': 'Erro interno do servidor'}), 500
+
+@app.route('/api/indicadores/setor')
+def api_indicadores_setor():
+    """API genérica para dados de qualquer setor"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Não autorizado'}), 401
+    
+    setor = request.args.get('setor', '').lower()
+    
+    # Mapeamento de setor para nome no banco
+    setor_mapping = {
+        'engenharia': 'Engenharia',
+        'producao': 'Produção',
+        'pcp': 'PCP',
+        'qualidade': 'Qualidade',
+        'compras': 'Compras',
+        'comercial': 'Comercial',
+        'terceiros': 'Terceiros'
+    }
+    
+    # Mapeamento adicional para setores específicos de produção
+    setor_producao_mapping = {
+        'usinagem_plana': 'Usinagem Plana',
+        'usin_cilindrica_cnc': 'Usin. Cilíndrica CNC',
+        'usin_cilindrica_convencional': 'Usin. Cilíndrica Convencional',
+        'caldeiraria_carbono': 'Caldeiraria de Carbono',
+        'caldeiraria_inox': 'Caldeiraria de Inox',
+        'corte': 'Corte',
+        'montagem': 'Montagem',
+        'pintura': 'Pintura',
+        'balanceamento': 'Balanceamento'
+    }
+    
+    setor_nome = setor_mapping.get(setor) or setor_producao_mapping.get(setor)
+    if not setor_nome:
+        return jsonify({'success': False, 'message': 'Setor inválido'}), 400
+    
+    try:
+        conn = sqlite3.connect('ippel_system.db')
+        cursor = conn.cursor()
+        
+        # Buscar RNCs do setor - busca mais precisa
+        if setor in ['usinagem_plana', 'usin_cilindrica_cnc', 'usin_cilindrica_convencional', 
+                     'caldeiraria_carbono', 'caldeiraria_inox', 'corte', 'montagem', 'pintura', 'balanceamento']:
+            # Para setores específicos de produção, buscar apenas no campo 'setor'
+            cursor.execute("""
+                SELECT 
+                    id, rnc_number, title, description, client, equipment, area_responsavel,
+                    setor, status, priority, finalized_at, created_at, price
+                FROM rncs 
+                WHERE LOWER(TRIM(setor)) LIKE ?
+                AND (is_deleted = 0 OR is_deleted IS NULL)
+                ORDER BY COALESCE(finalized_at, created_at) DESC
+            """, (f'%{setor_nome.lower()}%',))
+        else:
+            # Para setores gerais, buscar em ambos os campos
+            cursor.execute("""
+                SELECT 
+                    id, rnc_number, title, description, client, equipment, area_responsavel,
+                    setor, status, priority, finalized_at, created_at, price
+                FROM rncs 
+                WHERE (
+                    LOWER(TRIM(area_responsavel)) LIKE ?
+                    OR LOWER(TRIM(setor)) LIKE ?
+                )
+                AND (is_deleted = 0 OR is_deleted IS NULL)
+                ORDER BY COALESCE(finalized_at, created_at) DESC
+            """, (f'%{setor_nome.lower()}%', f'%{setor_nome.lower()}%'))
+        
+        rncs_raw = cursor.fetchall()
+        
+        # Dados mensais para gráficos
+        monthly_data = {}
+        cumulative_data = {}
+        total_value = 0
+        
+        for rnc in rncs_raw:
+            finalized_at = rnc[10]
+            created_at = rnc[11]
+            price_str = rnc[12] or "0"
+            
+            # Converter preço
+            try:
+                if isinstance(price_str, str):
+                    price_clean = price_str.replace('R$', '').replace(' ', '').replace(',', '.')
+                    price = float(price_clean) if price_clean else 0
+                else:
+                    price = float(price_str) if price_str else 0
+            except:
+                price = 0
+            
+            total_value += price
+            
+            # CORREÇÃO: Usar created_at como fallback (muitas RNCs não têm finalized_at)
+            date_to_use = finalized_at if finalized_at else created_at
+            if date_to_use and date_to_use != '':
+                try:
+                    if isinstance(date_to_use, str):
+                        date_str = date_to_use.strip()
+                        if ' ' in date_str:
+                            date = datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
+                        else:
+                            date = datetime.strptime(date_str, '%Y-%m-%d')
+                    else:
+                        date = date_to_use
+                except Exception as parse_err:
+                    try:
+                        if created_at:
+                            created_str = str(created_at).strip().split(' ')[0]
+                            date = datetime.strptime(created_str, '%Y-%m-%d')
+                        else:
+                            continue
+                    except:
+                        continue
+            else:
+                continue
+            
+            month_key = date.strftime('%Y-%m')
+            day = date.day
+            
+            if month_key not in monthly_data:
+                monthly_data[month_key] = {'count': 0, 'value': 0, 'daily': {}}
+            
+            monthly_data[month_key]['count'] += 1
+            monthly_data[month_key]['value'] += price
+            
+            if day not in monthly_data[month_key]['daily']:
+                monthly_data[month_key]['daily'][day] = 0
+            monthly_data[month_key]['daily'][day] += 1
+        
+        # Ordenar meses e calcular acumulado
+        sorted_months = sorted(monthly_data.keys())
+        accumulated_count = 0
+        accumulated_value = 0
+        
+        monthly_trend = []
+        for month in sorted_months:
+            data = monthly_data[month]
+            accumulated_count += data['count']
+            accumulated_value += data['value']
+            
+            daily_details = [
+                {'day': day, 'count': count}
+                for day, count in sorted(data['daily'].items())
+            ]
+            
+            monthly_trend.append({
+                'month': month,
+                'count': data['count'],
+                'accumulated_count': accumulated_count,
+                'value': round(data['value'], 2),
+                'accumulated_value': round(accumulated_value, 2),
+                'daily_details': daily_details
+            })
+        
+        # Estatísticas gerais
+        total_rncs = len(rncs_raw)
+        finalized_rncs = sum(1 for r in rncs_raw if r[10])
+        active_rncs = total_rncs - finalized_rncs
+        avg_value = total_value / total_rncs if total_rncs > 0 else 0
+        
+        conn.close()
+        
         return jsonify({
             'success': True,
-            'data': {
-                'total_rncs': 0,
-                'pendentes': 0,
-                'finalizadas': 0,
-                'tendencia_mensal': {},
-                'por_departamento': {'Geral': 0},
-                'por_status': {'Pendente': 0},
-                'eficiencia': {'finalizadas': 0, 'pendentes': 0, 'taxa': 0},
-                'rncs_recentes': []
-            }
+            'setor': setor_nome,
+            'rncs_count': total_rncs,
+            'stats': {
+                'total_rncs': total_rncs,
+                'finalized_rncs': finalized_rncs,
+                'active_rncs': active_rncs,
+                'total_value': round(total_value, 2),
+                'avg_value': round(avg_value, 2)
+            },
+            'monthly_trend': monthly_trend,
+            'rncs': [{
+                'id': r[0],
+                'rnc_number': r[1],
+                'title': r[2],
+                'description': r[3],
+                'client': r[4],
+                'equipment': r[5],
+                'area_responsavel': r[6],
+                'setor': r[7],
+                'status': r[8],
+                'priority': r[9],
+                'finalized_at': r[10],
+                'created_at': r[11],
+                'price': r[12]
+            } for r in rncs_raw]
         })
+        
+    except Exception as e:
+        try:
+            logger.error(f"Erro na API de setor: {e}")
+        except:
+            print(f"Erro na API de setor: {e}")
+        return jsonify({'success': False, 'message': 'Erro interno do servidor'}), 500
 
 @app.route('/api/indicadores')
 def api_indicadores():
@@ -2466,7 +2619,14 @@ def form():
                              error_title='Acesso Negado', 
                              error_message='Você não tem permissão para criar RNCs.'), 403
     
-    return send_from_directory('.', 'index.html')
+    # Buscar clientes para o dropdown
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('SELECT DISTINCT client FROM rncs WHERE client IS NOT NULL AND client != "" ORDER BY client')
+    clients = [row[0] for row in cursor.fetchall()]
+    conn.close()
+    
+    return render_template('new_rnc.html', clients=clients)
 
     # rotas /api/login e /api/logout movidas para routes/auth.py (Blueprint)
 
@@ -2776,7 +2936,7 @@ def get_user_info():
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         cursor.execute('''
-            SELECT u.permissions, g.name as group_name, u.avatar_key, u.avatar_prefs
+            SELECT u.permissions, g.name as group_name, u.avatar_key, u.avatar_prefs, u.group_id
             FROM users u
             LEFT JOIN groups g ON u.group_id = g.id
             WHERE u.id = ?
@@ -2839,6 +2999,7 @@ def get_user_info():
             'email': session['user_email'],
             'department': session.get('user_department') or get_user_department(session['user_id']),
             'group': user_data[1] if user_data else None,
+            'group_id': user_data[4] if user_data and len(user_data) > 4 else None,
             'role': session['user_role'],
             'permissions': permissions,
             'groupPermissions': group_perms_list,
@@ -4753,7 +4914,8 @@ def api_get_group_permissions(group_id):
     if 'user_id' not in session:
         return jsonify({'error': 'Usuário não autenticado'}), 401
     
-    if not has_permission(session['user_id'], 'admin_access'):
+    # Permitir acesso para admin_access OU manage_users
+    if not (has_permission(session['user_id'], 'admin_access') or has_permission(session['user_id'], 'manage_users')):
         return jsonify({'error': 'Acesso negado'}), 403
     
     try:
@@ -4775,7 +4937,8 @@ def api_update_group_permissions(group_id):
     if 'user_id' not in session:
         return jsonify({'error': 'Usuário não autenticado'}), 401
     
-    if not has_permission(session['user_id'], 'admin_access'):
+    # Permitir acesso para admin_access OU manage_users
+    if not (has_permission(session['user_id'], 'admin_access') or has_permission(session['user_id'], 'manage_users')):
         return jsonify({'error': 'Acesso negado'}), 403
     
     try:
@@ -4814,7 +4977,8 @@ def api_get_all_permissions():
     if 'user_id' not in session:
         return jsonify({'error': 'Usuário não autenticado'}), 401
     
-    if not has_permission(session['user_id'], 'admin_access'):
+    # Permitir acesso para admin_access OU manage_users
+    if not (has_permission(session['user_id'], 'admin_access') or has_permission(session['user_id'], 'manage_users')):
         return jsonify({'error': 'Acesso negado'}), 403
     
     try:
@@ -4869,7 +5033,8 @@ def admin_permissions():
     if 'user_id' not in session:
         return redirect('/')
     
-    if not has_permission(session['user_id'], 'admin_access'):
+    # Permitir acesso para admin_access OU manage_users
+    if not (has_permission(session['user_id'], 'admin_access') or has_permission(session['user_id'], 'manage_users')):
         return redirect('/dashboard')
     
     return render_template('admin_permissions.html')
@@ -6533,18 +6698,22 @@ if __name__ == '__main__':
     # Inicializar banco de dados
     init_database()
     
-    # Inicializar pool de conexões otimizado
+    # Inicializar pool de conexões otimizado (reduzido para startup mais rápido)
     try:
-        warm_pool(150)
+        warm_pool(5)  # Reduzido de 150 para 5 conexões iniciais
     except Exception as _e:
         try:
             logger.warning(f"Falha ao pré-aquecer pool: {_e}")
         except Exception:
             pass
     
-    # Iniciar backup automático (a cada 12 horas, sem backup imediato)
+    # Iniciar backup automático (a cada 12 horas, adiado para não atrasar startup)
     try:
+        # Atraso de 30 segundos antes do primeiro backup para não impactar a inicialização
+        def delayed_backup_start():
+            time.sleep(30)
         start_backup_scheduler(interval_seconds=43200)
+        threading.Thread(target=delayed_backup_start, daemon=True).start()
     except Exception as e:
         try:
             logger.error(f"Falha ao iniciar backup automático: {e}")
@@ -6554,6 +6723,12 @@ if __name__ == '__main__':
     # Iniciar monitor de performance em background
     performance_thread = threading.Thread(target=performance_monitor, daemon=True)
     performance_thread.start()
+    
+    # Iniciar configurações em background após inicialização completa
+    def delayed_setup_compression():
+        time.sleep(1.0)
+        setup_compression()
+    threading.Thread(target=delayed_setup_compression, daemon=True).start()
     
     # Obter IP e usar porta fixa para acesso em rede
     local_ip = get_local_ip()
