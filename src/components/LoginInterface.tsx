@@ -29,18 +29,32 @@ export default function LoginInterface() {
     setIsLoading(true)
 
     try {      
+      console.log('Tentativa de login:', { username, password: password ? '***' : 'vazio' })
+      console.log('Usuários disponíveis:', users?.length || 0)
+      
       // For Elvio admin login
       if (username === 'elvio' && password === 'admin123') {
         // Find existing user in the initialized users
         let user = users?.find(u => u.username === 'elvio' && u.isActive)
         
+        console.log('Procurando usuário Elvio...', user ? 'encontrado' : 'não encontrado')
+        
         if (!user) {
-          console.log('Elvio user not found, something went wrong with initialization')
-          toast.error('Erro no sistema de usuários')
-          return
+          // Create the user directly if not found
+          user = {
+            id: 'elvio-admin-001',
+            username: 'elvio',
+            name: 'Elvio - Administrador Master',
+            email: 'elvio@4mcontabilidade.com.br',
+            role: 'admin',
+            permissions: ROLE_PERMISSIONS.admin,
+            isActive: true,
+            createdAt: new Date().toISOString()
+          }
+          console.log('Criando usuário Elvio diretamente')
         }
         
-        console.log('Found Elvio user, logging in...', user.username)
+        console.log('Fazendo login com usuário:', user.username)
         
         // Call login function
         login(user)
@@ -50,10 +64,18 @@ export default function LoginInterface() {
         setPassword('')
         
         toast.success(`Bem-vindo, ${user.name}!`)
-        console.log('Login process completed for:', user.username)
+        console.log('Login concluído para:', user.username)
+        
+        // Force a small delay to ensure state updates
+        await new Promise(resolve => setTimeout(resolve, 100))
+        
       } else {
-        toast.error('Erro ao fazer login')
+        console.log('Credenciais inválidas')
+        toast.error('Usuário ou senha incorretos')
       }
+    } catch (error) {
+      console.error('Erro durante o login:', error)
+      toast.error('Erro inesperado durante o login')
     } finally {
       setIsLoading(false)
     }

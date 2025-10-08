@@ -30,33 +30,41 @@ export function useAuth() {
   }, [users])
 
   const login = (user: User) => {
-    console.log('Fazendo login para:', user.username)
+    console.log('Hook useAuth: Iniciando login para:', user.username)
     
-    const updatedUser = {
-      ...user,
-      lastLogin: new Date().toISOString(),
-      permissions: user.permissions || ROLE_PERMISSIONS[user.role] || []
-    }
-    
-    // Set current user with functional update
-    setCurrentUser(() => {
-      console.log('Usuário autenticado:', updatedUser.username)
-      return updatedUser
-    })
-    
-    // Update in users list if needed
-    setUsers(current => {
-      const currentUsers = current || []
-      const userExists = currentUsers.find(u => u.id === user.id)
-      
-      if (userExists) {
-        return currentUsers.map(u => 
-          u.id === user.id ? updatedUser : u
-        )
-      } else {
-        return [...currentUsers, updatedUser]
+    try {
+      const updatedUser = {
+        ...user,
+        lastLogin: new Date().toISOString(),
+        permissions: user.permissions || ROLE_PERMISSIONS[user.role] || []
       }
-    })
+      
+      console.log('Hook useAuth: Usuário processado:', updatedUser.username, updatedUser.role)
+      
+      // Set current user immediately
+      setCurrentUser(updatedUser)
+      console.log('Hook useAuth: setCurrentUser chamado')
+      
+      // Update in users list if needed
+      setUsers(current => {
+        const currentUsers = current || []
+        const userExists = currentUsers.find(u => u.id === user.id)
+        
+        if (userExists) {
+          console.log('Hook useAuth: Atualizando usuário existente na lista')
+          return currentUsers.map(u => 
+            u.id === user.id ? updatedUser : u
+          )
+        } else {
+          console.log('Hook useAuth: Adicionando novo usuário à lista')
+          return [...currentUsers, updatedUser]
+        }
+      })
+      
+      console.log('Hook useAuth: Login concluído com sucesso')
+    } catch (error) {
+      console.error('Hook useAuth: Erro durante o login:', error)
+    }
   }
 
   const hasPermission = (permission: Permission): boolean => {

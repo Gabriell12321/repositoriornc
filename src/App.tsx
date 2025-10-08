@@ -9,18 +9,27 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true)
   const { currentUser, logout } = useAuth()
 
+  // Debug logs for user state changes
+  useEffect(() => {
+    console.log('App.tsx: currentUser mudou:', currentUser ? currentUser.username : 'null')
+  }, [currentUser])
+
   useEffect(() => {
     // Simulate initial loading
     const timer = setTimeout(() => {
       setIsLoading(false)
+      console.log('App.tsx: Loading concluído')
     }, 1000)
 
     return () => clearTimeout(timer)
   }, [])
 
   const handleLogout = () => {
+    console.log('App.tsx: Logout solicitado')
     logout()
   }
+
+  console.log('App.tsx: Renderizando - isLoading:', isLoading, 'currentUser:', currentUser ? currentUser.username : 'null')
 
   if (isLoading) {
     return (
