@@ -19,56 +19,34 @@ export default function LoginInterface() {
 
   // Debug log to see users state
   useEffect(() => {
-    console.log('LoginInterface - users loaded:', users?.length, users?.map(u => u.username))
+    if (users && users.length > 0) {
+      console.log('Usuários carregados:', users.length)
+    }
   }, [users])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
 
-    try {
-      console.log('Login attempt for:', username)
-      
+    try {      
       // For Elvio admin login
       if (username === 'elvio' && password === 'admin123') {
-        // Find or create Elvio user
+        // Find existing user in the initialized users
         let user = users?.find(u => u.username === 'elvio' && u.isActive)
         
         if (!user) {
-          console.log('Creating Elvio user')
-          const elvioAdmin = {
-            username: 'elvio',
-            name: 'Elvio - Administrador Master',
-            email: 'elvio@4mcontabilidade.com.br',
-            role: 'admin' as const,
-            isActive: true
-          }
-          user = createUser(elvioAdmin)
-          console.log('Created user:', user)
+          toast.error('Erro no sistema de usuários')
+          return
         }
-
-        console.log('Attempting to login user:', user.username, 'with ID:', user.id)
         
-        // Ensure we have a valid user object before logging in
-        if (user && user.id) {
-          console.log('About to call login function')
-          login(user)
-          console.log('Login function completed')
-          
-          // Clear form
-          setUsername('')
-          setPassword('')
-          
-          toast.success(`Bem-vindo, ${user.name}!`)
-          
-          // Add a small delay to check if currentUser was set
-          setTimeout(() => {
-            console.log('Login process should be complete now')
-          }, 200)
-        } else {
-          console.error('User creation failed or user has no ID')
-          toast.error('Erro ao criar usuário')
-        }
+        // Call login function
+        login(user)
+        
+        // Clear form immediately
+        setUsername('')
+        setPassword('')
+        
+        toast.success(`Bem-vindo, ${user.name}!`)
         return
       }
 
@@ -81,13 +59,14 @@ export default function LoginInterface() {
       }
 
       login(user)
+      setUsername('')
+      setPassword('')
       toast.success(`Bem-vindo, ${user.name}!`)
       
     } catch (error) {
       console.error('Login error:', error)
       toast.error('Erro ao fazer login')
     } finally {
-      console.log('Setting isLoading to false')
       setIsLoading(false)
     }
   }
@@ -311,45 +290,6 @@ export default function LoginInterface() {
                   </Button>
                 </motion.div>
               </motion.form>
-              
-              {/* Debug info with improved styling */}
-              {users && users.length > 0 && (
-                <motion.div 
-                  className="mt-8"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 1.2 }}
-                >
-                  <div className="p-6 bg-gradient-to-br from-secondary/40 to-secondary/20 rounded-2xl border border-border/40 backdrop-blur-sm">
-                    <p className="text-sm text-muted-foreground mb-4 font-semibold flex items-center gap-2">
-                      <Building size={16} className="text-primary" />
-                      Usuários disponíveis no sistema:
-                    </p>
-                    <div className="space-y-3">
-                      {users.map(user => (
-                        <motion.div 
-                          key={user.id} 
-                          className="text-sm bg-background/60 p-4 rounded-xl border border-border/30 hover:bg-background/80 transition-all duration-300"
-                          whileHover={{ scale: 1.02, y: -2 }}
-                          transition={{ duration: 0.2 }}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <strong className="text-foreground text-base">{user.username}</strong>
-                              <p className="text-muted-foreground">{user.name} ({user.role})</p>
-                            </div>
-                            {user.username === 'elvio' && (
-                              <span className="px-3 py-1 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-xs font-semibold rounded-full">
-                                Admin
-                              </span>
-                            )}
-                          </div>
-                        </motion.div>
-                      ))}
-                    </div>
-                  </div>
-                </motion.div>
-              )}
             </CardContent>
           </div>
         </Card>

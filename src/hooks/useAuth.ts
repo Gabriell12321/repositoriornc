@@ -6,18 +6,31 @@ export function useAuth() {
   const [currentUser, setCurrentUser] = useKV<User | null>('current-user', null)
   const [users, setUsers] = useKV<User[]>('system-users', [])
 
+  // Initialize with Elvio user if needed
+  useEffect(() => {
+    if (!users || users.length === 0) {
+      const elvioAdmin: User = {
+        id: 'elvio-admin-001',
+        username: 'elvio',
+        name: 'Elvio - Administrador Master',
+        email: 'elvio@4mcontabilidade.com.br',
+        role: 'admin',
+        permissions: ROLE_PERMISSIONS.admin,
+        isActive: true,
+        createdAt: new Date().toISOString()
+      }
+      setUsers([elvioAdmin])
+      console.log('Initialized Elvio admin user')
+    }
+  }, [users, setUsers])
+
   // Debug useKV values
   useEffect(() => {
-    console.log('useAuth state update:')
-    console.log('  currentUser:', currentUser?.username)
-    console.log('  users count:', users?.length)
-    console.log('  currentUser object:', currentUser)
-  }, [currentUser, users])
+    console.log('Sistema de autenticação carregado - usuários:', users?.length)
+  }, [users])
 
   const login = (user: User) => {
-    console.log('=== LOGIN PROCESS START ===')
-    console.log('Login called for:', user.username)
-    console.log('Input user object:', user)
+    console.log('Fazendo login para:', user.username)
     
     const updatedUser = {
       ...user,
@@ -25,30 +38,25 @@ export function useAuth() {
       permissions: user.permissions || ROLE_PERMISSIONS[user.role] || []
     }
     
-    console.log('Setting currentUser to:', updatedUser.username)
-    console.log('Updated user object:', updatedUser)
+    // Set current user with functional update
+    setCurrentUser(() => {
+      console.log('Usuário autenticado:', updatedUser.username)
+      return updatedUser
+    })
     
-    try {
-      // Force update with callback to ensure state is set
-      setCurrentUser(updatedUser)
-      console.log('setCurrentUser called successfully')
-    } catch (error) {
-      console.error('Error setting current user:', error)
-    }
-    
-    // Add a small delay to ensure state is set
-    setTimeout(() => {
-      console.log('Current user after timeout should be:', updatedUser.username)
-    }, 100)
-    
-    // Update in users list
-    setUsers(current => 
-      (current || []).map(u => 
-        u.id === user.id ? updatedUser : u
-      )
-    )
-    
-    console.log('=== LOGIN PROCESS END ===')
+    // Update in users list if needed
+    setUsers(current => {
+      const currentUsers = current || []
+      const userExists = currentUsers.find(u => u.id === user.id)
+      
+      if (userExists) {
+        return currentUsers.map(u => 
+          u.id === user.id ? updatedUser : u
+        )
+      } else {
+        return [...currentUsers, updatedUser]
+      }
+    })
   }
 
   const hasPermission = (permission: Permission): boolean => {
