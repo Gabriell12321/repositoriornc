@@ -157,9 +157,21 @@ def generate_report():
             
         elif report_type == 'by_operator':
             # Relatório por operador
+            # CORRIGIDO: coluna department não existe mais na tabela rncs. Usar area_responsavel ou setor.
             query = """
-                SELECT r.*, r.responsavel as creator_name, r.department as creator_department,
-                       r.responsavel as assigned_user_name, r.department as assigned_department
+                SELECT r.*, 
+                       r.responsavel as creator_name,
+                       CASE 
+                           WHEN r.area_responsavel IS NOT NULL AND r.area_responsavel != '' THEN r.area_responsavel
+                           WHEN r.setor IS NOT NULL AND r.setor != '' THEN r.setor
+                           ELSE 'Não informado'
+                       END as creator_department,
+                       r.responsavel as assigned_user_name,
+                       CASE 
+                           WHEN r.area_responsavel IS NOT NULL AND r.area_responsavel != '' THEN r.area_responsavel
+                           WHEN r.setor IS NOT NULL AND r.setor != '' THEN r.setor
+                           ELSE 'Não informado'
+                       END as assigned_department
                 FROM rncs r
                 WHERE r.is_deleted = 0 
                 AND DATE(r.created_at) BETWEEN ? AND ?
@@ -170,24 +182,36 @@ def generate_report():
             stats = calculate_operator_stats_period(cursor, start_date, end_date)
             
         elif report_type == 'by_sector':
-            # Relatório por grupo (baseado no departamento dos RNCs)
+            # Relatório por setor/departamento (usando area_responsavel ou setor)
+            # CORRIGIDO: substituir r.department pela resolução dinâmica.
             query = """
-                SELECT r.*, r.department as creator_department, r.responsavel as creator_name,
-                       r.department as assigned_department, r.responsavel as assigned_user_name,
+                SELECT r.*, 
                        CASE 
-                           WHEN r.department = 'Engenharia' THEN 'Engenharia'
-                           WHEN r.department = 'Qualidade' THEN 'Qualidade'
-                           WHEN r.department = 'TI' THEN 'TI'
-                           WHEN r.department = 'Produção' THEN 'Produção'
-                           WHEN r.department = 'Compras' THEN 'Compras'
-                           WHEN r.department = 'Administração' THEN 'Administrador'
-                           WHEN r.department = 'Terceiros' THEN 'Terceiros'
+                           WHEN r.area_responsavel IS NOT NULL AND r.area_responsavel != '' THEN r.area_responsavel
+                           WHEN r.setor IS NOT NULL AND r.setor != '' THEN r.setor
+                           ELSE 'Não informado'
+                       END as creator_department,
+                       r.responsavel as creator_name,
+                       CASE 
+                           WHEN r.area_responsavel IS NOT NULL AND r.area_responsavel != '' THEN r.area_responsavel
+                           WHEN r.setor IS NOT NULL AND r.setor != '' THEN r.setor
+                           ELSE 'Não informado'
+                       END as assigned_department,
+                       r.responsavel as assigned_user_name,
+                       CASE 
+                           WHEN (r.area_responsavel = 'Engenharia' OR r.setor = 'Engenharia') THEN 'Engenharia'
+                           WHEN (r.area_responsavel = 'Qualidade' OR r.setor = 'Qualidade') THEN 'Qualidade'
+                           WHEN (r.area_responsavel = 'TI' OR r.setor = 'TI') THEN 'TI'
+                           WHEN (r.area_responsavel = 'Produção' OR r.setor = 'Produção') THEN 'Produção'
+                           WHEN (r.area_responsavel = 'Compras' OR r.setor = 'Compras') THEN 'Compras'
+                           WHEN (r.area_responsavel = 'Administração' OR r.setor = 'Administração') THEN 'Administrador'
+                           WHEN (r.area_responsavel = 'Terceiros' OR r.setor = 'Terceiros') THEN 'Terceiros'
                            ELSE 'Outros'
                        END as group_name
                 FROM rncs r
                 WHERE r.is_deleted = 0 
                 AND DATE(r.created_at) BETWEEN ? AND ?
-                ORDER BY group_name, r.department, r.created_at DESC
+                ORDER BY group_name, creator_department, r.created_at DESC
             """
             template = 'reports/by_sector_report_simple.html'
             stats = calculate_sector_stats_period(cursor, start_date, end_date)
@@ -397,24 +421,30 @@ def calculate_operator_stats_period(cursor, start_date, end_date):
     """, (start_date, end_date))
     stats['total_rncs'] = cursor.fetchone()[0]
     
-    # RNCs por operador
+    # RNCs por operador (usando r.responsavel direto se existir)
     cursor.execute("""
-        SELECT u.name, COUNT(*) FROM rncs r
+        SELECT 
+            COALESCE(NULLIF(r.responsavel, ''), u.name, 'Não informado') as operador,
+            COUNT(*) 
+        FROM rncs r
         LEFT JOIN users u ON r.user_id = u.id
         WHERE r.is_deleted = 0 AND DATE(r.created_at) BETWEEN ? AND ?
-        GROUP BY u.name
+        GROUP BY operador
         ORDER BY COUNT(*) DESC
     """, (start_date, end_date))
     stats['by_operator'] = dict(cursor.fetchall())
-    
-    # Valor por operador
+
+    # Valor por operador (sanitizando campo price que pode conter R$, vírgulas etc.)
     cursor.execute("""
-        SELECT u.name, SUM(CAST(r.price AS REAL)) FROM rncs r
+        SELECT 
+            COALESCE(NULLIF(r.responsavel, ''), u.name, 'Não informado') as operador,
+            SUM(CAST(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(r.price, 'R$', ''), ' ', ''), ',', ''), '"', ''), '''', '') AS REAL))
+        FROM rncs r
         LEFT JOIN users u ON r.user_id = u.id
         WHERE r.is_deleted = 0 AND DATE(r.created_at) BETWEEN ? AND ?
-        AND r.price IS NOT NULL AND r.price != ''
-        GROUP BY u.name
-        ORDER BY SUM(CAST(r.price AS REAL)) DESC
+          AND r.price IS NOT NULL AND r.price != '' AND r.price NOT IN ('0','0.0')
+        GROUP BY operador
+        ORDER BY SUM(CAST(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(r.price, 'R$', ''), ' ', ''), ',', ''), '"', ''), '''', '') AS REAL)) DESC
     """, (start_date, end_date))
     stats['value_by_operator'] = dict(cursor.fetchall())
     
@@ -431,30 +461,39 @@ def calculate_sector_stats_period(cursor, start_date, end_date):
     """, (start_date, end_date))
     stats['total_rncs'] = cursor.fetchone()[0]
     
-    # RNCs por setor
-    cursor.execute("""
-        SELECT r.department, COUNT(*) FROM rncs r
+    # RNCs por setor (usando area_responsavel ou setor)
+    dept_case = """
+        CASE 
+            WHEN r.area_responsavel IS NOT NULL AND r.area_responsavel != '' THEN r.area_responsavel
+            WHEN r.setor IS NOT NULL AND r.setor != '' THEN r.setor
+            ELSE 'Não informado'
+        END
+    """
+    cursor.execute(f"""
+        SELECT {dept_case} as departamento, COUNT(*) FROM rncs r
         WHERE r.is_deleted = 0 AND DATE(r.created_at) BETWEEN ? AND ?
-        GROUP BY r.department
+        GROUP BY departamento
         ORDER BY COUNT(*) DESC
     """, (start_date, end_date))
     stats['by_sector'] = dict(cursor.fetchall())
     
-    # Valor por setor
-    cursor.execute("""
-        SELECT r.department, SUM(CAST(r.price AS REAL)) FROM rncs r
+    # Valor por setor (sanitizando price)
+    cursor.execute(f"""
+        SELECT {dept_case} as departamento, 
+               SUM(CAST(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(r.price, 'R$', ''), ' ', ''), ',', ''), '"', ''), '''', '') AS REAL)) 
+        FROM rncs r
         WHERE r.is_deleted = 0 AND DATE(r.created_at) BETWEEN ? AND ?
-        AND r.price IS NOT NULL AND r.price != ''
-        GROUP BY r.department
-        ORDER BY SUM(CAST(r.price AS REAL)) DESC
+          AND r.price IS NOT NULL AND r.price != '' AND r.price NOT IN ('0','0.0')
+        GROUP BY departamento
+        ORDER BY SUM(CAST(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(r.price, 'R$', ''), ' ', ''), ',', ''), '"', ''), '''', '') AS REAL)) DESC
     """, (start_date, end_date))
     stats['value_by_sector'] = dict(cursor.fetchall())
     
     # RNCs por status por setor
-    cursor.execute("""
-        SELECT r.department, r.status, COUNT(*) FROM rncs r
+    cursor.execute(f"""
+        SELECT {dept_case} as departamento, r.status, COUNT(*) FROM rncs r
         WHERE r.is_deleted = 0 AND DATE(r.created_at) BETWEEN ? AND ?
-        GROUP BY r.department, r.status
+        GROUP BY departamento, r.status
     """, (start_date, end_date))
     sector_status = cursor.fetchall()
     stats['sector_status'] = {}
@@ -476,12 +515,18 @@ def calculate_finalized_stats(cursor):
     """)
     stats['total_finalized'] = cursor.fetchone()[0]
     
-    # RNCs finalizados por departamento
+    # RNCs finalizados por departamento (usar campos da própria RNC)
     cursor.execute("""
-        SELECT u.department, COUNT(*) FROM rncs r
-        LEFT JOIN users u ON r.user_id = u.id
+        SELECT 
+            CASE 
+                WHEN r.area_responsavel IS NOT NULL AND r.area_responsavel != '' THEN r.area_responsavel
+                WHEN r.setor IS NOT NULL AND r.setor != '' THEN r.setor
+                ELSE 'Não informado'
+            END as departamento,
+            COUNT(*)
+        FROM rncs r
         WHERE r.is_deleted = 0 AND r.status = 'Finalizado'
-        GROUP BY u.department
+        GROUP BY departamento
     """)
     stats['by_department'] = dict(cursor.fetchall())
     
