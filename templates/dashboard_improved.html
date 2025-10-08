@@ -2019,22 +2019,7 @@
                     " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 10px 22px rgba(220,53,69,.3)';" onmouseout="this.style.transform=''; this.style.boxShadow='0 8px 20px rgba(220,53,69,.25)';">
                         📊 Gerar Relatório
                     </button>
-                    <button id="expensesReportBtn" onclick="window.location.href='/dashboard/expenses'" style="
-                        padding: 10px;
-                        background: linear-gradient(135deg, #28a745, #20c997);
-                        color: white;
-                        border: none;
-                        border-radius: 10px;
-                        cursor: pointer;
-                        font-size: 14px;
-                        display: none;
-                        align-items: center;
-                        gap: 8px;
-                        box-shadow: 0 8px 20px rgba(40, 167, 69, 0.25);
-                        transition: transform .15s ease, box-shadow .15s ease;
-                    " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 10px 22px rgba(40,167,69,.3)';" onmouseout="this.style.transform=''; this.style.boxShadow='0 8px 20px rgba(40,167,69,.25)';">
-                        💰 Gastos por Funcionário
-                    </button>
+                    <!-- Botão 'Gastos por Funcionário' removido conforme solicitação -->
                 </div>
             </div>
         </div>
@@ -10993,6 +10978,30 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
             }
             
             console.log(`📊 Carregando dados do setor: ${setor}`);
+            
+            // Mostrar indicador de carregamento
+            const chartsContainer = document.getElementById('setorChartsContainer');
+            if (chartsContainer) {
+                chartsContainer.style.display = 'block';
+                chartsContainer.innerHTML = `
+                    <div style="background:#fff; border-radius:12px; padding:40px; text-align:center; box-shadow:0 2px 15px rgba(0,0,0,0.1);">
+                        <div style="font-size:48px; margin-bottom:16px;">⏳</div>
+                        <div style="font-size:18px; color:#333; font-weight:600; margin-bottom:8px;">Carregando dados...</div>
+                        <div style="font-size:14px; color:#666;">Processando RNCs do setor ${setorNames[setor] || setor}</div>
+                        <div style="margin-top:20px;">
+                            <div style="width:200px; height:4px; background:#f0f0f0; border-radius:2px; margin:0 auto; overflow:hidden;">
+                                <div style="width:100%; height:100%; background:linear-gradient(90deg, #667eea, #764ba2); animation:loading 1.5s ease-in-out infinite;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <style>
+                        @keyframes loading {
+                            0% { transform: translateX(-100%); }
+                            100% { transform: translateX(100%); }
+                        }
+                    </style>
+                `;
+            }
             
             // CRÍTICO: Limpar COMPLETAMENTE cache e gráficos anteriores para evitar acúmulo
             console.log('🧹 Limpando cache e gráficos anteriores...');
