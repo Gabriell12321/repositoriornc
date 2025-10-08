@@ -35,9 +35,12 @@ export default function LoginInterface() {
         let user = users?.find(u => u.username === 'elvio' && u.isActive)
         
         if (!user) {
+          console.log('Elvio user not found, something went wrong with initialization')
           toast.error('Erro no sistema de usuários')
           return
         }
+        
+        console.log('Found Elvio user, logging in...', user.username)
         
         // Call login function
         login(user)
@@ -47,25 +50,10 @@ export default function LoginInterface() {
         setPassword('')
         
         toast.success(`Bem-vindo, ${user.name}!`)
-        return
+        console.log('Login process completed for:', user.username)
+      } else {
+        toast.error('Erro ao fazer login')
       }
-
-      // For other users
-      const user = users?.find(u => u.username === username && u.isActive)
-      
-      if (!user) {
-        toast.error('Usuário não encontrado ou inativo')
-        return
-      }
-
-      login(user)
-      setUsername('')
-      setPassword('')
-      toast.success(`Bem-vindo, ${user.name}!`)
-      
-    } catch (error) {
-      console.error('Login error:', error)
-      toast.error('Erro ao fazer login')
     } finally {
       setIsLoading(false)
     }
