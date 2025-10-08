@@ -14,6 +14,59 @@ from services.permissions import has_permission
 
 print_reports = Blueprint('print_reports', __name__)
 
+# ===== Jinja filter: format numbers in BRL style (1.234,56) =====
+@print_reports.app_template_filter('brl')
+def _format_brl_number(value):
+    """Return number formatted in Brazilian style without currency symbol.
+
+    Examples:
+      1234.5 -> '1.234,50'
+      'R$ 3,45' -> '3,45'
+    """
+    try:
+        # Normalize to float
+        if value is None or value == '':
+            num = 0.0
+        elif isinstance(value, (int, float)):
+            num = float(value)
+        else:
+            s = str(value).strip()
+            # Remove currency and quotes/spaces
+            for ch in ['R$', '$', ' ', '\"', '"', "'"]:
+                s = s.replace(ch, '')
+            # Decide how to parse depending on separators present
+            if ',' in s and '.' in s:
+                # Assume BR format: thousands '.' and decimal ','
+                s = s.replace('.', '').replace(',', '.')
+            elif ',' in s and '.' not in s:
+                # Only comma present -> decimal comma
+                s = s.replace(',', '.')
+            else:
+                # Only dot or none -> keep as is
+                s = s
+            num = float(s) if s not in ('', '-',) else 0.0
+
+        # Format with thousands comma and dot decimal, then swap
+        txt = f"{num:,.2f}"
+        return txt.replace(',', 'X').replace('.', ',').replace('X', '.')
+    except Exception:
+        return '0,00'
+
+# With currency symbol
+@print_reports.app_template_filter('brl_money')
+def _format_brl_money(value):
+    try:
+        return f"R$ {_format_brl_number(value)}"
+    except Exception:
+        return 'R$ 0,00'
+# Also expose a helper for direct use in templates if needed
+@print_reports.app_context_processor
+def _inject_brl_helpers():
+    return {
+        'format_brl': _format_brl_number,
+        'format_brl_money': _format_brl_money,
+    }
+
 @print_reports.route('/report/print_rnc')
 def print_rnc_report():
     """Gera relatório de RNCs otimizado para impressão"""

@@ -398,9 +398,42 @@
             </tr>
             <tr>
                 <td><input type="text" name="description_drawing" class="input-field" placeholder="Descrição do desenho" data-field="description_drawing"></td>
-                <td><input type="text" name="quantity" class="input-field" placeholder="Quantidade" data-field="quantity"></td>
+                <td><input type="number" id="quantity" name="quantity" class="input-field" placeholder="Quantidade" data-field="quantity" min="0" step="1"></td>
                 <td><input type="text" id="client" name="client" class="input-field" placeholder="Cliente" data-field="client"></td>
                 <td><input type="text" name="material" class="input-field" placeholder="Material" data-field="material"></td>
+            </tr>
+        </table>
+
+        <!-- Sistema de Valor: Unitário x Quantidade = Total -->
+        <table>
+            <tr>
+                <td class="field-label" style="width: 30%;">PREÇO UNITÁRIO (R$)</td>
+                <td class="field-label" style="width: 20%;">QUANTIDADE</td>
+                <td class="field-label" style="width: 30%;">VALOR TOTAL (R$)</td>
+                <td class="field-label" style="width: 20%;">OBSERVAÇÃO</td>
+            </tr>
+            <tr>
+                <td>
+                    <input type="text" id="unit_price" name="unit_price" class="input-field" placeholder="R$ 0,00" data-field="unit_price"
+                           inputmode="decimal" autocomplete="off">
+                </td>
+                <td>
+                    <input type="number" id="quantity_calc" class="input-field" placeholder="0" min="0" step="1">
+                </td>
+                <td>
+                    <input type="text" id="price" name="price" class="input-field" placeholder="R$ 0,00" data-field="price"
+                           inputmode="decimal" autocomplete="off" style="margin-bottom:8px;">
+                    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:6px;">
+                        <button type="button" data-inc="50" class="mini-inc">+ R$ 50</button>
+                        <button type="button" data-inc="100" class="mini-inc">+ R$ 100</button>
+                        <button type="button" data-inc="500" class="mini-inc">+ R$ 500</button>
+                        <button type="button" data-inc="1000" class="mini-inc">+ R$ 1.000</button>
+                        <button type="button" id="clearPrice" class="mini-inc" style="background:#dee2e6;color:#495057">Limpar</button>
+                    </div>
+                </td>
+                <td>
+                    <input type="text" id="price_note" class="input-field" placeholder="Ex.: custo estimado, nota de orçamento" data-field="price_note">
+                </td>
             </tr>
         </table>
 
@@ -869,13 +902,18 @@
             const campos = [
                 'title', 'description', 'equipment', 'client', 'mp', 'revision', 'position', 'cv',
                 'conjunto', 'modelo', 'description_drawing', 'quantity', 'material', 'purchase_order',
-                'responsavel', 'inspetor', 'area_responsavel', 'instruction_retrabalho', 'cause_rnc', 'action_rnc'
+                'responsavel', 'inspetor', 'area_responsavel', 'instruction_retrabalho', 'cause_rnc', 'action_rnc',
+                'price', 'price_note', 'unit_price'
             ];
 
             campos.forEach(campo => {
                 const elemento = document.querySelector(`[data-field="${campo}"]`);
                 if (elemento) {
-                    const valor = elemento.value || '';
+                    let valor = elemento.value || '';
+                    // Normalizar valor monetário para número
+                    if (campo === 'price' || campo === 'unit_price') {
+                        valor = brlToFloat(valor);
+                    }
                     if (valor && __LOCKED_FIELDS.includes(campo)) {
                         camposBloqueadosViolados.push(campo);
                     }
@@ -1129,6 +1167,106 @@
         document.head.appendChild(style);
         
         console.log('🔧 Script carregado completamente!');
-    </script>
+        </script>
+        <script>
+            // Conversores BRL ↔ número
+            function brlToFloat(str) {
+                if (!str) return 0;
+                try {
+                    let s = String(str).trim();
+                    s = s.replace(/[^0-9.,-]/g, ''); // remove tudo que não é dígito, vírgula, ponto ou sinal
+                    if (s.includes(',') && s.includes('.')) {
+                        // padrão BR: milhar ponto e decimal vírgula
+                        s = s.replace(/\./g, '').replace(',', '.');
+                    } else if (s.includes(',') && !s.includes('.')) {
+                        s = s.replace(',', '.');
+                    }
+                    const n = parseFloat(s);
+                    return isNaN(n) ? 0 : Number(n.toFixed(2));
+                } catch (e) {
+                    return 0;
+                }
+            }
+
+            function floatToBRL(n) {
+                try {
+                    const num = isNaN(n) ? 0 : Number(n);
+                    return num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                } catch (e) {
+                    return '0,00';
+                }
+            }
+
+            // Máscara no input de valor
+            const priceInput = document.getElementById('price');
+            const unitPriceInput = document.getElementById('unit_price');
+            const qtyCalcInput = document.getElementById('quantity_calc');
+            const qtyField = document.getElementById('quantity');
+            if (priceInput) {
+                priceInput.addEventListener('input', () => {
+                    const val = brlToFloat(priceInput.value);
+                    priceInput.value = val > 0 ? `R$ ${floatToBRL(val)}` : '';
+                    // Se quantidade > 0, atualizar preço unitário
+                    const q = parseFloat((qtyCalcInput?.value || qtyField?.value || '0')) || 0;
+                    if (unitPriceInput && q > 0) {
+                        const unit = val / q;
+                        unitPriceInput.value = unit > 0 ? `R$ ${floatToBRL(unit)}` : '';
+                    }
+                });
+                priceInput.addEventListener('blur', () => {
+                    const val = brlToFloat(priceInput.value);
+                    priceInput.value = `R$ ${floatToBRL(val)}`;
+                });
+                // Increments
+                document.querySelectorAll('.mini-inc[data-inc]').forEach(btn => {
+                    btn.style.border = '1px solid #adb5bd';
+                    btn.style.borderRadius = '14px';
+                    btn.style.padding = '4px 10px';
+                    btn.style.background = '#f8f9fa';
+                    btn.style.cursor = 'pointer';
+                    btn.style.fontSize = '12px';
+                    btn.addEventListener('click', () => {
+                        const inc = parseFloat(btn.getAttribute('data-inc') || '0');
+                        const cur = brlToFloat(priceInput.value);
+                        const next = Math.max(0, cur + inc);
+                        priceInput.value = next ? `R$ ${floatToBRL(next)}` : '';
+                    });
+                });
+                const clearBtn = document.getElementById('clearPrice');
+                if (clearBtn) {
+                    clearBtn.addEventListener('click', () => { priceInput.value = ''; });
+                }
+            }
+
+            // Máscara para preço unitário e cálculo total
+            function recalcFromUnit() {
+                const unit = brlToFloat(unitPriceInput?.value || '');
+                const q = parseFloat((qtyCalcInput?.value || qtyField?.value || '0')) || 0;
+                const total = Math.max(0, unit * q);
+                if (priceInput) priceInput.value = `R$ ${floatToBRL(total)}`;
+            }
+
+            if (unitPriceInput) {
+                unitPriceInput.addEventListener('input', () => {
+                    const v = brlToFloat(unitPriceInput.value);
+                    unitPriceInput.value = v > 0 ? `R$ ${floatToBRL(v)}` : '';
+                    recalcFromUnit();
+                });
+                unitPriceInput.addEventListener('blur', () => {
+                    const v = brlToFloat(unitPriceInput.value);
+                    unitPriceInput.value = `R$ ${floatToBRL(v)}`;
+                });
+            }
+
+            function bindQty(el) {
+                if (!el) return;
+                el.addEventListener('input', () => {
+                    el.value = el.value.replace(/[^0-9]/g, '');
+                    recalcFromUnit();
+                });
+            }
+            bindQty(qtyCalcInput);
+            bindQty(qtyField);
+        </script>
 </body>
 </html>

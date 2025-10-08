@@ -41,19 +41,20 @@
     </style>
 </head>
 <body>
+    <style>
+        .print-button { position: fixed; top: 20px; right: 20px; background: #3498db; color: #fff; border: 0; padding: 8px 14px; border-radius: 5px; cursor: pointer; }
+        .back-button { position: fixed; top: 20px; right: 130px; background: #6c757d; color: #fff; border: 0; padding: 8px 14px; border-radius: 5px; cursor: pointer; }
+        @media print { .print-button, .back-button { display:none; } }
+    </style>
+    <button class="print-button" onclick="window.print()">Imprimir</button>
+    <button class="back-button" onclick="window.location.href='/reports/menu'">Novo Relatório</button>
     <div class="header">
-        <h1>RELATÓRIO RNC POR GRUPO</h1>
+        <h1>RELATÓRIO RNC POR SETOR</h1>
         <p>Período: {{ start_date }} a {{ end_date }}</p>
         <p>Total de RNCs: {{ stats.total_rncs }}</p>
     </div>
     
-    <div class="debug-info">
-        <strong>DEBUG INFO:</strong><br>
-        Total de RNCs recebidas: {{ rncs|length }}<br>
-        Grupos únicos: {{ rncs|map(attribute='group_name')|unique|list|length }}<br>
-        Grupos: {{ rncs|map(attribute='group_name')|unique|list }}<br>
-        Departamentos: {{ rncs|map(attribute='department')|unique|list }}
-    </div>
+    
     
     {# Organizar todos os RNCs por grupo #}
     {% set groups = {} %}
@@ -74,24 +75,31 @@
         {% set _ = groups[group].update({'count': groups[group]['count'] + 1}) %}
     {% endfor %}
     
-    <div class="debug-info">
-        <strong>GRUPOS PROCESSADOS:</strong><br>
-        {% for group_name, group_data in groups.items() %}
-            {{ group_name }}: {{ group_data.count }} RNCs, R$ {{ "%.2f"|format(group_data.total) }}<br>
-        {% endfor %}
+    
+    {# Total geral #}
+    {% set total_value = 0 %}
+    {% for g in groups.values() %}{% set total_value = total_value + g.total %}{% endfor %}
+    <div class="sector-header" style="margin-bottom:10px;">
+        Total Geral — R$ {{ total_value|brl }} ({{ stats.total_rncs }} RNCs)
     </div>
     
     {# Renderizar por grupo #}
-    {% for group_name, group_data in groups.items() %}
+    {% set group_list = [] %}
+    {% for name, data in groups.items() %}
+        {% set _ = group_list.append({'name': name, 'data': data, 'total': data.total}) %}
+    {% endfor %}
+    {% for _item in group_list|sort(attribute='total', reverse=true) %}
+        {% set group_name = _item.name %}
+        {% set group_data = _item.data %}
         <div class="sector-section">
             <div class="sector-header">
-                {{ group_name }} - R$ {{ "%.2f"|format(group_data.total) }} ({{ group_data.count }} RNCs)
+                {{ group_name }} - R$ {{ group_data.total|brl }} ({{ group_data.count }} RNCs)
             </div>
             
             <div class="rnc-list">
                 {% for rnc in group_data.rncs %}
                     <div class="rnc-item">
-                        <strong>RNC {{ rnc.rnc_number }}</strong> - R$ {{ "%.2f"|format(rnc.price|float if rnc.price else 0) }}
+                        <strong>RNC {{ rnc.rnc_number }}</strong> - R$ {{ (rnc.price|float if rnc.price else 0)|brl }}
                         <br>
                         <small>
                             Departamento: {{ rnc.department or 'N/A' }} | 

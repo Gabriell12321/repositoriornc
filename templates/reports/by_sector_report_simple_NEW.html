@@ -443,11 +443,11 @@
                 <div class="stat-label">Total de RNCs</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number">R$ {{ "{:,.2f}".format(total_value).replace(',', 'X').replace('.', ',').replace('X', '.') }}</div>
+                <div class="stat-number">R$ {{ total_value|brl }}</div>
                 <div class="stat-label">Valor Total</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number">R$ {{ "{:,.2f}".format(total_value / rncs|length if rncs|length > 0 else 0).replace(',', 'X').replace('.', ',').replace('X', '.') }}</div>
+                <div class="stat-number">R$ {{ (total_value / (rncs|length if rncs|length > 0 else 1))|brl }}</div>
                 <div class="stat-label">Valor Médio</div>
             </div>
         </div>
@@ -471,13 +471,13 @@
         <div class="sector-section">
             <div class="sector-header">
                 <span>{{ group_name }}</span>
-                <span class="sector-total">R$ {{ "{:,.2f}".format(group_data.total).replace(',', 'X').replace('.', ',').replace('X', '.') }}</span>
+                <span class="sector-total">R$ {{ group_data.total|brl }}</span>
             </div>
             
             <div class="sector-stats">
                 <strong>{{ group_data.count }}</strong> RNCs • 
-                Valor Total: <strong>R$ {{ "{:,.2f}".format(group_data.total).replace(',', 'X').replace('.', ',').replace('X', '.') }}</strong> • 
-                Valor Médio: <strong>R$ {{ "{:,.2f}".format(group_data.total / group_data.count).replace(',', 'X').replace('.', ',').replace('X', '.') if group_data.count > 0 else '0,00' }}</strong>
+                Valor Total: <strong>R$ {{ group_data.total|brl }}</strong> • 
+                Valor Médio: <strong>R$ {{ (group_data.total / group_data.count)|brl if group_data.count > 0 else '0,00' }}</strong>
             </div>
             
             <div class="rnc-list">
@@ -490,7 +490,7 @@
                             </div>
                         </div>
                         <div class="rnc-value">
-                            {{ rnc.price_formatted if rnc.price_formatted else 'R$ ' + "{:,.2f}".format(rnc.price|float if rnc.price else 0).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                            {{ rnc.price_formatted if rnc.price_formatted else ('R$ ' ~ ((rnc.price|float if rnc.price else 0)|brl)) }}
                         </div>
                     </div>
                 {% endfor %}

@@ -218,6 +218,16 @@
         <p>Período: {{ start_date }} a {{ end_date }}</p>
         <p>Total de RNCs: {{ stats.total_rncs }}</p>
     </div>
+
+    {# Calcular total geral em R$ #}
+    {% set grand_total = 0 %}
+    {% for _dept in departments.values() %}
+        {% set grand_total = grand_total + _dept.total %}
+    {% endfor %}
+    <div class="department-header" style="margin-top:10px;">
+        <span class="department-name">Total Geral</span>
+        <span class="department-total">R$ {{ grand_total|brl }}</span>
+    </div>
     
     {# Organizar todos os RNCs por departamento e funcionário #}
     {% set departments = {} %}
@@ -244,20 +254,26 @@
     {% endfor %}
     
     {# Renderizar por departamento #}
-    {% for dept_name, dept_data in departments.items() %}
+    {% set dept_list = [] %}
+    {% for name, data in departments.items() %}
+        {% set _ = dept_list.append({'name': name, 'data': data, 'total': data.total}) %}
+    {% endfor %}
+    {% for _item in dept_list|sort(attribute='total', reverse=true) %}
+        {% set dept_name = _item.name %}
+        {% set dept_data = _item.data %}
         <div class="department-section">
             <div class="department-header">
                 <span class="department-name">{{ dept_name }}</span>
-                <span class="department-total">R$ {{ "%.2f"|format(dept_data.total) }}</span>
+                <span class="department-total">R$ {{ dept_data.total|brl }}</span>
             </div>
             <div class="department-subtotal">
-                R$ {{ "%.2f"|format(dept_data.total) }}
+                R$ {{ dept_data.total|brl }}
             </div>
             <div class="employee-list">
-                {% for employee_name, employee_value in dept_data.employees.items() %}
+                {% for employee_name, employee_value in dept_data.employees|dictsort(by='value', reverse=true) %}
                     <div class="employee-item">
                         <span class="employee-name">{{ employee_name }}</span>
-                        <span class="employee-value">R$ {{ "%.2f"|format(employee_value) }}</span>
+                        <span class="employee-value">R$ {{ employee_value|brl }}</span>
                     </div>
                 {% endfor %}
             </div>

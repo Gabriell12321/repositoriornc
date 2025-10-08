@@ -317,11 +317,11 @@
                 <div class="stat-label">RNCs Finalizadas</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number">R$ {{ "%.2f"|format(stats.total_value) }}</div>
+                <div class="stat-number">R$ {{ stats.total_value|brl }}</div>
                 <div class="stat-label">Valor Total</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number">R$ {{ "%.2f"|format(stats.finalized_value) }}</div>
+                <div class="stat-number">R$ {{ stats.finalized_value|brl }}</div>
                 <div class="stat-label">Valor Finalizado</div>
             </div>
         </div>
@@ -357,16 +357,16 @@
                     <div class="department-section">
                         <div class="department-header">
                             <span class="department-name">{{ dept_name }}</span>
-                            <span class="department-total">R$ {{ "%.2f"|format(dept_data.total) }}</span>
+                            <span class="department-total">R$ {{ dept_data.total|brl }}</span>
                         </div>
                         <div class="department-subtotal">
-                            R$ {{ "%.2f"|format(dept_data.total) }}
+                            R$ {{ dept_data.total|brl }}
                         </div>
                         <div class="employee-list">
                             {% for employee_name, employee_value in dept_data.employees.items() %}
                                 <div class="employee-item">
                                     <span class="employee-name">{{ employee_name }}</span>
-                                    <span class="employee-value">R$ {{ "%.2f"|format(employee_value) }}</span>
+                                    <span class="employee-value">R$ {{ employee_value|brl }}</span>
                                 </div>
                             {% endfor %}
                         </div>

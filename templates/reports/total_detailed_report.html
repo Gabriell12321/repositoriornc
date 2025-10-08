@@ -292,7 +292,7 @@
             </div>
             
             <div class="stat-card">
-                <div class="stat-number">R$ {{ "%.2f"|format(stats.total_value) }}</div>
+                <div class="stat-number">R$ {{ stats.total_value|brl }}</div>
                 <div class="stat-label">Valor Total</div>
             </div>
             
@@ -393,7 +393,7 @@
                 </td>
                 <td>{{ rnc.creator_name or 'Sistema' }}</td>
                 <td>{{ rnc.created_at.split(' ')[0] if rnc.created_at else 'N/A' }}</td>
-                <td class="price">{{ "%.2f"|format(rnc.price|float) if rnc.price else '0.00' }}</td>
+                <td class="price">{{ (rnc.price|float if rnc.price else 0)|brl }}</td>
             </tr>
             {% endfor %}
         </tbody>

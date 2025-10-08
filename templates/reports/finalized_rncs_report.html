@@ -265,7 +265,7 @@
             </div>
             
             <div class="stat-card">
-                <div class="stat-number">R$ {{ "%.2f"|format(stats.total_value) }}</div>
+                <div class="stat-number">R$ {{ stats.total_value|brl }}</div>
                 <div class="stat-label">Valor Total</div>
             </div>
             
@@ -347,12 +347,12 @@
                     {% if rnc.price and rnc.price != '0' and rnc.price != '0.0' %}
                         {% set clean_price = rnc.price|replace('R$', '')|replace(' ', '')|replace(',', '')|replace('"', '')|replace("'", '')|trim %}
                         {% if clean_price and clean_price != '0' and clean_price != '0.0' %}
-                            {{ "%.2f"|format(clean_price|float) }}
+                            {{ (clean_price|float)|brl }}
                         {% else %}
-                            0.00
+                            0,00
                         {% endif %}
                     {% else %}
-                        0.00
+                        0,00
                     {% endif %}
                 </td>
             </tr>
