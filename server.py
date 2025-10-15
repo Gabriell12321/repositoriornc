@@ -22,11 +22,13 @@ def spark_current_user():
     if request.method == 'GET':
         return jsonify(current_user)
     elif request.method == 'POST':
-        if not request.is_json:
-            return jsonify({"error": "Unsupported Media Type"}), 415
-        data = request.get_json()
-        current_user.update(data)
-        return jsonify(current_user)
+        try:
+            data = request.get_json(force=True)
+            if data:
+                current_user.update(data)
+            return jsonify(current_user)
+        except Exception as e:
+            return jsonify({"error": str(e)}), 400
     return '', 405
 
 @app.route('/_spark/kv/system-users', methods=['GET', 'POST'])
@@ -34,11 +36,32 @@ def spark_system_users():
     if request.method == 'GET':
         return jsonify(system_users)
     elif request.method == 'POST':
-        if not request.is_json:
-            return jsonify({"error": "Unsupported Media Type"}), 415
-        data = request.get_json()
-        system_users.append(data)
-        return jsonify(system_users)
+        try:
+            data = request.get_json(force=True)
+            if data:
+                system_users.append(data)
+            return jsonify(system_users)
+        except Exception as e:
+            return jsonify({"error": str(e)}), 400
+    return '', 405
+
+@app.route('/_spark/loaded', methods=['POST'])
+def spark_loaded():
+    return jsonify({"status": "ok"}), 200
+
+@app.route('/_spark/kv/<path:key>', methods=['GET', 'POST', 'PUT', 'DELETE'])
+def spark_kv_generic(key: str):
+    """Rota genérica para qualquer chave do key-value store"""
+    if request.method == 'GET':
+        return jsonify({"key": key, "value": None})
+    elif request.method in ['POST', 'PUT']:
+        try:
+            data = request.get_json(force=True)
+            return jsonify({"key": key, "value": data})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 400
+    elif request.method == 'DELETE':
+        return jsonify({"status": "deleted"}), 200
     return '', 405
 
 @app.route('/')
