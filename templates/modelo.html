@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RNC {{ rnc.rnc_number or rnc.id }}</title>
+    <style>
+        :root {
+            --primary-red: #C1272D;
+            --secondary-gray: #555555;
+            --light-gray: #F5F5F5;
+            --border-gray: #DDDDDD;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #fff;
+            color: var(--secondary-gray);
+            line-height: 1.35;
+        }
+
+        .container { max-width: 850px; margin: 24px auto; padding: 0 16px; }
+
+        .header { text-align: center; margin-bottom: 16px; position: relative; }
+    .logo-container { display: flex; justify-content: center; align-items: center; gap: 16px; margin-bottom: 8px; }
+    .logo-img { height: 38px; object-fit: contain; display: block; }
+        .title { font-size: 18px; font-weight: bold; color: var(--secondary-gray); }
+        .subtitle { font-size: 13px; margin-top: 4px; color: var(--secondary-gray); }
+        .form-number { position: absolute; right: 0; top: 0; font-size: 14px; color: var(--secondary-gray); }
+        .rnc-number { margin-top: 6px; font-weight: 700; color: var(--primary-red); }
+
+        .print-controls { position: fixed; top: 16px; right: 16px; display: flex; gap: 8px; z-index: 1000; }
+        .print-btn { background: var(--primary-red); color: #fff; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: 700; }
+        .print-btn.secondary { background: #6c757d; }
+
+        table { width: 100%; border-collapse: collapse; margin-bottom: 14px; background: #fff; }
+        th, td { border: 1px solid var(--border-gray); padding: 6px 8px; text-align: left; font-size: 12px; vertical-align: top; }
+        .section-table { margin-bottom: 14px; }
+        .section-title { text-align: center; font-weight: 700; font-size: 12px; background: var(--light-gray); padding: 4px 0; }
+
+        .text-block { white-space: pre-wrap; min-height: 72px; padding: 6px 8px; }
+
+        .bottom-section { display: flex; gap: 14px; margin-top: 8px; }
+        .bottom-section > div { flex: 1; }
+        .signature-row td { padding: 2px 8px; }
+        .name-visto { display: flex; justify-content: space-between; gap: 8px; }
+
+        .check { font-weight: 700; color: var(--primary-red); }
+
+        @media print {
+            @page { size: A4; margin: 8mm; }
+            .print-controls { display: none !important; }
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+    </style>
+</head>
+<body>
+    <div class="print-controls">
+        <button class="print-btn" onclick="window.print()">Imprimir</button>
+        <button class="print-btn secondary" onclick="window.close()">Fechar</button>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="form-number">FQ – 002</div>
+            <div class="logo-container">
+                <img src="/IPPELLOGO.jpg" alt="IPPEL" class="logo-img logo-ippeel-img">
+                <img src="{{ url_for('static', filename='LOGOSQI.jpg') }}" alt="SQI" class="logo-img logo-sqi-img">
+            </div>
+            <div class="title">Relatório De Não Conformidades Internas – RNC</div>
+            <div class="subtitle">FABRICAÇÃO / RECEBIMENTO</div>
+            <div class="rnc-number">RNC Nº: {{ rnc.rnc_number or rnc.id }}</div>
+        </div>
+
+        <!-- Principal -->
+        <table>
+            <tr>
+                <td>DES.</td>
+                <td>{{ rnc.description_drawing or txt_fields.get('Desenho') or '-' }}</td>
+                <td>MP.</td>
+                <td>{{ rnc.mp or txt_fields.get('MP') or '-' }}</td>
+                <td>REV.</td>
+                <td>{{ rnc.revision or txt_fields.get('Revisão') or txt_fields.get('REVISAO') or '-' }}</td>
+            </tr>
+            <tr>
+                <td>POS.</td>
+                <td>{{ rnc.position or txt_fields.get('POS') or '-' }}</td>
+                <td>CV.</td>
+                <td>{{ rnc.cv or txt_fields.get('CV') or '-' }}</td>
+                <td>MOD.</td>
+                <td>{{ rnc.modelo or txt_fields.get('Modelo') or '-' }}</td>
+            </tr>
+            <tr>
+                <td>EQUIPAMENTO</td>
+                <td>{{ rnc.equipment or '-' }}</td>
+                <td>CONJUNTO</td>
+                <td>{{ rnc.conjunto or txt_fields.get('Conjunto') or '-' }}</td>
+                <td>CLIENTE</td>
+                <td>{{ rnc.client or '-' }}</td>
+            </tr>
+            <tr>
+                <td>DESCRIÇÃO DES.</td>
+                <td>{{ rnc.description_drawing or txt_fields.get('Descrição da RNC') or txt_fields.get('Descrição do desenho') or '-' }}</td>
+                <td>QTDE LOTE</td>
+                <td>{{ rnc.quantity or txt_fields.get('Quantidade') or '-' }}</td>
+                <td>MATERIAL</td>
+                <td>{{ rnc.material or txt_fields.get('Material') or '-' }}</td>
+            </tr>
+            <tr>
+                <td>ASSINATURA GERENTE</td>
+                <td>{{ rnc.signature_engineering_name or '-' }}</td>
+                <td>ASSINATURA LÍDER SETOR</td>
+                <td>{{ rnc.signature_inspection2_name or '-' }}</td>
+                <td>ORDEM DE COMPRA</td>
+                <td>{{ rnc.purchase_order or txt_fields.get('OC') or '-' }}</td>
+            </tr>
+            <tr>
+                <td>INSPECTOR:</td>
+                <td>{{ rnc.inspetor or rnc.signature_inspection_name or '-' }}</td>
+                <td>DATA EMISSÃO</td>
+                <td>{{ (rnc.created_at or '')[:10] if rnc.created_at else '-' }}</td>
+                <td>ÁREA RESPONSÁVEL</td>
+                <td>{{ rnc.area_responsavel or rnc.department or rnc.user_department or '-' }}</td>
+            </tr>
+            <tr>
+                <td>NOME RESPONSÁVEL</td>
+                <td>{{ rnc.responsavel or '-' }}</td>
+                <td>SETOR</td>
+                <td colspan="3">{{ rnc.setor or '-' }}</td>
+            </tr>
+        </table>
+
+        <!-- Descrição NC -->
+        <table class="section-table">
+            <thead>
+                <tr>
+                    <th>ITEM</th>
+                    <th colspan="3" class="section-title">DESCRIÇÃO DA NÃO CONFORMIDADE</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="width:60px;">1</td>
+                    <td colspan="3"><div class="text-block">{{ (txt_fields.get('Descrição da RNC') or rnc.description or '-') | trim }}</div></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Instrução retrabalho -->
+        <table class="section-table">
+            <thead>
+                <tr>
+                    <th>ITEM</th>
+                    <th colspan="3" class="section-title">INSTRUÇÃO PARA RETRABALHO</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>2</td>
+                    <td colspan="3"><div class="text-block">
+                        {% if rnc.instruction_retrabalho %}
+                            {{ rnc.instruction_retrabalho }}
+                        {% elif txt_fields.get('Instrução para retrabalho') %}
+                            {{ txt_fields.get('Instrução para retrabalho') }}
+                        {% elif txt_fields.get('Instrucao para retrabalho') %}
+                            {{ txt_fields.get('Instrucao para retrabalho') }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </div></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Causa -->
+        <table class="section-table">
+            <thead>
+                <tr>
+                    <th>ITEM</th>
+                    <th colspan="3" class="section-title">CAUSA DA RNC</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>3</td>
+                    <td colspan="3"><div class="text-block">
+                        {% if rnc.cause_rnc %}
+                            {{ rnc.cause_rnc }}
+                        {% elif txt_fields.get('Causa') %}
+                            {{ txt_fields.get('Causa') }}
+                        {% elif txt_fields.get('Causa da RNC') %}
+                            {{ txt_fields.get('Causa da RNC') }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </div></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Ação -->
+        <table class="section-table">
+            <thead>
+                <tr>
+                    <th>ITEM</th>
+                    <th colspan="3" class="section-title">AÇÃO A SER TOMADA</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>4</td>
+                    <td colspan="3"><div class="text-block">
+                        {% if rnc.action_rnc %}
+                            {{ rnc.action_rnc }}
+                        {% elif txt_fields.get('Ação') %}
+                            {{ txt_fields.get('Ação') }}
+                        {% elif txt_fields.get('Ação a ser tomada') %}
+                            {{ txt_fields.get('Ação a ser tomada') }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </div></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Disposição e Inspeção -->
+        <div class="bottom-section">
+            <div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th colspan="2" class="section-title">DISPOSIÇÃO DO MATERIAL NÃO-CONFORME</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>USAR COMO ESTÁ</td>
+                            <td class="check">{{ '✓' if rnc.disposition_usar else '' }}</td>
+                        </tr>
+                        <tr>
+                            <td>RETRABALHAR</td>
+                            <td class="check">{{ '✓' if rnc.disposition_retrabalhar else '' }}</td>
+                        </tr>
+                        <tr>
+                            <td>REJEITAR</td>
+                            <td class="check">{{ '✓' if rnc.disposition_rejeitar else '' }}</td>
+                        </tr>
+                        <tr>
+                            <td>SUCATA</td>
+                            <td class="check">{{ '✓' if rnc.disposition_sucata else '' }}</td>
+                        </tr>
+                        <tr>
+                            <td>DEVOLVER AO ESTOQUE</td>
+                            <td class="check">{{ '✓' if rnc.disposition_devolver_estoque else '' }}</td>
+                        </tr>
+                        <tr>
+                            <td>DEVOLVER AO FORNECEDOR</td>
+                            <td class="check">{{ '✓' if rnc.disposition_devolver_fornecedor else '' }}</td>
+                        </tr>
+                        <tr>
+                            <td>INSPECÇÃO:</td>
+                            <td>{{ rnc.signature_inspection_name or '-' }}</td>
+                        </tr>
+                        <tr>
+                            <td>ENGENHARIA:</td>
+                            <td>{{ rnc.signature_engineering_name or '-' }}</td>
+                        </tr>
+                        <tr class="signature-row">
+                            <td colspan="2">
+                                <div class="name-visto">
+                                    <span>NOME</span>
+                                    <span>VISTO</span>
+                                    <span>NOME</span>
+                                    <span>VISTO</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="section-title">INSPEÇÃO DO RETRABALHO</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>APROVADO <span class="check">{{ '✓' if rnc.inspection_aprovado else '' }}</span></td>
+                        </tr>
+                        <tr>
+                            <td>REPROVADO <span class="check">{{ '✓' if rnc.inspection_reprovado else '' }}</span></td>
+                        </tr>
+                        <tr>
+                            <td>VER RNC. N°: {{ rnc.inspection_ver_rnc or '-' }}</td>
+                        </tr>
+                        <tr>
+                            <td>INSPECÇÃO: {{ rnc.signature_inspection_name or '-' }}</td>
+                        </tr>
+                        <tr class="signature-row">
+                            <td>
+                                <div class="name-visto">
+                                    <span>NOME</span>
+                                    <span>VISTO</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

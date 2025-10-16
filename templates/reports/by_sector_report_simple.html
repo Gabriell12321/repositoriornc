@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório RNC por Setor - IPPEL</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: white;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #333;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+        .sector-section {
+            margin-bottom: 30px;
+            border: 1px solid #ddd;
+            padding: 15px;
+        }
+        .sector-header {
+            background: #f0f0f0;
+            padding: 10px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .rnc-item {
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .debug-info {
+            background: #f8f9fa;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <style>
+        .print-button { position: fixed; top: 20px; right: 20px; background: #3498db; color: #fff; border: 0; padding: 8px 14px; border-radius: 5px; cursor: pointer; }
+        .back-button { position: fixed; top: 20px; right: 130px; background: #6c757d; color: #fff; border: 0; padding: 8px 14px; border-radius: 5px; cursor: pointer; }
+        @media print { .print-button, .back-button { display:none; } }
+    </style>
+    <button class="print-button" onclick="window.print()">Imprimir</button>
+    <button class="back-button" onclick="window.location.href='/reports/menu'">Novo Relatório</button>
+    <div class="header">
+        <h1>RELATÓRIO RNC POR SETOR</h1>
+        <p>Período: {{ start_date }} a {{ end_date }}</p>
+        <p>Total de RNCs: {{ stats.total_rncs }}</p>
+    </div>
+    
+    
+    
+    {# Organizar todos os RNCs por grupo #}
+    {% set groups = {} %}
+    
+    {# Processar todos os RNCs #}
+    {% for rnc in rncs %}
+        {% set group = rnc.group_name or 'Sem Grupo' %}
+        {# ✅ CORREÇÃO: Usar parse_brl para converter strings brasileiras (R$ 1.000,00) para float #}
+        {% set value = rnc.price|parse_brl if rnc.price else 0 %}
+        
+        {# Inicializar grupo se não existir #}
+        {% if group not in groups %}
+            {% set _ = groups.update({group: {'rncs': [], 'total': 0, 'count': 0}}) %}
+        {% endif %}
+        
+        {# Adicionar RNC ao grupo #}
+        {% set _ = groups[group]['rncs'].append(rnc) %}
+        {% set _ = groups[group].update({'total': groups[group]['total'] + value}) %}
+        {% set _ = groups[group].update({'count': groups[group]['count'] + 1}) %}
+    {% endfor %}
+    
+    
+    {# Total geral #}
+    {% set total_value = 0 %}
+    {% for g in groups.values() %}{% set total_value = total_value + g.total %}{% endfor %}
+    <div class="sector-header" style="margin-bottom:10px;">
+        Total Geral — R$ {{ total_value|brl }} ({{ stats.total_rncs }} RNCs)
+    </div>
+    
+    {# Renderizar por grupo #}
+    {% set group_list = [] %}
+    {% for name, data in groups.items() %}
+        {% set _ = group_list.append({'name': name, 'data': data, 'total': data.total}) %}
+    {% endfor %}
+    {% for _item in group_list|sort(attribute='total', reverse=true) %}
+        {% set group_name = _item.name %}
+        {% set group_data = _item.data %}
+        <div class="sector-section">
+            <div class="sector-header">
+                {{ group_name }} - R$ {{ group_data.total|brl }} ({{ group_data.count }} RNCs)
+            </div>
+            
+            <div class="rnc-list">
+                {% for rnc in group_data.rncs %}
+                    <div class="rnc-item">
+                        {# ✅ CORREÇÃO: Usar parse_brl para converter string brasileira antes de formatar #}
+                        <strong>RNC {{ rnc.rnc_number }}</strong> - R$ {{ (rnc.price|parse_brl)|brl }}
+                        <br>
+                        <small>
+                            Departamento: {{ rnc.creator_department or rnc.department or 'N/A' }} | 
+                            Responsável: {{ rnc.responsavel or rnc.creator_name or 'N/A' }} | 
+                            Status: {{ rnc.status or 'N/A' }} | 
+                            Data: {{ rnc.created_at.split(' ')[0] if rnc.created_at else 'N/A' }}
+                        </small>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endfor %}
+    
+    {% if not groups %}
+        <div style="text-align: center; padding: 40px; color: #666;">
+            <h3>Nenhum RNC encontrado</h3>
+            <p>Não há RNCs no período selecionado.</p>
+        </div>
+    {% endif %}
+</body>
+</html>

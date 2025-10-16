@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administração - Bloqueio de Campos por Grupo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .header-container {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px 0;
+            margin-bottom: 0;
+        }
+        
+        .logo-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .logo-left, .logo-right {
+            max-height: 80px;
+            width: auto;
+        }
+        
+        .header-title {
+            text-align: center;
+            color: white;
+            flex-grow: 1;
+            margin: 0 20px;
+        }
+        
+        .header-title h1 {
+            font-size: 2.8rem;
+            font-weight: 700;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            background: linear-gradient(45deg, #ffffff, #f8f9fa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .header-title .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.95;
+            margin-top: 8px;
+            font-weight: 500;
+        }
+        
+        .version-info {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            color: rgba(255,255,255,0.8);
+            font-size: 0.9rem;
+        }
+        
+        .main-container {
+            background: rgba(255, 255, 255, 0.95);
+            margin: 0 auto;
+            max-width: 1400px;
+            border-radius: 20px 20px 0 0;
+            box-shadow: 0 -5px 30px rgba(0,0,0,0.2);
+            backdrop-filter: blur(10px);
+            min-height: calc(100vh - 140px);
+            padding: 0;
+        }
+        
+        .form-section {
+            background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .form-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+        
+        .section-title {
+            color: #2c3e50;
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid transparent;
+            background: linear-gradient(90deg, #667eea, #764ba2) bottom;
+            background-size: 100% 3px;
+            background-repeat: no-repeat;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .section-title i {
+            font-size: 1.4rem;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .field-group {
+            background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 50%, #ffffff 100%);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid rgba(102, 126, 234, 0.1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+        
+        .field-group::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #667eea, transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .field-group:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 35px rgba(102, 126, 234, 0.15);
+            border-color: rgba(102, 126, 234, 0.3);
+        }
+        
+        .field-group:hover::before {
+            opacity: 1;
+        }
+        
+        .field-group h5 {
+            color: #495057;
+            font-weight: 600;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .field-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding: 12px 15px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            background: rgba(255,255,255,0.7);
+            border: 1px solid transparent;
+        }
+        
+        .field-row:hover {
+            background: linear-gradient(145deg, #f8f9fa, #ffffff);
+            border-color: rgba(102, 126, 234, 0.2);
+            transform: translateX(5px);
+        }
+        
+        .field-label {
+            font-weight: 500;
+            color: #495057;
+            margin: 0;
+            flex-grow: 1;
+            font-size: 0.95rem;
+        }
+        
+        .form-check {
+            margin: 0;
+        }
+        
+        .form-check-input {
+            cursor: pointer;
+            transform: scale(1.3);
+            border: 2px solid #ced4da;
+            transition: all 0.3s ease;
+        }
+        
+        .form-check-input:checked {
+            background-color: #dc3545;
+            border-color: #dc3545;
+            box-shadow: 0 0 10px rgba(220, 53, 69, 0.5);
+        }
+        
+        .form-check-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        
+        .group-selector {
+            background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 6px 25px rgba(0,0,0,0.1);
+            border: 1px solid rgba(102, 126, 234, 0.1);
+            position: relative;
+        }
+        
+        .group-selector::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #28a745, #20c997);
+            border-radius: 15px 15px 0 0;
+        }
+        
+        .btn-modern {
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-modern::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .btn-modern:hover::before {
+            left: 100%;
+        }
+        
+        .btn-modern:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+        
+        .btn-primary.btn-modern {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+        }
+        
+        .btn-success.btn-modern {
+            background: linear-gradient(45deg, #28a745, #20c997);
+        }
+        
+        .field-blocked {
+            animation: pulse 1.5s infinite;
+            background: linear-gradient(145deg, #ffe6e6, #fff0f0) !important;
+            border: 2px solid #dc3545 !important;
+            box-shadow: 0 0 15px rgba(220, 53, 69, 0.3) !important;
+        }
+        
+        .field-blocked .field-label {
+            color: #dc3545 !important;
+            font-weight: bold;
+        }
+        
+        @keyframes pulse {
+            0% { 
+                transform: scale(1);
+                box-shadow: 0 0 15px rgba(220, 53, 69, 0.3);
+            }
+            50% { 
+                transform: scale(1.02);
+                box-shadow: 0 0 25px rgba(220, 53, 69, 0.5);
+            }
+            100% { 
+                transform: scale(1);
+                box-shadow: 0 0 15px rgba(220, 53, 69, 0.3);
+            }
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 5px rgba(220, 53, 69, 0.5); }
+            50% { box-shadow: 0 0 20px rgba(220, 53, 69, 0.8); }
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .modal-content {
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            border: none;
+            overflow: hidden;
+        }
+        
+        .modal-header {
+            background: linear-gradient(45deg, #dc3545, #c82333);
+            color: white;
+            border: none;
+            padding: 20px 25px;
+        }
+        
+        .modal-title {
+            font-weight: 700;
+        }
+        
+        .modal-body {
+            padding: 25px;
+            background: linear-gradient(145deg, #ffffff, #f8f9fa);
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            opacity: 0;
+            transform: translateX(300px);
+            transition: all 0.3s ease;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .notification.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        
+        .floating-actions {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 1000;
+        }
+        
+        .floating-btn {
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            border: none;
+            color: white;
+            font-size: 24px;
+            box-shadow: 0 6px 25px rgba(0,0,0,0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .floating-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .floating-btn:hover::before {
+            left: 100%;
+        }
+        
+        .floating-btn:hover {
+            transform: scale(1.15) rotate(5deg);
+            box-shadow: 0 10px 35px rgba(0,0,0,0.4);
+        }
+        
+        .floating-btn.save {
+            background: linear-gradient(45deg, #28a745, #20c997);
+        }
+        
+        .floating-btn.reset {
+            background: linear-gradient(45deg, #6c757d, #495057);
+        }
+        
+        .form-select {
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            padding: 12px 15px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: white;
+        }
+        
+        .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="header-container">
+        <div class="logo-container">
+            <img src="/static/img/logo1.png" alt="Logo 1" class="logo-left">
+            <div class="header-title">
+                <h1><i class="bi bi-shield-lock-fill me-3"></i>Administração de Campos</h1>
+                <div class="subtitle">Configure as permissões de campos por grupo de usuários</div>
+            </div>
+            <img src="/static/img/logo2.png" alt="Logo 2" class="logo-right">
+        </div>
+        <div class="version-info">
+            Sistema RNC v3.2 | IPPEL
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="group-selector">
+            <div class="section-title">
+                <i class="bi bi-people-fill"></i>
+                Seleção de Grupo
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <label for="groupSelect" class="form-label">Escolha o grupo para configurar:</label>
+                    <select class="form-select" id="groupSelect">
+                        <option value="">Selecione um grupo...</option>
+                    </select>
+                </div>
+                <div class="col-md-6 d-flex align-items-end">
+                    <button type="button" class="btn btn-success btn-modern me-2" onclick="saveFieldLocks()">
+                        <i class="bi bi-check-circle-fill me-2"></i>Salvar Alterações
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-modern" onclick="loadFieldLocks()">
+                        <i class="bi bi-arrow-clockwise me-2"></i>Recarregar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="fieldsContainer" style="display: none;">
+            <div class="form-section">
+                <div class="section-title">
+                    <i class="bi bi-card-text"></i>
+                    Informações Principais do RNC
+                </div>
+                <div class="field-group">
+                    <h5><i class="bi bi-info-circle-fill me-2"></i>Identificação</h5>
+                    <div class="field-row">
+                        <span class="field-label">Título do RNC</span>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="titulo_rnc" data-field="titulo_rnc">
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <span class="field-label">Equipamento/Sistema</span>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="equipamento_sistema" data-field="equipamento_sistema">
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <span class="field-label">Cliente/Departamento</span>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="cliente_departamento" data-field="cliente_departamento">
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <span class="field-label">Descrição</span>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="descricao" data-field="descricao">
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <span class="field-label">Nível de Urgência</span>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="nivel_urgencia" data-field="nivel_urgencia">
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <span class="field-label">Custo Estimado (R$)</span>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="custo_estimado" data-field="custo_estimado">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <div class="section-title">
+                    <i class="bi bi-people"></i>
+                    Responsabilidades e Setores
+                </div>
+                <div class="field-group">
+                    <h5><i class="bi bi-person-badge-fill me-2"></i>Responsáveis</h5>
+                    <div class="field-row">
+                        <span class="field-label">Responsável pela Detecção</span>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="responsavel_deteccao" data-field="responsavel_deteccao">
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <span class="field-label">Inspetor</span>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="inspetor" data-field="inspetor">
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <span class="field-label">Área/Setor</span>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="area_setor" data-field="area_setor">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <div class="section-title">
+                    <i class="bi bi-tools"></i>
+                    Análise de Engenharia
+                </div>
+                <div class="field-group">
+                    <h5><i class="bi bi-gear-fill me-2"></i>Análise Técnica</h5>
+                    <div class="field-row">
+                        <span class="field-label">Análise de Causa Raiz</span>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="analise_causa_raiz" data-field="analise_causa_raiz">
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <span class="field-label">Plano de Ação</span>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="plano_acao" data-field="plano_acao">
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <span class="field-label">Prazo para Implementação</span>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="prazo_implementacao" data-field="prazo_implementacao">
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <span class="field-label">Responsável pela Implementação</span>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="responsavel_implementacao" data-field="responsavel_implementacao">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <div class="section-title">
+                    <i class="bi bi-check-circle"></i>
+                    Verificação e Fechamento
+                </div>
+                <div class="field-group">
+                    <h5><i class="bi bi-clipboard-check-fill me-2"></i>Evidências</h5>
+                    <div class="field-row">
+                        <span class="field-label">Evidências da Implementação</span>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="evidencias_implementacao" data-field="evidencias_implementacao">
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <span class="field-label">Verificação de Eficácia</span>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="verificacao_eficacia" data-field="verificacao_eficacia">
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <span class="field-label">Data de Conclusão</span>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="data_conclusao" data-field="data_conclusao">
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <span class="field-label">Assinatura Responsável</span>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="assinatura_responsavel" data-field="assinatura_responsavel">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Action Buttons -->
+    <div class="floating-actions">
+        <button type="button" class="floating-btn save" onclick="saveFieldLocks()" title="Salvar Configurações">
+            <i class="bi bi-check-lg"></i>
+        </button>
+        <button type="button" class="floating-btn reset" onclick="loadFieldLocks()" title="Recarregar Configurações">
+            <i class="bi bi-arrow-clockwise"></i>
+        </button>
+    </div>
+
+    <!-- Modal de Campo Bloqueado -->
+    <div class="modal fade" id="blockedFieldModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        Campo Bloqueado
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-lock-fill text-danger me-3" style="font-size: 2rem;"></i>
+                        <div>
+                            <h6 class="mb-1">Acesso Restrito</h6>
+                            <p class="mb-0">Este campo está bloqueado para o grupo selecionado e não pode ser editado.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-modern" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-2"></i>Entendi
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notificação -->
+    <div id="notification" class="notification alert alert-success">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            <span id="notificationText">Configurações salvas com sucesso!</span>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentFieldLocks = {};
+        let currentGroup = '';
+
+        // Carregar grupos ao inicializar
+        document.addEventListener('DOMContentLoaded', function() {
+            loadGroups();
+        });
+
+        async function loadGroups() {
+            try {
+                const response = await fetch('/api/groups');
+                const data = await response.json();
+                
+                const groupSelect = document.getElementById('groupSelect');
+                groupSelect.innerHTML = '<option value="">Selecione um grupo...</option>';
+                
+                data.groups.forEach(group => {
+                    const option = document.createElement('option');
+                    option.value = group.id;
+                    option.textContent = group.name;
+                    groupSelect.appendChild(option);
+                });
+
+                groupSelect.addEventListener('change', function() {
+                    const selectedGroup = this.value;
+                    if (selectedGroup) {
+                        currentGroup = selectedGroup;
+                        loadFieldLocks();
+                        document.getElementById('fieldsContainer').style.display = 'block';
+                    } else {
+                        document.getElementById('fieldsContainer').style.display = 'none';
+                    }
+                });
+            } catch (error) {
+                console.error('Erro ao carregar grupos:', error);
+                showNotification('Erro ao carregar grupos!', 'error');
+            }
+        }
+
+        async function loadFieldLocks() {
+            if (!currentGroup) return;
+
+            try {
+                const response = await fetch(`/api/field-locks/${currentGroup}`);
+                const data = await response.json();
+                
+                currentFieldLocks = data.field_locks || {};
+                
+                // Aplicar os locks nos checkboxes
+                document.querySelectorAll('input[data-field]').forEach(checkbox => {
+                    const fieldName = checkbox.getAttribute('data-field');
+                    const isBlocked = currentFieldLocks[fieldName] === true;
+                    
+                    checkbox.checked = isBlocked;
+                    
+                    const fieldRow = checkbox.closest('.field-row');
+                    if (isBlocked) {
+                        fieldRow.classList.add('field-blocked');
+                        // Adicionar animação
+                        fieldRow.style.animation = 'pulse 1.5s infinite';
+                    } else {
+                        fieldRow.classList.remove('field-blocked');
+                        fieldRow.style.animation = '';
+                    }
+                });
+
+                showNotification('Configurações carregadas!', 'success');
+            } catch (error) {
+                console.error('Erro ao carregar bloqueios de campo:', error);
+                showNotification('Erro ao carregar configurações!', 'error');
+            }
+        }
+
+        async function saveFieldLocks() {
+            if (!currentGroup) {
+                showNotification('Selecione um grupo primeiro!', 'warning');
+                return;
+            }
+
+            // Coletar estado atual dos checkboxes
+            const fieldLocks = {};
+            document.querySelectorAll('input[data-field]').forEach(checkbox => {
+                const fieldName = checkbox.getAttribute('data-field');
+                fieldLocks[fieldName] = checkbox.checked;
+            });
+
+            try {
+                const response = await fetch(`/api/field-locks/${currentGroup}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ field_locks: fieldLocks })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentFieldLocks = fieldLocks;
+                    showNotification('Configurações salvas com sucesso!', 'success');
+                    
+                    // Aplicar efeitos visuais
+                    updateFieldVisuals();
+                } else {
+                    showNotification('Erro ao salvar configurações!', 'error');
+                }
+            } catch (error) {
+                console.error('Erro ao salvar bloqueios de campo:', error);
+                showNotification('Erro ao salvar configurações!', 'error');
+            }
+        }
+
+        function updateFieldVisuals() {
+            document.querySelectorAll('input[data-field]').forEach(checkbox => {
+                const fieldName = checkbox.getAttribute('data-field');
+                const isBlocked = checkbox.checked;
+                const fieldRow = checkbox.closest('.field-row');
+                
+                if (isBlocked) {
+                    fieldRow.classList.add('field-blocked');
+                    // Aplicar animação de bloqueio
+                    fieldRow.style.animation = 'pulse 1.5s infinite';
+                    
+                    // Efeito shake quando clicado
+                    fieldRow.addEventListener('click', function() {
+                        this.style.animation = 'shake 0.5s ease-in-out';
+                        setTimeout(() => {
+                            this.style.animation = 'pulse 1.5s infinite';
+                        }, 500);
+                        
+                        // Mostrar modal
+                        const modal = new bootstrap.Modal(document.getElementById('blockedFieldModal'));
+                        modal.show();
+                    });
+                } else {
+                    fieldRow.classList.remove('field-blocked');
+                    fieldRow.style.animation = '';
+                    fieldRow.removeEventListener('click', arguments.callee);
+                }
+            });
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            const notificationText = document.getElementById('notificationText');
+            
+            notificationText.textContent = message;
+            
+            // Remover classes anteriores
+            notification.classList.remove('alert-success', 'alert-danger', 'alert-warning');
+            
+            // Adicionar classe baseada no tipo
+            switch(type) {
+                case 'error':
+                    notification.classList.add('alert-danger');
+                    break;
+                case 'warning':
+                    notification.classList.add('alert-warning');
+                    break;
+                default:
+                    notification.classList.add('alert-success');
+            }
+            
+            // Mostrar notificação
+            notification.classList.add('show');
+            
+            // Esconder após 3 segundos
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // Event listeners para checkboxes
+        document.addEventListener('change', function(e) {
+            if (e.target.matches('input[data-field]')) {
+                const fieldRow = e.target.closest('.field-row');
+                const isBlocked = e.target.checked;
+                
+                if (isBlocked) {
+                    fieldRow.classList.add('field-blocked');
+                    fieldRow.style.animation = 'bounce 0.6s ease-in-out';
+                    setTimeout(() => {
+                        fieldRow.style.animation = 'pulse 1.5s infinite';
+                    }, 600);
+                } else {
+                    fieldRow.classList.remove('field-blocked');
+                    fieldRow.style.animation = 'glow 0.4s ease-in-out';
+                    setTimeout(() => {
+                        fieldRow.style.animation = '';
+                    }, 400);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

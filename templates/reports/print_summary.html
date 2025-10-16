@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório Resumido de RNCs - {{ start_date }} a {{ end_date }}</title>
+    <style>
+        @page {
+            margin: 1.5cm;
+            size: A4;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #333;
+            background: white;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #8b1538;
+        }
+        
+        .logo {
+            max-width: 80px;
+            height: auto;
+            margin: 0 auto 15px;
+            display: block;
+        }
+        
+        .header h1 {
+            color: #8b1538;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .header h2 {
+            color: #666;
+            font-size: 16px;
+            font-weight: normal;
+        }
+        
+        .period {
+            color: #e74c3c;
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            border: 2px solid #8b1538;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .stat-number {
+            font-size: 36px;
+            font-weight: bold;
+            color: #8b1538;
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+            font-weight: bold;
+        }
+        
+        .summary-tables {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .summary-table {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .table-header {
+            background: #8b1538;
+            color: white;
+            padding: 15px;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        .table-body {
+            padding: 0;
+        }
+        
+        .table-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .table-row:last-child {
+            border-bottom: none;
+        }
+        
+        .table-row:nth-child(even) {
+            background: #f8f9fa;
+        }
+        
+        .row-label {
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .row-value {
+            font-weight: bold;
+            color: #8b1538;
+        }
+        
+        .rncs-list {
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            color: #8b1538;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #e74c3c;
+        }
+        
+        .rncs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .rncs-table th {
+            background: #8b1538;
+            color: white;
+            padding: 12px 8px;
+            text-align: left;
+            font-weight: bold;
+            font-size: 11px;
+        }
+        
+        .rncs-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #eee;
+            font-size: 10px;
+            vertical-align: top;
+        }
+        
+        .rncs-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 9px;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        .status-pendente {
+            background: #ffc107;
+            color: #000;
+        }
+        
+        .status-finalizado {
+            background: #28a745;
+            color: white;
+        }
+        
+        .status-andamento {
+            background: #17a2b8;
+            color: white;
+        }
+        
+        .priority-alta {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        
+        .priority-media {
+            color: #ffc107;
+            font-weight: bold;
+        }
+        
+        .priority-baixa {
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        .footer {
+            position: fixed;
+            bottom: 1cm;
+            left: 1.5cm;
+            right: 1.5cm;
+            text-align: center;
+            font-size: 10px;
+            color: #666;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+        }
+        
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            
+            body {
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+        }
+        
+        @media screen {
+            body {
+                padding: 20px;
+                background: #f5f5f5;
+            }
+            
+            .container {
+                max-width: 210mm;
+                margin: 0 auto;
+                background: white;
+                padding: 30px;
+                box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Cabeçalho -->
+        <div class="header">
+            <img src="/IPPELLOGO.jpg" alt="IPPEL Logo" class="logo">
+            <h1>RELATÓRIO RESUMIDO DE RNCs</h1>
+            <h2>Relatório de Não Conformidades</h2>
+            <div class="period">
+                Período: {{ start_date.strftime('%d/%m/%Y') if start_date else start_date }} 
+                a {{ end_date.strftime('%d/%m/%Y') if end_date else end_date }}
+            </div>
+        </div>
+        
+        <!-- Estatísticas Principais -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-number">{{ stats.total_rncs }}</span>
+                <div class="stat-label">Total de RNCs</div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">{{ stats.finalized }}</span>
+                <div class="stat-label">Finalizados</div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">{{ stats.pending }}</span>
+                <div class="stat-label">Pendentes</div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">{{ stats.resolution_rate }}%</span>
+                <div class="stat-label">Taxa de Resolução</div>
+            </div>
+        </div>
+        
+        <!-- Tabelas de Resumo -->
+        <div class="summary-tables">
+            <!-- Por Status -->
+            <div class="summary-table">
+                <div class="table-header">Distribuição por Status</div>
+                <div class="table-body">
+                    {% for status, count in stats.by_status.items() %}
+                    <div class="table-row">
+                        <span class="row-label">{{ status }}</span>
+                        <span class="row-value">{{ count }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Por Prioridade -->
+            <div class="summary-table">
+                <div class="table-header">Distribuição por Prioridade</div>
+                <div class="table-body">
+                    {% for priority, count in stats.by_priority.items() %}
+                    <div class="table-row">
+                        <span class="row-label">{{ priority }}</span>
+                        <span class="row-value">{{ count }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Por Departamento -->
+            <div class="summary-table">
+                <div class="table-header">Distribuição por Departamento</div>
+                <div class="table-body">
+                    {% for dept, count in stats.by_department.items() %}
+                    <div class="table-row">
+                        <span class="row-label">{{ dept or 'N/A' }}</span>
+                        <span class="row-value">{{ count }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Lista Resumida de RNCs -->
+        <div class="rncs-list">
+            <h3 class="section-title">Lista de RNCs do Período</h3>
+            
+            {% if rncs %}
+            <table class="rncs-table">
+                <thead>
+                    <tr>
+                        <th style="width: 15%;">Número RNC</th>
+                        <th style="width: 25%;">Título</th>
+                        <th style="width: 15%;">Status</th>
+                        <th style="width: 10%;">Prioridade</th>
+                        <th style="width: 15%;">Criado por</th>
+                        <th style="width: 10%;">Data</th>
+                        <th style="width: 10%;">Cliente</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rnc in rncs %}
+                    <tr>
+                        <td><strong>{{ rnc.rnc_number }}</strong></td>
+                        <td>{{ rnc.title or 'N/A' }}</td>
+                        <td>
+                            <span class="status-badge status-{{ rnc.status.lower() }}">
+                                {{ rnc.status }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="priority-{{ rnc.priority.lower() if rnc.priority else 'media' }}">
+                                {{ rnc.priority or 'N/A' }}
+                            </span>
+                        </td>
+                        <td>{{ rnc.creator_name or 'N/A' }}</td>
+                        <td>{{ rnc.created_at.split('T')[0] if rnc.created_at else 'N/A' }}</td>
+                        <td>{{ rnc.client or 'N/A' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div style="text-align: center; padding: 40px; color: #666;">
+                <h3>Nenhuma RNC encontrada no período especificado</h3>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Observações -->
+        <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-left: 4px solid #8b1538; border-radius: 4px;">
+            <h4 style="color: #8b1538; margin-bottom: 10px;">Observações:</h4>
+            <ul style="margin-left: 20px; color: #666;">
+                <li>Este relatório apresenta um resumo das RNCs no período especificado.</li>
+                <li>Taxa de resolução calculada como: (RNCs Finalizados / Total de RNCs) × 100</li>
+                <li>Para informações detalhadas, consulte o relatório detalhado.</li>
+            </ul>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <div class="footer">
+        Relatório gerado em {{ generated_at.strftime('%d/%m/%Y às %H:%M') }} | 
+        Sistema IPPEL - Relatórios de Não Conformidade | 
+        Página <span id="pageNum"></span>
+    </div>
+    
+    <script>
+        // Configurar impressão automática se solicitado
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                if (window.location.search.includes('auto_print=true')) {
+                    window.print();
+                }
+            }, 500);
+        });
+        
+        // Botão para imprimir manualmente
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'p') {
+                e.preventDefault();
+                window.print();
+            }
+        });
+    </script>
+</body>
+</html>

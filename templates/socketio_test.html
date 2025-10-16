@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Socket.IO</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .status {
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        #logs {
+            background: #000;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-left: 3px solid #0f0;
+            padding-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Diagnóstico Socket.IO</h1>
+    
+    <div id="socketStatus" class="status warning">
+        ⏳ Verificando Socket.IO...
+    </div>
+
+    <div>
+        <button class="btn-primary" onclick="checkHealth()">🏥 Verificar Saúde do Servidor</button>
+        <button class="btn-success" onclick="testConnection()">🔌 Testar Conexão</button>
+        <button class="btn-danger" onclick="clearLogs()">🗑️ Limpar Logs</button>
+    </div>
+
+    <div id="logs"></div>
+
+    <!-- Socket.IO com versão compatível -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+    
+    <script>
+        const logsDiv = document.getElementById('logs');
+        const statusDiv = document.getElementById('socketStatus');
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString('pt-BR');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.textContent = `[${timestamp}] ${message}`;
+            logsDiv.appendChild(entry);
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function clearLogs() {
+            logsDiv.innerHTML = '';
+            log('🗑️ Logs limpos');
+        }
+
+        function updateStatus(message, className) {
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${className}`;
+        }
+
+        async function checkHealth() {
+            log('🏥 Verificando saúde do servidor...');
+            try {
+                const response = await fetch('/socketio-health');
+                const data = await response.json();
+                
+                if (data.status === 'ok') {
+                    log(`✅ Servidor Socket.IO OK - Modo: ${data.async_mode}`);
+                    updateStatus('✅ Socket.IO está funcionando no servidor', 'success');
+                } else {
+                    log(`❌ Erro: ${data.message}`);
+                    updateStatus('❌ Socket.IO com problemas no servidor', 'error');
+                }
+            } catch (error) {
+                log(`❌ Erro ao verificar saúde: ${error.message}`);
+                updateStatus('❌ Não foi possível conectar ao servidor', 'error');
+            }
+        }
+
+        function testConnection() {
+            log('🔌 Testando conexão Socket.IO...');
+            
+            if (typeof io === 'undefined') {
+                log('❌ ERRO: Biblioteca Socket.IO não carregada!');
+                log('❌ O arquivo /socket.io/socket.io.js não está acessível');
+                updateStatus('❌ Socket.IO não carregado (erro 400)', 'error');
+                return;
+            }
+
+            log('✅ Biblioteca Socket.IO carregada com sucesso');
+            
+            try {
+                const socket = io({
+                    transports: ['polling', 'websocket'],
+                    reconnection: true,
+                    reconnectionDelay: 1000,
+                    reconnectionAttempts: 5
+                });
+
+                socket.on('connect', () => {
+                    log(`✅ Conectado! Socket ID: ${socket.id}`);
+                    updateStatus('✅ Socket.IO conectado com sucesso!', 'success');
+                });
+
+                socket.on('disconnect', (reason) => {
+                    log(`❌ Desconectado. Motivo: ${reason}`);
+                    updateStatus('⚠️ Socket.IO desconectado', 'warning');
+                });
+
+                socket.on('connect_error', (error) => {
+                    log(`❌ Erro de conexão: ${error.message}`);
+                    updateStatus('❌ Erro ao conectar Socket.IO', 'error');
+                });
+
+                socket.on('reconnect', (attemptNumber) => {
+                    log(`🔄 Reconectado após ${attemptNumber} tentativa(s)`);
+                    updateStatus('✅ Socket.IO reconectado', 'success');
+                });
+
+                socket.on('reconnect_attempt', () => {
+                    log('🔄 Tentando reconectar...');
+                });
+
+                socket.on('reconnect_failed', () => {
+                    log('❌ Falha ao reconectar após múltiplas tentativas');
+                    updateStatus('❌ Falha na reconexão Socket.IO', 'error');
+                });
+
+            } catch (error) {
+                log(`❌ Erro ao criar conexão: ${error.message}`);
+                updateStatus('❌ Erro ao inicializar Socket.IO', 'error');
+            }
+        }
+
+        // Verificar automaticamente ao carregar a página
+        window.addEventListener('load', () => {
+            log('🚀 Página carregada');
+            
+            // Verificar se Socket.IO foi carregado
+            if (typeof io === 'undefined') {
+                log('❌ CRÍTICO: Socket.IO não foi carregado!');
+                log('❌ Erro 400: /socket.io/socket.io.js não encontrado');
+                log('⚠️ CAUSA PROVÁVEL: Servidor não está rodando com socketio.run()');
+                updateStatus('❌ Socket.IO não carregado (Erro 400)', 'error');
+            } else {
+                log('✅ Socket.IO biblioteca carregada');
+                log(`✅ Versão: ${io.version || 'desconhecida'}`);
+                updateStatus('✅ Socket.IO carregado, pronto para conectar', 'success');
+            }
+            
+            // Verificar saúde automaticamente
+            setTimeout(checkHealth, 500);
+        });
+
+        // Capturar erros de script
+        window.addEventListener('error', (event) => {
+            if (event.filename && event.filename.includes('socket.io')) {
+                log(`❌ Erro ao carregar: ${event.filename}`);
+                log(`❌ Linha ${event.lineno}: ${event.message}`);
+                updateStatus('❌ Erro ao carregar Socket.IO (400)', 'error');
+            }
+        });
+    </script>
+</body>
+</html>

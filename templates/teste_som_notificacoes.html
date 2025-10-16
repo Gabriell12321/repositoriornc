@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔊 Teste de Som e Notificações</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .test-section h2 {
+            color: #495057;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin: 10px 0;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+        
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+            font-family: monospace;
+            font-size: 13px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔊 Teste de Som e Notificações</h1>
+        <p class="subtitle">Sistema RNC IPPEL - Diagnóstico Completo</p>
+        
+        <!-- Teste de Som -->
+        <div class="test-section">
+            <h2>🔊 Teste de Som</h2>
+            <button onclick="testarSomSimples()">🔊 Som Simples (Beep)</button>
+            <button onclick="testarSomTriplo()">🔊 Som Triplo (Notificação)</button>
+            <button onclick="testarSomMP3()">🎵 Som MP3 (notification.mp3)</button>
+            <div id="somStatus"></div>
+        </div>
+        
+        <!-- Teste de Notificações -->
+        <div class="test-section">
+            <h2>🔔 Teste de Notificações</h2>
+            <button onclick="verificarPermissao()">✅ Verificar Permissão</button>
+            <button onclick="solicitarPermissao()">🔓 Solicitar Permissão</button>
+            <button onclick="testarNotificacao()">📢 Enviar Notificação Teste</button>
+            <button onclick="testarNotificacaoComSom()">🔊 Notificação + Som</button>
+            <div id="notifStatus"></div>
+        </div>
+        
+        <!-- Teste Completo -->
+        <div class="test-section">
+            <h2>🎯 Teste Completo</h2>
+            <button onclick="testarTudo()" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                🚀 Testar TUDO (Som + Notificação)
+            </button>
+        </div>
+        
+        <!-- Resultado -->
+        <div class="result" id="resultado"></div>
+    </div>
+    
+    <script>
+        let logs = [];
+        
+        function log(msg, tipo = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const emoji = tipo === 'success' ? '✅' : tipo === 'error' ? '❌' : tipo === 'warning' ? '⚠️' : 'ℹ️';
+            logs.push(`[${timestamp}] ${emoji} ${msg}`);
+            document.getElementById('resultado').innerHTML = logs.slice(-10).join('<br>');
+            console.log(msg);
+        }
+        
+        function showStatus(elementId, msg, tipo) {
+            const el = document.getElementById(elementId);
+            el.innerHTML = `<div class="status ${tipo}">${msg}</div>`;
+        }
+        
+        // Teste de Som Simples
+        function testarSomSimples() {
+            log('Testando som simples...');
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(1000, audioContext.currentTime);
+                gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
+                
+                oscillator.start();
+                oscillator.stop(audioContext.currentTime + 0.3);
+                
+                log('Som simples tocado com sucesso!', 'success');
+                showStatus('somStatus', '✅ Som simples funcionou!', 'success');
+            } catch (error) {
+                log(`Erro ao tocar som simples: ${error.message}`, 'error');
+                showStatus('somStatus', `❌ Erro: ${error.message}`, 'error');
+            }
+        }
+        
+        // Teste de Som Triplo (como nas notificações)
+        function testarSomTriplo() {
+            log('Testando som triplo...');
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                const playBeep = (frequency, startTime, duration) => {
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    oscillator.frequency.setValueAtTime(frequency, startTime);
+                    gainNode.gain.setValueAtTime(0.4, startTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+                    
+                    oscillator.start(startTime);
+                    oscillator.stop(startTime + duration);
+                };
+                
+                const now = audioContext.currentTime;
+                playBeep(1000, now, 0.2);
+                playBeep(800, now + 0.3, 0.2);
+                playBeep(1200, now + 0.6, 0.3);
+                
+                log('Som triplo tocado com sucesso!', 'success');
+                showStatus('somStatus', '✅ Som triplo funcionou! (3 beeps)', 'success');
+            } catch (error) {
+                log(`Erro ao tocar som triplo: ${error.message}`, 'error');
+                showStatus('somStatus', `❌ Erro: ${error.message}`, 'error');
+            }
+        }
+        
+        // Teste de Som MP3
+        function testarSomMP3() {
+            log('Testando som MP3...');
+            try {
+                const audio = new Audio('/static/notification.mp3');
+                audio.volume = 0.7;
+                audio.play()
+                    .then(() => {
+                        log('Som MP3 tocado com sucesso!', 'success');
+                        showStatus('somStatus', '✅ Som MP3 funcionou!', 'success');
+                    })
+                    .catch(error => {
+                        log(`Erro ao tocar MP3: ${error.message}`, 'error');
+                        showStatus('somStatus', `⚠️ MP3 bloqueado: ${error.message}`, 'warning');
+                    });
+            } catch (error) {
+                log(`Erro ao tocar som MP3: ${error.message}`, 'error');
+                showStatus('somStatus', `❌ Erro: ${error.message}`, 'error');
+            }
+        }
+        
+        // Verificar Permissão
+        function verificarPermissao() {
+            log('Verificando permissão de notificações...');
+            if (!('Notification' in window)) {
+                log('Notificações não suportadas neste navegador', 'error');
+                showStatus('notifStatus', '❌ Navegador não suporta notificações', 'error');
+                return;
+            }
+            
+            const status = Notification.permission;
+            log(`Status da permissão: ${status}`, status === 'granted' ? 'success' : 'warning');
+            
+            const statusMap = {
+                'granted': { msg: '✅ Permissão CONCEDIDA!', tipo: 'success' },
+                'denied': { msg: '❌ Permissão NEGADA!', tipo: 'error' },
+                'default': { msg: '⚠️ Permissão ainda não solicitada', tipo: 'warning' }
+            };
+            
+            const {msg, tipo} = statusMap[status] || { msg: '❓ Status desconhecido', tipo: 'warning' };
+            showStatus('notifStatus', msg, tipo);
+        }
+        
+        // Solicitar Permissão
+        async function solicitarPermissao() {
+            log('Solicitando permissão...');
+            if (!('Notification' in window)) {
+                log('Notificações não suportadas', 'error');
+                showStatus('notifStatus', '❌ Navegador não suporta notificações', 'error');
+                return;
+            }
+            
+            try {
+                const permission = await Notification.requestPermission();
+                log(`Resposta do usuário: ${permission}`, permission === 'granted' ? 'success' : 'error');
+                
+                if (permission === 'granted') {
+                    showStatus('notifStatus', '✅ Permissão CONCEDIDA!', 'success');
+                } else {
+                    showStatus('notifStatus', '❌ Permissão NEGADA!', 'error');
+                }
+            } catch (error) {
+                log(`Erro ao solicitar permissão: ${error.message}`, 'error');
+                showStatus('notifStatus', `❌ Erro: ${error.message}`, 'error');
+            }
+        }
+        
+        // Testar Notificação
+        function testarNotificacao() {
+            log('Testando notificação...');
+            if (!('Notification' in window)) {
+                log('Notificações não suportadas', 'error');
+                showStatus('notifStatus', '❌ Navegador não suporta notificações', 'error');
+                return;
+            }
+            
+            if (Notification.permission !== 'granted') {
+                log('Permissão não concedida', 'warning');
+                showStatus('notifStatus', '⚠️ Solicite permissão primeiro!', 'warning');
+                return;
+            }
+            
+            try {
+                const notif = new Notification('🎉 Teste de Notificação', {
+                    body: 'Se você está vendo isso, as notificações estão funcionando!',
+                    icon: '/LOGOIPPEL.JPEG',
+                    requireInteraction: true,
+                    silent: false
+                });
+                
+                notif.onclick = () => {
+                    log('Notificação clicada!', 'success');
+                    notif.close();
+                };
+                
+                log('Notificação enviada com sucesso!', 'success');
+                showStatus('notifStatus', '✅ Notificação enviada! Verifique o canto da tela.', 'success');
+            } catch (error) {
+                log(`Erro ao enviar notificação: ${error.message}`, 'error');
+                showStatus('notifStatus', `❌ Erro: ${error.message}`, 'error');
+            }
+        }
+        
+        // Testar Notificação + Som
+        function testarNotificacaoComSom() {
+            log('Testando notificação + som...');
+            
+            // Tocar som primeiro
+            testarSomTriplo();
+            
+            // Depois enviar notificação
+            setTimeout(() => {
+                testarNotificacao();
+            }, 500);
+        }
+        
+        // Teste Completo
+        async function testarTudo() {
+            logs = [];
+            log('🚀 Iniciando teste completo...', 'success');
+            
+            // 1. Verificar permissão
+            verificarPermissao();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // 2. Se não tiver permissão, solicitar
+            if (Notification.permission !== 'granted') {
+                await solicitarPermissao();
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+            
+            // 3. Tocar som
+            testarSomTriplo();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // 4. Enviar notificação
+            if (Notification.permission === 'granted') {
+                testarNotificacao();
+            }
+            
+            log('✅ Teste completo finalizado!', 'success');
+        }
+        
+        // Verificar permissão ao carregar
+        window.onload = () => {
+            verificarPermissao();
+        };
+    </script>
+</body>
+</html>

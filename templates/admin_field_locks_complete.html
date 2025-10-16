@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔐 Permissões de Campos RNC - IPPEL</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 2.2em;
+        }
+
+        .header p {
+            color: #7f8c8d;
+            font-size: 1.1em;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 25px;
+        }
+
+        .sidebar {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            height: fit-content;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .group-list {
+            list-style: none;
+        }
+
+        .group-item {
+            padding: 15px;
+            margin: 8px 0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .group-item:hover {
+            background: #f8f9fa;
+            transform: translateX(5px);
+        }
+
+        .group-item.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-color: #5a6fd8;
+        }
+
+        .group-name {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .group-desc {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        .content-area {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 100px 50px;
+            color: #7f8c8d;
+            font-size: 1.2em;
+        }
+
+        .actions-bar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60, #229954);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(39, 174, 96, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(243, 156, 18, 0.4);
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+
+        .legend {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: bold;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            border: 2px solid #ddd;
+        }
+
+        .legend-color.unlocked {
+            background: linear-gradient(135deg, #d4edda, #ffffff);
+            border-color: #28a745;
+        }
+
+        .legend-color.locked {
+            background: linear-gradient(135deg, #f8d7da, #ffffff);
+            border-color: #dc3545;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        /* SEÇÕES DE CAMPOS */
+        .fields-section {
+            margin-bottom: 30px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px 25px;
+            font-weight: bold;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        .fields-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1px;
+            background: #e9ecef;
+            padding: 1px;
+        }
+
+        .field-card {
+            background: white;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .field-card:hover {
+            transform: scale(1.02);
+            z-index: 10;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .field-card.unlocked {
+            background: linear-gradient(135deg, #d4edda, #ffffff);
+            border-left: 4px solid #28a745;
+        }
+
+        .field-card.locked {
+            background: linear-gradient(135deg, #f8d7da, #ffffff);
+            border-left: 4px solid #dc3545;
+        }
+
+        .field-name {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .field-description {
+            color: #6c757d;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .field-status {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: white;
+            font-weight: bold;
+        }
+
+        .field-status.unlocked {
+            background: #28a745;
+        }
+
+        .field-status.locked {
+            background: #dc3545;
+        }
+
+        .stats-bar {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            justify-content: center;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #f8f9fa, #ffffff);
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            min-width: 120px;
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #495057;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .fields-grid {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            }
+
+            .actions-bar {
+                flex-direction: column;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .fields-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔐 Gerenciar Permissões de Campos RNC</h1>
+            <p>Configure quais campos cada grupo pode editar - <strong>TODOS os 50 campos disponíveis</strong></p>
+        </div>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <h3>👥 Grupos</h3>
+                <input type="text" class="search-box" id="groupSearch" placeholder="Buscar grupo...">
+                <ul class="group-list" id="groupList">
+                    <!-- Grupos serão carregados via JavaScript -->
+                </ul>
+            </div>
+
+            <div class="content-area">
+                <div id="loading" class="loading">
+                    <p>📋 Selecione um grupo para configurar as permissões</p>
+                </div>
+
+                <div id="groupContent" style="display: none;">
+                    <h3 id="groupTitle">Configurações do Grupo</h3>
+                    
+                    <div class="actions-bar">
+                        <button class="btn btn-success" onclick="saveChanges()">💾 Salvar Alterações</button>
+                        <button class="btn btn-primary" onclick="unlockAll()">🔓 Liberar Todos</button>
+                        <button class="btn btn-warning" onclick="lockAll()">🔒 Bloquear Todos</button>
+                        <button class="btn btn-danger" onclick="resetGroup()">🗑️ Resetar Grupo</button>
+                    </div>
+
+                    <div id="alerts"></div>
+
+                    <div class="stats-bar">
+                        <div class="stat-card">
+                            <div class="stat-number" id="statLocked">0</div>
+                            <div class="stat-label">🔒 Bloqueados</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="statUnlocked">0</div>
+                            <div class="stat-label">🔓 Liberados</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="statTotal">50</div>
+                            <div class="stat-label">📋 Total</div>
+                        </div>
+                    </div>
+
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-color unlocked"></div>
+                            <span>🔓 Campo Liberado (clique para bloquear)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color locked"></div>
+                            <span>🔒 Campo Bloqueado (clique para liberar)</span>
+                        </div>
+                    </div>
+
+                    <!-- SEÇÃO 1: INFORMAÇÕES PRINCIPAIS -->
+                    <div class="fields-section">
+                        <div class="section-header">📋 INFORMAÇÕES PRINCIPAIS</div>
+                        <div class="fields-grid">
+                            <div class="field-card" data-field="rnc_number">
+                                <div class="field-name">Número RNC</div>
+                                <div class="field-description">Número único de identificação do RNC</div>
+                                <div class="field-status"></div>
+                            </div>
+                            <div class="field-card" data-field="title">
+                                <div class="field-name">Título</div>
+                                <div class="field-description">Título descritivo do problema</div>
+                                <div class="field-status"></div>
+                            </div>
+                            <div class="field-card" data-field="description">
+                                <div class="field-name">Descrição</div>
+                                <div class="field-description">Descrição detalhada da não conformidade</div>
+                                <div class="field-status"></div>
+                            </div>
+                            <div class="field-card" data-field="priority">
+                                <div class="field-name">Prioridade</div>
+                                <div class="field-description">Nível de urgência (Baixa, Média, Alta, Crítica)</div>
+                                <div class="field-status"></div>
+                            </div>
+                            <div class="field-card" data-field="status">
+                                <div class="field-name">Status</div>
+                                <div class="field-description">Status atual do RNC</div>
+                                <div class="field-status"></div>
+                            </div>
+                            <div class="field-card" data-field="price">
+                                <div class="field-name">Preço</div>
+                                <div class="field-description">Valor monetário associado</div>
+                                <div class="field-status"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SEÇÃO 2: DADOS TÉCNICOS -->
+                    <div class="fields-section">
+                        <div class="section-header">🔧 DADOS TÉCNICOS</div>
+                        <div class="fields-grid">
+                            <div class="field-card" data-field="equipment">
+                                <div class="field-name">Equipamento</div>
+                                <div class="field-description">Nome do equipamento relacionado</div>
+                                <div class="field-status"></div>
+                            </div>
+                            <div class="field-card" data-field="material">
+                                <div class="field-name">Material</div>
+                                <div class="field-description">Tipo de material envolvido</div>
+                                <div class="field-status"></div>
+                            </div>
+                            <div class="field-card" data-field="quantity">
+                                <div class="field-name">Quantidade</div>
+                                <div class="field-description">Quantidade de itens afetados</div>
+                                <div class="field-status"></div>
+                            </div>
+                            <div class="field-card" data-field="drawing">
+                                <div class="field-name">Desenho</div>
+                                <div class="field-description">Número do desenho técnico</div>
+                                <div class="field-status"></div>
+                            </div>
+                            <div class="field-card" data-field="mp">
+                                <div class="field-name">MP</div>
+                                <div class="field-description">Código MP</div>
+                                <div class="field-status"></div>
+                            </div>
+                            <div class="field-card" data-field="revision">
+                                <div class="field-name">Revisão</div>
+                                <div class="field-description">Número da revisão</div>
+                                <div class="field-status"></div>
+                            </div>
+                            <div class="field-card" data-field="position">
+                                <div class="field-name">Posição</div>
+                                <div class="field-description">Posição no equipamento</div>
+                                <div class="field-status"></div>
+                            </div>
+                            <div class="field-card" data-field="cv">
+                                <div class="field-name">CV</div>
+                                <div class="field-description">Código CV</div>
+                                <div class="field-status"></div>
+                            </div>
+                            <div class="field-card" data-field="conjunto">
+                                <div class="field-name">Conjunto</div>
+                                <div class="field-description">Nome do conjunto</div>
+                                <div class="field-status"></div>
+                            </div>
+                            <div class="field-card" data-field="modelo">
+                                <div class="field-name">Modelo</div>
+                                <div class="field-description">Modelo do equipamento</div>
+                                <div class="field-status"></div>
+                            </div>
+                            <div class="field-card" data-field="description_drawing">
+                                <div class="field-name">Descrição do Desenho</div>
+                                <div class="field-description">Descrição detalhada do desenho</div>
+                                <div class="field-status"></div>
+                            </div>
+                            <div class="field-card" data-field="purchase_order">
+                                <div class="field-name">Ordem de Compra</div>
+                                <div class="field-description">Número da ordem de compra</div>
+                                <div class="field-status"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SEÇÃO 3: RESPONSABILIDADES -->
+                    <div class="fields-section">
+                        <div class="section-header">👥 RESPONSABILIDADES</div>
+                        <div class="fields-grid">
+                            <div class="field-card" data-field="assigned_user_id">
+                                <div class="field-name">Usuário Atribuído</div>
+                                <div class="field-description">Usuário responsável pelo RNC</div>
+                                <div class="field-status"></div>
+                            </div>
+                            <div class="field-card" data-field="responsavel">
+                                <div class="field-name">Responsável</div>
+                                <div class="field-description">Nome do responsável</div>
+                                <div class="field-status"></div>
+                            </div>
+                            <div class="field-card" data-field="inspetor">
+                                <div class="field-name">Inspetor</div>
+                                <div class="field-description">Nome do inspetor</div>
+                                <div class="field-status"></div>
+                            </div>
+                            <div class="field-card" data-field="setor">
+                                <div class="field-name">Setor</div>
+                                <div class="field-description">Setor onde ocorreu</div>
+                                <div class="field-status"></div>
+                            </div>
+                            <div class="field-card" data-field="area_responsavel">
+                                <div class="field-name">Área Responsável</div>
+                                <div class="field-description">Área/localização responsável</div>
+                                <div class="field-status"></div>
+                            </div>
+                            <div class="field-card" data-field="client">
+                                <div class="field-name">Cliente</div>
+                                <div class="field-description">Cliente relacionado</div>
+                                <div class="field-status"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SEÇÃO 4: DISPOSIÇÕES -->
+                    <div class="fields-section">
+                        <div class="section-header">📦 DISPOSIÇÕES</div>
+                        <div class="fields-grid">
+                            <div class="field-card" data-field="disposition_usar">
+                                <div class="field-name">Disposição: Usar</div>
+                                <div class="field-description">Permissão para usar o item</div>
+                                <div class="field-status"></div>
+                            </div>
+                            <div class="field-card" data-field="disposition_retrabalhar">
+                                <div class="field-name">Disposição: Retrabalhar</div>
+                                <div class="field-description">Item necessita retrabalho</div>
+                                <div class="field-status"></div>
+                            </div>
+                            <div class="field-card" data-field="disposition_rejeitar">
+                                <div class="field-name">Disposição: Rejeitar</div>
+                                <div class="field-description">Item deve ser rejeitado</div>
+                                <div class="field-status"></div>
+                            </div>
+                            <div class="field-card" data-field="disposition_sucata">
+                                <div class="field-name">Disposição: Sucata</div>
+                                <div class="field-description">Item vai para sucata</div>
+                                <div class="field-status"></div>
+                            </div>
+                            <div class="field-card" data-field="disposition_devolver_estoque">
+                                <div class="field-name">Disposição: Devolver ao Estoque</div>
+                                <div class="field-description">Retornar item ao estoque</div>
+                                <div class="field-status"></div>
+                            </div>
+                            <div class="field-card" data-field="disposition_devolver_fornecedor">
+                                <div class="field-name">Disposição: Devolver ao Fornecedor</div>
+                                <div class="field-description">Retornar item ao fornecedor</div>
+                                <div class="field-status"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SEÇÃO 5: INSPEÇÃO -->
+                    <div class="fields-section">
+                        <div class="section-header">🔍 INSPEÇÃO</div>
+                        <div class="fields-grid">
+                            <div class="field-card" data-field="inspection_aprovado">
+                                <div class="field-name">Inspeção: Aprovado</div>
+                                <div class="field-description">Item aprovado na inspeção</div>
+                                <div class="field-status"></div>
+                            </div>
+                            <div class="field-card" data-field="inspection_reprovado">
+                                <div class="field-name">Inspeção: Reprovado</div>
+                                <div class="field-description">Item reprovado na inspeção</div>
+                                <div class="field-status"></div>
+                            </div>
+                            <div class="field-card" data-field="inspection_ver_rnc">
+                                <div class="field-name">Inspeção: Ver RNC</div>
+                                <div class="field-description">Referência para visualizar RNC</div>
+                                <div class="field-status"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SEÇÃO 6: ASSINATURAS E DATAS -->
+                    <div class="fields-section">
+                        <div class="section-header">✍️ ASSINATURAS E DATAS</div>
+                        <div class="fields-grid">
+                            <div class="field-card" data-field="signature_inspection_name">
+                                <div class="field-name">Nome Assinatura Inspeção</div>
+                                <div class="field-description">Nome de quem assinou a inspeção</div>
+                                <div class="field-status"></div>
+                            </div>
+                            <div class="field-card" data-field="signature_inspection_date">
+                                <div class="field-name">Data Assinatura Inspeção</div>
+                                <div class="field-description">Data da assinatura de inspeção</div>
+                                <div class="field-status"></div>
+                            </div>
+                            <div class="field-card" data-field="signature_engineering_name">
+                                <div class="field-name">Nome Assinatura Engenharia</div>
+                                <div class="field-description">Nome de quem assinou pela engenharia</div>
+                                <div class="field-status"></div>
+                            </div>
+                            <div class="field-card" data-field="signature_engineering_date">
+                                <div class="field-name">Data Assinatura Engenharia</div>
+                                <div class="field-description">Data da assinatura de engenharia</div>
+                                <div class="field-status"></div>
+                            </div>
+                            <div class="field-card" data-field="signature_inspection2_name">
+                                <div class="field-name">Nome Assinatura Inspeção 2</div>
+                                <div class="field-description">Nome da segunda assinatura de inspeção</div>
+                                <div class="field-status"></div>
+                            </div>
+                            <div class="field-card" data-field="signature_inspection2_date">
+                                <div class="field-name">Data Assinatura Inspeção 2</div>
+                                <div class="field-description">Data da segunda assinatura de inspeção</div>
+                                <div class="field-status"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SEÇÃO 7: INSTRUÇÕES E ANÁLISES -->
+                    <div class="fields-section">
+                        <div class="section-header">📝 INSTRUÇÕES E ANÁLISES</div>
+                        <div class="fields-grid">
+                            <div class="field-card" data-field="instruction_retrabalho">
+                                <div class="field-name">Instrução Retrabalho</div>
+                                <div class="field-description">Instruções para correção</div>
+                                <div class="field-status"></div>
+                            </div>
+                            <div class="field-card" data-field="cause_rnc">
+                                <div class="field-name">Causa da RNC</div>
+                                <div class="field-description">Análise da causa raiz</div>
+                                <div class="field-status"></div>
+                            </div>
+                            <div class="field-card" data-field="action_rnc">
+                                <div class="field-name">Ação da RNC</div>
+                                <div class="field-description">Ações corretivas e preventivas</div>
+                                <div class="field-status"></div>
+                            </div>
+                            <div class="field-card" data-field="justificativa">
+                                <div class="field-name">Justificativa</div>
+                                <div class="field-description">Justificativa para o RNC</div>
+                                <div class="field-status"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentGroupId = null;
+        let fieldLocks = {};
+        let hasChanges = false;
+
+        // TODOS OS 44 CAMPOS CONFIGURÁVEIS DA TABELA RNC
+        const availableFields = [
+            // Informações principais
+            'rnc_number', 'title', 'description', 'priority', 'status', 'price',
+            
+            // Dados técnicos
+            'equipment', 'material', 'quantity', 'drawing', 'mp', 'revision', 'position', 
+            'cv', 'conjunto', 'modelo', 'description_drawing', 'purchase_order',
+            
+            // Responsabilidades
+            'assigned_user_id', 'responsavel', 'inspetor', 'setor', 'area_responsavel', 'client',
+            
+            // Disposições
+            'disposition_usar', 'disposition_retrabalhar', 'disposition_rejeitar', 
+            'disposition_sucata', 'disposition_devolver_estoque', 'disposition_devolver_fornecedor',
+            
+            // Inspeção
+            'inspection_aprovado', 'inspection_reprovado', 'inspection_ver_rnc',
+            
+            // Assinaturas e Datas
+            'signature_inspection_name', 'signature_inspection_date', 'signature_engineering_name',
+            'signature_engineering_date', 'signature_inspection2_name', 'signature_inspection2_date',
+            
+            // Instruções e Análises
+            'instruction_retrabalho', 'cause_rnc', 'action_rnc', 'justificativa'
+        ];
+
+        // Carregar grupos na inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            loadGroups();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // Search functionality
+            document.getElementById('groupSearch').addEventListener('input', function(e) {
+                filterGroups(e.target.value);
+            });
+
+            // Field click handlers
+            document.querySelectorAll('.field-card').forEach(field => {
+                field.addEventListener('click', function() {
+                    if (currentGroupId) {
+                        toggleField(this.dataset.field);
+                    }
+                });
+            });
+
+            // Warning on page leave if there are unsaved changes
+            window.addEventListener('beforeunload', function(e) {
+                if (hasChanges) {
+                    e.preventDefault();
+                    e.returnValue = 'Você tem alterações não salvas. Deseja continuar?';
+                }
+            });
+        }
+
+        async function loadGroups() {
+            try {
+                const response = await fetch('/admin/field-locks/api/groups');
+                const groups = await response.json();
+                
+                const groupList = document.getElementById('groupList');
+                groupList.innerHTML = '';
+                
+                groups.forEach(group => {
+                    const li = document.createElement('li');
+                    li.className = 'group-item';
+                    li.onclick = () => selectGroup(group.id, group.name);
+                    
+                    li.innerHTML = `
+                        <div class="group-name">${group.name}</div>
+                        <div class="group-desc">${group.description || 'Sem descrição'}</div>
+                    `;
+                    
+                    groupList.appendChild(li);
+                });
+                
+            } catch (error) {
+                console.error('Erro ao carregar grupos:', error);
+                showAlert('Erro ao carregar grupos: ' + error.message, 'error');
+            }
+        }
+
+        function filterGroups(searchTerm) {
+            const groups = document.querySelectorAll('.group-item');
+            const term = searchTerm.toLowerCase();
+            
+            groups.forEach(group => {
+                const text = group.textContent.toLowerCase();
+                group.style.display = text.includes(term) ? 'block' : 'none';
+            });
+        }
+
+        async function selectGroup(groupId, groupName) {
+            // Verificar se há mudanças não salvas
+            if (hasChanges) {
+                const confirm = window.confirm('Você tem alterações não salvas. Deseja continuar sem salvar?');
+                if (!confirm) return;
+            }
+
+            currentGroupId = groupId;
+            
+            // Atualizar UI
+            document.querySelectorAll('.group-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            event.target.closest('.group-item').classList.add('active');
+            
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('groupContent').style.display = 'block';
+            document.getElementById('groupTitle').textContent = `Configurações do Grupo: ${groupName}`;
+            
+            // Carregar configurações do grupo
+            await loadGroupSettings(groupId);
+        }
+
+        async function loadGroupSettings(groupId) {
+            try {
+                const response = await fetch(`/admin/field-locks/api/locks/${groupId}`);
+                const locks = await response.json();
+                
+                // Resetar fieldLocks
+                fieldLocks = {};
+                
+                // Configurar locks baseado na resposta
+                locks.forEach(lock => {
+                    fieldLocks[lock.field_name] = lock.is_locked;
+                });
+                
+                // Atualizar interface visual
+                updateFieldDisplay();
+                updateStats();
+                hasChanges = false;
+                
+            } catch (error) {
+                console.error('Erro ao carregar configurações:', error);
+                showAlert('Erro ao carregar configurações: ' + error.message, 'error');
+            }
+        }
+
+        function updateFieldDisplay() {
+            availableFields.forEach(fieldName => {
+                const fieldElement = document.querySelector(`[data-field="${fieldName}"]`);
+                if (!fieldElement) return;
+                
+                const statusElement = fieldElement.querySelector('.field-status');
+                
+                const isLocked = fieldLocks[fieldName] || false;
+                
+                // Atualizar classes
+                fieldElement.className = `field-card ${isLocked ? 'locked' : 'unlocked'}`;
+                statusElement.className = `field-status ${isLocked ? 'locked' : 'unlocked'}`;
+                statusElement.textContent = isLocked ? '🔒' : '🔓';
+            });
+        }
+
+        function updateStats() {
+            const locked = availableFields.filter(field => fieldLocks[field]).length;
+            const unlocked = availableFields.length - locked;
+            
+            document.getElementById('statLocked').textContent = locked;
+            document.getElementById('statUnlocked').textContent = unlocked;
+        }
+
+        function toggleField(fieldName) {
+            fieldLocks[fieldName] = !fieldLocks[fieldName];
+            updateFieldDisplay();
+            updateStats();
+            hasChanges = true;
+        }
+
+        async function saveChanges() {
+            if (!currentGroupId) {
+                showAlert('Selecione um grupo primeiro', 'error');
+                return;
+            }
+
+            try {
+                const locks = availableFields.map(fieldName => ({
+                    field_name: fieldName,
+                    is_locked: fieldLocks[fieldName] || false
+                }));
+
+                const response = await fetch(`/admin/field-locks/api/locks/${currentGroupId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ locks })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showAlert('✅ Configurações salvas com sucesso!', 'success');
+                    hasChanges = false;
+                } else {
+                    throw new Error(result.error || 'Erro desconhecido');
+                }
+
+            } catch (error) {
+                console.error('Erro ao salvar:', error);
+                showAlert('❌ Erro ao salvar: ' + error.message, 'error');
+            }
+        }
+
+        function unlockAll() {
+            availableFields.forEach(fieldName => {
+                fieldLocks[fieldName] = false;
+            });
+            updateFieldDisplay();
+            updateStats();
+            hasChanges = true;
+            showAlert('🔓 Todos os campos foram liberados', 'success');
+        }
+
+        function lockAll() {
+            availableFields.forEach(fieldName => {
+                fieldLocks[fieldName] = true;
+            });
+            updateFieldDisplay();
+            updateStats();
+            hasChanges = true;
+            showAlert('🔒 Todos os campos foram bloqueados', 'success');
+        }
+
+        async function resetGroup() {
+            if (!currentGroupId) {
+                showAlert('Selecione um grupo primeiro', 'error');
+                return;
+            }
+
+            const confirm = window.confirm('Tem certeza que deseja resetar todas as configurações deste grupo?');
+            if (!confirm) return;
+
+            try {
+                const response = await fetch(`/admin/field-locks/api/locks/${currentGroupId}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showAlert('🗑️ Configurações resetadas com sucesso!', 'success');
+                    await loadGroupSettings(currentGroupId);
+                } else {
+                    throw new Error(result.error || 'Erro desconhecido');
+                }
+
+            } catch (error) {
+                console.error('Erro ao resetar:', error);
+                showAlert('❌ Erro ao resetar: ' + error.message, 'error');
+            }
+        }
+
+        function showAlert(message, type) {
+            const alertsContainer = document.getElementById('alerts');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+            
+            alertsContainer.innerHTML = '';
+            alertsContainer.appendChild(alertDiv);
+            
+            // Auto-hide success messages
+            if (type === 'success') {
+                setTimeout(() => {
+                    alertDiv.remove();
+                }, 5000);
+            }
+        }
+    </script>
+</body>
+</html>

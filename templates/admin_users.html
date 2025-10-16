@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>IPPEL - Gerenciamento de Usuários</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: radial-gradient(1200px 600px at 10% 0%, #0b1220 0%, #0b1220 40%, #0f1a33 100%),
+                        linear-gradient(135deg, rgba(25, 80, 200, 0.15), rgba(220, 53, 69, 0.15));
+            min-height: 100vh;
+            color: #e6ebff;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #0f1a33 0%, #131f3d 100%);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.35);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(6px);
+        }
+        
+        .logo {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            object-fit: contain;
+            background: transparent;
+            padding: 0;
+            border: none;
+        }
+        
+        .logo:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+        
+        .header h1 {
+            background: linear-gradient(90deg, #69b3ff, #8cd2ff, #c3e9ff);
+            -webkit-background-clip: text; background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 26px;
+            letter-spacing: .3px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #3a7bd5 0%, #00d2ff 100%);
+            color: white;
+            box-shadow: 0 10px 25px rgba(0, 210, 255, .25);
+        }
+        
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d, #8a98a8);
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        
+        .users-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .permissions-section {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
+            backdrop-filter: blur(5px);
+        }
+
+        .permissions-section h3 {
+            color: #a9d0ff;
+            margin-bottom: 15px;
+        }
+
+        .permission-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px;
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 12px;
+            margin-bottom: 12px;
+            background: rgba(20, 30, 55, 0.85);
+        }
+
+        .permission-info {
+            flex: 1;
+        }
+
+        .permission-name {
+            font-weight: 700;
+            color: #e6f1ff;
+            letter-spacing: .25px;
+        }
+
+        .permission-description {
+            font-size: 0.9em;
+            color: #a0b3d6;
+        }
+        
+        .user-card {
+            background: linear-gradient(135deg, rgba(16, 24, 44, 0.95), rgba(17, 26, 49, 0.95));
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 12px 35px rgba(0,0,0,0.35);
+            transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+        }
+        
+        .user-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 22px 50px rgba(0,0,0,0.45);
+            border-color: rgba(129, 200, 255, 0.35);
+        }
+        
+        .user-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .user-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: #eaf2ff;
+        }
+        
+        .user-role {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .role-admin {
+            background: linear-gradient(135deg, #dc3545, #ff6b6b);
+            color: white;
+        }
+        
+        .role-user {
+            background: linear-gradient(135deg, #28a745, #64e89a);
+            color: white;
+        }
+        
+        .user-info {
+            margin-bottom: 15px;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .info-label {
+            color: #9fb4d9;
+            font-weight: 600;
+        }
+        
+        .info-value {
+            color: #e6f0ff;
+            font-weight: 700;
+        }
+        
+        .permissions-list {
+            margin-top: 10px;
+        }
+        
+        .permission-tag {
+            display: inline-block;
+            background: rgba(70, 130, 255, 0.15);
+            color: #b7d1ff;
+            padding: 4px 8px;
+            border-radius: 999px;
+            font-size: 11px;
+            margin: 2px;
+            border: 1px solid rgba(100, 170, 255, 0.25);
+        }
+        
+        .user-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .close {
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #666;
+        }
+        
+        .close:hover {
+            color: #333;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .form-select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .form-checkbox {
+            margin-right: 8px;
+        }
+        
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+        
+        .empty-state h3 {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+                 .empty-state p {
+             font-size: 14px;
+             opacity: 0.7;
+         }
+
+         /* Estilos para seleção de usuários */
+         .user-selection-item {
+             display: flex;
+             justify-content: space-between;
+             align-items: center;
+             padding: 15px;
+             border: 1px solid #e9ecef;
+             border-radius: 8px;
+             margin-bottom: 10px;
+             cursor: pointer;
+             transition: all 0.3s ease;
+             background: white;
+         }
+
+         .user-selection-item:hover {
+             background: #f8f9fa;
+             border-color: #007bff;
+             transform: translateY(-1px);
+             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+         }
+
+         .user-selection-info {
+             flex: 1;
+         }
+
+         .user-selection-name {
+             font-size: 16px;
+             font-weight: 600;
+             color: #333;
+             margin-bottom: 5px;
+         }
+
+         .user-selection-details {
+             display: flex;
+             gap: 15px;
+             margin-bottom: 8px;
+             font-size: 12px;
+             color: #666;
+         }
+
+         .user-selection-details span {
+             background: #f8f9fa;
+             padding: 2px 6px;
+             border-radius: 4px;
+         }
+
+         .user-selection-permissions {
+             font-size: 12px;
+             color: #666;
+         }
+
+         .user-selection-permissions strong {
+             color: #333;
+         }
+
+         .user-selection-action {
+             margin-left: 15px;
+         }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <img src="{{ url_for('static', filename='LOGOSQI.jpg') }}" alt="SQI Logo" class="logo">
+                <img src="/IPPELLOGO.jpg" alt="IPPEL Logo" class="logo apply-logo"
+                     data-logo-primary="/IPPELLOGO.jpg"
+                     data-logo-fallback1="/IPPELLOGO.jpg"
+                     data-logo-fallback2="{{ url_for('static', filename='LOGOSQI.jpg') }}"
+                     onerror="if(this.dataset.try1!=='1'){this.dataset.try1='1'; this.src=this.dataset.logoFallback1;} else if(this.dataset.try2!=='1'){this.dataset.try2='1'; this.src=this.dataset.logoFallback2;} else {this.style.display='none';}">
+                <h1>👥 Gerenciamento de Usuários</h1>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <input id="searchInput" class="form-input" placeholder="Buscar por nome, email ou departamento" style="width: 320px;" onkeyup="debouncedLoad()" />
+                <select id="roleFilter" class="form-select" onchange="loadUsers()" style="width: 160px;">
+                    <option value="">Todos os papéis</option>
+                    <option value="admin">Administrador</option>
+                    <option value="user">Usuário</option>
+                </select>
+                <input id="deptFilter" class="form-input" placeholder="Departamento" style="width: 160px;" onkeyup="debouncedLoad()" />
+                <label style="display:flex; align-items:center; gap:6px; font-size:14px;">
+                    <input type="checkbox" id="showInactive" onchange="loadUsers()" /> Mostrar inativos
+                </label>
+                <button class="btn btn-secondary" onclick="window.location.href='/dashboard'">🏠 Dashboard</button>
+                <button class="btn btn-primary" onclick="openCreateModal()">➕ Novo Usuário</button>
+            </div>
+        </div>
+
+        <!-- Seção de Permissões -->
+        <div class="permissions-section">
+            <h3>🔐 Gerenciar Permissões</h3>
+            <div class="permission-item">
+                <div class="permission-info">
+                    <div class="permission-name">view_all_rncs</div>
+                    <div class="permission-description">Visualizar todas as RNCs do sistema</div>
+                </div>
+                <button class="btn btn-primary" onclick="grantPermission('view_all_rncs')">Conceder</button>
+            </div>
+            <div class="permission-item">
+                <div class="permission-info">
+                    <div class="permission-name">edit_rncs</div>
+                    <div class="permission-description">Editar RNCs de outros usuários</div>
+                </div>
+                <button class="btn btn-primary" onclick="grantPermission('edit_rncs')">Conceder</button>
+            </div>
+            <div class="permission-item">
+                <div class="permission-info">
+                    <div class="permission-name">delete_rncs</div>
+                    <div class="permission-description">Deletar RNCs do sistema</div>
+                </div>
+                <button class="btn btn-primary" onclick="grantPermission('delete_rncs')">Conceder</button>
+            </div>
+            <div class="permission-item">
+                <div class="permission-info">
+                    <div class="permission-name">manage_users</div>
+                    <div class="permission-description">Gerenciar usuários do sistema</div>
+                </div>
+                <button class="btn btn-primary" onclick="grantPermission('manage_users')">Conceder</button>
+            </div>
+        </div>
+        
+        <div id="usersGrid" class="users-grid">
+            <div class="empty-state">
+                <div class="empty-icon">👥</div>
+                <h3>Carregando usuários...</h3>
+                <p>Aguarde um momento</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal para criar/editar usuário -->
+    <div id="userModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Novo Usuário</h2>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            
+            <form id="userForm">
+                <input type="hidden" id="userId" value="">
+                
+                <div class="form-group">
+                    <label class="form-label" for="userName">Nome:</label>
+                    <input type="text" id="userName" class="form-input" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="userEmail">Email:</label>
+                    <input type="email" id="userEmail" class="form-input" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="userPassword">Senha:</label>
+                    <input type="password" id="userPassword" class="form-input" required>
+                </div>
+                
+                                                     <div class="form-group">
+                     <label class="form-label" for="userDepartment">Grupo/Departamento:</label>
+                     <input type="text" id="userDepartment" class="form-input" list="groupSuggestions" required placeholder="Digite ou selecione um grupo...">
+                     <datalist id="groupSuggestions">
+                         <!-- Sugestões serão carregadas dinamicamente -->
+                     </datalist>
+                 </div>
+                 
+                 <div class="form-group">
+                     <label class="form-label">Adicionar a Grupos Existentes:</label>
+                     <div id="existingGroupsContainer" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; border-radius: 5px; padding: 10px; background: #f8f9fa;">
+                         <div style="text-align: center; color: #666; font-size: 14px;">Carregando grupos...</div>
+                     </div>
+                 </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="userRole">Função:</label>
+                    <select id="userRole" class="form-select" required>
+                        <option value="user">Usuário</option>
+                        <option value="admin">Administrador</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Permissões:</label>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="perm_create_rnc" class="form-checkbox">
+                            <label for="perm_create_rnc">Criar RNCs</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="perm_view_all_rncs" class="form-checkbox">
+                            <label for="perm_view_all_rncs">Ver todos os RNCs</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="perm_manage_users" class="form-checkbox">
+                            <label for="perm_manage_users">Gerenciar usuários</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="perm_edit_rncs" class="form-checkbox">
+                            <label for="perm_edit_rncs">Editar RNCs</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="perm_delete_rncs" class="form-checkbox">
+                            <label for="perm_delete_rncs">Deletar RNCs</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+                </div>
+            </form>
+                 </div>
+     </div>
+
+     <!-- Modal para seleção de usuário -->
+     <div id="userSelectionModal" class="modal">
+         <div class="modal-content">
+             <div class="modal-header">
+                 <h2 class="modal-title" id="permissionTitle">Selecionar Usuário</h2>
+                 <span class="close" onclick="closeUserSelectionModal()">&times;</span>
+             </div>
+             
+             <div id="usersList" style="max-height: 400px; overflow-y: auto;">
+                 <p>Carregando usuários...</p>
+             </div>
+         </div>
+     </div>
+ 
+     <script>
+        let users = [];
+        let editingUserId = null;
+
+        // Função para conceder permissões
+        async function grantPermission(permission) {
+            // Mostrar modal de seleção de usuário
+            showUserSelectionModal(permission);
+        }
+
+        // Função para mostrar modal de seleção de usuário
+        function showUserSelectionModal(permission) {
+            const modal = document.getElementById('userSelectionModal');
+            const permissionTitle = document.getElementById('permissionTitle');
+            const usersList = document.getElementById('usersList');
+            
+            // Definir título da permissão
+            permissionTitle.textContent = `Conceder permissão: ${permission}`;
+            
+            // Carregar lista de usuários
+            loadUsersForSelection(usersList, permission);
+            
+            // Mostrar modal
+            modal.style.display = 'block';
+        }
+
+        // Função para carregar usuários para seleção
+        async function loadUsersForSelection(container, permission) {
+            try {
+                const response = await fetch('/api/admin/users');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const users = data.users;
+                    
+                    if (users.length === 0) {
+                        container.innerHTML = '<p>Nenhum usuário disponível</p>';
+                        return;
+                    }
+                    
+                    container.innerHTML = users.map(user => `
+                        <div class="user-selection-item" onclick="selectUser(${user.id}, '${user.name}', '${permission}')">
+                            <div class="user-selection-info">
+                                <div class="user-selection-name">${user.name}</div>
+                                <div class="user-selection-details">
+                                    <span>ID: ${user.id}</span>
+                                    <span>Email: ${user.email}</span>
+                                    <span>Departamento: ${user.department}</span>
+                                </div>
+                                <div class="user-selection-permissions">
+                                    <strong>Permissões atuais:</strong> 
+                                    ${user.permissions.length > 0 ? 
+                                        user.permissions.map(perm => `<span class="permission-tag">${perm}</span>`).join('') :
+                                        '<span class="permission-tag">Nenhuma</span>'
+                                    }
+                                </div>
+                            </div>
+                            <div class="user-selection-action">
+                                <button class="btn btn-primary btn-sm">Selecionar</button>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<p>Erro ao carregar usuários</p>';
+                }
+            } catch (error) {
+                console.error('Erro ao carregar usuários:', error);
+                container.innerHTML = '<p>Erro ao carregar usuários</p>';
+            }
+        }
+
+        // Função para selecionar usuário
+        async function selectUser(userId, userName, permission) {
+            if (!confirm(`Conceder a permissão "${permission}" para o usuário "${userName}"?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/admin/grant-permission', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        permission: permission
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert(data.message);
+                    closeUserSelectionModal();
+                    loadUsers(); // Recarregar lista de usuários
+                } else {
+                    alert('Erro: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Erro ao conceder permissão:', error);
+                alert('Erro ao conectar com o servidor');
+            }
+        }
+
+        // Função para fechar modal de seleção
+        function closeUserSelectionModal() {
+            document.getElementById('userSelectionModal').style.display = 'none';
+        }
+
+        // Carregar usuários
+        let searchDebounce = null;
+
+        function debouncedLoad() {
+            if (searchDebounce) clearTimeout(searchDebounce);
+            searchDebounce = setTimeout(loadUsers, 300);
+        }
+
+        async function loadUsers() {
+            try {
+                const params = new URLSearchParams();
+                const q = document.getElementById('searchInput').value.trim();
+                const role = document.getElementById('roleFilter').value;
+                const dept = document.getElementById('deptFilter').value.trim();
+                const includeInactive = document.getElementById('showInactive').checked;
+
+                if (q) params.append('q', q);
+                if (role) params.append('role', role);
+                if (dept) params.append('department', dept);
+                if (includeInactive) params.append('include_inactive', 'true');
+
+                const response = await fetch(`/api/admin/users?${params.toString()}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    users = data.users;
+                    displayUsers();
+                } else {
+                    alert('Erro ao carregar usuários: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Erro ao carregar usuários:', error);
+                alert('Erro ao carregar usuários');
+            }
+        }
+
+        // Exibir usuários
+        function displayUsers() {
+            const grid = document.getElementById('usersGrid');
+            
+            if (users.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">👥</div>
+                        <h3>Nenhum usuário encontrado</h3>
+                        <p>Clique em "Novo Usuário" para começar</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            grid.innerHTML = users.map(user => `
+                <div class="user-card">
+                    <div class="user-header">
+                        <div class="user-name">${user.name} ${user.is_active ? '' : '<span style="font-size:11px; color:#dc3545; font-weight:600; margin-left:6px;">(Inativo)</span>'}</div>
+                        <div class="user-role role-${user.role}">${user.role}</div>
+                    </div>
+                    
+                    <div class="user-info">
+                        <div class="info-row">
+                            <span class="info-label">Email:</span>
+                            <span class="info-value">${user.email}</span>
+                        </div>
+                                                 <div class="info-row">
+                             <span class="info-label">Departamento:</span>
+                             <span class="info-value">${user.department}</span>
+                         </div>
+                         <div class="info-row">
+                             <span class="info-label">Grupo:</span>
+                             <span class="info-value">${user.group_name || 'Não definido'}</span>
+                         </div>
+                        <div class="info-row">
+                            <span class="info-label">Criado em:</span>
+                            <span class="info-value">${new Date(user.created_at).toLocaleDateString('pt-BR')}</span>
+                        </div>
+                        
+                        <div class="permissions-list">
+                            <div class="info-label">Permissões:</div>
+                            ${user.permissions.length > 0 ? 
+                                user.permissions.map(perm => `<span class="permission-tag">${perm}</span>`).join('') :
+                                '<span class="permission-tag">Nenhuma</span>'
+                            }
+                        </div>
+                    </div>
+                    
+                    <div class="user-actions">
+                        <button class="btn btn-primary btn-sm" onclick="editUser(${user.id})">✏️ Editar</button>
+                        ${user.is_active
+                            ? `<button class="btn btn-danger btn-sm" onclick="deactivateUser(${user.id})">🗑️ Desativar</button>`
+                            : `<button class="btn btn-secondary btn-sm" onclick="restoreUser(${user.id})">↩️ Restaurar</button>`}
+                        <button class="btn btn-warning btn-sm" onclick="resetPassword(${user.id})">🔒 Resetar Senha</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+                 // Abrir modal para criar usuário
+         function openCreateModal() {
+             editingUserId = null;
+             document.getElementById('modalTitle').textContent = 'Novo Usuário';
+             document.getElementById('userForm').reset();
+             
+             // Ocultar seção de grupos para criação
+             document.getElementById('existingGroupsContainer').innerHTML = '<div style="text-align: center; color: #666; font-size: 14px;">Grupos serão criados automaticamente baseado no departamento</div>';
+             
+             document.getElementById('userModal').style.display = 'block';
+         }
+
+                 // Editar usuário
+         async function editUser(userId) {
+             const user = users.find(u => u.id === userId);
+             if (!user) return;
+             
+             editingUserId = userId;
+             document.getElementById('modalTitle').textContent = 'Editar Usuário';
+             
+             // Preencher formulário
+             document.getElementById('userName').value = user.name;
+             document.getElementById('userEmail').value = user.email;
+             document.getElementById('userDepartment').value = user.department;
+             document.getElementById('userRole').value = user.role;
+             
+             // Limpar senha (não mostrar senha atual)
+             document.getElementById('userPassword').value = '';
+             document.getElementById('userPassword').required = false;
+             
+             // Marcar permissões
+             document.getElementById('perm_create_rnc').checked = user.permissions.includes('create_rnc');
+             document.getElementById('perm_view_all_rncs').checked = user.permissions.includes('view_all_rncs');
+             document.getElementById('perm_manage_users').checked = user.permissions.includes('manage_users');
+             document.getElementById('perm_edit_rncs').checked = user.permissions.includes('edit_rncs');
+             document.getElementById('perm_delete_rncs').checked = user.permissions.includes('delete_rncs');
+             
+             // Carregar grupos do usuário
+             await loadUserGroups(userId);
+             
+             document.getElementById('userModal').style.display = 'block';
+         }
+
+        // Fechar modal
+        function closeModal() {
+            document.getElementById('userModal').style.display = 'none';
+            document.getElementById('userPassword').required = true;
+        }
+
+        // Salvar usuário
+        async function saveUser(event) {
+            event.preventDefault();
+            
+            const permissions = [];
+            if (document.getElementById('perm_create_rnc').checked) permissions.push('create_rnc');
+            if (document.getElementById('perm_view_all_rncs').checked) permissions.push('view_all_rncs');
+            if (document.getElementById('perm_manage_users').checked) permissions.push('manage_users');
+            if (document.getElementById('perm_edit_rncs').checked) permissions.push('edit_rncs');
+            if (document.getElementById('perm_delete_rncs').checked) permissions.push('delete_rncs');
+            
+            const userData = {
+                name: document.getElementById('userName').value,
+                email: document.getElementById('userEmail').value,
+                password: document.getElementById('userPassword').value,
+                department: document.getElementById('userDepartment').value,
+                role: document.getElementById('userRole').value,
+                permissions: permissions
+            };
+            
+            try {
+                let response;
+                if (editingUserId) {
+                    // Atualizar usuário
+                    response = await fetch(`/api/admin/users/${editingUserId}`, {
+                        method: 'PUT',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(userData)
+                    });
+                } else {
+                    // Criar usuário
+                    response = await fetch('/api/admin/users', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(userData)
+                    });
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert(data.message);
+                    closeModal();
+                    loadUsers();
+                } else {
+                    alert('Erro: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Erro ao salvar usuário:', error);
+                alert('Erro ao salvar usuário');
+            }
+        }
+
+        // Deletar usuário
+        async function deactivateUser(userId) {
+            if (!confirm('Tem certeza que deseja desativar este usuário?')) return;
+            
+            try {
+                const response = await fetch(`/api/admin/users/${userId}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert(data.message);
+                    loadUsers();
+                } else {
+                    alert('Erro: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Erro ao desativar usuário:', error);
+                alert('Erro ao desativar usuário');
+            }
+        }
+
+        async function restoreUser(userId) {
+            if (!confirm('Restaurar (reativar) este usuário?')) return;
+            try {
+                const response = await fetch(`/api/admin/users/${userId}/restore`, { method: 'POST' });
+                const data = await response.json();
+                if (data.success) {
+                    alert(data.message);
+                    loadUsers();
+                } else {
+                    alert('Erro: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Erro ao restaurar usuário:', error);
+                alert('Erro ao restaurar usuário');
+            }
+        }
+
+        async function resetPassword(userId) {
+            const newPass = prompt('Digite uma nova senha (mínimo 6 caracteres):');
+            if (!newPass || newPass.length < 6) {
+                alert('Senha inválida.');
+                return;
+            }
+            try {
+                const response = await fetch(`/api/admin/users/${userId}/reset-password`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ new_password: newPass })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    alert(data.message);
+                } else {
+                    alert('Erro: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Erro ao resetar senha:', error);
+                alert('Erro ao resetar senha');
+            }
+        }
+
+                 // Função para carregar sugestões de grupos
+         async function loadGroupSuggestions() {
+             try {
+                 const response = await fetch('/api/admin/groups/suggestions');
+                 const data = await response.json();
+                 
+                 if (data.success) {
+                     const datalist = document.getElementById('groupSuggestions');
+                     datalist.innerHTML = '';
+                     
+                     data.groups.forEach(group => {
+                         const option = document.createElement('option');
+                         option.value = group;
+                         datalist.appendChild(option);
+                     });
+                 }
+             } catch (error) {
+                 console.error('Erro ao carregar sugestões de grupos:', error);
+             }
+         }
+
+         // Função para carregar grupos do usuário
+         async function loadUserGroups(userId) {
+             try {
+                 const response = await fetch(`/api/admin/users/${userId}/groups`);
+                 const data = await response.json();
+                 
+                 if (data.success) {
+                     displayUserGroups(data.groups, data.main_group);
+                 } else {
+                     console.error('Erro ao carregar grupos do usuário:', data.message);
+                     document.getElementById('existingGroupsContainer').innerHTML = '<div style="text-align: center; color: #dc3545; font-size: 14px;">Erro ao carregar grupos</div>';
+                 }
+             } catch (error) {
+                 console.error('Erro ao carregar grupos do usuário:', error);
+                 document.getElementById('existingGroupsContainer').innerHTML = '<div style="text-align: center; color: #dc3545; font-size: 14px;">Erro ao carregar grupos</div>';
+             }
+         }
+
+         // Função para exibir grupos do usuário
+         function displayUserGroups(groups, mainGroup) {
+             const container = document.getElementById('existingGroupsContainer');
+             
+             if (groups.length === 0) {
+                 container.innerHTML = '<div style="text-align: center; color: #666; font-size: 14px;">Nenhum grupo disponível</div>';
+                 return;
+             }
+             
+             container.innerHTML = groups.map(group => `
+                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #e9ecef; margin-bottom: 5px;">
+                     <div>
+                         <div style="font-weight: 600; color: #333;">${group.name}</div>
+                         <div style="font-size: 12px; color: #666;">${group.description || 'Sem descrição'}</div>
+                         ${group.is_main ? '<span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-top: 4px; display: inline-block;">Grupo Principal</span>' : ''}
+                     </div>
+                     <button 
+                         class="btn btn-primary btn-sm" 
+                         onclick="addUserToGroup(${group.id}, '${group.name}')"
+                         ${group.is_main ? 'disabled style="opacity: 0.5;"' : ''}
+                     >
+                         ${group.is_main ? 'Atual' : 'Adicionar'}
+                     </button>
+                 </div>
+             `).join('');
+         }
+
+         // Função para adicionar usuário a um grupo
+         async function addUserToGroup(groupId, groupName) {
+             if (!confirm(`Adicionar o usuário ao grupo "${groupName}"?`)) {
+                 return;
+             }
+             
+             try {
+                 const response = await fetch(`/api/admin/users/${editingUserId}/add-to-group`, {
+                     method: 'POST',
+                     headers: {
+                         'Content-Type': 'application/json',
+                     },
+                     body: JSON.stringify({
+                         group_id: groupId
+                     })
+                 });
+                 
+                 const data = await response.json();
+                 
+                 if (data.success) {
+                     alert(data.message);
+                     // Recarregar grupos do usuário
+                     await loadUserGroups(editingUserId);
+                     // Recarregar lista de usuários
+                     loadUsers();
+                 } else {
+                     alert('Erro: ' + data.message);
+                 }
+             } catch (error) {
+                 console.error('Erro ao adicionar usuário ao grupo:', error);
+                 alert('Erro ao conectar com o servidor');
+             }
+         }
+
+        // Event listeners
+        document.getElementById('userForm').addEventListener('submit', saveUser);
+        
+        // Carregar usuários e sugestões quando a página carregar
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUsers();
+            loadGroupSuggestions();
+        });
+    </script>
+</body>
+</html> 

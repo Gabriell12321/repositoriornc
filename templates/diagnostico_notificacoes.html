@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 Diagnóstico de Notificações - IPPEL RNC</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            color: #dc3545;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        .status {
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #dc3545, #b21f35);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 10px 10px 10px 0;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(220,53,69,0.3);
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(220,53,69,0.4);
+        }
+        
+        button.secondary {
+            background: linear-gradient(135deg, #28a745, #20c997);
+        }
+        
+        button.info {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+        }
+        
+        .log {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-left: 3px solid transparent;
+        }
+        
+        .log-entry.success { border-left-color: #28a745; }
+        .log-entry.error { border-left-color: #dc3545; }
+        .log-entry.warning { border-left-color: #ffc107; }
+        .log-entry.info { border-left-color: #007bff; }
+        
+        .instructions {
+            background: #e7f3ff;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        
+        .instructions h3 {
+            color: #0056b3;
+            margin-bottom: 10px;
+        }
+        
+        .instructions ol {
+            margin-left: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 8px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>
+            <span>🔧</span>
+            Diagnóstico de Notificações do Windows
+        </h1>
+        <div class="subtitle">Sistema IPPEL RNC - Teste e Debug de Notificações Nativas</div>
+        
+        <div class="section">
+            <h2>📊 Status do Sistema</h2>
+            <div id="statusSupport" class="status warning">🔍 Verificando suporte...</div>
+            <div id="statusPermission" class="status warning">🔍 Verificando permissão...</div>
+            <div id="statusFocus" class="status warning">🔍 Verificando foco da janela...</div>
+        </div>
+        
+        <div class="section">
+            <h2>🧪 Testes de Notificação</h2>
+            <button onclick="testarNotificacaoSimples()">
+                📢 Teste 1: Notificação Simples
+            </button>
+            <button onclick="testarNotificacaoCompleta()" class="secondary">
+                🎯 Teste 2: Notificação Completa
+            </button>
+            <button onclick="testarNotificacaoMinima()" class="info">
+                ⚡ Teste 3: Notificação Mínima
+            </button>
+            <button onclick="testarSequencia()" style="background: linear-gradient(135deg, #6f42c1, #563d7c);">
+                🔄 Teste 4: Sequência de 3
+            </button>
+        </div>
+        
+        <div class="section">
+            <h2>📝 Log de Eventos</h2>
+            <div id="logContainer" class="log"></div>
+        </div>
+        
+        <div class="instructions">
+            <h3>📋 Como Interpretar os Resultados</h3>
+            <ol>
+                <li><strong>Se "onshow" aparecer no log:</strong> A notificação FOI EXIBIDA pelo Windows</li>
+                <li><strong>Se "onclose" aparecer mas NÃO "onshow":</strong> A notificação foi bloqueada</li>
+                <li><strong>Se "onerror" aparecer:</strong> Houve um erro ao criar a notificação</li>
+                <li><strong>Se nada aparecer:</strong> A notificação não foi criada (erro de código)</li>
+            </ol>
+            
+            <h3 style="margin-top: 20px;">🔧 Soluções para Problemas Comuns</h3>
+            <ol>
+                <li><strong>Modo "Não Perturbe" ativado:</strong> Desative em Configurações → Sistema → Foco</li>
+                <li><strong>Notificações do navegador desativadas no Windows:</strong> 
+                    <br>Configurações → Sistema → Notificações → Procure pelo navegador → Ative</li>
+                <li><strong>Navegador bloqueou o site:</strong> Clique no cadeado 🔒 → Permitir notificações</li>
+                <li><strong>Central de Ações está cheia:</strong> Pressione Win+N e limpe notificações antigas</li>
+            </ol>
+        </div>
+    </div>
+    
+    <script>
+        const logs = [];
+        
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString('pt-BR');
+            const logEntry = `[${timestamp}] ${message}`;
+            logs.push({ message: logEntry, type });
+            
+            const logContainer = document.getElementById('logContainer');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = logEntry;
+            logContainer.appendChild(entry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            
+            console.log(message);
+        }
+        
+        function updateStatus() {
+            // Suporte
+            const supportEl = document.getElementById('statusSupport');
+            if ('Notification' in window) {
+                supportEl.className = 'status success';
+                supportEl.textContent = '✅ Navegador suporta Notification API';
+                addLog('✅ Notification API suportada', 'success');
+            } else {
+                supportEl.className = 'status error';
+                supportEl.textContent = '❌ Navegador NÃO suporta Notification API';
+                addLog('❌ Notification API não suportada', 'error');
+                return;
+            }
+            
+            // Permissão
+            const permEl = document.getElementById('statusPermission');
+            const perm = Notification.permission;
+            if (perm === 'granted') {
+                permEl.className = 'status success';
+                permEl.textContent = '✅ Permissão CONCEDIDA para notificações';
+                addLog('✅ Permissão: granted', 'success');
+            } else if (perm === 'denied') {
+                permEl.className = 'status error';
+                permEl.textContent = '❌ Permissão NEGADA - Clique no cadeado 🔒 para alterar';
+                addLog('❌ Permissão: denied', 'error');
+            } else {
+                permEl.className = 'status warning';
+                permEl.textContent = '⚠️ Permissão NÃO SOLICITADA - Clique em um dos botões de teste';
+                addLog('⚠️ Permissão: default', 'warning');
+            }
+            
+            // Foco
+            const focusEl = document.getElementById('statusFocus');
+            if (document.hasFocus()) {
+                focusEl.className = 'status success';
+                focusEl.textContent = '✅ Janela está EM FOCO';
+                addLog('✅ Window focused: true', 'info');
+            } else {
+                focusEl.className = 'status warning';
+                focusEl.textContent = '⚠️ Janela está FORA DE FOCO (minimize para testar)';
+                addLog('⚠️ Window focused: false', 'warning');
+            }
+        }
+        
+        async function solicitarPermissao() {
+            if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+                addLog('🔔 Solicitando permissão...', 'info');
+                const perm = await Notification.requestPermission();
+                addLog(`📊 Resultado: ${perm}`, perm === 'granted' ? 'success' : 'error');
+                updateStatus();
+                return perm === 'granted';
+            }
+            return Notification.permission === 'granted';
+        }
+        
+        async function testarNotificacaoSimples() {
+            addLog('🧪 ===== TESTE 1: NOTIFICAÇÃO SIMPLES =====', 'info');
+            
+            if (!await solicitarPermissao()) {
+                addLog('❌ Sem permissão, teste cancelado', 'error');
+                return;
+            }
+            
+            try {
+                addLog('📢 Criando notificação simples...', 'info');
+                const notif = new Notification('Teste Simples', {
+                    body: 'Esta é uma notificação básica'
+                });
+                
+                addLog('✅ Notificação criada! Aguardando eventos...', 'success');
+                
+                notif.onshow = () => addLog('📢 onshow: Notificação EXIBIDA!', 'success');
+                notif.onclick = () => addLog('👆 onclick: Notificação clicada', 'info');
+                notif.onerror = (e) => addLog('❌ onerror: ' + e, 'error');
+                notif.onclose = () => addLog('🚪 onclose: Notificação fechada', 'warning');
+                
+                setTimeout(() => {
+                    addLog('⏱️ Timeout de 5s - Se onshow não apareceu, a notificação foi bloqueada', 'warning');
+                }, 5000);
+                
+            } catch (error) {
+                addLog('❌ ERRO ao criar notificação: ' + error.message, 'error');
+            }
+        }
+        
+        async function testarNotificacaoCompleta() {
+            addLog('🧪 ===== TESTE 2: NOTIFICAÇÃO COMPLETA =====', 'info');
+            
+            if (!await solicitarPermissao()) {
+                addLog('❌ Sem permissão, teste cancelado', 'error');
+                return;
+            }
+            
+            try {
+                addLog('📢 Criando notificação completa...', 'info');
+                const notif = new Notification('🎯 Teste Completo - IPPEL RNC', {
+                    body: 'Nova RNC criada: RNC-2025-TEST-001\nClique para visualizar',
+                    icon: '/LOGOIPPEL.JPEG',
+                    tag: 'test-' + Date.now(),
+                    requireInteraction: true,
+                    silent: false
+                });
+                
+                addLog('✅ Notificação completa criada!', 'success');
+                
+                notif.onshow = () => addLog('📢 onshow: Notificação EXIBIDA!', 'success');
+                notif.onclick = () => addLog('👆 onclick: Notificação clicada', 'info');
+                notif.onerror = (e) => addLog('❌ onerror: ' + e, 'error');
+                notif.onclose = () => addLog('🚪 onclose: Notificação fechada', 'warning');
+                
+            } catch (error) {
+                addLog('❌ ERRO ao criar notificação: ' + error.message, 'error');
+            }
+        }
+        
+        async function testarNotificacaoMinima() {
+            addLog('🧪 ===== TESTE 3: NOTIFICAÇÃO MÍNIMA =====', 'info');
+            
+            if (!await solicitarPermissao()) {
+                addLog('❌ Sem permissão, teste cancelado', 'error');
+                return;
+            }
+            
+            try {
+                addLog('📢 Criando notificação mínima (sem opções)...', 'info');
+                const notif = new Notification('Teste Mínimo');
+                
+                addLog('✅ Notificação mínima criada!', 'success');
+                
+                notif.onshow = () => addLog('📢 onshow: Notificação EXIBIDA!', 'success');
+                notif.onclick = () => addLog('👆 onclick: Notificação clicada', 'info');
+                notif.onerror = (e) => addLog('❌ onerror: ' + e, 'error');
+                notif.onclose = () => addLog('🚪 onclose: Notificação fechada', 'warning');
+                
+            } catch (error) {
+                addLog('❌ ERRO ao criar notificação: ' + error.message, 'error');
+            }
+        }
+        
+        async function testarSequencia() {
+            addLog('🧪 ===== TESTE 4: SEQUÊNCIA DE 3 NOTIFICAÇÕES =====', 'info');
+            
+            if (!await solicitarPermissao()) {
+                addLog('❌ Sem permissão, teste cancelado', 'error');
+                return;
+            }
+            
+            for (let i = 1; i <= 3; i++) {
+                setTimeout(() => {
+                    try {
+                        addLog(`📢 Criando notificação ${i}/3...`, 'info');
+                        const notif = new Notification(`Teste ${i} de 3`, {
+                            body: `Esta é a notificação número ${i}`,
+                            tag: 'seq-' + i
+                        });
+                        
+                        notif.onshow = () => addLog(`📢 Notificação ${i} EXIBIDA!`, 'success');
+                        notif.onerror = (e) => addLog(`❌ Notificação ${i} erro: ` + e, 'error');
+                        notif.onclose = () => addLog(`🚪 Notificação ${i} fechada`, 'warning');
+                        
+                    } catch (error) {
+                        addLog(`❌ ERRO na notificação ${i}: ` + error.message, 'error');
+                    }
+                }, i * 2000);
+            }
+        }
+        
+        // Inicializar
+        window.addEventListener('load', () => {
+            addLog('🚀 Diagnóstico iniciado', 'success');
+            updateStatus();
+        });
+        
+        window.addEventListener('focus', () => {
+            addLog('👁️ Janela ganhou foco', 'info');
+            updateStatus();
+        });
+        
+        window.addEventListener('blur', () => {
+            addLog('👁️ Janela perdeu foco', 'warning');
+            updateStatus();
+        });
+    </script>
+</body>
+</html>

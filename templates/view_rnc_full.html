@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualização RNC - {{ rnc.rnc_number }}</title>
+    <style>
+        /* CSS completamente local - sem imports externos */
+        :root {
+            --primary-red: #6c757d;
+            --secondary-red: #6c757d;
+            --accent-blue: #2c3e50;
+            --light-gray: #f8f9fa;
+            --border-gray: #e9ecef;
+            --text-dark: #2c3e50;
+            --text-muted: #6c757d;
+            --success-green: #28a745;
+            --warning-orange: #ffc107;
+            --danger-red: #dc3545;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Liberation Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+            background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 30%, #dddddd 70%, #d0d0d0 100%);
+            padding: 0;
+            margin: 0;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+            color: var(--text-dark);
+            line-height: 1.4;
+            font-size: 13px;
+        }
+
+        /* Header com controles */
+        .print-controls {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 12px 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid var(--border-gray);
+        }
+
+        .controls-container {
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .controls-left, .controls-right {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--primary-red);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--secondary-red);
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(193, 39, 45, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--accent-blue);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #34495e;
+            transform: translateY(-1px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--primary-red);
+            border: 1px solid var(--primary-red);
+        }
+
+        .btn-outline:hover {
+            background: var(--primary-red);
+            color: white;
+        }
+
+        .btn-print {
+            background: var(--success-green);
+            color: white;
+        }
+
+        .btn-print:hover {
+            background: #218838;
+            transform: translateY(-1px);
+        }
+
+        /* Container principal - ULTRA EXTREMO para uma folha só */
+        .container {
+            width: 100vw;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #ffffff 0%, #fdfdfd 50%, #fafafa 100%);
+            padding: 35px;
+            box-shadow: 0 32px 64px rgba(0, 0, 0, 0.18);
+            border-radius: 0;
+            overflow-y: auto;
+            border-top: 8px solid #6c757d;
+            position: relative;
+        }
+
+        .header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: none;
+            padding-bottom: 0;
+            position: relative;
+        }
+
+        .logo-ippel {
+            width: 120px;
+            height: 120px;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .logo-ippel:hover {
+            transform: scale(1.05);
+        }
+
+        /* Tabelas ULTRA compactas - sem espaços desnecessários */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 3px;
+            font-size: 9px;
+            border-radius: 1px;
+            overflow: hidden;
+            box-shadow: 0 1px 1px rgba(0,0,0,0.03);
+        }
+
+        table td, table th {
+            border: 1px solid var(--border-gray);
+            padding: 2px 4px;
+            text-align: left;
+            vertical-align: middle;
+            line-height: 1.2;
+        }
+        
+        table td {
+            height: auto;
+            min-height: 18px;
+        }
+        
+        table td strong {
+            display: inline-block;
+            min-width: fit-content;
+        }           
+
+        /* Listras alternadas para as linhas da tabela */
+        table tbody tr:nth-child(odd) {
+            background-color: #f8f9fa !important;
+        }
+        
+        table tbody tr:nth-child(even) {
+            background-color: white !important;
+        }
+        
+        /* Garantir que as células herdem a cor da linha */
+        table tbody tr:nth-child(odd) td {
+            background-color: #f8f9fa !important;
+        }
+        
+        table tbody tr:nth-child(even) td {
+            background-color: white !important;
+        }
+        
+        /* Reduzir espaçamento na linha do MATERIAL */
+        .material-row td {
+            padding: 1px 3px !important;
+            min-height: 14px !important;
+            line-height: 1.1 !important;
+        }
+
+        table th {
+            background: linear-gradient(135deg, var(--primary-red) 0%, var(--secondary-red) 100%);
+            color: white;
+            font-weight: 600;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.2px;
+        }
+
+        /* Seções com títulos ULTRA EXTREMAMENTE compactos */
+        .section-title {
+            background: linear-gradient(135deg, var(--primary-red) 0%, var(--secondary-red) 100%) !important;
+            color: white !important;
+            text-align: center;
+            font-weight: bold;
+            font-size: 10px;
+            padding: 3px !important;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            position: relative;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, var(--accent-blue) 0%, var(--success-green) 100%);
+        }
+
+        .section-table {
+            margin-bottom: 4px;
+        }
+
+        /* Campos de texto compactos */
+        .text-block {
+            min-height: 24px;
+            padding: 4px 6px;
+            word-wrap: break-word;
+            background: var(--light-gray);
+            border-radius: 1px;
+            border: 1px solid var(--border-gray);
+            font-size: 9px;
+            line-height: 1.3;
+            color: var(--text-dark);
+        }
+
+        /* Seção inferior compacta */
+        .bottom-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+            margin-top: 3px;
+            border: 1px solid var(--primary-red);
+            border-radius: 1px;
+            overflow: hidden;
+            background: white;
+        }
+
+        .disposition-section, .inspection-section {
+            padding: 4px;
+            position: relative;
+        }
+
+        .disposition-section {
+            background: var(--light-gray);
+            border-right: 1px solid var(--primary-red);
+        }
+
+        .inspection-section {
+            background: white;
+        }
+
+        .section-header {
+            background: var(--primary-red);
+            color: white;
+            text-align: center;
+            font-weight: bold;
+            font-size: 8px;
+            padding: 3px;
+            margin: -4px -4px 4px -4px;
+            text-transform: uppercase;
+            letter-spacing: 0.1px;
+        }
+
+        /* Opções de disposição compactas */
+        .disposition-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2px;
+            margin-bottom: 4px;
+        }
+
+        .disposition-option {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            font-size: 7px;
+            font-weight: 600;
+            padding: 2px 3px;
+            border-radius: 1px;
+            transition: all 0.3s ease;
+        }
+
+        .disposition-option:hover {
+            background: rgba(193, 39, 45, 0.1);
+        }
+
+        .disposition-option input[type="checkbox"] {
+            width: 10px;
+            height: 10px;
+            accent-color: var(--primary-red);
+            flex-shrink: 0;
+        }
+
+        .disposition-option label {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Campos de assinatura ULTRA compactos - todas as informações em uma linha alinhadas */
+        .signature-fields {
+            margin-top: 5px;
+            padding: 0;
+        }
+
+        .signature-row {
+            display: grid;
+            grid-template-columns: 70px 90px 40px 1fr 40px 100px;
+            align-items: center;
+            margin-bottom: 3px;
+            gap: 5px;
+        }
+
+        .signature-label {
+            font-size: 8px;
+            font-weight: 600;
+            color: var(--text-dark);
+            text-align: right;
+            padding-right: 3px;
+        }
+
+        .signature-input {
+            height: 18px;
+            border: 1px solid var(--border-gray);
+            border-radius: 2px;
+            padding: 2px 5px;
+            font-size: 9px;
+            background: white;
+        }
+
+        .date-input {
+            height: 18px;
+            border: 1px solid var(--border-gray);
+            border-radius: 2px;
+            padding: 2px 5px;
+            font-size: 9px;
+            background: white;
+            text-align: center;
+        }
+
+        .signature-separator {
+            color: var(--text-muted);
+            font-weight: bold;
+            font-size: 8px;
+            text-align: right;
+            padding-right: 3px;
+        }
+
+        /* Checkboxes de aprovação compactos */
+        .approval-options {
+            margin-bottom: 4px;
+        }
+
+        .approval-option {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            font-size: 7px;
+            font-weight: 600;
+            padding: 2px 3px;
+            border-radius: 1px;
+            transition: all 0.3s ease;
+        }
+
+        .approval-option:hover {
+            background: rgba(193, 39, 45, 0.1);
+        }
+
+        .approval-option input[type="checkbox"] {
+            width: 10px;
+            height: 10px;
+            accent-color: var(--primary-red);
+            flex-shrink: 0;
+        }
+
+        .approval-option label {
+            flex: 1;
+        }
+
+        /* Campo de referência RNC compacto */
+        .rnc-reference {
+            margin-bottom: 4px;
+        }
+
+        .rnc-reference-label {
+            font-size: 7px;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 2px;
+        }
+
+        .rnc-reference-input {
+            width: 100%;
+            height: 18px;
+            border: 1px solid var(--border-gray);
+            border-radius: 2px;
+            padding: 2px 4px;
+            font-size: 9px;
+            background: white;
+        }
+
+        /* ========================================== */
+        /* CSS DE IMPRESSÃO - EXATO DO NEW_RNC.HTML */
+        /* ATUALIZADO: 2024-10-15 17:23 - COM LINHAS */
+        /* ========================================== */
+        @media print {
+            /* PRIMEIRA REGRA - FORÇAR TODAS AS BORDAS PARA 1PX IMEDIATAMENTE */
+            * {
+                border-width: 1px !important;
+            }
+            
+            .action-bar,
+            .create-mode-banner,
+            .no-print,
+            .print-controls,
+            button[onclick="openValoresSelectionModal()"],
+            div[style*="width: 60px; height: 2px"],
+            div[style*="margin-bottom: 10px"] > div[style*="width: 60px"] {
+                display: none !important;
+            }
+            
+            body {
+                background: white;
+                margin: 0;
+                margin-top: 0 !important;
+                padding: 0;
+                padding-top: 0 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            
+            /* Forçar impressão exata de cores */
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            
+            .container {
+                box-shadow: none !important;
+                border: none !important;
+                border-top: none !important;
+                padding: 3px;
+                padding-top: 0 !important;
+                margin: 0;
+                margin-top: 0 !important;
+                width: 100%;
+                height: auto;
+                overflow: visible;
+                border-radius: 0 !important;
+            }
+            
+            /* Ajustar tamanho da página */
+            @page {
+                size: A4 portrait;
+                margin: 8mm;
+            }
+            
+            /* Otimizar escala para caber em 1 folha */
+            html {
+                zoom: 0.82;
+            }
+            
+            body {
+                margin: 0;
+                padding: 0;
+                transform-origin: top center;
+            }
+            
+            .container {
+                padding: 3px !important;
+                margin: 0 !important;
+                max-width: 100% !important;
+            }
+            
+            /* Logo no topo centralizado */
+            .logo-ippel {
+                width: auto !important;
+                height: auto !important;
+                margin: 3px auto !important;
+                display: block !important;
+            }
+            
+            .logo-ippel img,
+            .logo-img {
+                width: 45px !important;
+                height: 45px !important;
+                display: block !important;
+                margin: 0 auto !important;
+            }
+            
+            .logos {
+                margin-bottom: 5px !important;
+                margin-top: 0 !important;
+                padding-top: 0 !important;
+                border: none !important;
+                text-align: center !important;
+            }
+            
+            .header {
+                border: none !important;
+                box-shadow: none !important;
+                text-align: center !important;
+                margin-bottom: 5px !important;
+            }
+            
+            /* Reduzir espaçamentos */
+            .title-section {
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            
+            .main-title {
+                font-size: 12px !important;
+                margin-bottom: 2px !important;
+                margin-top: 2px !important;
+                padding-top: 0 !important;
+                color: #000 !important;
+                line-height: 1.1 !important;
+                text-align: center !important;
+                font-weight: bold !important;
+                border: 2px solid #000 !important;
+                padding: 5px !important;
+                background: #fff !important;
+            }
+            
+            .subtitle {
+                display: none !important;
+            }
+            
+            .form-code {
+                display: none !important;
+            }
+            
+            .rnc-number {
+                margin-bottom: 3px !important;
+                margin-top: 2px !important;
+                padding: 4px !important;
+                border: 2px solid #dc3545 !important;
+                background: #fff !important;
+                text-align: center !important;
+                font-size: 10px !important;
+                font-weight: bold !important;
+                color: #dc3545 !important;
+                border-radius: 3px !important;
+            }
+            
+            /* Reduzir espaço entre subtitle, form-code e rnc-number */
+            .subtitle + .form-code,
+            .form-code + .rnc-number,
+            .title-section + .rnc-number,
+            div[style*="FABRICAÇÃO"] + div {
+                margin-top: 0 !important;
+                padding-top: 0 !important;
+            }
+            
+            /* Garantir espaçamento zero entre elementos do header */
+            .title-section > * {
+                margin: 0 !important;
+                padding-top: 0 !important;
+                padding-bottom: 0 !important;
+            }
+            
+            .rnc-number input {
+                padding: 1px !important;
+                font-size: 8px !important;
+                border: 1px solid #000 !important;
+                border-radius: 0 !important;
+                width: 90px !important;
+                max-width: 50px !important;
+            }
+            
+            .rnc-number label {
+                margin: 0 !important;
+                padding: 0 !important;
+                margin-right: 5px !important;
+                color: #000 !important;
+                font-weight: bold !important;
+                font-size: 8px !important;
+            }
+            
+            /* Reduzir espaçamento das seções */
+            div[style*="margin: 25px 0"] {
+                margin: 2px 0 !important;
+                border: 2px solid #000 !important;
+                border-radius: 0 !important;
+            }
+            
+            /* Cabeçalhos das seções com fundo cinza */
+            div[style*="background: linear-gradient"] {
+                background: #4a5568 !important;
+                color: #fff !important;
+                padding: 4px !important;
+                font-size: 10px !important;
+                font-weight: bold !important;
+                text-align: center !important;
+                border-bottom: 2px solid #000 !important;
+                letter-spacing: 0.5px !important;
+            }
+            
+            /* Reduzir padding das seções */
+            div[style*="padding: 20px"] {
+                padding: 3px !important;
+                background: #fff !important;
+            }
+            
+            /* Configuração completa das tabelas */
+            table {
+                margin-bottom: 3px !important;
+                font-size: 8px !important;
+                border: 2px solid #000 !important;
+                border-collapse: collapse !important;
+                width: 100% !important;
+            }
+            
+            /* Estratégia de bordas simplificada - apenas bordas internas */
+            table td, table th {
+                border: none !important;
+                border-right: 1px solid #000 !important;
+                border-bottom: 1px solid #000 !important;
+                padding: 2px !important;
+            }
+            
+            /* Remover borda direita da última célula */
+            table td:last-child,
+            table th:last-child {
+                border-right: none !important;
+            }
+            
+            /* Remover borda inferior da última linha */
+            table tr:last-child td,
+            table tr:last-child th {
+                border-bottom: none !important;
+            }
+            
+            /* Remover borda das células que contêm apenas inputs (evitar borda dupla) */
+            table td:has(input.input-field:only-child),
+            table td:has(textarea.input-field:only-child),
+            table td:has(select.input-field:only-child) {
+                border: none !important;
+                padding: 0 !important;
+            }
+            
+            /* Alternativa: remover borda de todas as células não-label */
+            table tr:not(:first-child) td {
+                border: none !important;
+                padding: 0 !important;
+            }
+            
+            /* Manter borda apenas nos labels */
+            table tr:first-child td,
+            table td.field-label,
+            table td.item-column,
+            table td.section-title {
+                border: 1px solid #000 !important;
+                padding: 2px !important;
+            }
+            
+            .field-label {
+                padding: 3px !important;
+                font-size: 7px !important;
+                background: #e2e8f0 !important;
+                color: #000 !important;
+                border: 1px solid #000 !important;
+                line-height: 1.2 !important;
+                font-weight: 600 !important;
+            }
+            
+            .field-value {
+                padding: 4px !important;
+                font-size: 8px !important;
+                min-height: auto !important;
+                border: 1px solid #000 !important;
+                color: #000 !important;
+                line-height: 1.3 !important;
+            }
+            
+            .input-field {
+                padding: 4px !important;
+                font-size: 8px !important;
+                min-height: auto !important;
+                border: 1px solid #000 !important;
+                color: #000 !important;
+                line-height: 1.3 !important;
+            }
+            
+            textarea.input-field {
+                min-height: 90px !important;
+                line-height: 1.4 !important;
+                height: 90px !important;
+            }
+            
+            /* Aumentar altura específica para textareas grandes */
+            textarea.large-text-area {
+                min-height: 100px !important;
+                height: 100px !important;
+            }
+            
+            textarea.medium-text-area {
+                min-height: 95px !important;
+                height: 95px !important;
+            }
+            
+            /* Altura para textarea de 2 linhas */
+            textarea.instruction-2lines {
+                min-height: 50px !important;
+                height: 50px !important;
+                line-height: 1.4 !important;
+            }
+            
+            .section-title {
+                padding: 3px !important;
+                font-size: 8px !important;
+                background: #fff !important;
+                color: #000 !important;
+                border: 1px solid #000 !important;
+                line-height: 1.1 !important;
+                text-align: center !important;
+                font-weight: bold !important;
+            }
+            
+            .section-content {
+                padding: 2px !important;
+                font-size: 9px !important;
+                border: 1px solid #000 !important;
+                border-top: none !important;
+                color: #000 !important;
+                line-height: 1.3 !important;
+                background: #fff !important;
+                min-height: 50px !important;
+            }
+
+            .section-content-large {
+                min-height: 50px !important; /* Correspondente ao textarea.large-text-area */
+            }
+
+            .section-content-medium {
+                min-height: 40px !important; /* Correspondente ao textarea.medium-text-area */
+            }
+
+            .section-content-instruction {
+                min-height: 35px !important; /* Correspondente ao textarea.instruction-2lines */
+                background-image: repeating-linear-gradient(
+                    transparent,
+                    transparent 8px,
+                    #ccc 8px,
+                    #ccc 9px
+                ) !important;
+            }
+            
+            /* Adicionar linhas em todos os campos de conteúdo na impressão */
+            .section-content,
+            .section-content-large,
+            .section-content-medium {
+                background-image: repeating-linear-gradient(
+                    transparent,
+                    transparent 12px,
+                    #000 12px,
+                    #000 13px
+                ) !important;
+                background-color: white !important;
+            }
+            
+            /* FORÇAR TODAS AS BORDAS PARA 1PX - REGRA MÁXIMA PRIORIDADE */
+            *,
+            *::before,
+            *::after,
+            div,
+            input,
+            select,
+            textarea,
+            table,
+            td,
+            th,
+            tr {
+                border-width: 1px !important;
+            }
+            
+            /* Forçar bordas 1px em elementos com style inline */
+            *[style*="border: 2px"],
+            *[style*="border:2px"],
+            *[style*="border: 3px"],
+            *[style*="border:3px"],
+            *[style*="border-right: 2px"],
+            *[style*="border-bottom: 2px"],
+            *[style*="border-top: 2px"],
+            *[style*="border-left: 2px"] {
+                border-width: 1px !important;
+                border-style: solid !important;
+                border-color: #000 !important;
+            }
+            
+            div[style*="border"],
+            section[style*="border"],
+            div,
+            section,
+            table,
+            tr,
+            td,
+            th {
+                border-width: 1px !important;
+                border-style: solid !important;
+                border-color: #000 !important;
+            }
+            
+            /* Bordas de seções específicas - SEMPRE 1px - MÁXIMA PRIORIDADE */
+            div[style*="border: 2px solid"],
+            div[style*="border:2px"],
+            div[style*="border: 3px"],
+            div[style*="border:3px"],
+            div[style*="border: 2px solid #6c757d"],
+            div[style*="margin: 25px 0; border"],
+            section[style*="border:"],
+            div[style*="margin: 25px 0"],
+            div[style*="border-radius"],
+            div[style*="box-shadow"] {
+                border: 1px solid #000 !important;
+                border-width: 1px !important;
+                border-style: solid !important;
+                border-color: #000 !important;
+                box-shadow: none !important;
+            }
+            
+            /* Cabeçalho de disposição e inspeção */
+            div[style*="background: #6c757d"] {
+                background: #d6d6d6 !important;
+                color: #000 !important;
+                padding: 3px !important;
+                font-size: 8px !important;
+                font-weight: bold !important;
+                border: 1px solid #000 !important;
+            }
+            
+            /* Checkboxes */
+            input[type="checkbox"] {
+                width: 9px !important;
+                height: 9px !important;
+                border: 1px solid #000 !important;
+                margin: 1px !important;
+                margin-right: 3px !important;
+            }
+            
+            /* FORÇAR TODAS AS LETRAS EM PRETO */
+            *,
+            body,
+            div,
+            span,
+            label,
+            input,
+            textarea,
+            select,
+            option,
+            td,
+            th,
+            p,
+            h1, h2, h3, h4, h5, h6 {
+                color: #000 !important;
+            }
+            
+            /* Remover espaços extras */
+            body * {
+                line-height: 1.1 !important;
+            }
+            
+            /* Forçar quebra de página apenas no final */
+            * {
+                page-break-inside: avoid !important;
+            }
+            
+            .container {
+                page-break-after: avoid !important;
+            }
+        }
+
+        /* Animações suaves */
+        .header, table, .text-block {
+            transition: all 0.3s ease;
+        }
+
+        .header:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+        }
+
+        table:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+        }
+
+        .text-block:hover {
+            border-color: var(--primary-red);
+            box-shadow: 0 2px 6px rgba(193, 39, 45, 0.1);
+        }
+
+        /* Melhorias nos campos vazios */
+        .value:empty::before {
+            content: 'Não informado';
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Esconde botões quando print_mode=True */
+        {% if print_mode %}
+        .print-controls {
+            display: none !important;
+        }
+        {% endif %}
+
+        /* Indicadores visuais */
+        .rnc-number::before {
+            content: '🔴 ';
+            margin-right: 5px;
+        }
+
+        .form-number::before {
+            content: '📋 ';
+            margin-right: 5px;
+        }
+
+        /* Espaçamento otimizado para uma folha */
+        .container {
+            padding: 12px;
+        }
+
+        /* ========================================== */
+        /* ESTILOS IGUAIS AO NEW_RNC.HTML */
+        /* ========================================== */
+        
+        /* Header styles */
+        .logos {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .logo-ippel {
+            width: 120px;
+            height: 120px;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .title-section {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .main-title {
+            font-size: 30px;
+            font-weight: 800;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #6c757d 0%, #495057 30%, #343a40 70%, #212529 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 1.5px;
+            position: relative;
+            text-align: center;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #6c757d;
+            font-weight: 600;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+        }
+
+        .form-code {
+            font-size: 12px;
+            color: #6c757d;
+            text-align: center;
+        }
+
+        /* Table styles igual ao new_rnc.html */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 8px;
+            background: white;
+            border: 1px solid #6c757d;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(108, 117, 125, 0.1);
+        }
+
+        .field-label {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            font-weight: bold;
+            font-size: 11px;
+            color: #495057;
+            padding: 8px 12px;
+            border: 1px solid #dee2e6;
+            text-align: left;
+            vertical-align: middle;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .field-value {
+            padding: 10px 12px;
+            border: 1px solid #dee2e6;
+            font-size: 13px;
+            color: #495057;
+            background: white;
+            vertical-align: middle;
+            min-height: 20px;
+        }
+
+        .section-title {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            padding: 12px 20px;
+            text-align: center;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            border: none;
+        }
+
+        .section-content {
+            padding: 20px;
+            font-size: 15px;
+            color: #495057;
+            background: white;
+            border: 1px solid #dee2e6;
+            min-height: 100px;
+            vertical-align: top;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        /* Alturas específicas para cada tipo de campo - IGUAIS AO NEW_RNC.HTML */
+        .section-content-large {
+            min-height: 80px; /* Igual a .large-text-area */
+        }
+
+        .section-content-medium {
+            min-height: 60px; /* Igual a .medium-text-area */
+        }
+
+        .section-content-instruction {
+            min-height: 50px; /* Igual a .instruction-2lines - 2 linhas */
+        }
+
+        .header {
+            margin-bottom: 12px;
+        }
+
+        table {
+            margin-bottom: 10px;
+        }
+
+        .section-table {
+            margin-bottom: 10px;
+        }
+
+        .bottom-section {
+            margin-top: 12px;
+        }
+
+        /* Garantir que os campos não quebrem */
+        .signature-row {
+            min-height: 30px;
+            align-items: center;
+        }
+
+        /* Ajustar tamanho dos campos para evitar overflow */
+        @media (max-width: 850px) {
+            .bottom-section {
+                grid-template-columns: 1fr;
+                gap: 0;
+            }
+            
+            .disposition-section {
+                border-right: none;
+                border-bottom: 1px solid var(--primary-red);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Controles de impressão e navegação -->
+    <div class="print-controls">
+        <div class="controls-container">
+            <div class="controls-left">
+                <a href="/dashboard" class="btn btn-outline">
+                    ←
+                    Voltar
+                </a>
+                <a href="/rnc/{{ rnc.id }}/edit" class="btn btn-secondary">
+                    ✏️
+                    Editar
+                </a>
+            </div>
+            <div class="controls-right">
+                <button onclick="window.print()" class="btn btn-print">
+                    🖨️
+                    Imprimir
+                </button>
+                <a href="/rnc/{{ rnc.id }}/download-pdf" class="btn btn-primary">
+                    💾
+                    Baixar PDF
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Header igual ao new_rnc.html -->
+        <div class="header">
+            <div class="logos">
+                <div class="logo-ippel">
+                    <img src="/IPPELLOGO.jpg" alt="IPPEL" class="logo-img" style="width: 100px; height: 100px;">
+                </div>
+            </div>
+        </div>
+
+        <div class="title-section">
+            <h1 class="main-title">Relatório de Não Conformidades Internas – RNC</h1>
+            <div class="subtitle">FABRICAÇÃO / RECEBIMENTO</div>
+            <div class="form-code">FQ – 002</div>
+            <div class="rnc-number" style="font-size: 16px; font-weight: bold; color: #6c757d; margin-top: 10px;">RNC Nº: {{ rnc.rnc_number or rnc.id }}</div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- SEÇÃO: DESENHO -->
+        <!-- ============================================ -->
+        <div style="margin: 25px 0; border: 1px solid #6c757d; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(108, 117, 125, 0.15);">
+            <!-- Cabeçalho da Seção -->
+            <div style="background: linear-gradient(135deg, #6c757d 0%, #495057 100%); color: white; padding: 12px 20px; font-weight: bold; font-size: 15px; text-align: center; letter-spacing: 1px;">
+                 DESENHO
+            </div>
+
+            <!-- Conteúdo -->
+            <div style="padding: 20px; background: white;">
+                <!-- Linha 1: CLIENTES | NUMERO DE DESENHO | REVISÃO -->
+                <table style="margin-bottom: 0;">
+                    <tr>
+                        <td class="field-label" style="width: 33.33%;">CLIENTES</td>
+                        <td class="field-label" style="width: 33.33%;">NUMERO DE DESENHO</td>
+                        <td class="field-label" style="width: 33.33%;">REVISÃO</td>
+                    </tr>
+                    <tr>
+                        <td class="field-value">{{ rnc.client or '-' }}</td>
+                        <td class="field-value">{{ rnc.drawing or '-' }}</td>
+                        <td class="field-value">{{ rnc.revision or '-' }}</td>
+                    </tr>
+                </table>
+
+                <!-- Linha 2: CONJ. | EQUIPAMENTO -->
+                <table style="margin-bottom: 0;">
+                    <tr>
+                        <td class="field-label" style="width: 50%;">CONJ.</td>
+                        <td class="field-label" style="width: 50%;">EQUIPAMENTO</td>
+                    </tr>
+                    <tr>
+                        <td class="field-value">{{ rnc.conjunto or '-' }}</td>
+                        <td class="field-value">{{ rnc.equipment or '-' }}</td>
+                    </tr>
+                </table>
+
+                <!-- Linha 3: DESCRIÇÃO -->
+                <table style="margin-bottom: 0;">
+                    <tr>
+                        <td class="field-label" style="width: 100%;">DESCRIÇÃO</td>
+                    </tr>
+                    <tr>
+                        <td class="field-value">{{ rnc.description_drawing or '-' }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- SEÇÃO: COMPLEMENTARES -->
+        <!-- ============================================ -->
+        <div style="margin: 25px 0; border: 1px solid #6c757d; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(23, 162, 184, 0.15);">
+            <!-- Cabeçalho da Seção -->
+            <div style="background: linear-gradient(135deg, #6c757d 0%, #6c757d 100%); color: white; padding: 12px 20px; font-weight: bold; font-size: 15px; text-align: center; letter-spacing: 1px;">
+                 COMPLEMENTARES
+            </div>
+
+            <!-- Conteúdo -->
+            <div style="padding: 20px; background: white;">
+                <!-- Linha 1: POSIÇÃO | MODELO | MATERIAL | QUANTIDADE -->
+                <table style="margin-bottom: 0;">
+                    <tr>
+                        <td class="field-label" style="width: 25%;">POSIÇÃO</td>
+                        <td class="field-label" style="width: 25%;">MODELO</td>
+                        <td class="field-label" style="width: 25%;">MATERIAL</td>
+                        <td class="field-label" style="width: 25%;">QUANTIDADE</td>
+                    </tr>
+                    <tr>
+                        <td class="field-value">{{ rnc.position or '-' }}</td>
+                        <td class="field-value">{{ rnc.modelo or '-' }}</td>
+                        <td class="field-value">{{ rnc.material or '-' }}</td>
+                        <td class="field-value">{{ rnc.quantity or '-' }}</td>
+                    </tr>
+                </table>
+
+                <!-- Linha 2: CV | MP -->
+                <table style="margin-bottom: 0;">
+                    <tr>
+                        <td class="field-label" style="width: 50%;">CV</td>
+                        <td class="field-label" style="width: 50%;">MP</td>
+                    </tr>
+                    <tr>
+                        <td class="field-value">{{ rnc.cv or '-' }}</td>
+                        <td class="field-value">{{ rnc.mp or '-' }}</td>
+                    </tr>
+                </table>
+
+                <!-- Linha 3: VALOR TOTAL | OBSERVAÇÃO -->
+                <table style="margin-bottom: 0;">
+                    <tr>
+                        <td class="field-label" style="width: 50%;">VALOR TOTAL (R$)</td>
+                        <td class="field-label" style="width: 50%;">OBSERVAÇÃO</td>
+                    </tr>
+                    <tr>
+                        <td class="field-value" style="font-weight: bold; color: #6c757d;">
+                            {% if rnc.price and rnc.price|float > 0 %}
+                                R$ {{ '%.2f'|format(rnc.price|float) }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="field-value">{{ rnc.price_note or '-' }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- SEÇÃO: ASSINATURAS CABEÇALHO -->
+        <!-- ============================================ -->
+        <div style="margin: 25px 0; border: 1px solid #6c757d; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(40, 167, 69, 0.15);">
+            <!-- Cabeçalho da Seção -->
+            <div style="background: linear-gradient(135deg, #6c757d 0%, #6c757d 100%); color: white; padding: 12px 20px; font-weight: bold; font-size: 15px; text-align: center; letter-spacing: 1px;">
+                 ASSINATURAS CABEÇALHO
+            </div>
+
+            <!-- Conteúdo -->
+            <div style="padding: 20px; background: white;">
+                <!-- Linha 1: Setor responsável | Assinatura responsável | Data -->
+                <table style="margin-bottom: 0;">
+                    <tr>
+                        <td class="field-label" style="width: 33.33%;">SETOR RESPONSÁVEL</td>
+                        <td class="field-label" style="width: 33.33%;">ASSINATURA RESPONSÁVEL</td>
+                        <td class="field-label" style="width: 33.33%;">DATA</td>
+                    </tr>
+                    <tr>
+                        <td class="field-value">{{ rnc.area_responsavel or '-' }}</td>
+                        <td class="field-value">{{ rnc.signature_inspection_name or '-' }}</td>
+                        <td class="field-value">{{ rnc.created_at[:10] if rnc.created_at else '-' }}</td>
+                    </tr>
+                </table>
+
+                <!-- Linha 2: Inspetor | Nome causador | Assinatura Causador -->
+                <table style="margin-bottom: 0;">
+                    <tr>
+                        <td class="field-label" style="width: 33.33%;">INSPETOR</td>
+                        <td class="field-label" style="width: 33.33%;">NOME CAUSADOR</td>
+                        <td class="field-label" style="width: 33.33%;">ASSINATURA CAUSADOR</td>
+                    </tr>
+                    <tr>
+                        <td class="field-value">{{ rnc.inspetor or '-' }}</td>
+                        <td class="field-value">{{ rnc.responsavel or '-' }}</td>
+                        <td class="field-value">{{ rnc.signature_inspection2_name or '-' }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- Description Section -->
+        <table>
+            <tr>
+                <td class="section-title">DESCRIÇÃO DA NÃO CONFORMIDADE</td>
+            </tr>
+            <tr>
+                <td class="section-content section-content-large">{{ rnc.description or '-' }}</td>
+            </tr>
+        </table>
+
+        <!-- Instruction Section -->
+        <table>
+            <tr>
+                <td class="section-title">INSTRUÇÃO PARA RETRABALHO</td>
+            </tr>
+            <tr>
+                <td class="section-content section-content-instruction">{{ rnc.instruction_retrabalho or '-' }}</td>
+            </tr>
+        </table>
+
+        <!-- Cause Section -->
+        <table>
+            <tr>
+                <td class="section-title">CAUSA DA RNC</td>
+            </tr>
+            <tr>
+                <td class="section-content section-content-medium">{{ rnc.cause_rnc or '-' }}</td>
+            </tr>
+        </table>
+
+        <!-- Action Section -->
+        <table>
+            <tr>
+                <td class="section-title">AÇÃO A SER TOMADA</td>
+            </tr>
+            <tr>
+                <td class="section-content section-content-medium">{{ rnc.action_rnc or '-' }}</td>
+            </tr>
+        </table>
+
+        <!-- Header Banner -->
+        <div style="width: 100%; background: #6c757d; color: white; text-align: center; padding: 12px 0; margin-bottom: 0; border-radius: 8px 8px 0 0; font-weight: bold; font-size: 14px; display: flex;">
+            <div style="width: 50%; text-align: center; border-right: 2px solid white;">DISPOSIÇÃO DO MATERIAL NÃO-CONFORME</div>
+            <div style="width: 50%; text-align: center;">INSPEÇÃO DO RETRABALHO</div>
+        </div>
+
+        <!-- Main Content Section -->
+        <div style="border: 1px solid #cccccc; border-top: none; border-radius: 0 0 8px 8px; background: white; display: flex;">
+            <!-- Left Section: Disposição do Material -->
+            <div style="width: 50%; padding: 15px; border-right: 1px solid #cccccc;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px; font-weight: bold;">
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" {% if rnc.disposition_usar == 1 or rnc.disposition_usar == True %}checked{% endif %} disabled style="margin-right: 8px; width: 16px; height: 16px; accent-color: #6c757d;">
+                        <label>USAR COMO ESTÁ</label>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" {% if rnc.disposition_retrabalhar == 1 or rnc.disposition_retrabalhar == True %}checked{% endif %} disabled style="margin-right: 8px; width: 16px; height: 16px; accent-color: #6c757d;">
+                        <label>RETRABALHAR</label>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" {% if rnc.disposition_rejeitar == 1 or rnc.disposition_rejeitar == True %}checked{% endif %} disabled style="margin-right: 8px; width: 16px; height: 16px; accent-color: #6c757d;">
+                        <label>REJEITAR</label>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" {% if rnc.disposition_sucata == 1 or rnc.disposition_sucata == True %}checked{% endif %} disabled style="margin-right: 8px; width: 16px; height: 16px; accent-color: #6c757d;">
+                        <label>SUCATA</label>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" {% if rnc.disposition_devolver_estoque == 1 or rnc.disposition_devolver_estoque == True %}checked{% endif %} disabled style="margin-right: 8px; width: 16px; height: 16px; accent-color: #6c757d;">
+                        <label>DEVOLVER AO ESTOQUE</label>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" {% if rnc.disposition_devolver_fornecedor == 1 or rnc.disposition_devolver_fornecedor == True %}checked{% endif %} disabled style="margin-right: 8px; width: 16px; height: 16px; accent-color: #6c757d;">
+                        <label>DEVOLVER AO FORNECEDOR</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Section: Inspeção do Retrabalho -->
+            <div style="width: 50%; padding: 15px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px; font-weight: bold;">
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" {% if rnc.inspection_aprovado == 1 or rnc.inspection_aprovado == True %}checked{% endif %} disabled style="margin-right: 8px; width: 16px; height: 16px; accent-color: #28a745;">
+                        <label>APROVADO</label>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" {% if rnc.inspection_reprovado == 1 or rnc.inspection_reprovado == True %}checked{% endif %} disabled style="margin-right: 8px; width: 16px; height: 16px; accent-color: #dc3545;">
+                        <label>REPROVADO</label>
+                    </div>
+                    <div style="display: flex; align-items: center; grid-column: 1 / -1;">
+                        <input type="checkbox" {% if rnc.inspection_ver_rnc %}checked{% endif %} disabled style="margin-right: 8px; width: 16px; height: 16px; accent-color: #ffc107;">
+                        <label>VER RNC. Nº:</label>
+                        <span style="border: none; border-bottom: 2px solid #6c757d; width: 120px; margin-left: 8px; font-size: 11px; padding: 2px; background: transparent; display: inline-block;">{{ rnc.inspection_ver_rnc or '-' }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Signature Section -->
+        <div style="margin-top: 15px; border: 1px solid #cccccc; border-radius: 4px; background: white;">
+            <!-- Date Row -->
+            <div style="display: flex; border-bottom: 1px solid #cccccc;">
+                <div style="width: 33.33%; padding: 8px; text-align: center; font-size: 10px; font-weight: bold; border-right: 1px solid #cccccc;">
+                    <span>DATA: {{ rnc.signature_inspection_date or '__/__/____' }}</span>
+                </div>
+                <div style="width: 33.33%; padding: 8px; text-align: center; font-size: 10px; font-weight: bold; border-right: 1px solid #cccccc;">
+                    <span>DATA: {{ rnc.signature_engineering_date or '__/__/____' }}</span>
+                </div>
+                <div style="width: 33.33%; padding: 8px; text-align: center; font-size: 10px; font-weight: bold;">
+                    <span>DATA: {{ rnc.signature_inspection2_date or '__/__/____' }}</span>
+                </div>
+            </div>
+
+            <!-- Signature Row -->
+            <div style="display: flex;">
+                <div style="width: 33.33%; padding: 15px; text-align: center; font-size: 11px; font-weight: bold; border-right: 1px solid #cccccc; background: #ffffff; color: rgb(0, 0, 0);">
+                    <div style="margin-bottom: 25px;">{{ rnc.signature_inspection_name or 'NOME' }}</div>
+                    <div style="border-top: 1px solid #6c757d; padding-top: 8px;">VISTO - Qualidade</div>
+                </div>
+                <div style="width: 33.33%; padding: 15px; text-align: center; font-size: 11px; font-weight: bold; border-right: 1px solid #cccccc;">
+                    <div style="margin-bottom: 25px;">{{ rnc.signature_engineering_name or 'NOME' }}</div>
+                    <div style="border-top: 1px solid #6c757d; padding-top: 8px;">VISTO - Gerente do Setor</div>
+                </div>
+                <div style="width: 33.33%; padding: 15px; text-align: center; font-size: 11px; font-weight: bold;">
+                    <div style="margin-bottom: 25px;">{{ rnc.signature_inspection2_name or 'NOME' }}</div>
+                    <div style="border-top: 1px solid #6c757d; padding-top: 8px;">VISTO - Causador</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+        // Adicionar efeitos de hover e interação
+        document.addEventListener('DOMContentLoaded', function() {
+            // Adicionar loading state aos botões
+            document.querySelectorAll('.btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    if (!this.classList.contains('btn-outline')) {
+                        this.classList.add('loading');
+                        setTimeout(() => {
+                            this.classList.remove('loading');
+                        }, 1000);
+                    }
+                });
+            });
+
+            // Melhorar experiência de impressão
+            window.addEventListener('beforeprint', function() {
+                document.body.classList.add('printing');
+            });
+
+            window.addEventListener('afterprint', function() {
+                document.body.classList.remove('printing');
+            });
+
+            // Verificar se há campos cortados e ajustar automaticamente
+            function checkLayoutIssues() {
+                const dispositionSection = document.querySelector('.disposition-section');
+                const inspectionSection = document.querySelector('.inspection-section');
+                
+                if (dispositionSection && inspectionSection) {
+                    const dispositionHeight = dispositionSection.scrollHeight;
+                    const inspectionHeight = inspectionSection.scrollHeight;
+                    
+                    // Ajustar altura se necessário
+                    if (dispositionHeight > inspectionHeight) {
+                        inspectionSection.style.minHeight = dispositionHeight + 'px';
+                    } else if (inspectionHeight > dispositionHeight) {
+                        dispositionSection.style.minHeight = inspectionHeight + 'px';
+                    }
+                }
+            }
+
+            // Executar verificação após carregamento
+            setTimeout(checkLayoutIssues, 100);
+        });
+    </script>
+</body>
+</html>
+ 

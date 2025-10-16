@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar RNC - {{ rnc.rnc_number }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0 0 10px 0;
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .rnc-number {
+            background: rgba(255,255,255,0.2);
+            padding: 10px 20px;
+            border-radius: 25px;
+            display: inline-block;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .form-content {
+            padding: 30px;
+        }
+
+        .form-section {
+            margin-bottom: 30px;
+            padding: 25px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            background: #fafbfc;
+        }
+
+        .section-title {
+            color: #dc2626;
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #dc2626;
+            padding-bottom: 10px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #dc2626;
+            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+        }
+
+        .form-textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .disposicao-header {
+            background: #dc3545;
+            color: white;
+            text-align: center;
+            padding: 15px 0;
+            font-weight: bold;
+            font-size: 16px;
+            display: flex;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .disposicao-header > div {
+            width: 50%;
+            text-align: center;
+            border-right: 2px solid white;
+            padding: 5px 0;
+        }
+
+        .disposicao-header > div:last-child {
+            border-right: none;
+        }
+
+        .disposicao-content {
+            border: 2px solid #dc3545;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            background: white;
+            display: flex;
+        }
+
+        .disposicao-content > div {
+            width: 50%;
+            padding: 20px;
+            border-right: 1px solid #dc3545;
+        }
+
+        .disposicao-content > div:last-child {
+            border-right: none;
+        }
+
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #dc3545;
+        }
+
+        .signature-container {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            background: white;
+            margin-top: 20px;
+        }
+
+        .signature-row {
+            display: flex;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .signature-row:last-child {
+            border-bottom: none;
+        }
+
+        .signature-cell {
+            width: 33.33%;
+            padding: 15px;
+            text-align: center;
+            border-right: 1px solid #dee2e6;
+        }
+
+        .signature-cell:last-child {
+            border-right: none;
+        }
+
+        .signature-cell.header {
+            background: #f8f9fa;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .signature-input {
+            border: none;
+            border-bottom: 2px solid #6c757d;
+            text-align: center;
+            font-size: 14px;
+            padding: 5px;
+            width: 100%;
+            background: transparent;
+        }
+
+        .signature-input:focus {
+            outline: none;
+            border-bottom-color: #dc2626;
+        }
+
+        .form-actions {
+            text-align: center;
+            padding: 30px;
+            border-top: 1px solid #e9ecef;
+            background: #f8f9fa;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 0 10px;
+        }
+
+        .btn-primary {
+            background: #dc2626;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #b91c1c;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .checkbox-group {
+                grid-template-columns: 1fr;
+            }
+            
+            .disposicao-content {
+                flex-direction: column;
+            }
+            
+            .disposicao-content > div {
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid #dc3545;
+            }
+            
+            .disposicao-content > div:last-child {
+                border-bottom: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>✏️ Editar RNC</h1>
+            <div class="rnc-number">{{ rnc.rnc_number }}</div>
+        </div>
+
+        <form method="POST" class="form-content">
+            <!-- Informações Básicas -->
+            <div class="form-section">
+                <div class="section-title">📋 Informações Básicas</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Título da Não Conformidade</label>
+                        <input type="text" name="title" class="form-input" value="{{ rnc.title }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Equipamento</label>
+                        <input type="text" name="equipment" class="form-input" value="{{ rnc.equipment or '' }}">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Cliente</label>
+                        <input type="text" name="client" class="form-input" value="{{ rnc.client or '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Preço (R$)</label>
+                        <input type="number" step="0.01" min="0" name="price" class="form-input" value="{{ '%.2f'|format(rnc.price or 0) }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Prioridade</label>
+                        <select name="priority" class="form-select">
+                            <option value="Baixa" {% if rnc.priority == 'Baixa' %}selected{% endif %}>Baixa</option>
+                            <option value="Média" {% if rnc.priority == 'Média' %}selected{% endif %}>Média</option>
+                            <option value="Alta" {% if rnc.priority == 'Alta' %}selected{% endif %}>Alta</option>
+                            <option value="Crítica" {% if rnc.priority == 'Crítica' %}selected{% endif %}>Crítica</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Descrição da Não Conformidade</label>
+                    <textarea name="description" class="form-textarea" required>{{ rnc.description or '' }}</textarea>
+                </div>
+            </div>
+
+            <!-- Disposição e Inspeção -->
+            <div class="form-section">
+                <div class="section-title">🔍 Disposição e Inspeção</div>
+                
+                <div class="disposicao-header">
+                    <div>DISPOSIÇÃO DO MATERIAL NÃO-CONFORME</div>
+                    <div>INSPEÇÃO DO RETRABALHO</div>
+                </div>
+
+                <div class="disposicao-content">
+                    <!-- Left Section: Disposição do Material -->
+                    <div>
+                        <div class="checkbox-group">
+                            <div class="checkbox-item">
+                                <input type="checkbox" name="disposition_usar" id="usar" {% if rnc.disposition_usar %}checked{% endif %}>
+                                <label for="usar">USAR COMO ESTÁ</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" name="disposition_sucata" id="sucata" {% if rnc.disposition_sucata %}checked{% endif %}>
+                                <label for="sucata">SUCATA</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" name="disposition_retrabalhar" id="retrabalhar" {% if rnc.disposition_retrabalhar %}checked{% endif %}>
+                                <label for="retrabalhar">RETRABALHAR</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" name="disposition_devolver_estoque" id="devolver-estoque" {% if rnc.disposition_devolver_estoque %}checked{% endif %}>
+                                <label for="devolver-estoque">DEVOLVER AO ESTOQUE</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" name="disposition_rejeitar" id="rejeitar" {% if rnc.disposition_rejeitar %}checked{% endif %}>
+                                <label for="rejeitar">REJEITAR</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" name="disposition_devolver_fornecedor" id="devolver-fornecedor" {% if rnc.disposition_devolver_fornecedor %}checked{% endif %}>
+                                <label for="devolver-fornecedor">DEVOLVER AO FORNECEDOR</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Right Section: Inspeção do Retrabalho -->
+                    <div>
+                        <div class="checkbox-group">
+                            <div class="checkbox-item">
+                                <input type="checkbox" name="inspection_aprovado" id="aprovado" {% if rnc.inspection_aprovado %}checked{% endif %}>
+                                <label for="aprovado">APROVADO</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" name="inspection_reprovado" id="reprovado" {% if rnc.inspection_reprovado %}checked{% endif %}>
+                                <label for="reprovado">REPROVADO</label>
+                            </div>
+                        </div>
+                        <div class="checkbox-item" style="margin-top: 15px;">
+                            <input type="checkbox" name="inspection_ver_rnc_check" id="ver-rnc" {% if rnc.inspection_ver_rnc %}checked{% endif %}>
+                            <label for="ver-rnc">VER RNC. Nº:</label>
+                            <input type="text" name="inspection_ver_rnc" value="{{ rnc.inspection_ver_rnc or '' }}" style="border: none; border-bottom: 2px solid #6c757d; width: 120px; margin-left: 8px; font-size: 14px; padding: 2px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Assinaturas -->
+            <div class="form-section">
+                <div class="section-title">✍️ Assinaturas</div>
+                
+                <div class="signature-container">
+                    <!-- Date Row -->
+                    <div class="signature-row">
+                        <div class="signature-cell header">
+                            <span>INSPEÇÃO: </span>
+                            <input type="text" name="signature_inspection_date" value="{{ rnc.signature_inspection_date or '' }}" class="signature-input" placeholder="__/__/____">
+                        </div>
+                        <div class="signature-cell header">
+                            <span>ENGENHARIA: </span>
+                            <input type="text" name="signature_engineering_date" value="{{ rnc.signature_engineering_date or '' }}" class="signature-input" placeholder="__/__/____">
+                        </div>
+                        <div class="signature-cell header">
+                            <span>INSPEÇÃO: </span>
+                            <input type="text" name="signature_inspection2_date" value="{{ rnc.signature_inspection2_date or '' }}" class="signature-input" placeholder="__/__/____">
+                        </div>
+                    </div>
+                    
+                    <!-- Names Row -->
+                    <div class="signature-row">
+                        <div class="signature-cell">
+                            <input type="text" name="signature_inspection_name" value="{{ rnc.signature_inspection_name or '' }}" class="signature-input" placeholder="Nome do Inspetor">
+                        </div>
+                        <div class="signature-cell">
+                            <input type="text" name="signature_engineering_name" value="{{ rnc.signature_engineering_name or '' }}" class="signature-input" placeholder="Nome do Engenheiro">
+                        </div>
+                        <div class="signature-cell">
+                            <input type="text" name="signature_inspection2_name" value="{{ rnc.signature_inspection2_name or '' }}" class="signature-input" placeholder="Nome do Inspetor">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-success">💾 Salvar Alterações</button>
+                <a href="/rnc/{{ rnc.id }}" class="btn btn-secondary">❌ Cancelar</a>
+                <a href="/dashboard" class="btn btn-primary">🏠 Voltar ao Dashboard</a>
+            </div>
+        </form>
+    </div>
+</body>
+</html> 

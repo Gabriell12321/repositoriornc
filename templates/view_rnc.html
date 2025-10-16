@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RNC {{ rnc.rnc_number }}</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Poppins','Inter', system-ui, sans-serif; 
+            margin: 0;
+            background: #f7f7fb; 
+            color: #333; 
+        }
+        .container {
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 24px; 
+        }
+        .header {
+            display:flex; 
+            align-items:center; 
+            justify-content:space-between; 
+            margin-bottom: 20px; 
+        }
+        .logo {
+            display:flex; 
+            align-items:center; 
+            gap:12px; 
+        }
+        .logo img {
+            width:60px; 
+            height:60px; 
+            border-radius:12px; 
+            object-fit:contain; 
+            box-shadow:0 4px 14px rgba(0,0,0,.1); 
+        }
+        .title {
+            font-weight:800; 
+            letter-spacing:.5px; 
+            font-size:18px; 
+            color:#8b1538; 
+        }
+        .rnc-number {
+            font-weight:700; 
+            font-size:14px; 
+            color:#495057; 
+        }
+
+        .actions {
+            display:flex; 
+            gap:10px; 
+        }
+        .btn {
+            padding:10px 14px; 
+            border:none; 
+            border-radius:10px; 
+            font-weight:600; 
+            cursor:pointer; 
+            color:#fff; 
+            display:inline-flex; 
+            align-items:center; 
+            gap:8px; 
+            box-shadow:0 8px 20px rgba(0,0,0,.12); 
+        }
+        .btn-secondary { background:#6c757d; }
+        .btn-primary { background:#0d6efd; }
+        .btn-info { background:#17a2b8; }
+        .btn-warning { background:#ffc107; color:#333; }
+
+        .card {
+            background:#fff; 
+            border-radius:14px; 
+            box-shadow:0 10px 30px rgba(0,0,0,.08); 
+            margin-bottom:16px; 
+            overflow:hidden; 
+            border:1px solid #eee; 
+        }
+        .card-header {
+            background:#8b1538; 
+            color:#fff; 
+            padding:10px 14px; 
+            font-weight:700; 
+            font-size:12px; 
+            letter-spacing:.4px; 
+        }
+        .card-body {
+            padding:16px; 
+        }
+
+        .grid {
+            display:grid; 
+            gap:12px; 
+        }
+        .grid-2 {
+            grid-template-columns: 1fr 1fr; 
+        }
+        .grid-3 {
+            grid-template-columns: 1fr 1fr 1fr; 
+        }
+
+        .field {
+            display:flex; 
+            flex-direction:column; 
+            gap:6px; 
+        }
+        .label {
+            font-size:11px; 
+            color:#8b1538; 
+            font-weight:700; 
+        }
+        .value {
+            padding:10px 12px; 
+            border:2px solid #8b1538; 
+            border-radius:8px; 
+            background:#fff; 
+            font-size:13px; 
+            min-height:38px; 
+            display:flex; 
+            align-items:center; 
+        }
+        .muted {
+            color:#6c757d; 
+        }
+
+        .dispo-grid {
+            display:grid; 
+            grid-template-columns: 1fr 1fr; 
+        }
+        .section-split {
+            display:grid; 
+            grid-template-columns: 1fr 1fr; 
+            border:2px solid #8b1538; 
+            border-top:none; 
+            border-radius:0 0 10px 10px; 
+        }
+        .split-left {
+            border-right:1px solid #8b1538; 
+            padding:12px; 
+        }
+        .split-right {
+            padding:12px; 
+        }
+        .checkbox {
+            display:flex; 
+            align-items:center; 
+            gap:8px; 
+            font-weight:600; 
+            font-size:12px; 
+            margin:6px 0; 
+        }
+        .checkbox input {
+            width:16px; 
+            height:16px; 
+            accent-color:#8b1538; 
+        }
+
+        .sign-row {
+            display:flex; 
+            border-top:1px solid #8b1538; 
+        }
+        .sign-col {
+            width:33.33%; 
+            padding:14px; 
+            text-align:center; 
+            border-right:1px solid #8b1538; 
+        }
+        .sign-col:last-child {
+            border-right:none; 
+        }
+        .sign-name {
+            font-weight:700; 
+            margin-bottom:18px; 
+            min-height:20px; 
+        }
+        .sign-line {
+            margin-top:8px; 
+            padding-top:8px; 
+            border-top:1px solid #dee2e6; 
+            color:#6c757d; 
+            font-weight:600; 
+        }
+
+        @media (max-width: 900px) {
+            .grid-2 { grid-template-columns: 1fr; }
+            .grid-3 { grid-template-columns: 1fr; }
+            .section-split { grid-template-columns: 1fr; }
+            .split-left { border-right:none; border-bottom:1px solid #8b1538; }
+        }
+
+        /* ========================================== */
+        /* CSS DE IMPRESSÃO - IGUAL AO NEW_RNC.HTML */
+        /* ATUALIZADO: 2024-10-15 16:36 - FORÇAR CACHE */
+        /* ========================================== */
+        @media print {
+            /* PRIMEIRA REGRA - FORÇAR TODAS AS BORDAS PARA 1PX IMEDIATAMENTE */
+            * {
+                border-width: 1px !important;
+            }
+            
+            /* FORÇAR APLICAÇÃO IMEDIATA - LIMPAR CACHE */
+            html, body {
+                font-family: Arial, sans-serif !important;
+                background: white !important;
+                color: black !important;
+            }
+            
+            .actions,
+            .btn,
+            button {
+                display: none !important;
+            }
+            
+            body {
+                background: white;
+                margin: 0;
+                margin-top: 0 !important;
+                padding: 0;
+                padding-top: 0 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            
+            /* Forçar impressão exata de cores */
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            
+            .container {
+                box-shadow: none !important;
+                border: none !important;
+                border-top: none !important;
+                padding: 3px;
+                padding-top: 0 !important;
+                margin: 0;
+                margin-top: 0 !important;
+                width: 100%;
+                height: auto;
+                overflow: visible;
+                border-radius: 0 !important;
+            }
+            
+            /* Ajustar tamanho da página */
+            @page {
+                size: A4;
+                margin: 3mm 8mm;
+            }
+            
+            /* Reduzir tamanho dos logos */
+            .logo img {
+                width: 35px !important;
+                height: 35px !important;
+            }
+            
+            .logo {
+                margin-bottom: 0 !important;
+                margin-top: 0 !important;
+                padding-top: 0 !important;
+                border: none !important;
+            }
+            
+            .header {
+                border: none !important;
+                box-shadow: none !important;
+                margin-bottom: 5px !important;
+            }
+            
+            /* Reduzir espaçamentos */
+            .title {
+                font-size: 13px !important;
+                margin-bottom: 0 !important;
+                margin-top: 0 !important;
+                padding-top: 0 !important;
+                color: #000 !important;
+                line-height: 1 !important;
+            }
+            
+            .rnc-number {
+                font-size: 8px !important;
+                margin-bottom: 0 !important;
+                margin-top: 0 !important;
+                padding-top: 0 !important;
+                color: #000 !important;
+                line-height: 1 !important;
+            }
+            
+            /* Reduzir espaçamento das seções */
+            .card {
+                margin: 3px 0 !important;
+                box-shadow: none !important;
+                border: 1px solid #000 !important;
+                border-radius: 0 !important;
+            }
+            
+            .card-header {
+                padding: 4px 8px !important;
+                font-size: 11px !important;
+                background: #fff !important;
+                color: #000 !important;
+                line-height: 1.2 !important;
+                margin-bottom: 3px !important;
+                border: 1px solid #000 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            
+            /* REMOVER QUADRADO DO CENTRO DOS CAMPOS */
+            table tr:not(:first-child) td {
+                border: none !important;
+                padding: 0 !important;
+            }
+            
+            .card-body {
+                padding: 4px !important;
+            }
+            
+            /* Configuração dos campos */
+            .field {
+                margin-bottom: 2px !important;
+            }
+            
+            .label {
+                padding: 3px !important;
+                font-size: 9px !important;
+                background: #f0f0f0 !important;
+                color: #000 !important;
+                border: 1px solid #000 !important;
+                line-height: 1.2 !important;
+            }
+            
+            .value {
+                padding: 4px !important;
+                font-size: 11px !important;
+                min-height: auto !important;
+                border: 1px solid #000 !important;
+                color: #000 !important;
+                line-height: 1.4 !important;
+                border-radius: 0 !important;
+            }
+            
+            /* FORÇAR TODAS AS BORDAS PARA 1PX - REGRA MÁXIMA PRIORIDADE */
+            *,
+            *::before,
+            *::after,
+            div,
+            input,
+            select,
+            textarea,
+            table,
+            td,
+            th,
+            tr {
+                border-width: 1px !important;
+            }
+            
+            /* Forçar bordas 1px em elementos com style inline */
+            *[style*="border: 2px"],
+            *[style*="border:2px"],
+            *[style*="border: 3px"],
+            *[style*="border:3px"],
+            *[style*="border-right: 2px"],
+            *[style*="border-bottom: 2px"],
+            *[style*="border-top: 2px"],
+            *[style*="border-left: 2px"] {
+                border-width: 1px !important;
+                border-style: solid !important;
+                border-color: #000 !important;
+            }
+            
+            div[style*="border"],
+            section[style*="border"],
+            div,
+            section,
+            table,
+            tr,
+            td,
+            th {
+                border-width: 1px !important;
+                border-style: solid !important;
+                border-color: #000 !important;
+            }
+            
+            /* SOLUÇÃO RADICAL: Remover TODAS as bordas horizontais entre linhas */
+            table {
+                border-collapse: collapse !important;
+            }
+            
+            /* Apenas bordas laterais (verticais) */
+            table td,
+            table th {
+                border-right: 1px solid #000 !important;
+                border-left: none !important;
+                border-top: none !important;
+                border-bottom: none !important;
+                padding: 2px !important;
+            }
+            
+            /* Primeira célula de cada linha - borda esquerda */
+            table td:first-child,
+            table th:first-child {
+                border-left: 1px solid #000 !important;
+            }
+            
+            /* Labels - adicionar borda superior E inferior */
+            table td.field-label,
+            table td.item-column,
+            table td.section-title,
+            table th.field-label,
+            table th.item-column,
+            table th.section-title {
+                border-top: 1px solid #000 !important;
+                border-bottom: 1px solid #000 !important;
+            }
+            
+            /* Primeira linha de labels da primeira tabela de cada seção */
+            table:first-of-type tr:first-child td.field-label,
+            table:first-of-type tr:first-child td.item-column,
+            table:first-of-type tr:first-child td.section-title,
+            table:first-of-type tr:first-child th {
+                border-top: 1px solid #000 !important;
+            }
+            
+            /* Labels de tabelas consecutivas - sem borda superior (para evitar duplicação) */
+            table + table tr:first-child td.field-label,
+            table + table tr:first-child td.item-column,
+            table + table tr:first-child td.section-title,
+            table + table tr:first-child th {
+                border-top: none !important;
+                border-bottom: 1px solid #000 !important;
+            }
+            
+            /* Bordas de seções específicas - SEMPRE 1px - MÁXIMA PRIORIDADE */
+            div[style*="border: 2px solid"],
+            div[style*="border:2px"],
+            div[style*="border: 3px"],
+            div[style*="border:3px"],
+            div[style*="border: 2px solid #6c757d"],
+            div[style*="margin: 25px 0; border"],
+            section[style*="border:"],
+            div[style*="margin: 25px 0"],
+            div[style*="border-radius"],
+            div[style*="box-shadow"] {
+                border: 1px solid #000 !important;
+                border-width: 1px !important;
+                border-style: solid !important;
+                border-color: #000 !important;
+                box-shadow: none !important;
+            }
+            
+            /* Ajustar assinaturas */
+            .sign-col {
+                padding: 4px !important;
+                font-size: 10px !important;
+                border: 1px solid #000 !important;
+                line-height: 1.2 !important;
+            }
+            
+            .sign-name {
+                margin-bottom: 3px !important;
+                font-size: 10px !important;
+                color: #000 !important;
+                line-height: 1.2 !important;
+            }
+            
+            .sign-line {
+                padding: 3px !important;
+                font-size: 9px !important;
+                color: #000 !important;
+                border-top: 1px solid #000 !important;
+            }
+            
+            /* Reduzir espaçamento dos checkboxes */
+            .checkbox {
+                margin: 0 !important;
+                font-size: 9px !important;
+                color: #000 !important;
+                line-height: 1.2 !important;
+            }
+            
+            input[type="checkbox"] {
+                width: 12px !important;
+                height: 12px !important;
+                border: 1px solid #000 !important;
+                margin: 2px !important;
+                margin-right: 4px !important;
+            }
+            
+            /* Compactar seção de disposição e inspeção */
+            .section-split {
+                gap: 2px !important;
+                border: 1px solid #000 !important;
+                border-radius: 0 !important;
+            }
+            
+            .split-left,
+            .split-right {
+                padding: 4px !important;
+                border: 1px solid #000 !important;
+            }
+            
+            .split-left {
+                border-right: 1px solid #000 !important;
+            }
+            
+            /* Grid adjustments */
+            .grid {
+                gap: 2px !important;
+            }
+            
+            /* FORÇAR TODAS AS LETRAS EM PRETO */
+            *,
+            body,
+            div,
+            span,
+            label,
+            input,
+            textarea,
+            select,
+            option,
+            td,
+            th,
+            p,
+            h1, h2, h3, h4, h5, h6 {
+                color: #000 !important;
+            }
+            
+            /* Títulos de seção - PRETO sobre fundo BRANCO */
+            .card-header {
+                color: #000 !important;
+                background: #fff !important;
+                border: 1px solid #000 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            
+            /* Labels de campo em preto com fundo cinza claro */
+            .label {
+                color: #000 !important;
+                background: #f0f0f0 !important;
+            }
+            
+            /* Garantir que todo texto dentro de tabelas seja preto */
+            table,
+            table td,
+            table th,
+            table tr {
+                color: #000 !important;
+                border: 1px solid #000 !important;
+                font-size: 10px !important;
+            }
+            
+            /* Remover espaços extras */
+            body * {
+                line-height: 1.1 !important;
+            }
+            
+            /* Forçar quebra de página apenas no final */
+            * {
+                page-break-inside: avoid !important;
+            }
+            
+            .container {
+                page-break-after: avoid !important;
+            }
+            
+            /* REGRA UNIVERSAL SUPREMA - TODAS AS BORDAS 1PX SEM EXCEÇÃO */
+            * {
+                border-width: 1px !important;
+            }
+            
+            *[style*="border"],
+            *[style*="border: 2px"],
+            *[style*="border:2px"],
+            *[style*="border: 3px"],
+            *[style*="border:3px"],
+            *[style*="border-width"],
+            *[style*="border-right"],
+            *[style*="border-left"],
+            *[style*="border-top"],
+            *[style*="border-bottom"],
+            div,
+            input,
+            select,
+            textarea,
+            table,
+            td,
+            th,
+            tr {
+                border-width: 1px !important;
+            }
+            
+            /* Forçar cor preta em todas as bordas */
+            *[style*="border"] {
+                border-color: #000 !important;
+                border-style: solid !important;
+            }
+            
+            /* REGRAS ESPECÍFICAS PARA ELEMENTOS DO VIEW_RNC */
+            .value {
+                border: 1px solid #000 !important;
+                border-width: 1px !important;
+            }
+            
+            .card {
+                border: 1px solid #000 !important;
+                border-width: 1px !important;
+            }
+            
+            .card-header {
+                border: 1px solid #000 !important;
+                border-width: 1px !important;
+            }
+            
+            .section-split {
+                border: 1px solid #000 !important;
+                border-width: 1px !important;
+            }
+            
+            .split-left {
+                border-right: 1px solid #000 !important;
+            }
+            
+            .sign-col {
+                border: 1px solid #000 !important;
+                border-width: 1px !important;
+            }
+            
+            /* FORÇAR TODAS AS BORDAS INLINE PARA 1PX */
+            div[style*="border: 2px solid #8b1538"] {
+                border: 1px solid #000 !important;
+            }
+            
+            div[style*="border-right:1px solid #8b1538"] {
+                border-right: 1px solid #000 !important;
+            }
+            
+            div[style*="border-top:1px solid #8b1538"] {
+                border-top: 1px solid #000 !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo" style="gap:12px;">
+                <img src="{{ url_for('static', filename='LOGOSQI.jpg') }}" alt="SQI Logo">
+                <img src="/IPPELLOGO.jpg" alt="IPPEL Logo" class="apply-logo"
+                     data-logo-primary="/IPPELLOGO.jpg"
+                     data-logo-fallback1="/IPPELLOGO.jpg"
+                     data-logo-fallback2="{{ url_for('static', filename='LOGOSQI.jpg') }}"
+                     onerror="if(this.dataset.try1!=='1'){this.dataset.try1='1'; this.src=this.dataset.logoFallback1;} else if(this.dataset.try2!=='1'){this.dataset.try2='1'; this.src=this.dataset.logoFallback2;} else {this.style.display='none';}">
+                <div>
+                    <div class="title">Relatório de Não Conformidades Internas – RNC</div>
+                    <div class="rnc-number">Nº: {{ rnc.rnc_number }}</div>
+            </div>
+            </div>
+            <div class="actions">
+                <button class="btn btn-secondary" onclick="window.location.href='/dashboard'">← Voltar</button>
+                <button class="btn btn-info" onclick="window.location.href='/rnc/{{ rnc.id }}/reply'">↩️ Responder</button>
+                <button class="btn btn-primary" onclick="window.location.href='/rnc/{{ rnc.id }}/edit'">✏️ Editar</button>
+                <button class="btn btn-warning" onclick="window.open('/rnc/{{ rnc.id }}/print','_blank')">📄 Modelo IPPEL</button>
+            </div>
+        </div>
+
+        <!-- Informações principais -->
+        <div class="card">
+            <div class="card-header">INFORMAÇÕES</div>
+            <div class="card-body grid grid-3">
+                <div class="field">
+                    <div class="label">📋 Título</div>
+                    <div class="value">{{ rnc.title or 'Sem título' }}</div>
+                </div>
+                <div class="field">
+                    <div class="label">🔧 Equipamento</div>
+                    <div class="value">
+                        {% if rnc.equipment %}
+                            {{ rnc.equipment }}
+                        {% else %}
+                            <span style="color: #6c757d; font-style: italic;">Não especificado</span>
+                        {% endif %}
+                </div>
+            </div>
+                <div class="field">
+                    <div class="label">🏢 Cliente</div>
+                    <div class="value">
+                        {% if rnc.client %}
+                            {{ rnc.client }}
+                        {% else %}
+                            <span style="color: #6c757d; font-style: italic;">Não especificado</span>
+                        {% endif %}
+                </div>
+                </div>
+                <div class="field">
+                    <div class="label">💰 Preço (R$)</div>
+                    <div class="value">
+                        {% if rnc.price and rnc.price > 0 %}
+                            {{ '%.2f'|format(rnc.price) }}
+                        {% else %}
+                            <span style="color: #6c757d; font-style: italic;">Não informado</span>
+                        {% endif %}
+                </div>
+            </div>
+
+                <!-- Seção de Itens de Valores/Hora -->
+                <div id="valoresItensSection" style="display: none; margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 12px; border-left: 4px solid #8b1538;">
+                    <h3 style="margin: 0 0 15px 0; color: #8b1538; font-size: 18px; display: flex; align-items: center; gap: 10px;">
+                        <span>📋</span>
+                        <span>Detalhamento do Orçamento</span>
+                        <span id="valoresItensCount" style="background: #8b1538; color: white; padding: 2px 10px; border-radius: 12px; font-size: 12px;"></span>
+                    </h3>
+                    
+                    <div id="valoresItensTable" style="background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead style="background: #8b1538; color: white;">
+                                <tr>
+                                    <th style="padding: 12px; text-align: left; font-weight: 600; font-size: 13px; border-bottom: 2px solid #6d1029;">CÓDIGO</th>
+                                    <th style="padding: 12px; text-align: left; font-weight: 600; font-size: 13px; border-bottom: 2px solid #6d1029;">DESCRIÇÃO</th>
+                                    <th style="padding: 12px; text-align: left; font-weight: 600; font-size: 13px; border-bottom: 2px solid #6d1029;">SETOR</th>
+                                    <th style="padding: 12px; text-align: right; font-weight: 600; font-size: 13px; border-bottom: 2px solid #6d1029;">VALOR/HORA</th>
+                                    <th style="padding: 12px; text-align: center; font-weight: 600; font-size: 13px; border-bottom: 2px solid #6d1029;">HORAS</th>
+                                    <th style="padding: 12px; text-align: right; font-weight: 600; font-size: 13px; border-bottom: 2px solid #6d1029;">SUBTOTAL</th>
+                                </tr>
+                            </thead>
+                            <tbody id="valoresItensTableBody">
+                                <!-- Preenchido via JavaScript -->
+                            </tbody>
+                            <tfoot id="valoresItensFooter" style="background: #f8f9fa; font-weight: 700;">
+                                <tr>
+                                    <td colspan="5" style="padding: 15px; text-align: right; font-size: 16px; color: #495057; border-top: 3px solid #8b1538;">
+                                        TOTAL GERAL:
+                                    </td>
+                                    <td id="valoresItensTotal" style="padding: 15px; text-align: right; font-size: 18px; color: #28a745; border-top: 3px solid #8b1538;">
+                                        R$ 0,00
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="label">⚡ Prioridade</div>
+                    <div class="value">
+                        {% if rnc.priority == 'Crítica' %}
+                            <span style="color: #dc3545; font-weight: bold;">{{ rnc.priority }}</span>
+                        {% elif rnc.priority == 'Alta' %}
+                            <span style="color: #fd7e14; font-weight: bold;">{{ rnc.priority }}</span>
+                        {% elif rnc.priority == 'Média' %}
+                            <span style="color: #ffc107; font-weight: bold;">{{ rnc.priority }}</span>
+                        {% elif rnc.priority == 'Baixa' %}
+                            <span style="color: #28a745; font-weight: bold;">{{ rnc.priority }}</span>
+                        {% else %}
+                            {{ rnc.priority or 'Média' }}
+                        {% endif %}
+            </div>
+                </div>
+                <div class="field">
+                    <div class="label">📊 Status Atual</div>
+                    <div class="value">
+                        {% if rnc.status == 'Finalizado' %}
+                            <span style="color: #28a745; font-weight: bold;">✅ {{ rnc.status }}</span>
+                        {% elif rnc.status == 'Pendente' %}
+                            <span style="color: #ffc107; font-weight: bold;">⏳ {{ rnc.status }}</span>
+                        {% elif rnc.status == 'Em andamento' %}
+                            <span style="color: #17a2b8; font-weight: bold;">🔄 {{ rnc.status }}</span>
+                        {% else %}
+                            {{ rnc.status or 'Pendente' }}
+                {% endif %}
+                    </div>
+                </div>
+                <div class="field">
+                    <div class="label">👤 Responsável</div>
+                    <div class="value">{{ rnc.user_name or 'Não definido' }}</div>
+                </div>
+                {% if rnc.department %}
+                <div class="field">
+                    <div class="label">🏢 Departamento</div>
+                    <div class="value">{{ rnc.department }}</div>
+                </div>
+                {% endif %}
+                {% if rnc.created_at %}
+                <div class="field">
+                    <div class="label">📅 Data de Criação</div>
+                    <div class="value">{{ rnc.created_at[:10] if rnc.created_at else 'N/A' }}</div>
+            </div>
+            {% endif %}
+            </div>
+        </div>
+
+        <!-- Descrição -->
+        <div class="card">
+            <div class="card-header">DESCRIÇÃO DA NÃO CONFORMIDADE</div>
+            <div class="card-body">
+                <!-- Informações técnicas organizadas -->
+                {% if txt_fields %}
+                    {% if txt_fields.get('Desenho') or txt_fields.get('DESENHO') or txt_fields.get('MP') or txt_fields.get('mp') %}
+                    <div class="grid grid-3" style="margin-bottom: 20px;">
+                        {% if txt_fields.get('Desenho') or txt_fields.get('DESENHO') %}
+                        <div class="field">
+                            <div class="label">📐 Desenho</div>
+                            <div class="value">{{ txt_fields.get('Desenho') or txt_fields.get('DESENHO') or '-' }}</div>
+                </div>
+                {% endif %}
+                        {% if txt_fields.get('MP') or txt_fields.get('mp') %}
+                        <div class="field">
+                            <div class="label">🔧 MP</div>
+                            <div class="value">{{ txt_fields.get('MP') or txt_fields.get('mp') or '-' }}</div>
+                </div>
+                {% endif %}
+                        {% if txt_fields.get('Revisão') or txt_fields.get('REVISAO') or txt_fields.get('REV') %}
+                        <div class="field">
+                            <div class="label">📝 Revisão</div>
+                            <div class="value">{{ txt_fields.get('Revisão') or txt_fields.get('REVISAO') or txt_fields.get('REV') or '-' }}</div>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+                    
+                    {% if txt_fields.get('CV') or txt_fields.get('cv') or txt_fields.get('POS') or txt_fields.get('Pos') %}
+                    <div class="grid grid-3" style="margin-bottom: 20px;">
+                        {% if txt_fields.get('CV') or txt_fields.get('cv') %}
+                        <div class="field">
+                            <div class="label">📊 CV</div>
+                            <div class="value">{{ txt_fields.get('CV') or txt_fields.get('cv') or '-' }}</div>
+                </div>
+                {% endif %}
+                        {% if txt_fields.get('POS') or txt_fields.get('Pos') %}
+                        <div class="field">
+                            <div class="label">📍 POS</div>
+                            <div class="value">{{ txt_fields.get('POS') or txt_fields.get('Pos') or '-' }}</div>
+                </div>
+                {% endif %}
+                        {% if txt_fields.get('Conjunto') or txt_fields.get('CONJUNTO') %}
+                        <div class="field">
+                            <div class="label">🔗 Conjunto</div>
+                            <div class="value">{{ txt_fields.get('Conjunto') or txt_fields.get('CONJUNTO') or '-' }}</div>
+                </div>
+                {% endif %}
+            </div>
+                    {% endif %}
+                    
+                    {% if txt_fields.get('Modelo') or txt_fields.get('MODELO') or txt_fields.get('Quantidade') or txt_fields.get('QUANTIDADE') %}
+                    <div class="grid grid-3" style="margin-bottom: 20px;">
+                        {% if txt_fields.get('Modelo') or txt_fields.get('MODELO') %}
+                        <div class="field">
+                            <div class="label">🏷️ Modelo</div>
+                            <div class="value">{{ txt_fields.get('Modelo') or txt_fields.get('MODELO') or '-' }}</div>
+                </div>
+                        {% endif %}
+                        {% if txt_fields.get('Quantidade') or txt_fields.get('QUANTIDADE') %}
+                        <div class="field">
+                            <div class="label">🔢 Quantidade</div>
+                            <div class="value">{{ txt_fields.get('Quantidade') or txt_fields.get('QUANTIDADE') or '-' }}</div>
+                </div>
+                        {% endif %}
+                        {% if txt_fields.get('Área responsável') or txt_fields.get('AREA RESPONSAVEL') or txt_fields.get('Area responsavel') %}
+                        <div class="field">
+                            <div class="label">👥 Área Responsável</div>
+                            <div class="value">{{ txt_fields.get('Área responsável') or txt_fields.get('AREA RESPONSAVEL') or txt_fields.get('Area responsavel') or '-' }}</div>
+            </div>
+                        {% endif %}
+        </div>
+                    {% endif %}
+                {% endif %}
+                
+                <!-- Instrução para retrabalho -->
+                {% if txt_fields.get('Instrução para retrabalho') or txt_fields.get('INSTRUÇÃO PARA RETRABALHO') or txt_fields.get('Instrucao para retrabalho') or txt_fields.get('INSTRUCAO PARA RETRABALHO') %}
+                <div class="field" style="margin-top: 20px;">
+                    <div class="label">⚙️ Instrução para Retrabalho</div>
+                    <div class="value" style="min-height: 60px; white-space: pre-wrap;">{{ txt_fields.get('Instrução para retrabalho') or txt_fields.get('INSTRUÇÃO PARA RETRABALHO') or txt_fields.get('Instrucao para retrabalho') or txt_fields.get('INSTRUCAO PARA RETRABALHO') or '-' }}</div>
+                </div>
+                {% endif %}
+                
+                <!-- Valor -->
+                {% if txt_fields.get('Valor') or txt_fields.get('VALOR') %}
+                <div class="field" style="margin-top: 20px;">
+                    <div class="label">💰 Valor</div>
+                    <div class="value">{{ txt_fields.get('Valor') or txt_fields.get('VALOR') or '-' }}</div>
+            </div>
+                {% endif %}
+                
+                <!-- Descrição da RNC -->
+                {% if txt_fields.get('Descrição da RNC') or txt_fields.get('DESCRIÇÃO DA RNC') or txt_fields.get('Descricao da RNC') or txt_fields.get('DESCRICAO DA RNC') %}
+                <div class="field" style="margin-top: 20px;">
+                    <div class="label">📋 Descrição da RNC</div>
+                    <div class="value" style="min-height: 60px; white-space: pre-wrap;">{{ txt_fields.get('Descrição da RNC') or txt_fields.get('DESCRIÇÃO DA RNC') or txt_fields.get('Descricao da RNC') or txt_fields.get('DESCRICAO DA RNC') }}</div>
+                        </div>
+                {% elif rnc.description %}
+                <div class="field" style="margin-top: 20px;">
+                    <div class="label">📄 Descrição</div>
+                    <div class="value" style="min-height: 60px; white-space: pre-wrap;">{{ rnc.description }}</div>
+                        </div>
+                {% else %}
+                <div class="field" style="margin-top: 20px;">
+                    <div class="label">📄 Descrição</div>
+                    <div class="value" style="min-height: 60px; white-space: pre-wrap; color: #6c757d; font-style: italic;">
+                        📝 Descrição da não conformidade a ser preenchida
+                        </div>
+                        </div>
+                {% endif %}
+                        </div>
+        </div>
+
+        <!-- Instrução para Retrabalho -->
+        <div class="card">
+            <div class="card-header">⚙️ INSTRUÇÃO PARA RETRABALHO</div>
+            <div class="card-body">
+                <div class="value" style="min-height:60px; white-space: pre-wrap;">
+                    {% if txt_fields.get('Instrução para retrabalho') or txt_fields.get('INSTRUÇÃO PARA RETRABALHO') or txt_fields.get('Instrucao para retrabalho') or txt_fields.get('INSTRUCAO PARA RETRABALHO') %}
+                        {{ txt_fields.get('Instrução para retrabalho') or txt_fields.get('INSTRUÇÃO PARA RETRABALHO') or txt_fields.get('Instrucao para retrabalho') or txt_fields.get('INSTRUCAO PARA RETRABALHO') }}
+                    {% elif rnc.instruction_retrabalho and rnc.instruction_retrabalho != 'Aguardando instruções de retrabalho' %}
+                        {{ rnc.instruction_retrabalho }}
+                    {% else %}
+                        <span style="color: #6c757d; font-style: italic;">📝 Aguardando instruções de retrabalho</span>
+                    {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+        <!-- Causa da RNC -->
+        <div class="card">
+            <div class="card-header">🔍 CAUSA DA RNC</div>
+            <div class="card-body">
+                <div class="value" style="min-height:60px; white-space: pre-wrap;">
+                    {% if txt_fields.get('Causa da RNC') or txt_fields.get('CAUSA DA RNC') or txt_fields.get('Causa da rnc') or txt_fields.get('causa da rnc') %}
+                        {{ txt_fields.get('Causa da RNC') or txt_fields.get('CAUSA DA RNC') or txt_fields.get('Causa da rnc') or txt_fields.get('causa da rnc') }}
+                    {% elif rnc.cause_rnc and rnc.cause_rnc != 'Causa a ser investigada' %}
+                        {{ rnc.cause_rnc }}
+                    {% else %}
+                        <span style="color: #6c757d; font-style: italic;">🔍 Causa a ser investigada</span>
+                    {% endif %}
+                        </div>
+                        </div>
+                        </div>
+
+        <!-- Ação a ser Tomada -->
+        <div class="card">
+            <div class="card-header">✅ AÇÃO A SER TOMADA</div>
+            <div class="card-body">
+                <div class="value" style="min-height:60px; white-space: pre-wrap;">
+                    {% if txt_fields.get('Ação a ser tomada') or txt_fields.get('AÇÃO A SER TOMADA') or txt_fields.get('Acao a ser tomada') or txt_fields.get('ACAO A SER TOMADA') %}
+                        {{ txt_fields.get('Ação a ser tomada') or txt_fields.get('AÇÃO A SER TOMADA') or txt_fields.get('Acao a ser tomada') or txt_fields.get('ACAO A SER TOMADA') }}
+                    {% elif rnc.action_rnc and rnc.action_rnc != 'Ações a serem definidas' %}
+                        {{ rnc.action_rnc }}
+                    {% else %}
+                        <span style="color: #6c757d; font-style: italic;">✅ Ações a serem definidas</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Disposição e Inspeção -->
+        <div class="card">
+            <div class="card-header" style="display:flex; justify-content:space-between;">
+                <div>DISPOSIÇÃO DO MATERIAL NÃO-CONFORME</div>
+                <div>INSPEÇÃO DO RETRABALHO</div>
+                </div>
+            <div class="section-split">
+                <div class="split-left">
+                    <div class="checkbox">
+                        <input type="checkbox" disabled {% if rnc.disposition_usar %}checked{% endif %}> 
+                        <span style="{% if rnc.disposition_usar %}color: #28a745; font-weight: bold;{% endif %}">USAR COMO ESTÁ</span>
+                </div>
+                    <div class="checkbox">
+                        <input type="checkbox" disabled {% if rnc.disposition_retrabalhar %}checked{% endif %}> 
+                        <span style="{% if rnc.disposition_retrabalhar %}color: #17a2b8; font-weight: bold;{% endif %}">RETRABALHAR</span>
+                </div>
+                    <div class="checkbox">
+                        <input type="checkbox" disabled {% if rnc.disposition_rejeitar %}checked{% endif %}> 
+                        <span style="{% if rnc.disposition_rejeitar %}color: #dc3545; font-weight: bold;{% endif %}">REJEITAR</span>
+            </div>
+                    <div class="checkbox">
+                        <input type="checkbox" disabled {% if rnc.disposition_sucata %}checked{% endif %}> 
+                        <span style="color: #6c757d; font-weight: bold;">SUCATA</span>
+                </div>
+                    <div class="checkbox">
+                        <input type="checkbox" disabled {% if rnc.disposition_devolver_estoque %}checked{% endif %}> 
+                        <span style="color: #fd7e14; font-weight: bold;">DEVOLVER AO ESTOQUE</span>
+                </div>
+                    <div class="checkbox">
+                        <input type="checkbox" disabled {% if rnc.disposition_devolver_fornecedor %}checked{% endif %}> 
+                        <span style="color: #6f42c1; font-weight: bold;">DEVOLVER AO FORNECEDOR</span>
+                </div>
+            </div>
+                <div class="split-right">
+                    <div class="checkbox">
+                        <input type="checkbox" disabled {% if rnc.inspection_aprovado %}checked{% endif %}> 
+                        <span style="{% if rnc.inspection_aprovado %}color: #28a745; font-weight: bold;{% endif %}">APROVADO</span>
+                </div>
+                    <div class="checkbox">
+                        <input type="checkbox" disabled {% if rnc.inspection_reprovado %}checked{% endif %}> 
+                        <span style="{% if rnc.inspection_reprovado %}color: #dc3545; font-weight: bold;{% endif %}">REPROVADO</span>
+                </div>
+                    <div class="checkbox" style="gap:12px;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <input type="checkbox" disabled {% if rnc.inspection_ver_rnc %}checked{% endif %}> 
+                            <span style="{% if rnc.inspection_ver_rnc %}color: #ffc107; font-weight: bold;{% endif %}">VER RNC Nº:</span>
+                            <div class="value" style="border:none; padding:0; min-height:auto;">
+                                {% if rnc.inspection_ver_rnc %}
+                                    {{ rnc.inspection_ver_rnc }}
+                                {% else %}
+                                    <span style="color: #6c757d; font-style: italic;">N/A</span>
+                                {% endif %}
+                </div>
+            </div>
+            </div>
+        </div>
+            </div>
+    </div>
+
+        <!-- Assinaturas -->
+        <div class="card">
+            <div class="card-header">ASSINATURAS</div>
+            <div class="card-body" style="padding:0; border:2px solid #8b1538; border-radius:8px; overflow:hidden;">
+                <div class="sign-row" style="border-bottom:1px solid #8b1538;">
+                    <div class="sign-col" style="font-size:11px; font-weight:bold;">
+                        INSPEÇÃO: {{ rnc.signature_inspection_date or 'Aguardando' }}
+            </div>
+                    <div class="sign-col" style="font-size:11px; font-weight:bold;">
+                        ENGENHARIA: {{ rnc.signature_engineering_date or 'Aguardando' }}
+                </div>
+                    <div class="sign-col" style="font-size:11px; font-weight:bold;">
+                        INSPEÇÃO 2: {{ rnc.signature_inspection2_date or 'Aguardando' }}
+                </div>
+                </div>
+                <div class="sign-row">
+                    <div class="sign-col">
+                        <div class="sign-name">
+                            {% if rnc.signature_inspection_name and rnc.signature_inspection_name != 'NOME' %}
+                                {{ rnc.signature_inspection_name }}
+                            {% else %}
+                                <span style="color: #6c757d; font-style: italic;">Aguardando assinatura</span>
+                            {% endif %}
+            </div>
+                        <div class="sign-line">VISTO</div>
+            </div>
+                    <div class="sign-col">
+                        <div class="sign-name">
+                            {% if rnc.signature_engineering_name and rnc.signature_engineering_name != 'NOME' %}
+                                {{ rnc.signature_engineering_name }}
+                            {% else %}
+                                <span style="color: #6c757d; font-style: italic;">Aguardando assinatura</span>
+                            {% endif %}
+        </div>
+                        <div class="sign-line">VISTO</div>
+    </div>
+                    <div class="sign-col">
+                        <div class="sign-name">
+                            {% if rnc.signature_inspection2_name and rnc.signature_inspection2_name != 'NOME' %}
+                                {{ rnc.signature_inspection2_name }}
+                            {% else %}
+                                <span style="color: #6c757d; font-style: italic;">Aguardando assinatura</span>
+                            {% endif %}
+                        </div>
+                        <div class="sign-line">VISTO</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Carregar itens de valores/hora da RNC
+        async function loadValoresItens() {
+            const rncId = {{ rnc.id }};
+            
+            try {
+                const response = await fetch(`/api/rnc/${rncId}/valores-itens`);
+                const result = await response.json();
+                
+                if (result.success && result.itens && result.itens.length > 0) {
+                    // Mostrar seção
+                    document.getElementById('valoresItensSection').style.display = 'block';
+                    
+                    // Atualizar contador
+                    document.getElementById('valoresItensCount').textContent = `${result.count} ${result.count === 1 ? 'item' : 'itens'}`;
+                    
+                    // Preencher tabela
+                    const tbody = document.getElementById('valoresItensTableBody');
+                    tbody.innerHTML = '';
+                    
+                    let currentSetor = '';
+                    
+                    result.itens.forEach((item, index) => {
+                        // Adicionar header de setor se mudou
+                        if (item.setor && item.setor !== currentSetor) {
+                            currentSetor = item.setor;
+                            const setorRow = document.createElement('tr');
+                            setorRow.innerHTML = `
+                                <td colspan="6" style="background: #8b1538; color: white; padding: 8px 12px; font-weight: 600; font-size: 12px;">
+                                    ${currentSetor}
+                                </td>
+                            `;
+                            tbody.appendChild(setorRow);
+                        }
+                        
+                        // Converter horas decimal para HH:MM
+                        const hours = Math.floor(item.horas);
+                        const minutes = Math.round((item.horas - hours) * 60);
+                        const horasFormatted = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+                        
+                        // Adicionar linha do item
+                        const row = document.createElement('tr');
+                        row.style.transition = 'background 0.2s';
+                        row.style.borderBottom = '1px solid #e9ecef';
+                        
+                        row.innerHTML = `
+                            <td style="padding: 10px 12px; color: #495057; font-weight: 600; font-size: 13px;">${item.codigo}</td>
+                            <td style="padding: 10px 12px; color: #6c757d; font-size: 13px;">${item.descricao}</td>
+                            <td style="padding: 10px 12px; color: #6c757d; font-size: 12px; font-style: italic;">${item.setor || '-'}</td>
+                            <td style="padding: 10px 12px; text-align: right; color: #28a745; font-weight: 600; font-size: 13px;">R$ ${item.valor_hora.toFixed(2).replace('.', ',')}</td>
+                            <td style="padding: 10px 12px; text-align: center; color: #007bff; font-weight: 600; font-size: 13px;">${horasFormatted}</td>
+                            <td style="padding: 10px 12px; text-align: right; color: #007bff; font-weight: 700; font-size: 14px;">R$ ${item.subtotal.toFixed(2).replace('.', ',')}</td>
+                        `;
+                        
+                        // Hover effect
+                        row.addEventListener('mouseenter', () => row.style.background = '#f8f9fa');
+                        row.addEventListener('mouseleave', () => row.style.background = 'white');
+                        
+                        tbody.appendChild(row);
+                    });
+                    
+                    // Atualizar total
+                    document.getElementById('valoresItensTotal').textContent = `R$ ${result.total.toFixed(2).replace('.', ',')}`;
+                    
+                    console.log(`✅ Carregados ${result.count} itens de valores/hora`);
+                } else {
+                    console.log('ℹ️ Esta RNC não possui itens de valores/hora');
+                }
+            } catch (error) {
+                console.error('Erro ao carregar itens de valores:', error);
+            }
+        }
+        
+        // Carregar quando a página estiver pronta
+        document.addEventListener('DOMContentLoaded', loadValoresItens);
+    </script>
+</body>
+</html> 

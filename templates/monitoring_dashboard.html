@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Painel de Monitoramento - IPPEL</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="{{ asset_url('css/avatar.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+  <script src="{{ asset_url('js/monitoring_dashboard.js') }}" defer></script>
+  <style>
+    body{font-family:Segoe UI,Tahoma,Verdana,sans-serif;background:#f6f7fb;margin:0;color:#333}
+    header{display:flex;justify-content:space-between;align-items:center;padding:16px 24px;background:#fff;border-bottom:1px solid #e5e7eb;position:sticky;top:0;z-index:10}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;padding:16px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,.04)}
+    .card h3{margin:0;padding:12px 16px;border-bottom:1px solid #f0f0f0}
+    .card .body{padding:12px 16px}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:8px;border-bottom:1px solid #eee;text-align:left}
+    th{background:#fafafa}
+    .bad{color:#dc2626;font-weight:600}
+    .ok{color:#16a34a;font-weight:600}
+    .muted{color:#6b7280}
+  </style>
+</head>
+<body>
+<header>
+  <h2>🔎 Painel de Monitoramento</h2>
+  <div class="muted">Somente administradores</div>
+</header>
+<div class="grid">
+  <div class="card">
+    <h3>Resumo (últimas <span id="hoursSpan">24</span>h)</h3>
+    <div class="body">
+      <div style="display:flex;gap:16px;flex-wrap:wrap">
+        <div>✅ Logins ok: <b id="m_auth_ok">0</b></div>
+        <div>❌ Falhas login: <b id="m_auth_fail">0</b></div>
+        <div>⛔ Lockouts: <b id="m_lockouts">0</b></div>
+        <div>🔐 401 API: <b id="m_401">0</b></div>
+        <div>🟣 Ativos bloqueios: <b id="m_active_lockouts">0</b></div>
+      </div>
+      <div style="margin-top:12px">
+  <label>Janela (h): <input id="hoursInput" type="number" min="1" max="168" value="24" style="width:80px"></label>
+  <button id="refreshBtn">Atualizar</button>
+      </div>
+      <div style="height:220px;margin-top:8px">
+        <canvas id="failChart"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="grid-column:1/-1">
+    <h3>Lockouts Ativos</h3>
+    <div class="body">
+      <table>
+        <thead>
+          <tr><th>Usuário</th><th>Email</th><th>Falhas</th><th>Bloqueado até</th></tr>
+        </thead>
+        <tbody id="lockoutsTBody"><tr><td class="muted" colspan="4">Carregando…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card" style="grid-column:1/-1">
+    <h3>Eventos Recentes</h3>
+    <div class="body">
+      <table>
+        <thead><tr><th>Quando</th><th>Cat</th><th>Ação</th><th>Status</th><th>IP</th><th>Usuário</th><th>Email</th></tr></thead>
+        <tbody id="eventsTBody"><tr><td class="muted" colspan="7">Carregando…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

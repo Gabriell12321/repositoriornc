@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📢 Notificações Persistentes</title>
+    <style>
+        /* 🎨 Estilos para notificações persistentes e "chatas" */
+        .persistent-notification-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 9999999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: pulseOverlay 2s infinite;
+        }
+
+        .persistent-notification-container {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 0 20px 40px rgba(255, 107, 107, 0.4);
+            animation: notificationShake 1s infinite alternate;
+            position: relative;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .notification-urgent-header {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            animation: textGlow 1.5s infinite alternate;
+        }
+
+        .notification-content {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 5px solid #ffeaa7;
+        }
+
+        .notification-rnc-info {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .notification-rnc-icon {
+            font-size: 40px;
+            margin-right: 15px;
+        }
+
+        .notification-rnc-details h3 {
+            margin: 0 0 5px 0;
+            font-size: 18px;
+        }
+
+        .notification-rnc-details p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .notification-message {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 16px;
+            line-height: 1.4;
+            margin-bottom: 15px;
+        }
+
+        .notification-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .notification-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 120px;
+        }
+
+        .btn-respond {
+            background: #00b894;
+            color: white;
+            animation: btnPulse 1.5s infinite;
+        }
+
+        .btn-respond:hover {
+            background: #00a085;
+            transform: scale(1.05);
+        }
+
+        .btn-view {
+            background: #0984e3;
+            color: white;
+        }
+
+        .btn-view:hover {
+            background: #0770c3;
+            transform: scale(1.05);
+        }
+
+        .btn-dismiss {
+            background: #636e72;
+            color: white;
+            font-size: 14px;
+            padding: 8px 16px;
+            min-width: auto;
+        }
+
+        .btn-dismiss:hover {
+            background: #2d3436;
+        }
+
+        .notification-response-area {
+            margin-top: 20px;
+            display: none;
+        }
+
+        .notification-response-textarea {
+            width: 100%;
+            min-height: 80px;
+            border-radius: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 15px;
+            font-size: 14px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            resize: vertical;
+        }
+
+        .notification-response-textarea::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .notification-counter {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #e17055;
+            color: white;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: bold;
+            z-index: 9999998;
+            animation: counterBounce 2s infinite;
+            box-shadow: 0 4px 15px rgba(225, 112, 85, 0.4);
+        }
+
+        .notification-sound-indicator {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: #fdcb6e;
+            color: #2d3436;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            animation: soundPulse 1s infinite;
+        }
+
+        /* 🎭 Animações */
+        @keyframes pulseOverlay {
+            0%, 100% { background: rgba(0, 0, 0, 0.8); }
+            50% { background: rgba(0, 0, 0, 0.9); }
+        }
+
+        @keyframes notificationShake {
+            0% { transform: translateX(0px) scale(1); }
+            25% { transform: translateX(-2px) scale(1.01); }
+            75% { transform: translateX(2px) scale(1.01); }
+            100% { transform: translateX(0px) scale(1); }
+        }
+
+        @keyframes textGlow {
+            0% { text-shadow: 0 0 10px rgba(255, 255, 255, 0.5); }
+            100% { text-shadow: 0 0 20px rgba(255, 255, 255, 0.8), 0 0 30px rgba(255, 255, 255, 0.6); }
+        }
+
+        @keyframes btnPulse {
+            0% { box-shadow: 0 0 0 0 rgba(0, 184, 148, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(0, 184, 148, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 184, 148, 0); }
+        }
+
+        @keyframes counterBounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+
+        @keyframes soundPulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+        }
+
+        /* 📱 Responsivo */
+        @media (max-width: 768px) {
+            .persistent-notification-container {
+                margin: 20px;
+                padding: 20px;
+            }
+            
+            .notification-actions {
+                flex-direction: column;
+            }
+            
+            .notification-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 🔔 Contador de notificações -->
+    <div id="notificationCounter" class="notification-counter" style="display: none;">
+        <span id="counterNumber">0</span>
+        <div class="notification-sound-indicator">🔊</div>
+    </div>
+
+    <!-- 🚨 Container de notificação persistente -->
+    <div id="persistentNotificationOverlay" class="persistent-notification-overlay" style="display: none;">
+        <div class="persistent-notification-container">
+            <div class="notification-urgent-header">
+                🚨 ATENÇÃO NECESSÁRIA!
+            </div>
+            
+            <div class="notification-content">
+                <div class="notification-rnc-info">
+                    <div class="notification-rnc-icon" id="notificationIcon">📋</div>
+                    <div class="notification-rnc-details">
+                        <h3 id="rncTitle">RNC #0000</h3>
+                        <p id="rncInfo">Informações da RNC</p>
+                    </div>
+                </div>
+                
+                <div class="notification-message" id="notificationMessage">
+                    Mensagem da notificação
+                </div>
+            </div>
+            
+            <div class="notification-actions">
+                <button class="notification-btn btn-respond" onclick="showResponseArea()">
+                    ✅ Responder Agora
+                </button>
+                <button class="notification-btn btn-view" onclick="viewRNC()">
+                    👁️ Ver RNC
+                </button>
+                <button class="notification-btn btn-dismiss" onclick="dismissNotification()">
+                    ⏰ Lembrar Depois
+                </button>
+            </div>
+            
+            <div class="notification-response-area" id="responseArea">
+                <textarea 
+                    class="notification-response-textarea" 
+                    id="responseText" 
+                    placeholder="Digite sua resposta ou comentário sobre esta alteração...">
+                </textarea>
+                <div style="margin-top: 15px; text-align: center;">
+                    <button class="notification-btn btn-respond" onclick="submitResponse()">
+                        📤 Enviar Resposta
+                    </button>
+                    <button class="notification-btn btn-dismiss" onclick="hideResponseArea()">
+                        ❌ Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * 🔔 Sistema de Notificações Persistentes
+         * Sistema "chato" que só para quando o usuário responder
+         */
+        class PersistentNotificationSystem {
+            constructor() {
+                this.currentNotifications = [];
+                this.currentNotificationIndex = 0;
+                this.isShowing = false;
+                this.checkInterval = null;
+                this.soundSystem = null;
+                
+                // Inicializar sistema
+                this.init();
+            }
+            
+            init() {
+                console.log('🔔 Inicializando Sistema de Notificações Persistentes');
+                
+                // Verificar notificações pendentes a cada 30 segundos
+                this.startPeriodicCheck();
+                
+                // Verificar imediatamente
+                this.checkPendingNotifications();
+                
+                // Integrar com sistema de som se disponível
+                if (window.SoundSystem) {
+                    this.soundSystem = window.SoundSystem;
+                }
+            }
+            
+            startPeriodicCheck() {
+                if (this.checkInterval) {
+                    clearInterval(this.checkInterval);
+                }
+                
+                this.checkInterval = setInterval(() => {
+                    if (!this.isShowing) {
+                        this.checkPendingNotifications();
+                    }
+                }, 30000); // 30 segundos
+            }
+            
+            async checkPendingNotifications() {
+                try {
+                    const response = await fetch('/api/persistent-notifications/pending');
+                    const data = await response.json();
+                    
+                    if (data.success && data.notifications.length > 0) {
+                        this.currentNotifications = data.notifications;
+                        this.updateCounter(data.count);
+                        
+                        if (!this.isShowing) {
+                            this.showNextNotification();
+                        }
+                    } else {
+                        this.hideCounter();
+                        this.hideNotification();
+                    }
+                } catch (error) {
+                    console.error('❌ Erro ao verificar notificações:', error);
+                }
+            }
+            
+            updateCounter(count) {
+                const counter = document.getElementById('notificationCounter');
+                const number = document.getElementById('counterNumber');
+                
+                if (count > 0) {
+                    number.textContent = count;
+                    counter.style.display = 'flex';
+                } else {
+                    counter.style.display = 'none';
+                }
+            }
+            
+            hideCounter() {
+                document.getElementById('notificationCounter').style.display = 'none';
+            }
+            
+            showNextNotification() {
+                if (this.currentNotifications.length === 0) {
+                    this.hideNotification();
+                    return;
+                }
+                
+                const notification = this.currentNotifications[this.currentNotificationIndex];
+                this.displayNotification(notification);
+                this.playNotificationSound();
+            }
+            
+            displayNotification(notification) {
+                this.isShowing = true;
+                
+                // Configurar ícone baseado no tipo
+                const icons = {
+                    'create': '📝',
+                    'update': '✏️',
+                    'chat_response': '💬',
+                    'value_addition': '💰'
+                };
+                
+                document.getElementById('notificationIcon').textContent = icons[notification.change_type] || '🔔';
+                document.getElementById('rncTitle').textContent = `RNC #${notification.rnc_number}`;
+                document.getElementById('rncInfo').textContent = notification.rnc_title || 'Sem título';
+                document.getElementById('notificationMessage').textContent = notification.message;
+                
+                // Armazenar ID da notificação atual
+                window.currentNotificationId = notification.id;
+                window.currentRncId = notification.rnc_id;
+                
+                // Mostrar overlay
+                document.getElementById('persistentNotificationOverlay').style.display = 'flex';
+                
+                console.log(`🚨 Mostrando notificação persistente: ${notification.message}`);
+            }
+            
+            hideNotification() {
+                this.isShowing = false;
+                document.getElementById('persistentNotificationOverlay').style.display = 'none';
+                document.getElementById('responseArea').style.display = 'none';
+                document.getElementById('responseText').value = '';
+            }
+            
+            playNotificationSound() {
+                if (this.soundSystem) {
+                    this.soundSystem.playNotification();
+                    
+                    // Som contínuo a cada 10 segundos até responder
+                    this.soundInterval = setInterval(() => {
+                        if (this.isShowing) {
+                            this.soundSystem.playWarning();
+                        } else {
+                            clearInterval(this.soundInterval);
+                        }
+                    }, 10000);
+                }
+            }
+            
+            async markAsResponded(notificationId, responseText = '') {
+                try {
+                    const response = await fetch(`/api/persistent-notifications/${notificationId}/respond`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            response: responseText
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        console.log('✅ Notificação marcada como respondida');
+                        this.removeCurrentNotification();
+                        this.showNextOrHide();
+                        
+                        if (this.soundSystem) {
+                            this.soundSystem.playSuccess();
+                        }
+                    } else {
+                        alert('Erro ao responder notificação: ' + data.message);
+                    }
+                } catch (error) {
+                    console.error('❌ Erro ao responder notificação:', error);
+                    alert('Erro de conexão ao responder notificação');
+                }
+            }
+            
+            async dismissTemporarily(notificationId) {
+                try {
+                    const response = await fetch(`/api/persistent-notifications/${notificationId}/dismiss`, {
+                        method: 'POST'
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        console.log('📵 Notificação dispensada temporariamente');
+                        this.removeCurrentNotification();
+                        this.showNextOrHide();
+                    } else {
+                        alert('Erro ao dispensar notificação: ' + data.message);
+                    }
+                } catch (error) {
+                    console.error('❌ Erro ao dispensar notificação:', error);
+                    alert('Erro de conexão ao dispensar notificação');
+                }
+            }
+            
+            removeCurrentNotification() {
+                this.currentNotifications.splice(this.currentNotificationIndex, 1);
+                
+                if (this.currentNotificationIndex >= this.currentNotifications.length) {
+                    this.currentNotificationIndex = 0;
+                }
+                
+                this.updateCounter(this.currentNotifications.length);
+                
+                // Parar som
+                if (this.soundInterval) {
+                    clearInterval(this.soundInterval);
+                }
+            }
+            
+            showNextOrHide() {
+                if (this.currentNotifications.length > 0) {
+                    setTimeout(() => {
+                        this.showNextNotification();
+                    }, 1000);
+                } else {
+                    this.hideNotification();
+                    this.hideCounter();
+                }
+            }
+        }
+        
+        // 🌍 Funções globais para os botões
+        function showResponseArea() {
+            document.getElementById('responseArea').style.display = 'block';
+            document.getElementById('responseText').focus();
+        }
+        
+        function hideResponseArea() {
+            document.getElementById('responseArea').style.display = 'none';
+            document.getElementById('responseText').value = '';
+        }
+        
+        function submitResponse() {
+            const responseText = document.getElementById('responseText').value.trim();
+            
+            if (responseText === '') {
+                alert('Por favor, digite uma resposta antes de enviar.');
+                return;
+            }
+            
+            if (window.persistentNotificationSystem && window.currentNotificationId) {
+                window.persistentNotificationSystem.markAsResponded(window.currentNotificationId, responseText);
+            }
+        }
+        
+        function dismissNotification() {
+            if (window.persistentNotificationSystem && window.currentNotificationId) {
+                window.persistentNotificationSystem.dismissTemporarily(window.currentNotificationId);
+            }
+        }
+        
+        function viewRNC() {
+            if (window.currentRncId) {
+                // Abrir RNC em nova aba
+                window.open(`/rnc/${window.currentRncId}`, '_blank');
+            }
+        }
+        
+        // 🚀 Inicializar sistema quando a página carregar
+        document.addEventListener('DOMContentLoaded', function() {
+            window.persistentNotificationSystem = new PersistentNotificationSystem();
+        });
+        
+        // 🔄 Verificar notificações quando a aba ganhar foco
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden && window.persistentNotificationSystem) {
+                setTimeout(() => {
+                    window.persistentNotificationSystem.checkPendingNotifications();
+                }, 1000);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Lista de RNCs - Sistema IPPEL{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1 style="color: #dc3545; margin-bottom: 1rem;">📋 Lista de Relatórios de Não Conformidade</h1>
+    
+    {% if rncs %}
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: #f8f9fa;">
+                    <th style="padding: 0.75rem; text-align: left; border-bottom: 1px solid #dee2e6;">Número</th>
+                    <th style="padding: 0.75rem; text-align: left; border-bottom: 1px solid #dee2e6;">Título</th>
+                    <th style="padding: 0.75rem; text-align: left; border-bottom: 1px solid #dee2e6;">Status</th>
+                    <th style="padding: 0.75rem; text-align: left; border-bottom: 1px solid #dee2e6;">Prioridade</th>
+                    <th style="padding: 0.75rem; text-align: left; border-bottom: 1px solid #dee2e6;">Data</th>
+                    <th style="padding: 0.75rem; text-align: left; border-bottom: 1px solid #dee2e6;">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rnc in rncs %}
+                <tr>
+                    <td style="padding: 0.75rem; border-bottom: 1px solid #dee2e6;">{{ rnc.rnc_number }}</td>
+                    <td style="padding: 0.75rem; border-bottom: 1px solid #dee2e6;">{{ rnc.title }}</td>
+                    <td style="padding: 0.75rem; border-bottom: 1px solid #dee2e6;">
+                        <span style="padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.875rem; 
+                                   {% if rnc.status == 'Concluído' %}background: #d4edda; color: #155724;
+                                   {% elif rnc.status == 'Pendente' %}background: #fff3cd; color: #856404;
+                                   {% else %}background: #f8d7da; color: #721c24;{% endif %}">
+                            {{ rnc.status }}
+                        </span>
+                    </td>
+                    <td style="padding: 0.75rem; border-bottom: 1px solid #dee2e6;">{{ rnc.priority }}</td>
+                    <td style="padding: 0.75rem; border-bottom: 1px solid #dee2e6;">{{ (rnc.created_at|string)[:10] if rnc.created_at else '' }}</td>
+                    <td style="padding: 0.75rem; border-bottom: 1px solid #dee2e6;">
+                        <a href="{{ url_for('view_rnc', rnc_id=rnc.id) }}" class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.875rem;">
+                            👁️ Ver
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p style="color: #6c757d; text-align: center; padding: 2rem;">Nenhum RNC encontrado. <a href="{{ url_for('new_rnc') }}">Criar primeiro RNC</a></p>
+    {% endif %}
+    
+    <div style="margin-top: 2rem;">
+        <a href="{{ url_for('new_rnc') }}" class="btn btn-primary">
+            📝 Novo RNC
+        </a>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+            📊 Voltar ao Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %} 

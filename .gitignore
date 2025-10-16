@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual envs
+.env
+*.env
+venv/
+.venv/
+ENV/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+email_system.log
+logs/
+backups/
+*.db-shm
+*.db-wal
+.venv*/
+
+# Local secrets and configs
+ippel_secret.key
+config_local.py
+
+# Local databases folder
+db/
+
+# SQLite databases and artifacts
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+
+# Backups
+backup/
+
+# Local data not meant for VCS
+ARQUIVOS PARA PUXAR INFORMAÇÕES PARA O PAINEL/
+
+# Node
+node_modules/

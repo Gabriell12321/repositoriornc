@@ -1,0 +1,4 @@
+
+Item	Valor
+URL	https://172.25.100.105:5001
+Senha	IPPEL@2025#RNC

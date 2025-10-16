@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔐 Permissões de Campos RNC - IPPEL</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/field_locks_premium.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Gerenciar Permissões de Campos RNC</h1>
+            <p>Configure quais campos cada grupo pode editar na criação de RNCs. Clique nos campos para bloquear/desbloquear o acesso.</p>
+        </div>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <h3>👥 Grupos</h3>
+                <input type="text" class="search-box" id="groupSearch" placeholder="Buscar grupo...">
+                <ul class="group-list" id="groupList">
+                    <!-- Grupos serão carregados via JavaScript -->
+                </ul>
+            </div>
+
+            <div class="content-area">
+                <div id="loading" class="loading">
+                    <p>Selecione um grupo na lista ao lado para configurar as permissões de campos</p>
+                </div>
+
+                <div id="groupContent" style="display: none;">
+                    <h3 id="groupTitle">Configurações do Grupo</h3>
+                    
+                    <!-- Abas de Contexto: Criação vs Resposta -->
+                    <div class="context-tabs">
+                        <button class="context-tab active" data-context="creation" onclick="switchContext('creation')">
+                            <span>🆕</span> Permissões de Criação
+                        </button>
+                        <button class="context-tab" data-context="response" onclick="switchContext('response')">
+                            <span>📝</span> Permissões de Resposta
+                        </button>
+                    </div>
+                    
+                    <div class="context-description">
+                        <p id="contextDesc">
+                            <strong>🆕 Permissões de Criação:</strong> Campos que o grupo pode editar ao <strong>criar um novo RNC</strong>
+                        </p>
+                    </div>
+                    
+                    <div class="actions-bar">
+                        <button class="btn btn-success" onclick="saveChanges()">
+                            <span>💾</span> Salvar Alterações
+                        </button>
+                        <button class="btn btn-primary" onclick="unlockAll()">
+                            <span>🔓</span> Liberar Todos
+                        </button>
+                        <button class="btn btn-warning" onclick="lockAll()">
+                            <span>🔒</span> Bloquear Todos
+                        </button>
+                        <button class="btn btn-danger" onclick="resetGroup()">
+                            <span>🗑️</span> Resetar Grupo
+                        </button>
+                    </div>
+
+                    <div id="alerts"></div>
+
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-color unlocked"></div>
+                            <span><strong>🔓 Campo Liberado</strong> - Clique para bloquear</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color locked"></div>
+                            <span><strong>🔒 Campo Bloqueado</strong> - Clique para liberar</span>
+                        </div>
+                    </div>
+
+                    <div class="rnc-form-preview">
+                        <div class="section-title">📋 INFORMAÇÕES PRINCIPAIS DO RNC</div>
+                        
+                        <div class="form-section">
+                            <div class="form-row">
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="title">
+                                        <div class="field-label">📝 Título do RNC</div>
+                                        <div class="field-placeholder">Ex: Falha no equipamento de produção - Linha A</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="equipment">
+                                        <div class="field-label">🔧 Equipamento/Sistema</div>
+                                        <div class="field-placeholder">Ex: Linha de montagem A, Máquina X, Sistema Y</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="client">
+                                        <div class="field-label">🏢 Cliente/Departamento</div>
+                                        <div class="field-placeholder">Selecione o cliente</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="description">
+                                        <div class="field-label">📄 Descrição</div>
+                                        <div class="field-placeholder">Descreva brevemente o problema identificado</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="priority">
+                                        <div class="field-label">⚡ Nível de Urgência</div>
+                                        <div class="field-placeholder">🔴 Média - Resolver em até 7 dias</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="price">
+                                        <div class="field-label">💰 Custo Estimado (R$)</div>
+                                        <div class="field-placeholder">Custo estimado para correção do impacto financeiro</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="section-title">👥 RESPONSABILIDADES E SETORES</div>
+                        
+                        <div class="form-section">
+                            <div class="form-row">
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="responsavel">
+                                        <div class="field-label">👤 Responsável pela Detecção</div>
+                                        <div class="field-placeholder">Nome do funcionário que detectou</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="inspetor">
+                                        <div class="field-label">🔍 Inspetor</div>
+                                        <div class="field-placeholder">Quem identificou o problema</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="assigned_user_id">
+                                        <div class="field-label">📋 Atribuir a um Usuário</div>
+                                        <div class="field-placeholder">Filtrar por grupos selecionados</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="setor">
+                                        <div class="field-label">🏭 Setor</div>
+                                        <div class="field-placeholder">Qual setor onde foi detectado</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="area_responsavel">
+                                        <div class="field-label">📍 Área/Localização</div>
+                                        <div class="field-placeholder">Ex: Setor de Produção, Capítulo 1, Piso 2</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="section-title">🔧 DADOS TÉCNICOS E ESPECIFICAÇÕES</div>
+                        
+                        <div class="form-section">
+                            <div class="form-row">
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="material">
+                                        <div class="field-label">🧱 Material</div>
+                                        <div class="field-placeholder">Descrição do material</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="quantity">
+                                        <div class="field-label">📊 Quantidade</div>
+                                        <div class="field-placeholder">Quantidade envolvida</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="drawing">
+                                        <div class="field-label">📐 Desenho</div>
+                                        <div class="field-placeholder">Número do desenho</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="mp">
+                                        <div class="field-label">🔢 MP</div>
+                                        <div class="field-placeholder">Código MP</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="revision">
+                                        <div class="field-label">🔄 Revisão</div>
+                                        <div class="field-placeholder">Número da revisão</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="position">
+                                        <div class="field-label">📍 Posição</div>
+                                        <div class="field-placeholder">Posição no desenho</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="cv">
+                                        <div class="field-label">📋 CV</div>
+                                        <div class="field-placeholder">Código CV</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="conjunto">
+                                        <div class="field-label">🔧 Conjunto</div>
+                                        <div class="field-placeholder">Nome do conjunto</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="modelo">
+                                        <div class="field-label">🎯 Modelo</div>
+                                        <div class="field-placeholder">Modelo do equipamento</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="description_drawing">
+                                        <div class="field-label">📝 Descrição do Desenho</div>
+                                        <div class="field-placeholder">Descrição detalhada do desenho</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="purchase_order">
+                                        <div class="field-label">🛒 Ordem de Compra</div>
+                                        <div class="field-placeholder">Número da ordem de compra</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="justificativa">
+                                        <div class="field-label">💭 Justificativa</div>
+                                        <div class="field-placeholder">Justificativa para o RNC</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="section-title">🔨 INSTRUÇÕES E ANÁLISES</div>
+                        
+                        <div class="form-section">
+                            <div class="form-row">
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="instruction_retrabalho">
+                                        <div class="field-label">🔨 Instrução para Retrabalho</div>
+                                        <div class="field-placeholder">Descreva as instruções detalhadas para o retrabalho</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="cause_rnc">
+                                        <div class="field-label">🔎 Causa da RNC</div>
+                                        <div class="field-placeholder">Descreva a causa raiz da não conformidade</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="action_rnc">
+                                        <div class="field-label">⚡ Ação a ser Tomada</div>
+                                        <div class="field-placeholder">Descreva as ações corretivas e preventivas</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="section-title">✅ DISPOSIÇÃO DO MATERIAL NÃO-CONFORME</div>
+                        
+                        <div class="form-section">
+                            <div class="form-row">
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="disposition_usar">
+                                        <div class="field-label">✅ Usar como Está</div>
+                                        <div class="field-placeholder">Aprovar o uso do material sem alterações</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="disposition_retrabalhar">
+                                        <div class="field-label">🔄 Retrabalhar</div>
+                                        <div class="field-placeholder">Material precisa de retrabalho</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="disposition_rejeitar">
+                                        <div class="field-label">❌ Rejeitar</div>
+                                        <div class="field-placeholder">Material rejeitado</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="disposition_sucata">
+                                        <div class="field-label">🗑️ Sucata</div>
+                                        <div class="field-placeholder">Material será descartado como sucata</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="disposition_devolver_estoque">
+                                        <div class="field-label">📦 Devolver ao Estoque</div>
+                                        <div class="field-placeholder">Retornar material ao estoque</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="disposition_devolver_fornecedor">
+                                        <div class="field-label">🚚 Devolver ao Fornecedor</div>
+                                        <div class="field-placeholder">Retornar material ao fornecedor</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="section-title">🔍 INSPEÇÃO DO RETRABALHO</div>
+                        
+                        <div class="form-section">
+                            <div class="form-row">
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="inspection_aprovado">
+                                        <div class="field-label">✅ Aprovado</div>
+                                        <div class="field-placeholder">Retrabalho aprovado</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="inspection_reprovado">
+                                        <div class="field-label">❌ Reprovado</div>
+                                        <div class="field-placeholder">Retrabalho reprovado</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="inspection_ver_rnc">
+                                        <div class="field-label">🔗 Ver RNC Nº</div>
+                                        <div class="field-placeholder">Referência para outro RNC</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="section-title">✍️ ASSINATURAS E APROVAÇÕES</div>
+                        
+                        <div class="form-section">
+                            <div class="form-row">
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="signature_inspection_name">
+                                        <div class="field-label">✍️ Assinatura: Responsável</div>
+                                        <div class="field-placeholder">Nome do responsável</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="signature_inspection_date">
+                                        <div class="field-label">📅 Data: Assinatura Responsável</div>
+                                        <div class="field-placeholder">Data da assinatura</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="signature_engineering_name">
+                                        <div class="field-label">✍️ Assinatura: Gerente</div>
+                                        <div class="field-placeholder">Nome do gerente</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="signature_engineering_date">
+                                        <div class="field-label">📅 Data: Assinatura Gerente</div>
+                                        <div class="field-placeholder">Data da assinatura</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="signature_inspection2_name">
+                                        <div class="field-label">✍️ Assinatura: Líder</div>
+                                        <div class="field-placeholder">Nome do líder</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="signature_inspection2_date">
+                                        <div class="field-label">📅 Data: Assinatura Líder</div>
+                                        <div class="field-placeholder">Data da assinatura</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="section-title">⚙️ CAMPOS ADMINISTRATIVOS</div>
+                        
+                        <div class="form-section">
+                            <div class="form-row">
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="priority">
+                                        <div class="field-label">⚠️ Nível de Urgência</div>
+                                        <div class="field-placeholder">Baixa / Média / Alta / Crítica</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="status">
+                                        <div class="field-label">📊 Status</div>
+                                        <div class="field-placeholder">Status atual do RNC</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="price">
+                                        <div class="field-label">💰 Custo Estimado</div>
+                                        <div class="field-placeholder">R$ 0,00</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="rnc_number">
+                                        <div class="field-label">📋 Número RNC</div>
+                                        <div class="field-placeholder">Gerado automaticamente</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="created_at">
+                                        <div class="field-label">📅 Data de Emissão</div>
+                                        <div class="field-placeholder">Data de criação do RNC</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="assigned_user_id">
+                                        <div class="field-label">👥 Usuário Atribuído</div>
+                                        <div class="field-placeholder">Selecione o usuário</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/field_locks_new.js') }}"></script>
+</body>
+</html>

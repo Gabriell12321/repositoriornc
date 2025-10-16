@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sistema IPPEL{% endblock %}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .header {
+            background: white;
+            padding: 15px 20px;
+            border-bottom: 2px solid #e9ecef;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+                .logo {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            object-fit: contain;
+            background: transparent;
+            padding: 0;
+            border: none;
+        }
+        
+        .logo:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: 700;
+            color: #007bff;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .user-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .logout-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: #c82333;
+            transform: translateY(-1px);
+        }
+
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        {% block extra_css %}{% endblock %}
+    </style>
+    {% block head %}{% endblock %}
+    <link rel="stylesheet" href="{{ asset_url('css/avatar.css') }}">
+    <!-- 🎮 Sistema de Sons Minecraft -->
+    <script src="{{ url_for('static', filename='minecraft_sounds.js') }}"></script>
+    <script src="{{ asset_url('js/app.js') }}" defer></script>
+    <script src="{{ asset_url('js/avatar.js') }}" defer></script>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="logo-section">
+                <!-- SQI à esquerda -->
+                <img src="{{ url_for('static', filename='LOGOSQI.jpg') }}" alt="SQI Logo" class="logo">
+                <!-- IPPEL à direita -->
+                <img src="/IPPELLOGO.jpg" 
+                     alt="IPPEL Logo" 
+                     class="logo apply-logo"
+                     data-logo-primary="/IPPELLOGO.jpg"
+                     data-logo-fallback1="/IPPELLOGO.jpg"
+                     data-logo-fallback2="{{ url_for('static', filename='LOGOSQI.jpg') }}"
+                     onerror="if(this.dataset.try1!=='1'){this.dataset.try1='1'; this.src=this.dataset.logoFallback1;} else if(this.dataset.try2!=='1'){this.dataset.try2='1'; this.src=this.dataset.logoFallback2;} else {this.style.display='none';}">
+                <div class="logo-text">IPPEL</div>
+            </div>
+            <div class="user-info">
+                <div id="userAvatar" class="user-avatar initial ava ava-ippel" title="Clique para trocar seu avatar" data-initial="1" role="button" tabindex="0" onclick="if(window.IPPELAvatar){ IPPELAvatar.show(); } else { window.__OPEN_AVATAR_ON_READY__=true; }" onkeydown="if(event.key==='Enter'||event.key===' '){ event.preventDefault(); if(window.IPPELAvatar){ IPPELAvatar.show(); } else { window.__OPEN_AVATAR_ON_READY__=true; }}">U</div>
+                <span class="user-name" id="userName">Sistema IPPEL</span>
+                <button class="logout-btn" onclick="(function(){ try { const base = window.location.origin; fetch(base + '/api/logout', { credentials: 'include' }).finally(() => { window.location.href = '/'; }); } catch(e){ window.location.href = '/'; } })()">🚪 Sair</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        {% block content %}{% endblock %}
+    </div>
+
+    <div id="avatarModal"></div>
+
+    <script>
+      // Quando carregar informações do usuário, aplicar avatar
+      (function(){
+        const orig = (window.IPPELApp && IPPELApp.loadUserInfo) ? IPPELApp.loadUserInfo : null;
+        window.__USER_NAME__ = null;
+        async function patched(){
+          try{
+            const resp = await fetch('/api/user/info', { credentials: 'include' });
+            if(!resp.ok) return; const js = await resp.json();
+                        if(js && js.success && js.user){
+              __USER_NAME__ = js.user.name;
+                              const av = js.user.avatar || 'ava-ippel';
+                              const prefs = js.user.avatarPrefs || null;
+                            if(window.IPPELAvatar){ IPPELAvatar.applyToHeader(av, prefs); }
+              const nameEl = document.getElementById('userName');
+              if(nameEl) nameEl.textContent = js.user.name;
+            }
+          }catch(e){}
+        }
+        document.addEventListener('DOMContentLoaded', patched);
+      })();
+    </script>
+
+    <!-- 🔔 Sistema de Notificações Persistentes -->
+    <!-- Contador de notificações -->
+    <div id="notificationCounter" class="notification-counter" style="display: none; position: fixed; top: 20px; right: 20px; background: #e17055; color: white; border-radius: 50%; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; z-index: 9999998; animation: counterBounce 2s infinite; box-shadow: 0 4px 15px rgba(225, 112, 85, 0.4);">
+        <span id="counterNumber">0</span>
+        <div style="position: absolute; top: -10px; right: -10px; background: #fdcb6e; color: #2d3436; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 16px; animation: soundPulse 1s infinite;">🔊</div>
+    </div>
+
+    <!-- Container de notificação persistente -->
+    <div id="persistentNotificationOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(5px); z-index: 9999999; align-items: center; justify-content: center; animation: pulseOverlay 2s infinite;">
+        <div style="background: linear-gradient(135deg, #ff6b6b, #ee5a24); border-radius: 20px; padding: 30px; max-width: 600px; width: 90%; box-shadow: 0 20px 40px rgba(255, 107, 107, 0.4); animation: notificationShake 1s infinite alternate; position: relative; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+            <div style="text-align: center; font-size: 24px; font-weight: bold; margin-bottom: 20px; animation: textGlow 1.5s infinite alternate;">
+                🚨 ATENÇÃO NECESSÁRIA!
+            </div>
+            
+            <div style="background: rgba(255, 255, 255, 0.1); border-radius: 15px; padding: 20px; margin-bottom: 20px; border-left: 5px solid #ffeaa7;">
+                <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                    <div id="notificationIcon" style="font-size: 40px; margin-right: 15px;">📋</div>
+                    <div>
+                        <h3 id="rncTitle" style="margin: 0 0 5px 0; font-size: 18px;">RNC #0000</h3>
+                        <p id="rncInfo" style="margin: 0; opacity: 0.9; font-size: 14px;">Informações da RNC</p>
+                    </div>
+                </div>
+                
+                <div id="notificationMessage" style="background: rgba(255, 255, 255, 0.2); padding: 15px; border-radius: 10px; font-size: 16px; line-height: 1.4; margin-bottom: 15px;">
+                    Mensagem da notificação
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                <button onclick="showResponseArea()" style="padding: 12px 24px; border: none; border-radius: 25px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.3s ease; min-width: 120px; background: #00b894; color: white; animation: btnPulse 1.5s infinite;">
+                    ✅ Responder Agora
+                </button>
+                <button onclick="viewRNC()" style="padding: 12px 24px; border: none; border-radius: 25px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.3s ease; min-width: 120px; background: #0984e3; color: white;">
+                    👁️ Ver RNC
+                </button>
+                <button onclick="dismissNotification()" style="padding: 8px 16px; border: none; border-radius: 25px; font-size: 14px; font-weight: bold; cursor: pointer; transition: all 0.3s ease; background: #636e72; color: white;">
+                    ⏰ Lembrar Depois
+                </button>
+            </div>
+            
+            <div id="responseArea" style="margin-top: 20px; display: none;">
+                <textarea id="responseText" placeholder="Digite sua resposta ou comentário sobre esta alteração..." style="width: 100%; min-height: 80px; border-radius: 10px; border: 2px solid rgba(255, 255, 255, 0.3); padding: 15px; font-size: 14px; background: rgba(255, 255, 255, 0.1); color: white; resize: vertical;"></textarea>
+                <div style="margin-top: 15px; text-align: center;">
+                    <button onclick="submitResponse()" style="padding: 12px 24px; border: none; border-radius: 25px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.3s ease; min-width: 120px; background: #00b894; color: white; margin-right: 10px;">
+                        📤 Enviar Resposta
+                    </button>
+                    <button onclick="hideResponseArea()" style="padding: 8px 16px; border: none; border-radius: 25px; font-size: 14px; font-weight: bold; cursor: pointer; transition: all 0.3s ease; background: #636e72; color: white;">
+                        ❌ Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        @keyframes pulseOverlay {
+            0%, 100% { background: rgba(0, 0, 0, 0.8); }
+            50% { background: rgba(0, 0, 0, 0.9); }
+        }
+        @keyframes notificationShake {
+            0% { transform: translateX(0px) scale(1); }
+            25% { transform: translateX(-2px) scale(1.01); }
+            75% { transform: translateX(2px) scale(1.01); }
+            100% { transform: translateX(0px) scale(1); }
+        }
+        @keyframes textGlow {
+            0% { text-shadow: 0 0 10px rgba(255, 255, 255, 0.5); }
+            100% { text-shadow: 0 0 20px rgba(255, 255, 255, 0.8), 0 0 30px rgba(255, 255, 255, 0.6); }
+        }
+        @keyframes btnPulse {
+            0% { box-shadow: 0 0 0 0 rgba(0, 184, 148, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(0, 184, 148, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 184, 148, 0); }
+        }
+        @keyframes counterBounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+        @keyframes soundPulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+        }
+    </style>
+
+    <script>
+        /**
+         * 🔔 Sistema de Notificações Persistentes
+         * Sistema "chato" que só para quando o usuário responder
+         */
+        class PersistentNotificationSystem {
+            constructor() {
+                this.currentNotifications = [];
+                this.currentNotificationIndex = 0;
+                this.isShowing = false;
+                this.checkInterval = null;
+                this.soundSystem = null;
+                
+                // Inicializar sistema
+                this.init();
+            }
+            
+            init() {
+                console.log('🔔 Inicializando Sistema de Notificações Persistentes');
+                
+                // Verificar notificações pendentes a cada 30 segundos
+                this.startPeriodicCheck();
+                
+                // Verificar imediatamente
+                this.checkPendingNotifications();
+                
+                // Integrar com sistema de som se disponível
+                if (window.SoundSystem) {
+                    this.soundSystem = window.SoundSystem;
+                }
+            }
+            
+            startPeriodicCheck() {
+                if (this.checkInterval) {
+                    clearInterval(this.checkInterval);
+                }
+                
+                this.checkInterval = setInterval(() => {
+                    if (!this.isShowing) {
+                        this.checkPendingNotifications();
+                    }
+                }, 30000); // 30 segundos
+            }
+            
+            async checkPendingNotifications() {
+                try {
+                    const response = await fetch('/api/persistent-notifications/pending');
+                    const data = await response.json();
+                    
+                    if (data.success && data.notifications.length > 0) {
+                        this.currentNotifications = data.notifications;
+                        this.updateCounter(data.count);
+                        
+                        if (!this.isShowing) {
+                            this.showNextNotification();
+                        }
+                    } else {
+                        this.hideCounter();
+                        this.hideNotification();
+                    }
+                } catch (error) {
+                    console.error('❌ Erro ao verificar notificações:', error);
+                }
+            }
+            
+            updateCounter(count) {
+                const counter = document.getElementById('notificationCounter');
+                const number = document.getElementById('counterNumber');
+                
+                if (count > 0) {
+                    number.textContent = count;
+                    counter.style.display = 'flex';
+                } else {
+                    counter.style.display = 'none';
+                }
+            }
+            
+            hideCounter() {
+                document.getElementById('notificationCounter').style.display = 'none';
+            }
+            
+            showNextNotification() {
+                if (this.currentNotifications.length === 0) {
+                    this.hideNotification();
+                    return;
+                }
+                
+                const notification = this.currentNotifications[this.currentNotificationIndex];
+                this.displayNotification(notification);
+                this.playNotificationSound();
+            }
+            
+            displayNotification(notification) {
+                this.isShowing = true;
+                
+                // Configurar ícone baseado no tipo
+                const icons = {
+                    'create': '📝',
+                    'update': '✏️',
+                    'chat_response': '💬',
+                    'value_addition': '💰'
+                };
+                
+                document.getElementById('notificationIcon').textContent = icons[notification.change_type] || '🔔';
+                document.getElementById('rncTitle').textContent = `RNC #${notification.rnc_number}`;
+                document.getElementById('rncInfo').textContent = notification.rnc_title || 'Sem título';
+                
+                // Criar mensagem baseada no tipo
+                let message = '';
+                if (notification.change_type === 'create') {
+                    message = `📝 ${notification.created_by_name} criou uma nova RNC`;
+                } else if (notification.change_type === 'update') {
+                    message = `✏️ ${notification.created_by_name} atualizou a RNC`;
+                } else if (notification.change_type === 'chat_response') {
+                    const chatMsg = notification.details.message || '';
+                    const shortMsg = chatMsg.length > 50 ? chatMsg.substring(0, 50) + '...' : chatMsg;
+                    message = `💬 ${notification.created_by_name} respondeu: ${shortMsg}`;
+                } else {
+                    message = `🔔 ${notification.created_by_name} fez alterações na RNC`;
+                }
+                
+                document.getElementById('notificationMessage').textContent = message;
+                
+                // Armazenar ID da notificação atual
+                window.currentNotificationId = notification.id;
+                window.currentRncId = notification.rnc_id;
+                
+                // Mostrar overlay
+                document.getElementById('persistentNotificationOverlay').style.display = 'flex';
+                
+                console.log(`🚨 Mostrando notificação persistente: ${message}`);
+            }
+            
+            hideNotification() {
+                this.isShowing = false;
+                document.getElementById('persistentNotificationOverlay').style.display = 'none';
+                document.getElementById('responseArea').style.display = 'none';
+                document.getElementById('responseText').value = '';
+            }
+            
+            playNotificationSound() {
+                if (this.soundSystem) {
+                    this.soundSystem.playNotification();
+                    
+                    // Som contínuo a cada 10 segundos até responder
+                    this.soundInterval = setInterval(() => {
+                        if (this.isShowing) {
+                            this.soundSystem.playWarning();
+                        } else {
+                            clearInterval(this.soundInterval);
+                        }
+                    }, 10000);
+                }
+            }
+            
+            async markAsResponded(notificationId, responseText = '') {
+                try {
+                    const response = await fetch(`/api/persistent-notifications/${notificationId}/respond`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            response: responseText
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        console.log('✅ Notificação marcada como respondida');
+                        this.removeCurrentNotification();
+                        this.showNextOrHide();
+                        
+                        if (this.soundSystem) {
+                            this.soundSystem.playSuccess();
+                        }
+                    } else {
+                        alert('Erro ao responder notificação: ' + data.message);
+                    }
+                } catch (error) {
+                    console.error('❌ Erro ao responder notificação:', error);
+                    alert('Erro de conexão ao responder notificação');
+                }
+            }
+            
+            async dismissTemporarily(notificationId) {
+                try {
+                    const response = await fetch(`/api/persistent-notifications/${notificationId}/dismiss`, {
+                        method: 'POST'
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        console.log('📵 Notificação dispensada temporariamente');
+                        this.removeCurrentNotification();
+                        this.showNextOrHide();
+                    } else {
+                        alert('Erro ao dispensar notificação: ' + data.message);
+                    }
+                } catch (error) {
+                    console.error('❌ Erro ao dispensar notificação:', error);
+                    alert('Erro de conexão ao dispensar notificação');
+                }
+            }
+            
+            removeCurrentNotification() {
+                this.currentNotifications.splice(this.currentNotificationIndex, 1);
+                
+                if (this.currentNotificationIndex >= this.currentNotifications.length) {
+                    this.currentNotificationIndex = 0;
+                }
+                
+                this.updateCounter(this.currentNotifications.length);
+                
+                // Parar som
+                if (this.soundInterval) {
+                    clearInterval(this.soundInterval);
+                }
+            }
+            
+            showNextOrHide() {
+                if (this.currentNotifications.length > 0) {
+                    setTimeout(() => {
+                        this.showNextNotification();
+                    }, 1000);
+                } else {
+                    this.hideNotification();
+                    this.hideCounter();
+                }
+            }
+        }
+        
+        // 🌍 Funções globais para os botões
+        function showResponseArea() {
+            document.getElementById('responseArea').style.display = 'block';
+            document.getElementById('responseText').focus();
+        }
+        
+        function hideResponseArea() {
+            document.getElementById('responseArea').style.display = 'none';
+            document.getElementById('responseText').value = '';
+        }
+        
+        function submitResponse() {
+            const responseText = document.getElementById('responseText').value.trim();
+            
+            if (responseText === '') {
+                alert('Por favor, digite uma resposta antes de enviar.');
+                return;
+            }
+            
+            if (window.persistentNotificationSystem && window.currentNotificationId) {
+                window.persistentNotificationSystem.markAsResponded(window.currentNotificationId, responseText);
+            }
+        }
+        
+        function dismissNotification() {
+            if (window.persistentNotificationSystem && window.currentNotificationId) {
+                window.persistentNotificationSystem.dismissTemporarily(window.currentNotificationId);
+            }
+        }
+        
+        function viewRNC() {
+            if (window.currentRncId) {
+                // Abrir RNC em nova aba
+                window.open(`/rnc/${window.currentRncId}`, '_blank');
+            }
+        }
+        
+        // 🚀 Inicializar sistema quando a página carregar
+        document.addEventListener('DOMContentLoaded', function() {
+            window.persistentNotificationSystem = new PersistentNotificationSystem();
+        });
+        
+        // 🔄 Verificar notificações quando a aba ganhar foco
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden && window.persistentNotificationSystem) {
+                setTimeout(() => {
+                    window.persistentNotificationSystem.checkPendingNotifications();
+                }, 1000);
+            }
+        });
+    </script>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

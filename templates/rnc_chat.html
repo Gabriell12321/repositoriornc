@@ -1,0 +1,2622 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💬 Chat IPPEL - {{ rnc.rnc_number }}</title>
+    <!-- ✅ DESIGN IPPEL ATUALIZADO - Versão 2.0 -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <!-- Socket.IO - SEM integrity para evitar bloqueio -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js" 
+            crossorigin="anonymous"></script>
+    
+    <!-- Script para corrigir erros de SVG -->
+    <script>
+        // Interceptar erros de SVG para evitar spam no console
+        window.addEventListener('error', function(e) {
+            if (e.message && (e.message.includes('Expected number') || e.message.includes('attribute d'))) {
+                e.preventDefault();
+                console.log('Erro de SVG ignorado para melhor experiência do usuário');
+                return false;
+            }
+        });
+        
+        // Corrigir erros de SVG com atributo d inválido
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                // Remover elementos SVG problemáticos
+                const problematicSvgs = document.querySelectorAll('svg path[d*="tc0.2,0,0.4-0.2,0"]');
+                problematicSvgs.forEach(svg => svg.remove());
+                
+                // Corrigir outros elementos SVG problemáticos
+                const allPaths = document.querySelectorAll('svg path');
+                allPaths.forEach(path => {
+                    const d = path.getAttribute('d');
+                    if (d && d.includes('tc0.2,0,0.4-0.2,0')) {
+                        path.remove();
+                    }
+                });
+            } catch (error) {
+                console.log('Erro ao processar SVG ignorado:', error);
+            }
+        });
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --ippel-primary: #dc2626;
+            --ippel-secondary: #ef4444;
+            --ippel-accent: #f87171;
+            --ippel-dark: #1e293b;
+            --ippel-light: #fef2f2;
+            --ippel-success: #10b981;
+            --ippel-warning: #f59e0b;
+            --ippel-danger: #dc2626;
+            --ippel-gradient: linear-gradient(135deg, #dc2626 0%, #ef4444 50%, #f87171 100%);
+        }
+
+        body {
+            /* Fonte local, sem externa (CSP): */
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+                         Ubuntu, Cantarell, 'Helvetica Neue', Arial, 'Noto Sans',
+                         'Liberation Sans', sans-serif;
+            background: var(--ippel-gradient);
+            min-height: 100vh;
+            color: var(--ippel-dark);
+        }
+
+        .chat-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(220, 38, 38, 0.3);
+            overflow: hidden;
+            height: calc(100vh - 40px);
+            display: flex;
+            flex-direction: column;
+            border: 4px solid rgba(220, 38, 38, 0.3);
+        }
+
+        .chat-header {
+            background: var(--ippel-gradient);
+            color: white;
+            padding: 24px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 20px rgba(220, 38, 38, 0.25);
+            position: relative;
+            border-bottom: 3px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .back-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-1px);
+        }
+
+        .rnc-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 🏷️ Estilo específico para logo IPPEL - evitar corte */
+        .ippel-logo {
+            width: 55px !important;
+            height: 34px !important;
+            background: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 11px !important;
+            color: var(--ippel-primary);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            padding: 2px 4px;
+            white-space: nowrap;
+            overflow: visible;
+            text-overflow: clip;
+            line-height: 1.2;
+            letter-spacing: 0.5px;
+        }
+
+        .rnc-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .rnc-number {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .online-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+        }
+
+        .online-dot {
+            width: 8px;
+            height: 8px;
+            background: #28a745;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
+        @keyframes slideInDown {
+            from {
+                transform: translate(-50%, -100%);
+                opacity: 0;
+            }
+            to {
+                transform: translate(-50%, 0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOutUp {
+            from {
+                transform: translate(-50%, 0);
+                opacity: 1;
+            }
+            to {
+                transform: translate(-50%, -100%);
+                opacity: 0;
+            }
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .message.own {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: var(--ippel-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 16px;
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+            border: 2px solid white;
+        }
+
+        .message-content {
+            max-width: 70%;
+            background: white;
+            padding: 12px 16px;
+            border-radius: 18px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        .message.own .message-content {
+            background: var(--ippel-gradient);
+            color: white;
+            box-shadow: 0 4px 16px rgba(220, 38, 38, 0.3);
+        }
+
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 5px;
+        }
+
+        .message-author {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .message-department {
+            font-size: 11px;
+            opacity: 0.7;
+            background: rgba(0,0,0,0.1);
+            padding: 2px 6px;
+            border-radius: 8px;
+        }
+
+        .message.own .message-department {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .message-time {
+            font-size: 11px;
+            opacity: 0.6;
+            margin-left: auto;
+        }
+
+        .message-text {
+            font-size: 14px;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+
+        /* 👁️ STATUS DE VISUALIZAÇÃO - Estilo WhatsApp/Telegram */
+        .message-footer {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 5px;
+            margin-top: 5px;
+            font-size: 11px;
+            opacity: 0.7;
+        }
+
+        .message-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .status-icon {
+            font-size: 14px;
+            line-height: 1;
+        }
+
+        /* Check simples (enviado) */
+        .status-sent .status-icon {
+            color: #8696a0;
+        }
+
+        /* Check duplo (entregue) */
+        .status-delivered .status-icon {
+            color: #8696a0;
+        }
+
+        /* Check duplo azul (visto) */
+        .status-read .status-icon {
+            color: #53bdeb;
+            font-weight: bold;
+        }
+
+        /* Para mensagens próprias com fundo colorido */
+        .message.own .message-status {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .message.own .status-sent .status-icon,
+        .message.own .status-delivered .status-icon {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .message.own .status-read .status-icon {
+            color: #4fc3f7;
+        }
+
+        .message-viewed-info {
+            font-size: 10px;
+            opacity: 0.6;
+            margin-left: 5px;
+        }
+
+        .chat-input-container {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+            background: #f8f9fa;
+            border-radius: 25px;
+            padding: 10px;
+            margin: 10px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            color: #666;
+        }
+
+        .action-btn:hover {
+            background: rgba(220, 38, 38, 0.1);
+            color: var(--ippel-secondary);
+            transform: scale(1.15);
+        }
+
+        .text-area-container {
+            flex: 1;
+            position: relative;
+        }
+
+        .char-counter {
+            position: absolute;
+            bottom: 5px;
+            right: 10px;
+            font-size: 11px;
+            color: #999;
+            background: rgba(255,255,255,0.8);
+            padding: 2px 6px;
+            border-radius: 10px;
+        }
+
+        .file-preview {
+            margin: 10px;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            border: 2px dashed #007bff;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #007bff;
+        }
+
+        .clear-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .clear-btn:hover {
+            background: #c82333;
+        }
+
+        .message-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 0;
+            font-size: 14px;
+            resize: none;
+            max-height: 100px;
+            min-height: 45px;
+            transition: all 0.3s ease;
+            background: transparent;
+            outline: none;
+        }
+
+        .message-input:focus {
+            outline: none;
+            border-color: transparent;
+        }
+
+        .send-btn {
+            background: var(--ippel-gradient);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 28px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 15px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 16px rgba(220, 38, 38, 0.3);
+        }
+
+        .send-btn:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 8px 30px rgba(220, 38, 38, 0.4);
+        }
+        
+        .send-btn:active {
+            transform: translateY(-1px);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .typing-indicator {
+            padding: 10px 20px;
+            font-size: 12px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+            opacity: 0.7;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.fade-in {
+            animation: messageSlideIn 0.3s ease-out;
+        }
+
+        @keyframes messageSlideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 768px) {
+            .chat-container {
+                margin: 10px;
+                height: calc(100vh - 20px);
+                border-radius: 15px;
+            }
+
+            .chat-header {
+                padding: 20px 15px;
+                min-height: 80px;
+            }
+
+            .header-left {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .message-content {
+                max-width: 85%;
+            }
+
+            /* 📱 Logo IPPEL responsiva em mobile */
+            .ippel-logo {
+                width: 50px !important;
+                height: 30px !important;
+                font-size: 10px !important;
+                padding: 1px 3px;
+            }
+
+            .input-group {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .send-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        /* Estilos do Seletor de Emojis */
+        .emoji-picker {
+            position: absolute;
+            bottom: 80px;
+            left: 20px;
+            width: 320px;
+            max-height: 400px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            border: 2px solid var(--ippel-primary);
+            display: none;
+            flex-direction: column;
+            z-index: 1000;
+            animation: slideInUp 0.3s ease;
+        }
+
+        .emoji-picker.show {
+            display: flex;
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .emoji-picker-header {
+            padding: 12px 16px;
+            border-bottom: 2px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--ippel-gradient);
+            color: white;
+            border-radius: 14px 14px 0 0;
+        }
+
+        .emoji-picker-title {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .emoji-picker-close {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+
+        .emoji-picker-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(90deg);
+        }
+
+        .emoji-categories {
+            display: flex;
+            padding: 8px;
+            gap: 4px;
+            border-bottom: 1px solid #f0f0f0;
+            overflow-x: auto;
+            background: #fafafa;
+        }
+
+        .emoji-category-btn {
+            padding: 8px 12px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 20px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            opacity: 0.6;
+        }
+
+        .emoji-category-btn:hover {
+            background: rgba(220, 38, 38, 0.1);
+            opacity: 1;
+        }
+
+        .emoji-category-btn.active {
+            background: var(--ippel-light);
+            opacity: 1;
+            border: 2px solid var(--ippel-primary);
+        }
+
+        .emoji-grid {
+            padding: 12px;
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 4px;
+            max-height: 280px;
+            overflow-y: auto;
+        }
+
+        .emoji-item {
+            padding: 8px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 24px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .emoji-item:hover {
+            background: var(--ippel-light);
+            transform: scale(1.2);
+        }
+
+        .emoji-item:active {
+            transform: scale(1.1);
+        }
+
+        .emoji-search {
+            padding: 8px 12px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .emoji-search input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .emoji-search input:focus {
+            border-color: var(--ippel-primary);
+        }
+
+        .emoji-grid::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .emoji-grid::-webkit-scrollbar-track {
+            background: #f0f0f0;
+            border-radius: 3px;
+        }
+
+        .emoji-grid::-webkit-scrollbar-thumb {
+            background: var(--ippel-primary);
+            border-radius: 3px;
+        }
+
+        .emoji-grid::-webkit-scrollbar-thumb:hover {
+            background: var(--ippel-secondary);
+        }
+
+        @media (max-width: 768px) {
+            .emoji-picker {
+                width: calc(100% - 40px);
+                left: 20px;
+                right: 20px;
+            }
+
+            .emoji-grid {
+                grid-template-columns: repeat(6, 1fr);
+            }
+        }
+
+        /* 🔊 PAINEL DE TESTE DE SONS */
+        .sound-test-btn {
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .sound-test-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+        }
+
+        .sound-test-btn:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container fade-in"
+         data-rnc-id="{{ rnc.id }}"
+         data-rnc-number="{{ rnc.rnc_number or ('RNC-' ~ rnc.id) }}"
+         data-current-user-id="{{ current_user[0] }}"
+         data-current-user-name="{{ current_user[1] }}"
+         data-current-user-dept="{{ current_user[4] or '' }}"
+         data-is-admin="{{ 'true' if current_user[5] == 'admin' else 'false' }}">
+        <!-- Cabeçalho do Chat IPPEL -->
+        <div class="chat-header">
+            <div class="header-left">
+                <button class="back-btn" onclick="window.location.href='/rnc/{{ rnc.id }}'">
+                    ← Voltar
+                </button>
+                <div class="rnc-info">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                        <div class="ippel-logo">
+                            IPPEL
+                        </div>
+                        <div style="font-size: 16px; font-weight: 800; color: white; text-transform: uppercase; letter-spacing: 1px;">CHAT CORPORATIVO</div>
+                    </div>
+                    <div class="rnc-title">{{ rnc.title or 'RNC sem título' }}</div>
+                    <div class="rnc-number">{{ rnc.rnc_number }}</div>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <!-- 🔊 Controle de Som -->
+                <button id="soundToggle" onclick="toggleSound()" 
+                        style="background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.3); color: white; font-size: 20px; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(0,0,0,0.2);"
+                        onmouseover="this.style.background='rgba(255,255,255,0.3)'; this.style.transform='scale(1.1)'"
+                        onmouseout="this.style.background='rgba(255,255,255,0.2)'; this.style.transform='scale(1)'"
+                        title="Ativar/Desativar sons">
+                    🔊
+                </button>
+                
+                <div class="online-indicator" style="background: rgba(16, 185, 129, 0.2); padding: 8px 16px; border-radius: 20px;">
+                    <div class="online-dot" style="width: 10px; height: 10px; background: #10b981; border-radius: 50%; animation: pulse 2s infinite;"></div>
+                    <span id="onlineCount" style="font-weight: 600; color: white;">1 online</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Área de Mensagens -->
+        <div class="chat-messages" id="chatMessages">
+            {% if messages %}
+                {% for message in messages %}
+                <div class="message {% if message[1] == current_user[0] %}own{% endif %} fade-in" data-message-id="{{ message[0] }}" data-user-id="{{ message[1] }}">
+                    <div class="message-avatar">
+                        {{ (message[2][0].upper() if message[2] else 'U') if message|length > 2 else 'U' }}
+                    </div>
+                    <div class="message-content">
+                        <div class="message-header">
+                            <span class="message-author">{{ (message[2] if message|length > 2 else '') or 'Usuário' }}</span>
+                            {% if message|length > 7 and message[7] %}
+                            <span class="message-department">{{ message[7] }}</span>
+                            {% endif %}
+                            <span class="message-time">{{ message[5].split(' ')[1][:5] if message[5] else '' }}</span>
+                        </div>
+                        <div class="message-text">{{ message[3] }}</div>
+                        
+                        {# 👁️ Status de visualização estilo WhatsApp - só para mensagens próprias #}
+                        {% if message[1] == current_user[0] %}
+                        <div class="message-footer">
+                            <div class="message-status {% if message[6] %}status-read{% else %}status-sent{% endif %}">
+                                <span class="status-icon">{% if message[6] %}✓✓{% else %}✓{% endif %}</span>
+                            </div>
+                            {% if message[6] %}
+                            <span class="message-viewed-info">Visto {{ message[6].split(' ')[1][:5] if ' ' in message[6] else message[6][:5] }}</span>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">💬</div>
+                    <h3>Nenhuma mensagem ainda</h3>
+                    <p>Seja o primeiro a comentar sobre este RNC!</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Indicador de Digitação -->
+        <div class="typing-indicator" id="typingIndicator" style="display: none;">
+            <span id="typingText">Alguém está digitando...</span>
+        </div>
+
+        <!-- Área de Input -->
+        <div class="chat-input-container">
+            {% if rnc.status == 'Finalizado' %}
+            <!-- RNC FINALIZADA - SOMENTE LEITURA -->
+            <div class="finalized-notice" style="padding: 15px; background: #fff3cd; border-radius: 8px; text-align: center; color: #856404; border: 2px solid #ffc107;">
+                <strong>🔒 RNC Finalizada</strong>
+                <p style="margin: 5px 0 0 0; font-size: 14px;">Esta RNC foi finalizada. Não é possível enviar mais mensagens.</p>
+            </div>
+            {% else %}
+            <div class="input-group">
+                <!-- Botões de Ação -->
+                <div class="action-buttons">
+                    <button class="action-btn" onclick="document.getElementById('fileInput').click()" title="Enviar arquivo">
+                        📎
+                    </button>
+                    <button class="action-btn" onclick="document.getElementById('imageInput').click()" title="Enviar imagem">
+                        🖼️
+                    </button>
+                    <button class="action-btn" onclick="insertEmoji()" title="Inserir emoji">
+                        😊
+                    </button>
+                    <button class="action-btn" onclick="toggleVoiceMessage()" title="Mensagem de voz">
+                        🎤
+                    </button>
+                </div>
+                
+                <!-- Área de Texto -->
+                <div class="text-area-container">
+                    <textarea 
+                        id="messageInput" 
+                        class="message-input" 
+                        placeholder="Digite sua mensagem..."
+                        rows="1"
+                        maxlength="1000"
+                    ></textarea>
+                    
+                    <!-- Contador de caracteres -->
+                    <div class="char-counter" id="charCounter">0/1000</div>
+                </div>
+                
+                <!-- Botão de Enviar -->
+                <button id="sendBtn" class="send-btn">
+                    📤 Enviar
+                </button>
+            </div>
+            
+            <!-- Inputs ocultos para arquivos -->
+            <input type="file" id="fileInput" style="display: none;" accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx" onchange="handleFileUpload(this)">
+            <input type="file" id="imageInput" style="display: none;" accept="image/*" onchange="handleImageUpload(this)">
+            
+            <!-- Preview de arquivos -->
+            <div id="filePreview" class="file-preview" style="display: none;">
+                <div class="preview-header">
+                    <span>📎 Arquivo selecionado</span>
+                    <button onclick="clearFilePreview()" class="clear-btn">✕</button>
+                </div>
+                <div id="previewContent"></div>
+            {% endif %}
+            </div>
+
+            <!-- Seletor de Emojis -->
+            <div id="emojiPicker" class="emoji-picker">
+                <div class="emoji-picker-header">
+                    <span class="emoji-picker-title">😊 Selecione um emoji</span>
+                    <button class="emoji-picker-close" onclick="closeEmojiPicker()">✕</button>
+                </div>
+                
+                <div class="emoji-search">
+                    <input type="text" id="emojiSearch" placeholder="🔍 Buscar emoji..." oninput="filterEmojis(this.value)">
+                </div>
+                
+                <div class="emoji-categories">
+                    <button class="emoji-category-btn active" data-category="smileys" onclick="showEmojiCategory('smileys')">😊</button>
+                    <button class="emoji-category-btn" data-category="gestures" onclick="showEmojiCategory('gestures')">👋</button>
+                    <button class="emoji-category-btn" data-category="hearts" onclick="showEmojiCategory('hearts')">❤️</button>
+                    <button class="emoji-category-btn" data-category="animals" onclick="showEmojiCategory('animals')">🐶</button>
+                    <button class="emoji-category-btn" data-category="food" onclick="showEmojiCategory('food')">🍕</button>
+                    <button class="emoji-category-btn" data-category="activities" onclick="showEmojiCategory('activities')">⚽</button>
+                    <button class="emoji-category-btn" data-category="objects" onclick="showEmojiCategory('objects')">💡</button>
+                    <button class="emoji-category-btn" data-category="symbols" onclick="showEmojiCategory('symbols')">🔔</button>
+                </div>
+                
+                <div id="emojiGrid" class="emoji-grid">
+                    <!-- Emojis serão adicionados dinamicamente via JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variáveis globais - inicializadas primeiro
+        let isTyping = false;
+        let typingTimeout;
+        let lastAckAt = 0; // controle de ACK do socket
+        let selectedFile = null;
+        let selectedImage = null;
+        let isRecording = false;
+        let mediaRecorder = null;
+        let audioChunks = [];
+        
+        // Elementos do DOM - inicializados após DOM carregar
+        let chatMessages, messageInput, sendBtn, typingIndicator, typingText;
+    let socket, root, rncId, rncNumber, currentUserId, currentUserName, currentUserDept, isAdmin;
+    let notificationSocket;
+        
+    // Inicialização do chat com Socket.IO e notificações
+    function initializeChat() {
+            console.log('📡 Inicializando chat com Socket.IO');
+            
+            // Inicializar variáveis
+            root = document.querySelector('.chat-container');
+            rncId = Number(root.dataset.rncId);
+            rncNumber = root.dataset.rncNumber || `RNC-${root.dataset.rncId}`;
+            currentUserId = Number(root.dataset.currentUserId);
+            currentUserName = root.dataset.currentUserName || 'Usuário';
+            currentUserDept = root.dataset.currentUserDept || '';
+            isAdmin = root.dataset.isAdmin === 'true';
+            
+            console.log('✅ Chat inicializado com sucesso:', {
+                rncId: rncId,
+                rncNumber: rncNumber,
+                currentUserId: currentUserId,
+                currentUserName: currentUserName
+            });
+            
+            // Testar conectividade Socket.IO antes de inicializar
+            testSocketIOConnectivity().then(() => {
+                // Inicializar Socket.IO
+                initializeSocket();
+
+                // Inicializar Socket.IO para notificações
+                initializeNotificationSocket();
+            }).catch(error => {
+                console.warn('⚠️ Teste de conectividade falhou, continuando com inicialização:', error);
+                // Inicializar mesmo assim
+                initializeSocket();
+                initializeNotificationSocket();
+            });
+        
+        // Teste de conectividade Socket.IO
+        async function testSocketIOConnectivity() {
+            const isHTTPS = window.location.protocol === 'https:';
+            console.log(`🧪 Testando conectividade Socket.IO (${isHTTPS ? 'HTTPS' : 'HTTP'})`);
+            
+            try {
+                const response = await fetch('/socketio-health');
+                const data = await response.json();
+                console.log('✅ Health check Socket.IO:', data);
+                
+                if (data.status !== 'ok') {
+                    throw new Error(data.message);
+                }
+                
+                return data;
+            } catch (error) {
+                console.error('❌ Falha no health check Socket.IO:', error);
+                throw error;
+            }
+        }
+        
+        // Inicializar Socket.IO para notificações
+        function initializeNotificationSocket() {
+            if (typeof io === 'undefined') {
+                console.warn('⚠️ Socket.IO não carregado para notificações');
+                return;
+            }
+            try {
+                // Detectar se está usando HTTPS
+                const isHTTPS = window.location.protocol === 'https:';
+                const socketUrl = window.location.origin;
+                console.log('🔔 Inicializando Socket.IO notificações:', socketUrl, isHTTPS ? '(HTTPS)' : '(HTTP)');
+                
+                notificationSocket = io(socketUrl + '/notifications', {
+                    // Configuração específica para HTTPS
+                    transports: isHTTPS ? ['polling', 'websocket'] : ['websocket', 'polling'],
+                    path: '/socket.io/',
+                    reconnection: true,
+                    reconnectionAttempts: 8,
+                    reconnectionDelay: isHTTPS ? 2000 : 1000,
+                    reconnectionDelayMax: isHTTPS ? 8000 : 5000,
+                    timeout: isHTTPS ? 15000 : 10000,
+                    forceNew: false,
+                    // Configurações específicas para HTTPS/SSL
+                    upgrade: true,
+                    rememberUpgrade: true,
+                    // Polling interval otimizado para HTTPS
+                    pollingTimeout: isHTTPS ? 10000 : 30000,
+                    // Configuração de segurança para HTTPS
+                    secure: isHTTPS,
+                    rejectUnauthorized: false // Para certificados auto-assinados
+                });
+                setupNotificationSocketEvents();
+            } catch (error) {
+                console.error('❌ Erro ao inicializar Socket.IO para notificações:', error);
+            }
+        }
+
+        // Configurar eventos do Socket.IO de notificações
+        function setupNotificationSocketEvents() {
+            notificationSocket.on('connect', function() {
+                console.log('🔔 Socket.IO de notificações conectado!');
+            });
+            notificationSocket.on('notifications_sync', function(data) {
+                console.log('🔔 Notificações sincronizadas:', data);
+                if (data.notifications && data.notifications.length > 0) {
+                    data.notifications.forEach(showSystemNotification);
+                }
+            });
+            notificationSocket.on('new_notification', function(data) {
+                console.log('🔔 Nova notificação recebida:', data);
+                showSystemNotification(data);
+            });
+            notificationSocket.on('system_notification', function(data) {
+                console.log('⚠️ Notificação do sistema recebida:', data);
+                showSystemNotification(data);
+            });
+            notificationSocket.on('unread_count_update', function(data) {
+                console.log('🔔 Atualização de contagem de não lidas:', data);
+            });
+            notificationSocket.on('error', function(data) {
+                console.error('❌ Erro de notificações:', data);
+            });
+        }
+
+        // Exibir notificação do sistema (toast e navegador)
+        function showSystemNotification(data) {
+            // Notificação do navegador
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification(data.title || '🔔 Notificação', {
+                    body: data.message || '',
+                    icon: '/LOGOIPPEL.JPEG',
+                    tag: `system-${data.id || Date.now()}`
+                });
+            }
+            // Notificação toast
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #dc2626, #ef4444);
+                color: white;
+                padding: 15px 20px;
+                border-radius: 10px;
+                box-shadow: 0 4px 15px rgba(220,38,38,0.3);
+                z-index: 4000;
+                animation: slideInRight 0.3s ease-out;
+                max-width: 350px;
+                cursor: pointer;
+            `;
+            toast.innerHTML = `
+                <div style="font-weight: 700; margin-bottom: 5px;">${data.title || '🔔 Notificação'}</div>
+                <div style="font-size: 0.95rem;">${data.message || ''}</div>
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.animation = 'slideOutRight 0.3s ease-in';
+                setTimeout(() => {
+                    if (document.body.contains(toast)) {
+                        document.body.removeChild(toast);
+                    }
+                }, 300);
+            }, 6000);
+        }
+        }
+        
+        // Configuração do Socket.IO
+        function initializeSocket() {
+            if (typeof io === 'undefined') {
+                console.warn('⚠️ Socket.IO não carregado, usando modo HTTP');
+                return;
+            }
+            
+            try {
+                // Detectar se está usando HTTPS
+                const isHTTPS = window.location.protocol === 'https:';
+                const socketUrl = window.location.origin;
+                console.log('🔌 Conectando ao Socket.IO:', socketUrl, isHTTPS ? '(HTTPS)' : '(HTTP)');
+                
+                socket = io(socketUrl, {
+                    // Configuração específica para HTTPS
+                    transports: isHTTPS ? ['polling', 'websocket'] : ['websocket', 'polling'],
+                    path: '/socket.io/',
+                    reconnection: true,
+                    reconnectionAttempts: 8,
+                    reconnectionDelay: isHTTPS ? 2000 : 1000,
+                    reconnectionDelayMax: isHTTPS ? 8000 : 5000,
+                    timeout: isHTTPS ? 15000 : 10000,
+                    forceNew: false,
+                    // Configurações específicas para HTTPS/SSL
+                    upgrade: true,
+                    rememberUpgrade: true,
+                    // Polling interval otimizado para HTTPS
+                    pollingTimeout: isHTTPS ? 10000 : 30000,
+                    // Configuração de segurança para HTTPS
+                    secure: isHTTPS,
+                    rejectUnauthorized: false // Para certificados auto-assinados
+                });
+                
+                setupSocketEvents();
+            } catch (error) {
+                console.error('❌ Erro ao inicializar Socket.IO:', error);
+            }
+        }
+        
+        // Configurar eventos do Socket.IO
+        function setupSocketEvents() {
+            socket.on('connect', function() {
+                const isHTTPS = window.location.protocol === 'https:';
+                console.log('✅ Socket.IO conectado com sucesso!');
+                console.log('🔌 Socket ID:', socket.id);
+                console.log('🔐 Protocolo:', isHTTPS ? 'HTTPS/WSS' : 'HTTP/WS');
+                console.log('🚀 Transport:', socket.io.engine.transport.name);
+                console.log('🏠 RNC ID:', rncId);
+                console.log(`🔗 Entrando na sala: rnc_${rncId}`);
+                
+                // Entrar na sala do RNC
+                socket.emit('join_room', { room: `rnc_${rncId}` });
+                console.log('📤 Evento join_room emitido para sala:', `rnc_${rncId}`);
+                
+                // Toast de sucesso
+                showSuccessToast(`🔌 Socket.IO conectado via ${socket.io.engine.transport.name.toUpperCase()}`);
+            });
+            
+            socket.on('room_joined', function(data) {
+                console.log('✅ Entrou na sala com sucesso:', data);
+            });
+            
+            socket.on('user_joined_room', function(data) {
+                console.log('👤 Outro usuário entrou na sala:', data.user_name, data.user_id);
+                showSuccessToast(`👤 ${data.user_name} entrou no chat`);
+            });
+            
+            socket.on('disconnect', function() {
+                console.log('❌ Socket.IO desconectado');
+            });
+            
+            socket.on('connect_error', function(error) {
+                console.error('❌ Erro de conexão Socket.IO:', error);
+                console.log('🔍 Diagnóstico de conectividade:');
+                console.log('   - Protocolo:', window.location.protocol);
+                console.log('   - Host:', window.location.host);
+                console.log('   - HTTPS:', window.location.protocol === 'https:');
+                console.log('   - Socket URL:', socket.io.uri);
+                console.log('   - Transports:', socket.io.opts.transports);
+                console.log('   - Timeout:', socket.io.opts.timeout);
+                
+                // Mostrar toast de erro mais informativo
+                showErrorToast(`❌ Socket.IO: ${error.description || error.message || 'Erro de conexão'}`);
+            });
+            
+            socket.on('reconnect', function() {
+                console.log('🔄 Socket.IO reconectado - entrando na sala novamente');
+                socket.emit('join_room', { room: `rnc_${rncId}` });
+            });
+            
+            // Eventos específicos para diagnosticar problemas HTTPS/WSS
+            socket.io.on('upgrade', function() {
+                console.log('⬆️ Socket.IO upgrade para WebSocket realizado!');
+                showSuccessToast('⬆️ Upgrade para WebSocket realizado');
+            });
+            
+            socket.io.on('upgradeError', function(error) {
+                console.warn('⚠️ Erro no upgrade para WebSocket:', error);
+                showErrorToast('⚠️ Falha no upgrade para WebSocket, usando polling');
+            });
+            
+            // DEBUG: Capturar TODOS os eventos
+            socket.onAny(function(eventName, ...args) {
+                console.log(`📡 Evento Socket.IO: ${eventName}`, args);
+                
+                // Teste específico para new_message
+                if (eventName === 'new_message') {
+                    console.log('🎯 EVENTO new_message DETECTADO!', args);
+                }
+            });
+            
+            socket.on('new_message', function(messageData) {
+                console.log('📨 ========================================');
+                console.log('📨 NOVA MENSAGEM RECEBIDA VIA SOCKET.IO!');
+                console.log('📊 Dados da mensagem:', messageData);
+                console.log(`👤 Mensagem de user_id: ${messageData.user_id}, eu sou: ${currentUserId}`);
+                console.log(`💬 Conteúdo: "${messageData.message}"`);
+                console.log(`⏰ Timestamp: ${messageData.timestamp}`);
+                console.log('📨 ========================================');
+                
+                // Servidor já filtra para não enviar para o remetente (include_self=False)
+                // Então sempre adicionar a mensagem recebida via Socket.IO
+                console.log('🔊 Tocando som de notificação');
+                SoundSystem.incoming(); // 🔊 Som de mensagem recebida
+                playNotificationSound(); // Manter compatibilidade
+                console.log('➕ Adicionando mensagem à interface');
+                addMessage(messageData);
+                console.log('✅ Mensagem adicionada com sucesso!');
+            });
+            
+            // Listener message_sent removido - agora é gerenciado dinamicamente em sendMessageSocket
+            
+            socket.on('error', function(data) {
+                console.error('❌ Erro do Socket.IO:', data);
+                // Se for "Mensagem já processada", não mostrar erro
+                if (data.message && data.message.includes('Mensagem já processada')) {
+                    console.log('⚠️ Mensagem já processada via Socket.IO, usando HTTP...');
+                    return;
+                }
+                // Para outros erros, não mostrar alert - o timeout HTTP vai funcionar como fallback
+                console.log('⚠️ Socket.IO falhou, aguardando timeout para HTTP...');
+            });
+        }
+        
+
+        // Inicializar elementos do DOM
+        function initializeDOM() {
+            chatMessages = document.getElementById('chatMessages');
+            messageInput = document.getElementById('messageInput');
+            sendBtn = document.getElementById('sendBtn');
+            typingIndicator = document.getElementById('typingIndicator');
+            typingText = document.getElementById('typingText');
+            
+            // Configurar event listeners
+            setupEventListeners();
+        }
+        
+        function setupEventListeners() {
+            // Event listeners para o input de mensagem
+            messageInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (sendBtn.disabled) {
+                        console.log('⚠️ Botão desabilitado, ignorando Enter');
+                        return;
+                    }
+                    sendMessage();
+                }
+            });
+
+            messageInput.addEventListener('input', function() {
+                // Auto-resize do textarea
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+                
+                // Atualizar contador de caracteres
+                updateCharCounter();
+                
+                // Indicador de digitação
+                if (socket && socket.connected) {
+                    if (!isTyping) {
+                        isTyping = true;
+                        socket.emit('typing', { rnc_id: rncId, is_typing: true });
+                    }
+                    
+                    clearTimeout(typingTimeout);
+                    typingTimeout = setTimeout(() => {
+                        isTyping = false;
+                        socket.emit('typing', { rnc_id: rncId, is_typing: false });
+                    }, 1000);
+                }
+            });
+
+            // Clique do botão enviar - com proteção contra múltiplos cliques
+            sendBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (sendBtn.disabled) {
+                    console.log('⚠️ Botão desabilitado, ignorando clique');
+                    return;
+                }
+                sendMessage();
+            });
+        }
+
+        // Função para enviar mensagem
+        async function sendMessage() {
+            // 🔒 PROTEÇÃO: Bloquear envio se RNC estiver finalizada
+            {% if rnc.status == 'Finalizado' %}
+            console.log('🔒 RNC finalizada - envio bloqueado');
+            showErrorToast('❌ Esta RNC foi finalizada. Não é possível enviar mensagens.');
+            SoundSystem.warning();
+            return;
+            {% endif %}
+            
+            const message = messageInput.value.trim();
+            if (!message && !selectedFile && !selectedImage) {
+                console.log('⚠️ Tentativa de enviar mensagem vazia');
+                SoundSystem.warning(); // 🔊 Som de aviso
+                return;
+            }
+            
+            // Verificar se é uma mensagem duplicada muito rápida (apenas para texto)
+            const now = Date.now();
+            if (message === lastSentMessage && (now - lastSentTime) < 3000 && !selectedImage && !selectedFile) {
+                console.log('⚠️ Tentativa de envio duplicado muito rápido, ignorando');
+                showSuccessToast('⚠️ Aguarde antes de enviar a mesma mensagem');
+                SoundSystem.warning(); // 🔊 Som de aviso
+                return;
+            }
+            
+            // 🔊 Som de envio
+            SoundSystem.send();
+            
+            // Atualizar controle de envio APENAS para mensagens de texto
+            if (!selectedImage && !selectedFile) {
+                lastSentMessage = message;
+                lastSentTime = now;
+            } else {
+                // Para imagens/arquivos, limpar o controle para não interferir
+                lastSentMessage = '';
+                lastSentTime = 0;
+            }
+            
+            // LIMPAR CAMPO IMEDIATAMENTE para evitar duplo clique
+            messageInput.value = '';
+            messageInput.innerHTML = '';
+            messageInput.textContent = '';
+            updateCharCounter();
+            
+            // DESABILITAR BOTÃO IMEDIATAMENTE
+            sendBtn.disabled = true;
+            sendBtn.innerHTML = '⏳ Enviando...';
+            
+            // FORÇAR LIMPEZA ADICIONAL
+            setTimeout(() => {
+                messageInput.value = '';
+                messageInput.innerHTML = '';
+                messageInput.textContent = '';
+                updateCharCounter();
+            }, 50);
+
+            console.log('🚀 Iniciando envio de mensagem...');
+            console.log('📊 Estado atual:', {
+                rncId: rncId,
+                currentUserId: currentUserId,
+                socket_connected: socket ? socket.connected : false,
+                message_length: message.length,
+                has_image: !!selectedImage,
+                has_file: !!selectedFile
+            });
+
+            // Desabilitar botão durante envio
+            sendBtn.disabled = true;
+            sendBtn.innerHTML = '📤 Enviando...';
+
+            try {
+                // Se houver imagem ou arquivo, sempre usar HTTP com FormData
+                if (selectedImage || selectedFile) {
+                    console.log('📎 Enviando com anexo via HTTP (FormData)');
+                    await sendMessageHttp(message);
+                } else if (socket && socket.connected) {
+                    console.log('📡 Enviando mensagem via Socket.IO');
+                    await sendMessageSocket(message);
+                } else {
+                    console.log('📡 Socket.IO não disponível, usando HTTP');
+                    await sendMessageHttp(message);
+                }
+            } catch (error) {
+                console.error('❌ Erro ao enviar mensagem:', error);
+                SoundSystem.error(); // 🔊 Som de erro
+                showErrorToast('❌ Erro ao enviar mensagem. Tente novamente.');
+            } finally {
+                // Limpar preview de arquivo
+                clearFilePreview();
+
+                // Reabilitar botão
+                setTimeout(() => {
+                    sendBtn.disabled = false;
+                    sendBtn.innerHTML = '📤 Enviar';
+                }, 1000);
+            }
+        }
+        
+        // Enviar mensagem via Socket.IO
+        async function sendMessageSocket(text) {
+            return new Promise((resolve, reject) => {
+                console.log('📤 ========================================');
+                console.log('📤 ENVIANDO MENSAGEM VIA SOCKET.IO');
+                console.log('📊 RNC ID:', rncId);
+                console.log('💬 Texto:', text);
+                console.log('👤 User ID:', currentUserId);
+                console.log('📤 ========================================');
+                
+                // Gerar ID único para a mensagem
+                const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                
+                const messageData = {
+                    rnc_id: rncId,
+                    message: text,
+                    chat_type: 'rnc',
+                    message_id: messageId
+                };
+                
+                // NÃO adicionar mensagem localmente - aguardar confirmação do servidor
+                console.log('⏳ Aguardando confirmação do servidor antes de adicionar mensagem...');
+                
+                // Enviar via Socket.IO
+                console.log('📡 Emitindo evento send_message via Socket.IO');
+                socket.emit('send_message', messageData);
+                
+                // Variável para controlar se já foi processada
+                let messageProcessed = false;
+                
+                // Aguardar confirmação via evento 'message_sent'
+                const messageSentHandler = function(response) {
+                    if (messageProcessed) {
+                        console.log('⚠️ Mensagem já processada, ignorando confirmação duplicada');
+                        return;
+                    }
+                    
+                    console.log('📨 Confirmação recebida via message_sent:', response);
+                    if (response && response.success) {
+                        messageProcessed = true;
+                        console.log('✅ Mensagem enviada via Socket.IO com sucesso!');
+                        
+                        // ✅ CORREÇÃO: Adicionar mensagem imediatamente para melhor UX
+                        console.log('➕ Adicionando mensagem própria à interface...');
+                        const ownMessageData = {
+                            id: response.message_id || Date.now(),
+                            rnc_id: rncId,
+                            user_id: currentUserId,
+                            message: text,
+                            message_type: 'text',
+                            created_at: new Date().toISOString(),
+                            user_name: currentUserName || 'Você',
+                            department: currentUserDept || ''
+                        };
+                        addMessage(ownMessageData);
+                        
+                        showSuccessToast('✅ Mensagem enviada com sucesso!');
+                        SoundSystem.success(); // 🔊 Som de sucesso
+                        socket.off('message_sent', messageSentHandler); // Remover listener
+                        resolve(response);
+                    } else {
+                        console.error('❌ Erro na confirmação:', response);
+                        socket.off('message_sent', messageSentHandler); // Remover listener
+                        reject(new Error(response?.message || 'Erro ao enviar mensagem'));
+                    }
+                };
+                
+                socket.on('message_sent', messageSentHandler);
+                
+                // Timeout para fallback HTTP otimizado para HTTPS
+                const isHTTPS = window.location.protocol === 'https:';
+                const timeoutMs = isHTTPS ? 5000 : 2000; // Mais tempo para HTTPS
+                
+                setTimeout(() => {
+                    if (messageProcessed) {
+                        console.log('✅ Mensagem já processada via Socket.IO, ignorando timeout HTTP');
+                        return;
+                    }
+                    
+                    console.warn(`⚠️ Timeout Socket.IO após ${timeoutMs}ms (${isHTTPS ? 'HTTPS' : 'HTTP'}), tentando HTTP...`);
+                    socket.off('message_sent', messageSentHandler); // Remover listener
+                    sendMessageHttp(text, messageId).then(resolve).catch(reject);
+                }, timeoutMs);
+            });
+        }
+
+        // Função para lidar com upload de arquivo
+        function handleFileUpload(input) {
+            const file = input.files[0];
+            if (file) {
+                if (file.size > 10 * 1024 * 1024) { // 10MB limit
+                    SoundSystem.error(); // 🔊 Som de erro
+                    showErrorToast('❌ Arquivo muito grande. Máximo 10MB.');
+                    return;
+                }
+                
+                selectedFile = file;
+                showFilePreview(file, 'file');
+                input.value = '';
+            }
+        }
+
+        // Função para lidar com upload de imagem
+        function handleImageUpload(input) {
+            const file = input.files[0];
+            if (file) {
+                if (file.size > 5 * 1024 * 1024) { // 5MB limit
+                    SoundSystem.error(); // 🔊 Som de erro
+                    showErrorToast('❌ Imagem muito grande. Máximo 5MB.');
+                    return;
+                }
+                
+                selectedImage = file;
+                showFilePreview(file, 'image');
+                input.value = '';
+            }
+        }
+
+        // Função para mostrar preview de arquivo
+        function showFilePreview(file, type) {
+            const preview = document.getElementById('filePreview');
+            const content = document.getElementById('previewContent');
+            
+            if (type === 'image') {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    content.innerHTML = `
+                        <img src="${e.target.result}" style="max-width: 200px; max-height: 150px; border-radius: 8px;">
+                        <div style="margin-top: 8px; font-size: 12px; color: #666;">
+                            ${file.name} (${(file.size / 1024).toFixed(1)} KB)
+                        </div>
+                    `;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                content.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="font-size: 24px;">📎</div>
+                        <div>
+                            <div style="font-weight: 600;">${file.name}</div>
+                            <div style="font-size: 12px; color: #666;">
+                                ${(file.size / 1024).toFixed(1)} KB
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            preview.style.display = 'block';
+        }
+
+        // Função para limpar preview
+        function clearFilePreview() {
+            selectedFile = null;
+            selectedImage = null;
+            document.getElementById('filePreview').style.display = 'none';
+            document.getElementById('fileInput').value = '';
+            document.getElementById('imageInput').value = '';
+        }
+
+        // Base de dados de emojis por categoria
+        const emojiDatabase = {
+            smileys: ['😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '🙃', '😉', '😊', '😇', '🥰', '😍', '🤩', '😘', '😗', '😚', '😙', '😋', '😛', '😜', '🤪', '😝', '🤑', '🤗', '🤭', '🤫', '🤔', '🤐', '🤨', '😐', '😑', '😶', '😏', '😒', '🙄', '😬', '🤥', '😌', '😔', '😪', '🤤', '😴', '😷', '🤒', '🤕', '🤢', '🤮', '🤧', '🥵', '🥶', '😎', '🤓', '🧐', '😕', '😟', '🙁', '😮', '😯', '😲', '😳', '🥺', '😦', '😧', '😨', '😰', '😥', '😢', '😭', '😱', '😖', '😣', '😞', '😓', '😩', '😫', '🥱', '😤', '😡', '😠', '🤬'],
+            gestures: ['👋', '🤚', '🖐', '✋', '🖖', '👌', '🤌', '🤏', '✌️', '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '🖕', '👇', '☝️', '👍', '👎', '✊', '👊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🤝', '🙏', '✍️', '💅', '🤳', '💪', '🦾', '🦿', '🦵', '🦶', '👂', '🦻', '👃', '🧠', '🦷', '🦴', '👀', '👁', '👅', '👄'],
+            hearts: ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '💌', '💋', '💏', '💑', '👩‍❤️‍👨', '👨‍❤️‍👨', '👩‍❤️‍👩', '💒', '👨‍👩‍👦', '👨‍👩‍👧', '👨‍👩‍👧‍👦', '👨‍👩‍👦‍👦', '👨‍👩‍👧‍👧'],
+            animals: ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐽', '🐸', '🐵', '🙈', '🙉', '🙊', '🐒', '🐔', '🐧', '🐦', '🐤', '🐣', '🐥', '🦆', '🦅', '🦉', '🦇', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', '🦋', '🐌', '🐞', '🐜', '🦟', '🦗', '🕷', '🦂', '🐢', '🐍', '🦎', '🦖', '🦕', '🐙', '🦑', '🦐', '🦞', '🦀', '🐡', '🐠', '🐟', '🐬', '🐳', '🐋', '🦈', '🐊', '🐅', '🐆', '🦓', '🦍', '🦧', '🐘', '🦛', '🦏', '🐪', '🐫', '🦒', '🦘', '🐃', '🐂', '🐄', '🐎', '🐖', '🐏', '🐑', '🦙', '🐐', '🦌', '🐕', '🐩', '🦮', '🐕‍🦺', '🐈', '🐓', '🦃', '🦚', '🦜', '🦢', '🦩', '🕊', '🐇', '🦝', '🦨', '🦡', '🦦', '🦥', '🐁', '🐀', '🐿', '🦔'],
+            food: ['🍇', '🍈', '🍉', '🍊', '🍋', '🍌', '🍍', '🥭', '🍎', '🍏', '🍐', '🍑', '🍒', '🍓', '🥝', '🍅', '🥥', '🥑', '🍆', '🥔', '🥕', '🌽', '🌶', '🥒', '🥬', '🥦', '🧄', '🧅', '🍄', '🥜', '🌰', '🍞', '🥐', '🥖', '🥨', '🥯', '🥞', '🧇', '🧀', '🍖', '🍗', '🥩', '🥓', '🍔', '🍟', '🍕', '🌭', '🥪', '🌮', '🌯', '🥙', '🧆', '🥚', '🍳', '🥘', '🍲', '🥣', '🥗', '🍿', '🧈', '🧂', '🥫', '🍱', '🍘', '🍙', '🍚', '🍛', '🍜', '🍝', '🍠', '🍢', '🍣', '🍤', '🍥', '🥮', '🍡', '🥟', '🥠', '🥡', '🦀', '🦞', '🦐', '🦑', '🦪', '🍦', '🍧', '🍨', '🍩', '🍪', '🎂', '🍰', '🧁', '🥧', '🍫', '🍬', '🍭', '🍮', '🍯', '🍼', '🥛', '☕', '🍵', '🍶', '🍾', '🍷', '🍸', '🍹', '🍺', '🍻', '🥂', '🥃', '🥤', '🧃', '🧉', '🧊'],
+            activities: ['⚽', '🏀', '🏈', '⚾', '🥎', '🎾', '🏐', '🏉', '🥏', '🎱', '🪀', '🏓', '🏸', '🏒', '🏑', '🥍', '🏏', '🥅', '⛳', '🪁', '🏹', '🎣', '🤿', '🥊', '🥋', '🎽', '🛹', '🛼', '🛷', '⛸', '🥌', '🎿', '⛷', '🏂', '🪂', '🏋️', '🤼', '🤸', '🤺', '⛹️', '🤾', '🏌️', '🏇', '🧘', '🏊', '🤽', '🚣', '🧗', '🚴', '🚵', '🎪', '🎭', '🎨', '🎬', '🎤', '🎧', '🎼', '🎹', '🥁', '🎷', '🎺', '🎸', '🪕', '🎻', '🎲', '♟', '🎯', '🎳', '🎮', '🎰', '🧩'],
+            objects: ['⌚', '📱', '📲', '💻', '⌨️', '🖥', '🖨', '🖱', '🖲', '🕹', '🗜', '💾', '💿', '📀', '📼', '📷', '📸', '📹', '🎥', '📽', '🎞', '📞', '☎️', '📟', '📠', '📺', '📻', '🎙', '🎚', '🎛', '🧭', '⏱', '⏲', '⏰', '🕰', '⌛', '⏳', '📡', '🔋', '🔌', '💡', '🔦', '🕯', '🪔', '🧯', '🛢', '💸', '💵', '💴', '💶', '💷', '💰', '💳', '💎', '⚖️', '🧰', '🔧', '🔨', '⚒', '🛠', '⛏', '🔩', '⚙️', '🧱', '⛓', '🧲', '🔫', '💣', '🧨', '🪓', '🔪', '🗡', '⚔️', '🛡', '🚬', '⚰️', '⚱️', '🏺', '🔮', '📿', '🧿', '💈', '⚗️', '🔭', '🔬', '🕳', '🩹', '🩺', '💊', '💉', '🩸', '🧬', '🦠', '🧫', '🧪', '🌡', '🧹', '🧺', '🧻', '🚽', '🚰', '🚿', '🛁', '🛀', '🧼', '🪒', '🧽', '🧴', '🛎', '🔑', '🗝', '🚪', '🪑', '🛋', '🛏', '🛌', '🧸', '🖼', '🛍', '🛒', '🎁', '🎈', '🎏', '🎀', '🎊', '🎉', '🎎', '🏮', '🎐', '🧧', '✉️', '📩', '📨', '📧', '💌', '📥', '📤', '📦', '🏷', '📪', '📫', '📬', '📭', '📮', '📯', '📜', '📃', '📄', '📑', '🧾', '📊', '📈', '📉', '🗒', '🗓', '📆', '📅', '🗑', '📇', '🗃', '🗳', '🗄', '📋', '📁', '📂', '🗂', '🗞', '📰', '📓', '📔', '📒', '📕', '📗', '📘', '📙', '📚', '📖', '🔖', '🧷', '🔗', '📎', '🖇', '📐', '📏', '🧮', '📌', '📍', '✂️', '🖊', '🖋', '✒️', '🖌', '🖍', '📝', '✏️', '🔍', '🔎', '🔏', '🔐', '🔒', '🔓'],
+            symbols: ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '☮️', '✝️', '☪️', '🕉', '☸️', '✡️', '🔯', '🕎', '☯️', '☦️', '🛐', '⛎', '♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓', '🆔', '⚛️', '🉑', '☢️', '☣️', '📴', '📳', '🈶', '🈚', '🈸', '🈺', '🈷️', '✴️', '🆚', '💮', '🉐', '㊙️', '㊗️', '🈴', '🈵', '🈹', '🈲', '🅰️', '🅱️', '🆎', '🆑', '🅾️', '🆘', '❌', '⭕', '🛑', '⛔', '📛', '🚫', '💯', '💢', '♨️', '🚷', '🚯', '🚳', '🚱', '🔞', '📵', '🚭', '❗', '❕', '❓', '❔', '‼️', '⁉️', '🔅', '🔆', '〽️', '⚠️', '🚸', '🔱', '⚜️', '🔰', '♻️', '✅', '🈯', '💹', '❇️', '✳️', '❎', '🌐', '💠', 'Ⓜ️', '🌀', '💤', '🏧', '🚾', '♿', '🅿️', '🈳', '🈂️', '🛂', '🛃', '🛄', '🛅', '🚹', '🚺', '🚼', '🚻', '🚮', '🎦', '📶', '🈁', '🔣', 'ℹ️', '🔤', '🔡', '🔠', '🆖', '🆗', '🆙', '🆒', '🆕', '🆓', '0️⃣', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟', '🔢', '#️⃣', '*️⃣', '⏏️', '▶️', '⏸', '⏯', '⏹', '⏺', '⏭', '⏮', '⏩', '⏪', '⏫', '⏬', '◀️', '🔼', '🔽', '➡️', '⬅️', '⬆️', '⬇️', '↗️', '↘️', '↙️', '↖️', '↕️', '↔️', '↪️', '↩️', '⤴️', '⤵️', '🔀', '🔁', '🔂', '🔄', '🔃', '🎵', '🎶', '➕', '➖', '➗', '✖️', '♾', '💲', '💱', '™️', '©️', '®️', '〰️', '➰', '➿', '🔚', '🔙', '🔛', '🔝', '🔜', '✔️', '☑️', '🔘', '🔴', '🟠', '🟡', '🟢', '🔵', '🟣', '⚫', '⚪', '🟤', '🔺', '🔻', '🔸', '🔹', '🔶', '🔷', '🔳', '🔲', '▪️', '▫️', '◾', '◽', '◼️', '◻️', '🟥', '🟧', '🟨', '🟩', '🟦', '🟪', '⬛', '⬜', '🟫', '🔈', '🔇', '🔉', '🔊', '🔔', '🔕', '📣', '📢', '👁‍🗨', '💬', '💭', '🗯', '♠️', '♣️', '♥️', '♦️', '🃏', '🎴', '🀄', '🕐', '🕑', '🕒', '🕓', '🕔', '🕕', '🕖', '🕗', '🕘', '🕙', '🕚', '🕛', '🕜', '🕝', '🕞', '🕟', '🕠', '🕡', '🕢', '🕣', '🕤', '🕥', '🕦', '🕧']
+        };
+
+        let currentEmojiCategory = 'smileys';
+        let allEmojis = [];
+
+        // Função para abrir o seletor de emojis
+        function insertEmoji() {
+            const picker = document.getElementById('emojiPicker');
+            const isVisible = picker.classList.contains('show');
+            
+            if (isVisible) {
+                closeEmojiPicker();
+            } else {
+                SoundSystem.click(); // 🔊 Som de clique
+                // Inicializar emojis se necessário
+                if (allEmojis.length === 0) {
+                    allEmojis = Object.values(emojiDatabase).flat();
+                    showEmojiCategory('smileys');
+                }
+                
+                picker.classList.add('show');
+                
+                // Fechar ao clicar fora
+                setTimeout(() => {
+                    document.addEventListener('click', handleOutsideClick);
+                }, 100);
+            }
+        }
+
+        // Função para fechar o seletor de emojis
+        function closeEmojiPicker() {
+            const picker = document.getElementById('emojiPicker');
+            picker.classList.remove('show');
+            document.removeEventListener('click', handleOutsideClick);
+            
+            // Limpar busca
+            document.getElementById('emojiSearch').value = '';
+            showEmojiCategory(currentEmojiCategory);
+        }
+
+        // Função para lidar com cliques fora do seletor
+        function handleOutsideClick(event) {
+            const picker = document.getElementById('emojiPicker');
+            const emojiBtn = event.target.closest('[onclick="insertEmoji()"]');
+            
+            if (!picker.contains(event.target) && !emojiBtn) {
+                closeEmojiPicker();
+            }
+        }
+
+        // Função para mostrar categoria de emojis
+        function showEmojiCategory(category) {
+            currentEmojiCategory = category;
+            
+            // Atualizar botões de categoria
+            document.querySelectorAll('.emoji-category-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.category === category) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            // Renderizar emojis da categoria
+            renderEmojis(emojiDatabase[category] || []);
+        }
+
+        // Função para renderizar emojis
+        function renderEmojis(emojis) {
+            const grid = document.getElementById('emojiGrid');
+            grid.innerHTML = '';
+            
+            emojis.forEach(emoji => {
+                const button = document.createElement('button');
+                button.className = 'emoji-item';
+                button.textContent = emoji;
+                button.onclick = () => selectEmoji(emoji);
+                grid.appendChild(button);
+            });
+        }
+
+        // Função para selecionar emoji
+        function selectEmoji(emoji) {
+            SoundSystem.click(); // 🔊 Som de clique ao selecionar emoji
+            
+            const cursorPos = messageInput.selectionStart || 0;
+            const textBefore = messageInput.value.substring(0, cursorPos);
+            const textAfter = messageInput.value.substring(cursorPos);
+            
+            messageInput.value = textBefore + emoji + textAfter;
+            messageInput.focus();
+            messageInput.setSelectionRange(cursorPos + emoji.length, cursorPos + emoji.length);
+            updateCharCounter();
+            
+            // Fechar seletor após escolher
+            closeEmojiPicker();
+        }
+
+        // Função para filtrar emojis por busca
+        function filterEmojis(searchTerm) {
+            if (!searchTerm.trim()) {
+                showEmojiCategory(currentEmojiCategory);
+                return;
+            }
+            
+            // Buscar em todos os emojis
+            const filtered = allEmojis.filter(emoji => {
+                // Você pode adicionar nomes de emojis aqui para melhor busca
+                return true; // Por enquanto, mostra todos (adicione lógica de busca se desejar)
+            });
+            
+            renderEmojis(allEmojis.slice(0, 100)); // Mostrar primeiros 100 emojis na busca
+        }
+
+        // Função para alternar mensagem de voz
+        function toggleVoiceMessage() {
+            if (!isRecording) {
+                startVoiceRecording();
+            } else {
+                stopVoiceRecording();
+            }
+        }
+
+        // Função para iniciar gravação de voz
+        function startVoiceRecording() {
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(stream => {
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+                    
+                    mediaRecorder.ondataavailable = event => {
+                        audioChunks.push(event.data);
+                    };
+                    
+                    mediaRecorder.onstop = () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                        // Aqui você pode enviar o áudio
+                        console.log('Áudio gravado:', audioBlob);
+                    };
+                    
+                    mediaRecorder.start();
+                    isRecording = true;
+                    
+                    // Atualizar botão
+                    const voiceBtn = document.querySelector('[onclick="toggleVoiceMessage()"]');
+                    voiceBtn.innerHTML = '⏹️';
+                    voiceBtn.style.background = 'rgba(220,53,69,0.1)';
+                    voiceBtn.style.color = '#dc3545';
+                })
+                .catch(err => {
+                    console.error('Erro ao acessar microfone:', err);
+                    showErrorToast('❌ Erro ao acessar microfone. Verifique as permissões.');
+                });
+        }
+
+        // Função para parar gravação de voz
+        function stopVoiceRecording() {
+            if (mediaRecorder && isRecording) {
+                mediaRecorder.stop();
+                isRecording = false;
+                
+                // Atualizar botão
+                const voiceBtn = document.querySelector('[onclick="toggleVoiceMessage()"]');
+                voiceBtn.innerHTML = '🎤';
+                voiceBtn.style.background = '';
+                voiceBtn.style.color = '';
+            }
+        }
+
+        // Função para atualizar contador de caracteres
+        function updateCharCounter() {
+            const counter = document.getElementById('charCounter');
+            const length = messageInput.value.length;
+            counter.textContent = `${length}/1000`;
+            
+            if (length > 900) {
+                counter.style.color = '#dc3545';
+            } else if (length > 700) {
+                counter.style.color = '#ffc107';
+            } else {
+                counter.style.color = '#999';
+            }
+        }
+
+        // Função para adicionar mensagem na interface
+        function addMessage(messageData) {
+            console.log('🔍 ========================================');
+            console.log('🔍 addMessage CHAMADO');
+            console.log('📊 messageData:', messageData);
+            console.log('  - ID:', messageData.id);
+            console.log('  - user_id:', messageData.user_id, '(eu sou:', currentUserId + ')');
+            console.log('  - message_type:', messageData.message_type);
+            console.log('  - file_path:', messageData.file_path);
+            console.log('  - message:', messageData.message);
+            console.log('🔍 ========================================');
+            
+            // Verificar se a mensagem já existe antes de adicionar
+            const existingMsg = document.querySelector(`[data-message-id="${messageData.id}"]`);
+            if (existingMsg) {
+                console.log('⚠️ ❌ BLOQUEADO: Mensagem duplicada, ignorando:', messageData.id);
+                return;
+            }
+            console.log('✅ Mensagem não existe no DOM, prosseguindo...');
+            
+            // Verificação de duplicação removida - deixar apenas a verificação por ID
+            // Isso evita problemas com mensagens não aparecendo
+            
+            console.log('✅ Adicionando mensagem ao DOM...');
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${messageData.user_id == currentUserId ? 'own' : ''} fade-in`;
+            messageDiv.dataset.messageId = messageData.id;
+            messageDiv.dataset.userId = messageData.user_id;
+            
+            // Atualizar o último ID de mensagem carregada
+            updateLastMessageId(messageData.id);
+            
+            const avatar = messageData.user_name ? messageData.user_name[0].toUpperCase() : 'U';
+            
+            // Construir conteúdo da mensagem baseado no tipo
+            let messageContent = '';
+            
+            if (messageData.message_type === 'image' && messageData.file_path) {
+                // Mensagem com imagem
+                messageContent = `
+                    ${messageData.message ? `<div class="message-text">${messageData.message}</div>` : ''}
+                    <div class="message-image">
+                        <img src="${messageData.file_path}" 
+                             alt="Imagem" 
+                             style="max-width: 300px; max-height: 300px; border-radius: 8px; cursor: pointer; margin-top: 8px;"
+                             onclick="window.open('${messageData.file_path}', '_blank')">
+                    </div>
+                `;
+            } else if (messageData.message_type === 'file' && messageData.file_path) {
+                // Mensagem com arquivo
+                const fileName = messageData.file_path.split('/').pop();
+                messageContent = `
+                    ${messageData.message ? `<div class="message-text">${messageData.message}</div>` : ''}
+                    <div class="message-file" style="margin-top: 8px;">
+                        <a href="${messageData.file_path}" 
+                           download 
+                           style="display: flex; align-items: center; gap: 10px; padding: 10px; background: #f0f0f0; border-radius: 8px; text-decoration: none; color: #333;">
+                            <span style="font-size: 24px;">📎</span>
+                            <div>
+                                <div style="font-weight: 600;">${fileName}</div>
+                                <div style="font-size: 12px; color: #666;">Clique para baixar</div>
+                            </div>
+                        </a>
+                    </div>
+                `;
+            } else {
+                // Mensagem de texto normal
+                messageContent = `<div class="message-text">${messageData.message}</div>`;
+            }
+            
+        // Determinar status de visualização (estilo WhatsApp)
+            let statusClass = 'status-sent';
+            let statusIcon = '✓';
+            let viewedInfo = '';
+            
+            if (messageData.viewed_at) {
+                statusClass = 'status-read';
+                statusIcon = '✓✓';
+                const viewedDate = new Date(messageData.viewed_at);
+                viewedInfo = `<span class="message-viewed-info">Visto ${viewedDate.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}</span>`;
+            } else if (messageData.delivered_at) {
+                statusClass = 'status-delivered';
+                statusIcon = '✓✓';
+            }
+
+        messageDiv.innerHTML = `
+                <div class="message-avatar">${avatar}</div>
+                <div class="message-content">
+                    <div class="message-header">
+                        <span class="message-author">${messageData.user_name || 'Usuário'}</span>
+                        ${messageData.department ? `<span class=\"message-department\">${messageData.department}</span>` : ''}
+                        <span class="message-time">${new Date(messageData.created_at).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}</span>
+                    </div>
+                    ${messageContent}
+                    ${messageData.user_id == currentUserId ? `
+                        <div class="message-footer">
+                            <div class="message-status ${statusClass}">
+                                <span class="status-icon">${statusIcon}</span>
+                            </div>
+                            ${viewedInfo}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+
+            // Remover estado vazio se existir
+            const emptyState = chatMessages.querySelector('.empty-state');
+            if (emptyState) {
+                emptyState.remove();
+            }
+
+            chatMessages.appendChild(messageDiv);
+            
+            // Logs de confirmação
+            console.log('✅ Mensagem adicionada ao chatMessages');
+            console.log('📊 Total de mensagens no DOM:', document.querySelectorAll('#chatMessages .message').length);
+            console.log('📜 Altura do scroll:', chatMessages.scrollHeight);
+            
+            // Forçar scroll para baixo
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            console.log('🎯 Scroll atualizado para:', chatMessages.scrollTop);
+        }
+
+
+        // Função para mostrar notificação de nova mensagem
+        function showMessageNotification(messageData) {
+            // Notificação do navegador
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification(`💬 Nova mensagem no ${rncNumber}`, {
+                    body: `${messageData.user_name}: ${messageData.message.substring(0, 50)}${messageData.message.length > 50 ? '...' : ''}`,
+                    icon: '/LOGOIPPEL.JPEG',
+                    tag: `chat-${rncId}-${messageData.id}`
+                });
+            }
+            
+            // Notificação toast
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #007bff, #0056b3);
+                color: white;
+                padding: 15px 20px;
+                border-radius: 10px;
+                box-shadow: 0 4px 15px rgba(0,123,255,0.3);
+                z-index: 3000;
+                animation: slideInRight 0.3s ease-out;
+                max-width: 300px;
+                cursor: pointer;
+            `;
+            
+            toast.innerHTML = `
+                <div style="font-weight: 600; margin-bottom: 5px;">💬 Nova mensagem</div>
+                <div style="font-size: 0.9rem;">${messageData.user_name}: ${messageData.message.substring(0, 50)}${messageData.message.length > 50 ? '...' : ''}</div>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            // Remover após 5 segundos
+            setTimeout(() => {
+                toast.style.animation = 'slideOutRight 0.3s ease-in';
+                setTimeout(() => {
+                    if (document.body.contains(toast)) {
+                        document.body.removeChild(toast);
+                    }
+                }, 300);
+            }, 5000);
+        }
+        
+        // Solicitar permissão para notificações
+        function requestNotificationPermission() {
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+        }
+        
+
+        // Headers para requisições HTTP (com CSRF)
+        const csrfHeader = { 'Content-Type': 'application/json' };
+
+        // Fallback: enviar mensagem via HTTP quando Socket.IO falhar
+        async function sendMessageHttp(text, messageId = null) {
+            console.log('📡 ========================================');
+            console.log('📡 ENVIANDO MENSAGEM VIA HTTP');
+            console.log('📊 Parâmetros:');
+            console.log('  - text:', text);
+            console.log('  - messageId:', messageId);
+            console.log('  - selectedImage:', selectedImage);
+            console.log('  - selectedFile:', selectedFile);
+            console.log('📡 ========================================');
+            
+            try {
+                let body, headers;
+                
+                // Se houver imagem ou arquivo, usar FormData
+                if (selectedImage || selectedFile) {
+                    const formData = new FormData();
+                    formData.append('message', text || '');
+                    
+                    if (selectedImage) {
+                        formData.append('image', selectedImage);
+                        formData.append('message_type', 'image');
+                        console.log('📸 Enviando imagem:', selectedImage.name);
+                    } else if (selectedFile) {
+                        formData.append('file', selectedFile);
+                        formData.append('message_type', 'file');
+                        console.log('📎 Enviando arquivo:', selectedFile.name);
+                    }
+                    
+                    if (messageId) {
+                        formData.append('message_id', messageId);
+                    }
+                    
+                    body = formData;
+                    // Não definir Content-Type, deixar o navegador definir com boundary
+                    headers = {};
+                } else {
+                    // Mensagem de texto normal
+                    body = JSON.stringify({ 
+                        message: text,
+                        message_id: messageId 
+                    });
+                    headers = csrfHeader;
+                }
+                
+                console.log('🌐 Fazendo requisição HTTP para:', `/api/chat/${rncId}/messages`);
+                const res = await fetch(`/api/chat/${rncId}/messages`, {
+                    method: 'POST',
+                    headers: headers,
+                    body: body
+                });
+                console.log('📥 Resposta HTTP recebida:', res.status, res.statusText);
+                const data = await res.json();
+                console.log('📦 Dados JSON:', data);
+                
+                if (res.ok && data.success) {
+                    console.log('✅ Mensagem enviada com sucesso! Processando...');
+                    console.log('📦 Dados completos da resposta:', JSON.stringify(data));
+                    
+                    // ✅ CORREÇÃO CRÍTICA: SEMPRE adicionar mensagem própria
+                    // Socket.IO não envia de volta para o remetente (include_self=False)
+                    // Portanto, devemos adicionar nossa própria mensagem via HTTP
+                    
+                    // Verificar se data.message existe e tem ID
+                    const messageData = data.message;
+                    
+                    if (messageData && typeof messageData === 'object' && messageData.id) {
+                        console.log('✅ Mensagem recebida do servidor:');
+                        console.log('  - ID:', messageData.id);
+                        console.log('  - user_id:', messageData.user_id);
+                        console.log('  - Tipo:', messageData.message_type);
+                        console.log('  - file_path:', messageData.file_path);
+                        console.log('  - message:', messageData.message);
+                        
+                        // Verificar se a mensagem já existe na tela
+                        const existingMsg = document.querySelector(`[data-message-id="${messageData.id}"]`);
+                        
+                        if (!existingMsg) {
+                            console.log('➕ Adicionando mensagem própria à interface...');
+                            addMessage(messageData);
+                            console.log('✅ Mensagem adicionada com sucesso!');
+                        } else {
+                            console.log('⚠️ Mensagem já existe na tela, pulando...');
+                        }
+                    } else if (data.message_data && data.message_data.id) {
+                        // Fallback para formato alternativo
+                        console.log('✅ Usando data.message_data...');
+                        const existingMsg = document.querySelector(`[data-message-id="${data.message_data.id}"]`);
+                        if (!existingMsg) {
+                            addMessage(data.message_data);
+                        }
+                    } else {
+                        console.error('❌ Resposta sem dados de mensagem válidos!');
+                        console.error('   data.message:', data.message);
+                        console.error('   data.message_data:', data.message_data);
+                        console.warn('⚠️ Forçando refresh em 300ms...');
+                        setTimeout(() => checkForNewMessages(), 300);
+                    }
+                    
+                    showSuccessToast('✅ Mensagem enviada com sucesso!');
+                    SoundSystem.success(); // 🔊 Som de sucesso
+                    
+                    // Campo já foi limpo no início do envio
+                    console.log('✅ Mensagem enviada com sucesso!');
+                    
+                    // Forçar verificação de novas mensagens após 500ms
+                    setTimeout(() => {
+                        console.log('🔄 Forçando verificação de mensagens...');
+                        checkForNewMessages();
+                    }, 500);
+                } else {
+                    console.error('❌ Erro ao enviar mensagem:', data.message);
+                    showErrorToast(data.message || '❌ Erro ao enviar mensagem');
+                }
+            } catch (err) {
+                console.error('Erro de rede ao enviar mensagem:', err);
+                showErrorToast('❌ Erro de rede ao enviar mensagem');
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.innerHTML = '📤 Enviar';
+            }
+        }
+        
+        // Função para tocar som de notificação
+        // 🔊 SISTEMA DE SONS PROFISSIONAL - Estilo WhatsApp/iOS
+        const SoundSystem = {
+            context: null,
+            enabled: true,
+            volume: 0.4,
+
+            // Inicializar contexto de áudio
+            init() {
+                if (!this.context) {
+                    this.context = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                return this.context;
+            },
+
+            // Criar oscilador com envelope
+            createTone(frequency, duration, volume = 0.3, type = 'sine') {
+                const ctx = this.init();
+                const oscillator = ctx.createOscillator();
+                const gainNode = ctx.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(ctx.destination);
+                
+                oscillator.type = type;
+                oscillator.frequency.setValueAtTime(frequency, ctx.currentTime);
+                
+                // Envelope ADSR suave
+                gainNode.gain.setValueAtTime(0, ctx.currentTime);
+                gainNode.gain.linearRampToValueAtTime(volume, ctx.currentTime + 0.01);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+                
+                oscillator.start(ctx.currentTime);
+                oscillator.stop(ctx.currentTime + duration);
+            },
+
+            // 🔔 Notificação (estilo WhatsApp) - Mensagem recebida
+            notification() {
+                if (!this.enabled) return;
+                try {
+                    const ctx = this.init();
+                    const now = ctx.currentTime;
+                    
+                    // Tom triplo característico: subida rápida
+                    this.createTone(440, 0.08, 0.25, 'sine');
+                    setTimeout(() => this.createTone(880, 0.12, 0.3, 'sine'), 80);
+                    
+                    console.log('� Som: Notificação');
+                } catch (e) {
+                    console.error('Erro ao tocar notificação:', e);
+                }
+            },
+
+            // ✅ Sucesso (estilo iOS) - Mensagem enviada, salvamento
+            success() {
+                if (!this.enabled) return;
+                try {
+                    const ctx = this.init();
+                    
+                    // Acorde ascendente: C - E - G
+                    this.createTone(523, 0.1, 0.2, 'sine');
+                    setTimeout(() => this.createTone(659, 0.1, 0.2, 'sine'), 50);
+                    setTimeout(() => this.createTone(784, 0.15, 0.25, 'sine'), 100);
+                    
+                    console.log('✅ Som: Sucesso');
+                } catch (e) {
+                    console.error('Erro ao tocar sucesso:', e);
+                }
+            },
+
+            // ❌ Erro - Operação falhou
+            error() {
+                if (!this.enabled) return;
+                try {
+                    const ctx = this.init();
+                    
+                    // Tom grave descendente
+                    this.createTone(300, 0.15, 0.3, 'square');
+                    setTimeout(() => this.createTone(200, 0.2, 0.35, 'square'), 100);
+                    
+                    console.log('❌ Som: Erro');
+                } catch (e) {
+                    console.error('Erro ao tocar erro:', e);
+                }
+            },
+
+            // 📨 Envio - Mensagem sendo enviada
+            send() {
+                if (!this.enabled) return;
+                try {
+                    // Tom rápido e discreto de envio
+                    this.createTone(800, 0.05, 0.2, 'sine');
+                    setTimeout(() => this.createTone(1000, 0.05, 0.15, 'sine'), 40);
+                    
+                    console.log('📨 Som: Envio');
+                } catch (e) {
+                    console.error('Erro ao tocar envio:', e);
+                }
+            },
+
+            // 🎯 Clique - Botão pressionado
+            click() {
+                if (!this.enabled) return;
+                try {
+                    // Tom muito curto e sutil
+                    this.createTone(600, 0.03, 0.15, 'sine');
+                    
+                    console.log('🎯 Som: Clique');
+                } catch (e) {
+                    console.error('Erro ao tocar clique:', e);
+                }
+            },
+
+            // ⚠️ Aviso - Atenção necessária
+            warning() {
+                if (!this.enabled) return;
+                try {
+                    // Tom repetitivo de alerta
+                    this.createTone(750, 0.1, 0.25, 'square');
+                    setTimeout(() => this.createTone(750, 0.1, 0.25, 'square'), 150);
+                    
+                    console.log('⚠️ Som: Aviso');
+                } catch (e) {
+                    console.error('Erro ao tocar aviso:', e);
+                }
+            },
+
+            // 🎉 Conquista - Ação importante concluída
+            achievement() {
+                if (!this.enabled) return;
+                try {
+                    // Sequência musical ascendente alegre
+                    this.createTone(523, 0.08, 0.2, 'sine');  // C
+                    setTimeout(() => this.createTone(659, 0.08, 0.2, 'sine'), 70);  // E
+                    setTimeout(() => this.createTone(784, 0.08, 0.2, 'sine'), 140); // G
+                    setTimeout(() => this.createTone(1047, 0.2, 0.25, 'sine'), 210); // C (oitava)
+                    
+                    console.log('🎉 Som: Conquista');
+                } catch (e) {
+                    console.error('Erro ao tocar conquista:', e);
+                }
+            },
+
+            // 📥 Chegada - Arquivo/anexo recebido
+            incoming() {
+                if (!this.enabled) return;
+                try {
+                    // Tom descendente suave
+                    this.createTone(900, 0.08, 0.2, 'sine');
+                    setTimeout(() => this.createTone(700, 0.1, 0.22, 'sine'), 60);
+                    
+                    console.log('📥 Som: Chegada');
+                } catch (e) {
+                    console.error('Erro ao tocar chegada:', e);
+                }
+            },
+
+            // 🔕 Silenciar/Desabilitar todos os sons
+            toggle() {
+                this.enabled = !this.enabled;
+                console.log(this.enabled ? '🔊 Sons ativados' : '🔇 Sons desativados');
+                return this.enabled;
+            },
+
+            // Ajustar volume global
+            setVolume(vol) {
+                this.volume = Math.max(0, Math.min(1, vol));
+                console.log(`🔊 Volume: ${Math.round(this.volume * 100)}%`);
+            }
+        };
+
+        // Função legacy para compatibilidade
+        function playNotificationSound() {
+            SoundSystem.notification();
+        }
+        
+        // Função para mostrar toast de sucesso
+        function showSuccessToast(message) {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 80px;
+                right: 20px;
+                background: #28a745;
+                color: white;
+                padding: 10px 20px;
+                border-radius: 8px;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+                z-index: 3000;
+                animation: slideInRight 0.3s ease-out;
+            `;
+            toast.innerHTML = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'slideOutRight 0.3s ease-in';
+                setTimeout(() => {
+                    if (document.body.contains(toast)) {
+                        document.body.removeChild(toast);
+                    }
+                }, 300);
+            }, 2000);
+        }
+
+        // Função para mostrar toast de erro
+        function showErrorToast(message) {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 80px;
+                right: 20px;
+                background: #dc3545;
+                color: white;
+                padding: 10px 20px;
+                border-radius: 8px;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+                z-index: 3000;
+                animation: slideInRight 0.3s ease-out;
+            `;
+            toast.innerHTML = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'slideOutRight 0.3s ease-in';
+                setTimeout(() => {
+                    if (document.body.contains(toast)) {
+                        document.body.removeChild(toast);
+                    }
+                }, 300);
+            }, 3000); // Erro fica mais tempo visível (3 segundos)
+        }
+
+        // Variável para armazenar o último ID de mensagem carregada
+        let lastLoadedMessageId = 0;
+        
+        // Variável para controlar envio rápido
+        let lastSentMessage = '';
+        let lastSentTime = 0;
+        
+        // Função para carregar novas mensagens (polling)
+        async function checkForNewMessages() {
+            try {
+                const response = await fetch(`/api/chat/${rncId}/messages`);
+                const data = await response.json();
+                
+                if (data.success && data.messages && data.messages.length > 0) {
+                    // Processar apenas mensagens novas
+                    let hasNewMessages = false;
+                    data.messages.forEach(msg => {
+                        if (msg.id > lastLoadedMessageId) {
+                            // Verificar se a mensagem já existe na tela
+                            const existingMsg = document.querySelector(`[data-message-id="${msg.id}"]`);
+                            if (!existingMsg) {
+                                console.log('🆕 Nova mensagem detectada:', msg.id, 'de user_id:', msg.user_id, 'conteúdo:', msg.message);
+                                addMessage(msg);
+                                hasNewMessages = true;
+                                
+                                // Tocar som se não for mensagem própria
+                                if (msg.user_id != currentUserId) {
+                                    playNotificationSound();
+                                }
+                            } else {
+                                console.log('⚠️ Mensagem já existe na tela, ignorando:', msg.id);
+                            }
+                            lastLoadedMessageId = msg.id;
+                        }
+                    });
+                    
+                    if (hasNewMessages) {
+                        scrollToBottom();
+                        console.log('📜 Scroll para baixo executado');
+                    }
+                }
+            } catch (error) {
+                console.error('Erro ao verificar novas mensagens:', error);
+            }
+        }
+        
+        // Função para atualizar o último ID quando uma mensagem é adicionada
+        function updateLastMessageId(messageId) {
+            if (messageId > lastLoadedMessageId) {
+                lastLoadedMessageId = messageId;
+                console.log('🔄 Último ID atualizado para:', lastLoadedMessageId);
+            }
+        }
+        
+        // Função para rolar para o final do chat
+        function scrollToBottom() {
+            if (chatMessages) {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                console.log('📜 Scroll para baixo:', chatMessages.scrollHeight);
+            }
+        }
+        
+        // Focar no input ao carregar
+        // 🔊 FUNÇÕES DE CONTROLE DE SOM
+        function toggleSound() {
+            const enabled = SoundSystem.toggle();
+            const btn = document.getElementById('soundToggle');
+            
+            if (enabled) {
+                btn.textContent = '🔊';
+                btn.title = 'Desativar sons';
+                showSuccessToast('🔊 Sons ativados');
+                SoundSystem.success();
+            } else {
+                btn.textContent = '🔇';
+                btn.title = 'Ativar sons';
+                showSuccessToast('🔇 Sons desativados');
+            }
+        }
+
+        // Testar som específico
+        function testSound(type) {
+            switch(type) {
+                case 'notification': SoundSystem.notification(); break;
+                case 'success': SoundSystem.success(); break;
+                case 'error': SoundSystem.error(); break;
+                case 'send': SoundSystem.send(); break;
+                case 'click': SoundSystem.click(); break;
+                case 'warning': SoundSystem.warning(); break;
+                case 'achievement': SoundSystem.achievement(); break;
+                case 'incoming': SoundSystem.incoming(); break;
+            }
+        }
+
+        // Abrir painel de teste de sons (Ctrl+Shift+S)
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.shiftKey && e.key === 'S') {
+                e.preventDefault();
+                showSoundPanel();
+            }
+        });
+
+        function showSoundPanel() {
+            const panel = document.createElement('div');
+            panel.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: white;
+                padding: 30px;
+                border-radius: 20px;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                z-index: 10000;
+                min-width: 400px;
+            `;
+            
+            panel.innerHTML = `
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <h2 style="color: var(--ippel-primary); margin: 0;">🔊 Painel de Sons</h2>
+                    <p style="color: #666; font-size: 14px; margin-top: 5px;">Teste todos os sons do sistema</p>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <button onclick="testSound('notification')" class="sound-test-btn">🔔 Notificação</button>
+                    <button onclick="testSound('success')" class="sound-test-btn">✅ Sucesso</button>
+                    <button onclick="testSound('error')" class="sound-test-btn">❌ Erro</button>
+                    <button onclick="testSound('send')" class="sound-test-btn">📨 Envio</button>
+                    <button onclick="testSound('incoming')" class="sound-test-btn">📥 Recebimento</button>
+                    <button onclick="testSound('click')" class="sound-test-btn">🎯 Clique</button>
+                    <button onclick="testSound('warning')" class="sound-test-btn">⚠️ Aviso</button>
+                    <button onclick="testSound('achievement')" class="sound-test-btn">🎉 Conquista</button>
+                </div>
+                
+                <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+                    <label style="display: block; margin-bottom: 10px; font-weight: 600; color: #333;">
+                        🔊 Volume Global: <span id="volumeValue">40%</span>
+                    </label>
+                    <input type="range" min="0" max="100" value="40" 
+                           oninput="SoundSystem.setVolume(this.value / 100); document.getElementById('volumeValue').textContent = this.value + '%'"
+                           style="width: 100%; cursor: pointer;">
+                </div>
+                
+                <button onclick="this.parentElement.remove()" 
+                        style="margin-top: 20px; width: 100%; padding: 12px; background: var(--ippel-gradient); color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 14px;">
+                    Fechar
+                </button>
+                
+                <p style="text-align: center; margin-top: 15px; font-size: 12px; color: #999;">
+                    Atalho: Ctrl+Shift+S
+                </p>
+            `;
+            
+            document.body.appendChild(panel);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicializar DOM primeiro
+            initializeDOM();
+            
+            // Inicializar chat
+            initializeChat();
+            
+            // Tocar som de conquista ao carregar
+            setTimeout(() => {
+                SoundSystem.achievement();
+                console.log('🎉 Chat carregado com sucesso!');
+            }, 500);
+            
+            // Marcar mensagens como visualizadas quando entrar no chat
+            markMessagesAsViewed();
+            
+            // Definir último ID de mensagem carregada
+            const messages = document.querySelectorAll('[data-message-id]');
+            messages.forEach(msg => {
+                const msgId = parseInt(msg.getAttribute('data-message-id'));
+                if (msgId > lastLoadedMessageId) {
+                    lastLoadedMessageId = msgId;
+                }
+            });
+            
+            console.log('🔄 Último ID de mensagem:', lastLoadedMessageId);
+            
+            // AUTO-REFRESH: Verificar novas mensagens a cada 1 segundo
+            setInterval(() => {
+                console.log('🔄 Auto-refresh executando...');
+                checkForNewMessages();
+            }, 1000);
+            console.log('✅ Auto-refresh ativado (1 segundo)');
+            
+            // Focar no input
+            if (messageInput) {
+                messageInput.focus();
+                updateCharCounter(); // Inicializar contador de caracteres
+            }
+            
+            // Solicitar permissão para notificações
+            requestNotificationPermission();
+            
+            // Auto-scroll para baixo
+            if (chatMessages) {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        });
+        
+        // Função para marcar mensagens como visualizadas
+        async function markMessagesAsViewed() {
+            try {
+                console.log('📖 Marcando mensagens como visualizadas para RNC:', rncId);
+                
+                const response = await fetch('/api/messages/mark_viewed', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        rnc_id: rncId
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    console.log(`✅ ${data.marked_count || 0} mensagens marcadas como visualizadas`);
+                } else {
+                    console.error('❌ Erro ao marcar mensagens como visualizadas:', data.message);
+                    
+                    // Se for erro de coluna, mostrar toast informativo
+                    if (data.message && data.message.includes('no such column')) {
+                        showErrorToast('🔧 Sistema atualizando estrutura do banco... Tente novamente em alguns segundos.');
+                    }
+                }
+            } catch (error) {
+                console.error('❌ Erro ao marcar mensagens como visualizadas:', error);
+            }
+            
+            // Dispensar notificações relacionadas a esta RNC
+            await dismissRncNotifications();
+        }
+        
+        // Função para dispensar notificações desta RNC
+        async function dismissRncNotifications() {
+            try {
+                console.log('🔔 Dispensando notificações da RNC:', rncId);
+                
+                // Buscar notificações não lidas desta RNC
+                const response = await fetch(`/api/notifications/rnc/${rncId}/dismiss`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    console.log('✅ Notificações dispensadas:', data.dismissed_count || 0);
+                    
+                    // Atualizar contagem via Socket.IO se disponível
+                    if (notificationSocket && notificationSocket.connected) {
+                        notificationSocket.emit('get_notifications', { unread_only: true });
+                    }
+                } else {
+                    console.error('❌ Erro ao dispensar notificações:', data.message);
+                }
+            } catch (error) {
+                console.error('❌ Erro ao dispensar notificações:', error);
+            }
+        }
+        
+        // Marcar notificações como visualizadas periodicamente enquanto o chat está aberto
+        setInterval(() => {
+            if (document.hasFocus()) {
+                dismissRncNotifications();
+            }
+        }, 30000); // A cada 30 segundos se a aba estiver ativa
+    </script>
+</body>
+</html> 

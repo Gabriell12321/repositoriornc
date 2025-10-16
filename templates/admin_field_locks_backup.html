@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔐 Permissões de Campos RNC - IPPEL</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 2.2em;
+        }
+
+        .header p {
+            color: #7f8c8d;
+            font-size: 1.1em;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 25px;
+        }
+
+        .sidebar {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            height: fit-content;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .group-list {
+            list-style: none;
+        }
+
+        .group-item {
+            padding: 15px;
+            margin: 8px 0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .group-item:hover {
+            background: #f8f9fa;
+            transform: translateX(5px);
+        }
+
+        .group-item.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-color: #5a6fd8;
+        }
+
+        .group-name {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .group-desc {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        .content-area {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 100px 50px;
+            color: #7f8c8d;
+            font-size: 1.2em;
+        }
+
+        .actions-bar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60, #229954);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(39, 174, 96, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(243, 156, 18, 0.4);
+        }
+
+        .rnc-form-preview {
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 30px;
+            background: #fafbfc;
+            margin-top: 20px;
+        }
+
+        .form-section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .field-container {
+            position: relative;
+        }
+
+        .field-preview {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 12px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-height: 50px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .field-preview:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .field-preview.unlocked {
+            border-color: #27ae60;
+            background: linear-gradient(135deg, #d5f4e6, #ffffff);
+        }
+
+        .field-preview.locked {
+            border-color: #e74c3c;
+            background: linear-gradient(135deg, #fadbd8, #ffffff);
+            opacity: 0.8;
+        }
+
+        .field-label {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .field-placeholder {
+            color: #7f8c8d;
+            font-style: italic;
+            font-size: 0.9em;
+        }
+
+        .field-status {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .field-status.unlocked {
+            background: #27ae60;
+        }
+
+        .field-status.locked {
+            background: #e74c3c;
+        }
+
+        .legend {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: bold;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            border: 2px solid #ddd;
+        }
+
+        .legend-color.unlocked {
+            background: linear-gradient(135deg, #d5f4e6, #ffffff);
+            border-color: #27ae60;
+        }
+
+        .legend-color.locked {
+            background: linear-gradient(135deg, #fadbd8, #ffffff);
+            border-color: #e74c3c;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .actions-bar {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔐 Gerenciar Permissões de Campos RNC</h1>
+            <p>Clique nos campos abaixo para bloquear/desbloquear o acesso por grupo</p>
+        </div>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <h3>👥 Grupos</h3>
+                <input type="text" class="search-box" id="groupSearch" placeholder="Buscar grupo...">
+                <ul class="group-list" id="groupList">
+                    <!-- Grupos serão carregados via JavaScript -->
+                </ul>
+            </div>
+
+            <div class="content-area">
+                <div id="loading" class="loading">
+                    <p>📋 Selecione um grupo para configurar as permissões</p>
+                </div>
+
+                <div id="groupContent" style="display: none;">
+                    <h3 id="groupTitle">Configurações do Grupo</h3>
+                    
+                    <div class="actions-bar">
+                        <button class="btn btn-success" onclick="saveChanges()">💾 Salvar Alterações</button>
+                        <button class="btn btn-primary" onclick="unlockAll()">🔓 Liberar Todos</button>
+                        <button class="btn btn-warning" onclick="lockAll()">🔒 Bloquear Todos</button>
+                        <button class="btn btn-danger" onclick="resetGroup()">🗑️ Resetar Grupo</button>
+                    </div>
+
+                    <div id="alerts"></div>
+
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-color unlocked"></div>
+                            <span>🔓 Campo Liberado (clique para bloquear)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color locked"></div>
+                            <span>🔒 Campo Bloqueado (clique para liberar)</span>
+                        </div>
+                    </div>
+
+                    <div class="rnc-form-preview">
+                        <div class="section-title">📋 INFORMAÇÕES PRINCIPAIS DO RNC</div>
+                        
+                        <div class="form-section">
+                            <div class="form-row">
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="title">
+                                        <div class="field-label">📝 Título do RNC</div>
+                                        <div class="field-placeholder">Ex: Falha no equipamento de produção - Linha A</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="equipment">
+                                        <div class="field-label">🔧 Equipamento/Sistema</div>
+                                        <div class="field-placeholder">Ex: Linha de montagem A, Máquina X, Sistema Y</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="client">
+                                        <div class="field-label">🏢 Cliente/Departamento</div>
+                                        <div class="field-placeholder">Selecione o cliente</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="description">
+                                        <div class="field-label">📄 Descrição</div>
+                                        <div class="field-placeholder">Descreva brevemente o problema identificado</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="priority">
+                                        <div class="field-label">⚡ Nível de Urgência</div>
+                                        <div class="field-placeholder">🔴 Média - Resolver em até 7 dias</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="price">
+                                        <div class="field-label">💰 Custo Estimado (R$)</div>
+                                        <div class="field-placeholder">Custo estimado para correção do impacto financeiro</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="section-title">👥 RESPONSABILIDADES</div>
+                        
+                        <div class="form-section">
+                            <div class="form-row">
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="responsavel">
+                                        <div class="field-label">👤 Responsável pela Detecção</div>
+                                        <div class="field-placeholder">Nome do funcionário que detectou</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="inspetor">
+                                        <div class="field-label">🔍 Inspetor</div>
+                                        <div class="field-placeholder">Quem identificou o problema</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="assigned_user_id">
+                                        <div class="field-label">📋 Atribuir a um Usuário</div>
+                                        <div class="field-placeholder">Pica ao selecionar grupos abaixo, a lista será filtrada para mostrar apenas os usuários desses grupos</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="setor">
+                                        <div class="field-label">🏭 Setor</div>
+                                        <div class="field-placeholder">Qual setor onde foi detectado</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="area_responsavel">
+                                        <div class="field-label">📍 Área/Localização</div>
+                                        <div class="field-placeholder">Ex: Setor de Produção, Capítulo 1, Piso 2</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="section-title">🔧 DADOS TÉCNICOS</div>
+                        
+                        <div class="form-section">
+                            <div class="form-row">
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="material">
+                                        <div class="field-label">🧱 Material</div>
+                                        <div class="field-placeholder">Descrição</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="quantity">
+                                        <div class="field-label">📦 Quantidade</div>
+                                        <div class="field-placeholder">Quantidade</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="drawing">
+                                        <div class="field-label">📐 Desenho</div>
+                                        <div class="field-placeholder">Desenho</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="mp">
+                                        <div class="field-label">🔢 MP</div>
+                                        <div class="field-placeholder">MP</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="revision">
+                                        <div class="field-label">🔄 Revisão</div>
+                                        <div class="field-placeholder">Revisão</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="position">
+                                        <div class="field-label">📍 Posição</div>
+                                        <div class="field-placeholder">Posição</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="cv">
+                                        <div class="field-label">📋 CV</div>
+                                        <div class="field-placeholder">CV</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="conjunto">
+                                        <div class="field-label">🔗 Conjunto</div>
+                                        <div class="field-placeholder">Conjunto</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="modelo">
+                                        <div class="field-label">🎯 Modelo</div>
+                                        <div class="field-placeholder">Modelo</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="description_drawing">
+                                        <div class="field-label">📝 Descrição do Desenho</div>
+                                        <div class="field-placeholder">Descrição do Desenho</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="purchase_order">
+                                        <div class="field-label">🛒 Ordem de Compra</div>
+                                        <div class="field-placeholder">Ordem de Compra</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="field-container">
+                                    <div class="field-preview" data-field="justificativa">
+                                        <div class="field-label">💭 Justificativa</div>
+                                        <div class="field-placeholder">Justificativa</div>
+                                        <div class="field-status"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .group-item:hover {
+            background: #f8f9ff;
+            border-color: #667eea;
+        }
+
+        .group-item.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+        }
+
+        .group-item .group-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .group-item .group-desc {
+            font-size: 13px;
+            opacity: 0.8;
+        }
+
+        .fields-panel {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        .fields-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .fields-panel-header h2 {
+            color: #333;
+            font-size: 24px;
+        }
+
+        .actions-bar {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .fields-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .field-card {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #e0e0e0;
+            transition: all 0.3s;
+        }
+
+        .field-card.locked {
+            border-color: #dc3545;
+            background: #fff5f5;
+        }
+
+        .field-card.unlocked {
+            border-color: #28a745;
+            background: #f0fff4;
+        }
+
+        .field-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .field-name {
+            font-weight: 600;
+            font-size: 16px;
+            color: #333;
+        }
+
+        .field-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 30px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #28a745;
+            transition: .4s;
+            border-radius: 30px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #dc3545;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(30px);
+        }
+
+        .field-status {
+            font-size: 12px;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .status-locked {
+            background: #dc3545;
+            color: white;
+        }
+
+        .status-unlocked {
+            background: #28a745;
+            color: white;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .empty-state .icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+            font-size: 18px;
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: none;
+            min-width: 300px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .toast.show {
+            display: block;
+        }
+
+        .toast.success {
+            border-left: 4px solid #28a745;
+        }
+
+        .toast.error {
+            border-left: 4px solid #dc3545;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .stats-bar {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            flex: 1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                🔒 Gerenciamento de Bloqueios de Campos
+            </h1>
+            <p>Configure quais campos cada grupo pode editar na criação de RNC</p>
+        </div>
+
+        <div class="main-content">
+            <div class="groups-sidebar">
+                <h2>👥 Grupos</h2>
+                <div id="groupsList" class="loading">
+                    Carregando grupos...
+                </div>
+            </div>
+
+            <div class="fields-panel">
+                <div class="fields-panel-header">
+                    <h2 id="panelTitle">Selecione um grupo</h2>
+                    <div class="actions-bar">
+                        <button class="btn btn-success" onclick="lockAll()" id="btnLockAll" style="display:none;">
+                            🔒 Bloquear Todos
+                        </button>
+                        <button class="btn btn-secondary" onclick="unlockAll()" id="btnUnlockAll" style="display:none;">
+                            🔓 Liberar Todos
+                        </button>
+                        <button class="btn btn-primary" onclick="saveChanges()" id="btnSave" style="display:none;">
+                            💾 Salvar Alterações
+                        </button>
+                    </div>
+                </div>
+
+                <div class="stats-bar" id="statsBar" style="display:none;">
+                    <div class="stat-card">
+                        <div class="stat-value" id="statLocked">0</div>
+                        <div class="stat-label">Bloqueados</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statUnlocked">0</div>
+                        <div class="stat-label">Liberados</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statTotal">0</div>
+                        <div class="stat-label">Total de Campos</div>
+                    </div>
+                </div>
+
+                <div id="fieldsContainer">
+                    <div class="empty-state">
+                        <div class="icon">👈</div>
+                        <h3>Selecione um grupo</h3>
+                        <p>Escolha um grupo na lista ao lado para configurar os bloqueios de campos</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">
+        <div id="toastMessage"></div>
+    </div>
+
+    <script>
+        let currentGroupId = null;
+        let currentLocks = {};
+        let allGroups = [];
+
+        // Carregar grupos ao iniciar
+        async function loadGroups() {
+            try {
+                const response = await fetch('/admin/field-locks/api/groups');
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.message);
+                }
+
+                allGroups = data.groups;
+                renderGroups(data.groups);
+
+            } catch (error) {
+                console.error('Erro ao carregar grupos:', error);
+                document.getElementById('groupsList').innerHTML = `
+                    <div style="color: #dc3545; padding: 20px; text-align: center;">
+                        ❌ Erro ao carregar grupos
+                    </div>
+                `;
+            }
+        }
+
+        function renderGroups(groups) {
+            const container = document.getElementById('groupsList');
+
+            if (groups.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 20px; color: #666;">
+                        Nenhum grupo encontrado
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = groups.map(group => `
+                <div class="group-item" onclick="selectGroup(${group.id})">
+                    <div class="group-name">${group.name}</div>
+                    <div class="group-desc">${group.description || 'Sem descrição'}</div>
+                </div>
+            `).join('');
+        }
+
+        async function selectGroup(groupId) {
+            currentGroupId = groupId;
+
+            // Atualizar UI dos grupos
+            document.querySelectorAll('.group-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.target.closest('.group-item').classList.add('active');
+
+            // Carregar bloqueios do grupo
+            await loadGroupLocks(groupId);
+        }
+
+        async function loadGroupLocks(groupId) {
+            try {
+                document.getElementById('fieldsContainer').innerHTML = '<div class="loading">Carregando configurações...</div>';
+
+                const response = await fetch(`/admin/field-locks/api/locks/${groupId}`);
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.message);
+                }
+
+                currentLocks = data.locks;
+                const group = allGroups.find(g => g.id === groupId);
+
+                document.getElementById('panelTitle').textContent = `Grupo: ${group.name}`;
+                document.getElementById('btnLockAll').style.display = 'flex';
+                document.getElementById('btnUnlockAll').style.display = 'flex';
+                document.getElementById('btnSave').style.display = 'flex';
+                document.getElementById('statsBar').style.display = 'flex';
+
+                renderFields(currentLocks);
+                updateStats();
+
+            } catch (error) {
+                console.error('Erro ao carregar bloqueios:', error);
+                showToast('Erro ao carregar configurações', 'error');
+            }
+        }
+
+        function renderFields(locks) {
+            const container = document.getElementById('fieldsContainer');
+            const fieldsHtml = Object.entries(locks).map(([fieldName, lockInfo]) => {
+                const isLocked = lockInfo.is_locked;
+                const statusClass = isLocked ? 'locked' : 'unlocked';
+                const statusText = isLocked ? '🔒 Bloqueado' : '🔓 Liberado';
+                const statusBadge = isLocked ? 'status-locked' : 'status-unlocked';
+
+                // Nome amigável do campo (buscar em AVAILABLE_FIELDS)
+                const fieldLabel = getFieldLabel(fieldName);
+
+                return `
+                    <div class="field-card ${statusClass}">
+                        <div class="field-card-header">
+                            <div>
+                                <div class="field-name">${fieldName}</div>
+                                <div class="field-label">${fieldLabel}</div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" 
+                                       ${isLocked ? 'checked' : ''} 
+                                       onchange="toggleField('${fieldName}')">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="field-status ${statusBadge}">
+                            ${statusText}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = `<div class="fields-grid">${fieldsHtml}</div>`;
+        }
+
+        function getFieldLabel(fieldName) {
+            const labels = {
+                'title': 'Título',
+                'description': 'Descrição',
+                'equipment': 'Equipamento',
+                'client': 'Cliente',
+                'priority': 'Prioridade',
+                'status': 'Status',
+                'responsavel': 'Responsável',
+                'inspetor': 'Inspetor',
+                'setor': 'Setor',
+                'area_responsavel': 'Área Responsável',
+                'price': 'Preço',
+                'assigned_user_id': 'Usuário Atribuído'
+            };
+            return labels[fieldName] || fieldName;
+        }
+
+        function toggleField(fieldName) {
+            currentLocks[fieldName].is_locked = !currentLocks[fieldName].is_locked;
+            renderFields(currentLocks);
+            updateStats();
+        }
+
+        function lockAll() {
+            Object.keys(currentLocks).forEach(field => {
+                currentLocks[field].is_locked = true;
+            });
+            renderFields(currentLocks);
+            updateStats();
+        }
+
+        function unlockAll() {
+            Object.keys(currentLocks).forEach(field => {
+                currentLocks[field].is_locked = false;
+            });
+            renderFields(currentLocks);
+            updateStats();
+        }
+
+        function updateStats() {
+            const locked = Object.values(currentLocks).filter(l => l.is_locked).length;
+            const total = Object.keys(currentLocks).length;
+            const unlocked = total - locked;
+
+            document.getElementById('statLocked').textContent = locked;
+            document.getElementById('statUnlocked').textContent = unlocked;
+            document.getElementById('statTotal').textContent = total;
+        }
+
+        async function saveChanges() {
+            if (!currentGroupId) {
+                showToast('Selecione um grupo primeiro', 'error');
+                return;
+            }
+
+            try {
+                const locks = {};
+                Object.entries(currentLocks).forEach(([field, info]) => {
+                    locks[field] = info.is_locked;
+                });
+
+                const response = await fetch(`/admin/field-locks/api/locks/${currentGroupId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ locks })
+                });
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.message);
+                }
+
+                showToast(`✅ ${data.updated_count} bloqueios salvos com sucesso!`, 'success');
+
+            } catch (error) {
+                console.error('Erro ao salvar:', error);
+                showToast('Erro ao salvar configurações', 'error');
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+
+            toastMessage.textContent = message;
+            toast.className = `toast ${type} show`;
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', () => {
+            loadGroups();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔐 Gerenciar Permissões de Campos RNC</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            color: #7f8c8d;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 30px;
+            min-height: 600px;
+        }
+
+        .sidebar {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            height: fit-content;
+        }
+
+        .sidebar h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .group-search {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e8ed;
+            border-radius: 10px;
+            font-size: 14px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .group-search:focus {
+            border-color: #667eea;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .group-list {
+            list-style: none;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .group-item {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid #e1e8ed;
+        }
+
+        .group-item:hover {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .group-item.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .group-name {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .group-desc {
+            font-size: 0.85rem;
+            opacity: 0.8;
+        }
+
+        .content-area {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px;
+            color: #7f8c8d;
+            font-size: 1.2rem;
+        }
+
+        .group-content {
+            display: none;
+        }
+
+        .group-title {
+            font-size: 1.8rem;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-radius: 12px;
+            color: white;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #fa709a, #fee140);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #ffecd2, #fcb69f);
+            color: #333;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .fields-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .field-section {
+            background: rgba(248, 249, 250, 0.8);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #e1e8ed;
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .field-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+        }
+
+        .field-card {
+            background: white;
+            border: 2px solid #e1e8ed;
+            border-radius: 10px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .field-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.5s;
+        }
+
+        .field-card:hover::before {
+            left: 100%;
+        }
+
+        .field-card.unlocked {
+            border-color: #4facfe;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
+        }
+
+        .field-card.locked {
+            border-color: #fa709a;
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(250, 112, 154, 0.3);
+        }
+
+        .field-card:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .field-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .field-status {
+            font-size: 1.5rem;
+            display: block;
+        }
+
+        .field-status.locked::after {
+            content: " BLOQUEADO";
+            font-size: 0.6rem;
+            display: block;
+            margin-top: 2px;
+        }
+
+        .field-status.unlocked::after {
+            content: " LIBERADO";
+            font-size: 0.6rem;
+            display: block;
+            margin-top: 2px;
+        }
+
+        .alerts {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            max-width: 400px;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            animation: slideIn 0.3s ease;
+        }
+
+        .alert-success {
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            color: white;
+        }
+
+        .alert-error {
+            background: linear-gradient(135deg, #fa709a, #fee140);
+            color: white;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .no-groups {
+            text-align: center;
+            color: #e74c3c;
+            padding: 20px;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .action-buttons {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .stats-bar {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔐 Gerenciar Permissões de Campos RNC</h1>
+            <p>Configure quais campos cada grupo pode editar TODOS os 44 campos disponíveis</p>
+        </div>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <h3>👥 Grupos</h3>
+                <input type="text" id="groupSearch" class="group-search" placeholder="Buscar grupo...">
+                <ul id="groupList" class="group-list">
+                    <li class="no-groups">❌ Erro ao carregar grupos</li>
+                </ul>
+            </div>
+
+            <div class="content-area">
+                <div id="loading" class="loading">
+                    <div>🔒 Gerenciamento de Bloqueios de Campos</div>
+                    <p>Configure quais campos cada grupo pode editar na criação de RNC</p>
+                    <br>
+                    <div>👈 Selecione um grupo para configurar as permissões</div>
+                </div>
+
+                <div id="groupContent" class="group-content">
+                    <h2 id="groupTitle" class="group-title">Configurações do Grupo</h2>
+                    
+                    <div class="stats-bar">
+                        <div class="stat-item">
+                            <span id="statLocked" class="stat-number">0</span>
+                            <span class="stat-label">🔒 Bloqueados</span>
+                        </div>
+                        <div class="stat-item">
+                            <span id="statUnlocked" class="stat-number">44</span>
+                            <span class="stat-label">🔓 Liberados</span>
+                        </div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button class="btn btn-primary" onclick="saveChanges()">💾 Salvar Alterações</button>
+                        <button class="btn btn-success" onclick="unlockAll()">🔓 Liberar Todos</button>
+                        <button class="btn btn-danger" onclick="lockAll()">🔒 Bloquear Todos</button>
+                        <button class="btn btn-warning" onclick="resetGroup()">🗑️ Resetar Grupo</button>
+                    </div>
+
+                    <div class="fields-container">
+                        <div class="field-section">
+                            <div class="section-title">📋 Informações Principais</div>
+                            <div class="field-grid">
+                                <div class="field-card unlocked" data-field="rnc_number">
+                                    <div class="field-name">Número RNC</div>
+                                    <span class="field-status unlocked">🔓</span>
+                                </div>
+                                <div class="field-card unlocked" data-field="title">
+                                    <div class="field-name">Título</div>
+                                    <span class="field-status unlocked">🔓</span>
+                                </div>
+                                <div class="field-card unlocked" data-field="description">
+                                    <div class="field-name">Descrição</div>
+                                    <span class="field-status unlocked">🔓</span>
+                                </div>
+                                <div class="field-card unlocked" data-field="priority">
+                                    <div class="field-name">Prioridade</div>
+                                    <span class="field-status unlocked">🔓</span>
+                                </div>
+                                <div class="field-card unlocked" data-field="status">
+                                    <div class="field-name">Status</div>
+                                    <span class="field-status unlocked">🔓</span>
+                                </div>
+                                <div class="field-card unlocked" data-field="price">
+                                    <div class="field-name">Preço</div>
+                                    <span class="field-status unlocked">🔓</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="field-section">
+                            <div class="section-title">🔧 Dados Técnicos</div>
+                            <div class="field-grid">
+                                <div class="field-card unlocked" data-field="equipment">
+                                    <div class="field-name">Equipamento</div>
+                                    <span class="field-status unlocked">🔓</span>
+                                </div>
+                                <div class="field-card unlocked" data-field="material">
+                                    <div class="field-name">Material</div>
+                                    <span class="field-status unlocked">🔓</span>
+                                </div>
+                                <div class="field-card unlocked" data-field="quantity">
+                                    <div class="field-name">Quantidade</div>
+                                    <span class="field-status unlocked">🔓</span>
+                                </div>
+                                <div class="field-card unlocked" data-field="drawing">
+                                    <div class="field-name">Desenho</div>
+                                    <span class="field-status unlocked">🔓</span>
+                                </div>
+                                <div class="field-card unlocked" data-field="mp">
+                                    <div class="field-name">MP</div>
+                                    <span class="field-status unlocked">🔓</span>
+                                </div>
+                                <div class="field-card unlocked" data-field="revision">
+                                    <div class="field-name">Revisão</div>
+                                    <span class="field-status unlocked">🔓</span>
+                                </div>
+                                <div class="field-card unlocked" data-field="position">
+                                    <div class="field-name">Posição</div>
+                                    <span class="field-status unlocked">🔓</span>
+                                </div>
+                                <div class="field-card unlocked" data-field="cv">
+                                    <div class="field-name">CV</div>
+                                    <span class="field-status unlocked">🔓</span>
+                                </div>
+                                <div class="field-card unlocked" data-field="conjunto">
+                                    <div class="field-name">Conjunto</div>
+                                    <span class="field-status unlocked">🔓</span>
+                                </div>
+                                <div class="field-card unlocked" data-field="modelo">
+                                    <div class="field-name">Modelo</div>
+                                    <span class="field-status unlocked">🔓</span>
+                                </div>
+                                <div class="field-card unlocked" data-field="description_drawing">
+                                    <div class="field-name">Desc. Desenho</div>
+                                    <span class="field-status unlocked">🔓</span>
+                                </div>
+                                <div class="field-card unlocked" data-field="purchase_order">
+                                    <div class="field-name">Ordem Compra</div>
+                                    <span class="field-status unlocked">🔓</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="field-section">
+                            <div class="section-title">👥 Responsabilidades</div>
+                            <div class="field-grid">
+                                <div class="field-card unlocked" data-field="assigned_user_id">
+                                    <div class="field-name">Usuário Atribuído</div>
+                                    <span class="field-status unlocked">🔓</span>
+                                </div>
+                                <div class="field-card unlocked" data-field="responsavel">
+                                    <div class="field-name">Responsável</div>
+                                    <span class="field-status unlocked">🔓</span>
+                                </div>
+                                <div class="field-card unlocked" data-field="inspetor">
+                                    <div class="field-name">Inspetor</div>
+                                    <span class="field-status unlocked">🔓</span>
+                                </div>
+                                <div class="field-card unlocked" data-field="setor">
+                                    <div class="field-name">Setor</div>
+                                    <span class="field-status unlocked">🔓</span>
+                                </div>
+                                <div class="field-card unlocked" data-field="area_responsavel">
+                                    <div class="field-name">Área Responsável</div>
+                                    <span class="field-status unlocked">🔓</span>
+                                </div>
+                                <div class="field-card unlocked" data-field="client">
+                                    <div class="field-name">Cliente</div>
+                                    <span class="field-status unlocked">🔓</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="field-section">
+                            <div class="section-title">📦 Disposições</div>
+                            <div class="field-grid">
+                                <div class="field-card unlocked" data-field="disposition_usar">
+                                    <div class="field-name">Usar</div>
+                                    <span class="field-status unlocked">🔓</span>
+                                </div>
+                                <div class="field-card unlocked" data-field="disposition_retrabalhar">
+                                    <div class="field-name">Retrabalhar</div>
+                                    <span class="field-status unlocked">🔓</span>
+                                </div>
+                                <div class="field-card unlocked" data-field="disposition_rejeitar">
+                                    <div class="field-name">Rejeitar</div>
+                                    <span class="field-status unlocked">🔓</span>
+                                </div>
+                                <div class="field-card unlocked" data-field="disposition_sucata">
+                                    <div class="field-name">Sucata</div>
+                                    <span class="field-status unlocked">🔓</span>
+                                </div>
+                                <div class="field-card unlocked" data-field="disposition_devolver_estoque">
+                                    <div class="field-name">Devolver Estoque</div>
+                                    <span class="field-status unlocked">🔓</span>
+                                </div>
+                                <div class="field-card unlocked" data-field="disposition_devolver_fornecedor">
+                                    <div class="field-name">Devolver Fornecedor</div>
+                                    <span class="field-status unlocked">🔓</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="field-section">
+                            <div class="section-title">🔍 Inspeção</div>
+                            <div class="field-grid">
+                                <div class="field-card unlocked" data-field="inspection_aprovado">
+                                    <div class="field-name">Aprovado</div>
+                                    <span class="field-status unlocked">🔓</span>
+                                </div>
+                                <div class="field-card unlocked" data-field="inspection_reprovado">
+                                    <div class="field-name">Reprovado</div>
+                                    <span class="field-status unlocked">🔓</span>
+                                </div>
+                                <div class="field-card unlocked" data-field="inspection_ver_rnc">
+                                    <div class="field-name">Ver RNC</div>
+                                    <span class="field-status unlocked">🔓</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="field-section">
+                            <div class="section-title">✍️ Assinaturas</div>
+                            <div class="field-grid">
+                                <div class="field-card unlocked" data-field="signature_inspection_name">
+                                    <div class="field-name">Nome Inspeção</div>
+                                    <span class="field-status unlocked">🔓</span>
+                                </div>
+                                <div class="field-card unlocked" data-field="signature_inspection_date">
+                                    <div class="field-name">Data Inspeção</div>
+                                    <span class="field-status unlocked">🔓</span>
+                                </div>
+                                <div class="field-card unlocked" data-field="signature_engineering_name">
+                                    <div class="field-name">Nome Engenharia</div>
+                                    <span class="field-status unlocked">🔓</span>
+                                </div>
+                                <div class="field-card unlocked" data-field="signature_engineering_date">
+                                    <div class="field-name">Data Engenharia</div>
+                                    <span class="field-status unlocked">🔓</span>
+                                </div>
+                                <div class="field-card unlocked" data-field="signature_inspection2_name">
+                                    <div class="field-name">Nome Inspeção 2</div>
+                                    <span class="field-status unlocked">🔓</span>
+                                </div>
+                                <div class="field-card unlocked" data-field="signature_inspection2_date">
+                                    <div class="field-name">Data Inspeção 2</div>
+                                    <span class="field-status unlocked">🔓</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="field-section">
+                            <div class="section-title">📝 Análises</div>
+                            <div class="field-grid">
+                                <div class="field-card unlocked" data-field="instruction_retrabalho">
+                                    <div class="field-name">Instrução Retrabalho</div>
+                                    <span class="field-status unlocked">🔓</span>
+                                </div>
+                                <div class="field-card unlocked" data-field="cause_rnc">
+                                    <div class="field-name">Causa RNC</div>
+                                    <span class="field-status unlocked">🔓</span>
+                                </div>
+                                <div class="field-card unlocked" data-field="action_rnc">
+                                    <div class="field-name">Ação RNC</div>
+                                    <span class="field-status unlocked">🔓</span>
+                                </div>
+                                <div class="field-card unlocked" data-field="justificativa">
+                                    <div class="field-name">Justificativa</div>
+                                    <span class="field-status unlocked">🔓</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="alerts" class="alerts"></div>
+
+    <script>
+        let currentGroupId = null;
+        let fieldLocks = {};
+        let hasChanges = false;
+
+        const availableFields = [
+            'rnc_number', 'title', 'description', 'priority', 'status', 'price',
+            'equipment', 'material', 'quantity', 'drawing', 'mp', 'revision', 'position', 
+            'cv', 'conjunto', 'modelo', 'description_drawing', 'purchase_order',
+            'assigned_user_id', 'responsavel', 'inspetor', 'setor', 'area_responsavel', 'client',
+            'disposition_usar', 'disposition_retrabalhar', 'disposition_rejeitar', 
+            'disposition_sucata', 'disposition_devolver_estoque', 'disposition_devolver_fornecedor',
+            'inspection_aprovado', 'inspection_reprovado', 'inspection_ver_rnc',
+            'signature_inspection_name', 'signature_inspection_date', 'signature_engineering_name',
+            'signature_engineering_date', 'signature_inspection2_name', 'signature_inspection2_date',
+            'instruction_retrabalho', 'cause_rnc', 'action_rnc', 'justificativa'
+        ];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadGroups();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            document.getElementById('groupSearch').addEventListener('input', function(e) {
+                filterGroups(e.target.value);
+            });
+            document.querySelectorAll('.field-card').forEach(field => {
+                field.addEventListener('click', function() {
+                    if (currentGroupId) toggleField(this.dataset.field);
+                });
+            });
+        }
+
+        async function loadGroups() {
+            try {
+                const response = await fetch('/admin/field-locks/api/groups');
+                const groups = await response.json();
+                const groupList = document.getElementById('groupList');
+                groupList.innerHTML = '';
+                groups.forEach(group => {
+                    const li = document.createElement('li');
+                    li.className = 'group-item';
+                    li.onclick = () => selectGroup(group.id, group.name);
+                    li.innerHTML = `<div class="group-name">${group.name}</div><div class="group-desc">${group.description || 'Sem descrição'}</div>`;
+                    groupList.appendChild(li);
+                });
+            } catch (error) {
+                showAlert('Erro ao carregar grupos: ' + error.message, 'error');
+            }
+        }
+
+        function filterGroups(searchTerm) {
+            const groups = document.querySelectorAll('.group-item');
+            const term = searchTerm.toLowerCase();
+            groups.forEach(group => {
+                const text = group.textContent.toLowerCase();
+                group.style.display = text.includes(term) ? 'block' : 'none';
+            });
+        }
+
+        async function selectGroup(groupId, groupName) {
+            currentGroupId = groupId;
+            document.querySelectorAll('.group-item').forEach(item => item.classList.remove('active'));
+            event.target.closest('.group-item').classList.add('active');
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('groupContent').style.display = 'block';
+            document.getElementById('groupTitle').textContent = `Configurações: ${groupName}`;
+            await loadGroupSettings(groupId);
+        }
+
+        async function loadGroupSettings(groupId) {
+            try {
+                const response = await fetch(`/admin/field-locks/api/locks/${groupId}`);
+                const locks = await response.json();
+                fieldLocks = {};
+                locks.forEach(lock => { fieldLocks[lock.field_name] = lock.is_locked; });
+                updateFieldDisplay();
+                updateStats();
+                hasChanges = false;
+            } catch (error) {
+                showAlert('Erro ao carregar configurações: ' + error.message, 'error');
+            }
+        }
+
+        function updateFieldDisplay() {
+            availableFields.forEach(fieldName => {
+                const fieldElement = document.querySelector(`[data-field="${fieldName}"]`);
+                if (!fieldElement) return;
+                const statusElement = fieldElement.querySelector('.field-status');
+                const isLocked = fieldLocks[fieldName] || false;
+                fieldElement.className = `field-card ${isLocked ? 'locked' : 'unlocked'}`;
+                statusElement.className = `field-status ${isLocked ? 'locked' : 'unlocked'}`;
+                statusElement.textContent = isLocked ? '🔒' : '🔓';
+            });
+        }
+
+        function updateStats() {
+            const locked = availableFields.filter(field => fieldLocks[field]).length;
+            const unlocked = availableFields.length - locked;
+            document.getElementById('statLocked').textContent = locked;
+            document.getElementById('statUnlocked').textContent = unlocked;
+        }
+
+        function toggleField(fieldName) {
+            fieldLocks[fieldName] = !fieldLocks[fieldName];
+            updateFieldDisplay();
+            updateStats();
+            hasChanges = true;
+        }
+
+        async function saveChanges() {
+            if (!currentGroupId) return showAlert('Selecione um grupo primeiro', 'error');
+            try {
+                const locks = availableFields.map(fieldName => ({
+                    field_name: fieldName, is_locked: fieldLocks[fieldName] || false
+                }));
+                const response = await fetch(`/admin/field-locks/api/locks/${currentGroupId}`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ locks })
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    showAlert('✅ Configurações salvas com sucesso!', 'success');
+                    hasChanges = false;
+                } else throw new Error(result.error || 'Erro desconhecido');
+            } catch (error) {
+                showAlert('❌ Erro ao salvar: ' + error.message, 'error');
+            }
+        }
+
+        function unlockAll() {
+            availableFields.forEach(fieldName => { fieldLocks[fieldName] = false; });
+            updateFieldDisplay(); updateStats(); hasChanges = true;
+            showAlert('🔓 Todos os campos foram liberados!', 'success');
+        }
+
+        function lockAll() {
+            availableFields.forEach(fieldName => { fieldLocks[fieldName] = true; });
+            updateFieldDisplay(); updateStats(); hasChanges = true;
+            showAlert('🔒 Todos os campos foram bloqueados!', 'success');
+        }
+
+        async function resetGroup() {
+            if (!currentGroupId) return showAlert('Selecione um grupo primeiro', 'error');
+            if (!confirm('⚠️ Tem certeza que deseja resetar todas as configurações deste grupo?')) return;
+            try {
+                const response = await fetch(`/admin/field-locks/api/locks/${currentGroupId}`, { method: 'DELETE' });
+                const result = await response.json();
+                if (response.ok) {
+                    showAlert('🗑️ Configurações resetadas com sucesso!', 'success');
+                    await loadGroupSettings(currentGroupId);
+                } else throw new Error(result.error || 'Erro desconhecido');
+            } catch (error) {
+                showAlert('❌ Erro ao resetar: ' + error.message, 'error');
+            }
+        }
+
+        function showAlert(message, type) {
+            const alertsContainer = document.getElementById('alerts');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+            alertsContainer.innerHTML = '';
+            alertsContainer.appendChild(alertDiv);
+            if (type === 'success') setTimeout(() => alertDiv.remove(), 5000);
+        }
+    </script>
+</body>
+</html>

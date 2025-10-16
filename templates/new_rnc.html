@@ -1,0 +1,3439 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novo RNC - Sistema IPPEL</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Liberation Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+            background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 30%, #dddddd 70%, #d0d0d0 100%);
+            padding: 0;
+            margin: 0;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 100vw;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #ffffff 0%, #fdfdfd 50%, #fafafa 100%);
+            padding: 35px;
+            box-shadow: 0 32px 64px rgba(0, 0, 0, 0.18);
+            border-radius: 0;
+            overflow-y: auto;
+            border-top: 8px solid #6c757d;
+            position: relative;
+        }
+
+        .header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: none;
+            padding-bottom: 0;
+            position: relative;
+        }
+
+        .logos {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .logo-ippel {
+            width: 120px;
+            height: 120px;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .logo-ippel:hover {
+            transform: scale(1.05);
+        }
+
+        .title-section {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .main-title {
+            font-size: 30px;
+            font-weight: 800;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #6c757d 0%, #495057 30%, #343a40 70%, #212529 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 1.5px;
+            position: relative;
+            text-align: center;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #6c757d;
+            font-weight: 600;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+        }
+
+        .form-code {
+            font-size: 12px;
+            color: #6c757d;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        .user-selector-section {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 40px;
+            margin: 25px auto;
+            padding: 30px;
+            max-width: 1000px;
+            background: linear-gradient(145deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+            border: 1px solid #dee2e6;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        
+        .selector-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+        
+        .selector-label {
+            font-size: 13px;
+            font-weight: 700;
+            color: #495057;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            text-align: center;
+        }
+        
+        .selector-dropdown {
+            width: 100%;
+            min-width: 250px;
+            max-width: 350px;
+            padding: 12px 15px;
+            border: 1px solid #ced4da;
+            border-radius: 10px;
+            background: white;
+            font-size: 14px;
+            font-weight: 500;
+            color: #495057;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+        
+        .selector-dropdown:focus {
+            outline: none;
+            border-color: #6c757d;
+            box-shadow: 0 0 0 3px rgba(108, 117, 125, 0.15);
+            transform: translateY(-1px);
+        }
+        
+        .selector-dropdown:hover {
+            border-color: #adb5bd;
+            transform: translateY(-1px);
+        }
+
+        .rnc-number {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .field-label {
+            background: #ced4da;
+            color: black;
+            padding: 8px;
+            font-weight: bold;
+            font-size: 11px;
+            text-align: center;
+            border: 1px solid #6c757d;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #000;
+            border-radius: 5px;
+            font-size: 11px;
+            background: white;
+        }
+
+        /* Sobrescrever font-size apenas para textareas, não para inputs */
+        textarea.input-field {
+            font-size: 12px !important;
+            line-height: 1.5 !important;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif !important;
+        }
+
+        .large-text-area {
+            min-height: 100px;
+            resize: vertical;
+            font-size: 12px !important;
+        }
+
+        .medium-text-area {
+            min-height: 60px;
+            resize: vertical;
+            font-size: 12px !important;
+        }
+
+        .instruction-2lines {
+            min-height: 50px;
+            resize: vertical;
+            font-size: 12px !important;
+        }
+
+        /* Garantir fonte de 12px nos textareas com maior especificidade */
+        textarea.large-text-area {
+            font-size: 12px !important;
+        }
+
+        textarea.medium-text-area {
+            font-size: 12px !important;
+        }
+
+        textarea.instruction-2lines {
+            font-size: 12px !important;
+        }
+
+        /* Máxima especificidade combinando input-field com as classes de textarea */
+        textarea.input-field.large-text-area {
+            font-size: 12px !important;
+        }
+
+        textarea.input-field.medium-text-area {
+            font-size: 12px !important;
+        }
+
+        textarea.input-field.instruction-2lines {
+            font-size: 12px !important;
+        }
+
+        /* Regra por ID para garantir absoluta prioridade */
+        #description,
+        #instruction_retrabalho,
+        #cause_rnc,
+        #action_rnc {
+            font-size: 12px !important;
+        }
+
+        .item-column {
+            background: #ced4da;
+            color: #000;
+            padding: 8px;
+            font-weight: bold;
+            font-size: 11px;
+            text-align: center;
+            width: 60px;
+            border: 1px solid #6c757d;
+        }
+
+        .section-title {
+            background: #ced4da;
+            color: #000;
+            padding: 8px;
+            font-weight: bold;
+            font-size: 11px;
+            text-align: center;
+            border: 1px solid #6c757d;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+
+        table td {
+            border: 1px solid #000;
+        }
+
+        /* Barra de ações moderna - Fixo no topo */
+        .action-bar { 
+            position: static;
+            top: auto;
+            right: auto;
+            bottom: auto;
+            display: flex;
+            gap: 8px;
+            z-index: auto;
+            box-shadow: none;
+            margin: 0;
+        }
+
+        .action-btn { 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 6px; 
+            height: 32px; 
+            padding: 0 12px; 
+            border-radius: 6px; 
+            border: none; 
+            cursor: pointer; 
+            color: #fff; 
+            font-weight: 500; 
+            font-size: 12px;
+            letter-spacing: 0;
+            box-shadow: 0 2px 6px rgba(0,0,0,.1); 
+            transition: all .2s ease; 
+            backdrop-filter: saturate(120%); 
+        }
+        .action-btn .icon { font-size: 0.9rem; display: inline-flex; }
+        .action-btn:hover { 
+            transform: translateY(-1px); 
+            box-shadow: 0 4px 10px rgba(0,0,0,.15); 
+        }
+        .dashboard-btn { background: #6c757d; }
+        .dashboard-btn:hover { background: #5a6268; }
+        .save-btn { background: #6c757d; }
+        .save-btn:hover { background: #5a6268; }
+
+        .create-mode-banner {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(40, 167, 69, 0.3);
+        }
+
+        /* Estilos para campos bloqueados */
+        .field-blocked {
+            background: repeating-linear-gradient(
+                45deg,
+                #f8f9fa,
+                #f8f9fa 10px,
+                #e9ecef 10px,
+                #e9ecef 20px
+            ) !important;
+            border: 1px solid #dc3545 !important;
+            opacity: 0.7;
+            cursor: not-allowed !important;
+            position: relative;
+            transition: all 0.3s ease !important;
+        }
+
+        .field-blocked::after {
+            content: "🔒";
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #dc3545;
+            font-size: 14px;
+            pointer-events: none;
+            animation: pulse 2s infinite;
+        }
+
+        .field-blocked:hover {
+            box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.3) !important;
+            transform: scale(1.02);
+            animation: shake 0.5s ease-in-out;
+        }
+
+        .field-blocked:focus {
+            animation: shake 0.5s ease-in-out, pulse 1s ease-in-out;
+            box-shadow: 0 0 20px rgba(220, 53, 69, 0.4) !important;
+        }
+
+        /* Animações */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        @keyframes bounceBlock {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 5px rgba(220, 53, 69, 0.2); }
+            50% { box-shadow: 0 0 20px rgba(220, 53, 69, 0.8), 0 0 30px rgba(220, 53, 69, 0.6); }
+        }
+
+        .field-blocked-animation {
+            animation: shake 0.6s ease-in-out, glow 0.8s ease-in-out !important;
+        }
+
+        /* Estilos para impressão */
+        @media print {
+            /* ⚡ REGRA SUPREMA - UNIFORMIZAR ABSOLUTAMENTE TUDO */
+            *,
+            *::before,
+            *::after,
+            html,
+            body,
+            div,
+            span,
+            label,
+            input,
+            textarea,
+            select,
+            option,
+            table,
+            thead,
+            tbody,
+            tfoot,
+            tr,
+            th,
+            td,
+            p,
+            h1, h2, h3, h4, h5, h6,
+            strong,
+            b,
+            em,
+            i {
+                border-width: 1px !important;
+                font-weight: normal !important;
+                color: #000 !important;
+                background: white !important;
+                font-style: normal !important;
+                opacity: 1 !important;
+                text-shadow: none !important;
+                box-shadow: none !important;
+            }
+            
+            .action-bar,
+            .create-mode-banner,
+            .no-print,
+            button[onclick="openValoresSelectionModal()"],
+            div[style*="width: 60px; height: 2px"],
+            div[style*="margin-bottom: 10px"] > div[style*="width: 60px"] {
+                display: none !important;
+            }
+            
+            body {
+                background: white;
+                margin: 0;
+                margin-top: 0 !important;
+                padding: 0;
+                padding-top: 0 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            
+            /* Forçar impressão exata de cores E FUNDO BRANCO */
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                background: white !important;
+            }
+            
+            /* Sobrescrever TODOS os estilos inline de font-weight */
+            *[style*="font-weight"],
+            div[style*="font-weight"],
+            span[style*="font-weight"],
+            label[style*="font-weight"],
+            button[style*="font-weight"],
+            input[style*="font-weight"] {
+                font-weight: normal !important;
+            }
+            
+            /* Sobrescrever TODOS os backgrounds com gradiente ou cor */
+            *[style*="background"],
+            div[style*="background"],
+            span[style*="background"] {
+                background: white !important;
+            }
+            
+            /* Sobrescrever TODAS as cores inline */
+            *[style*="color"],
+            div[style*="color"],
+            span[style*="color"],
+            label[style*="color"] {
+                color: #000 !important;
+            }
+            
+            /* ⚡ REGRA FINAL ABSOLUTA - FORÇAR PESO DE FONTE NORMAL EM ABSOLUTAMENTE TUDO */
+            html * {
+                font-weight: 400 !important;
+            }
+            
+            label,
+            span,
+            div,
+            td,
+            th,
+            p,
+            input,
+            textarea,
+            select {
+                font-weight: 400 !important;
+            }
+            
+            .container {
+                box-shadow: none !important;
+                border: none !important;
+                border-top: none !important;
+                padding: 3px;
+                padding-top: 0 !important;
+                margin: 0;
+                margin-top: 0 !important;
+                width: 100%;
+                height: auto;
+                overflow: visible;
+                border-radius: 0 !important;
+            }
+            
+            /* Ajustar tamanho da página */
+            @page {
+                size: A4;
+                margin: 2mm 5mm;
+            }
+            
+            /* Reduzir tamanho dos logos */
+            .logos img {
+                width: 35px !important;
+                height: 35px !important;
+            }
+            
+            .logos {
+                margin-bottom: 0 !important;
+                margin-top: 0 !important;
+                padding-top: 0 !important;
+                border: none !important;
+            }
+            
+            .header {
+                border: none !important;
+                box-shadow: none !important;
+            }
+            
+            /* Reduzir espaçamentos */
+            .title-section {
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            
+            .main-title {
+                font-size: 13px !important;
+                margin-bottom: 0 !important;
+                margin-top: 0 !important;
+                padding-top: 0 !important;
+                color: #000 !important;
+                line-height: 1 !important;
+            }
+            
+            .subtitle {
+                font-size: 7px !important;
+                margin-bottom: 0 !important;
+                margin-top: 0 !important;
+                padding-top: 0 !important;
+                color: #000 !important;
+                line-height: 1 !important;
+            }
+            
+            .form-code {
+                font-size: 6px !important;
+                margin-bottom: 0 !important;
+                margin-top: 0 !important;
+                padding-top: 0 !important;
+                padding-bottom: 0 !important;
+                color: #000 !important;
+                line-height: 1 !important;
+            }
+            
+            .rnc-number {
+                margin-bottom: 2px !important;
+                margin-top: 0 !important;
+                padding-top: 0 !important;
+                padding-bottom: 0 !important;
+                border-radius: 0 !important;
+                text-align: center !important;
+            }
+            
+            /* Reduzir espaço entre subtitle, form-code e rnc-number */
+            .subtitle + .form-code,
+            .form-code + .rnc-number,
+            .title-section + .rnc-number,
+            div[style*="FABRICAÇÃO"] + div {
+                margin-top: 0 !important;
+                padding-top: 0 !important;
+            }
+            
+            /* Garantir espaçamento zero entre elementos do header */
+            .title-section > * {
+                margin: 0 !important;
+                padding-top: 0 !important;
+                padding-bottom: 0 !important;
+            }
+            
+            /* REMOVER QUADRADO DO CENTRO DOS CAMPOS */
+            table tr:not(:first-child) td {
+                border: none !important;
+                padding: 0 !important;
+            }
+            
+            .rnc-number input {
+                padding: 1px !important;
+                font-size: 8px !important;
+                border: 1px solid #000 !important;
+                border-radius: 0 !important;
+                width: 90px !important;
+                max-width: 50px !important;
+            }
+            
+            .rnc-number label {
+                margin: 0 !important;
+                padding: 0 !important;
+                margin-right: 5px !important;
+                color: #000 !important;
+                font-weight: bold !important;
+                font-size: 8px !important;
+            }
+            
+            /* Reduzir espaçamento das seções */
+            div[style*="margin: 25px 0"] {
+                margin: 1px 0 !important;
+            }
+            
+            /* Reduzir padding das seções */
+            div[style*="padding: 20px"] {
+                padding: 2px !important;
+            }
+            
+            /* Configuração das tabelas - IGUAL AO MODO DE CRIAÇÃO */
+            table {
+                width: 100% !important;
+                border-collapse: collapse !important;
+                margin-bottom: 8px !important;
+            }
+            
+            /* SOLUÇÃO RADICAL: Remover TODAS as bordas horizontais entre linhas */
+            table {
+                border-collapse: collapse !important;
+            }
+            
+            /* Apenas bordas laterais (verticais) */
+            table td {
+                border-right: 1px solid #000 !important;
+                border-left: none !important;
+                border-top: none !important;
+                border-bottom: none !important;
+                padding: 2px !important;
+            }
+            
+            /* Primeira célula de cada linha - borda esquerda */
+            table td:first-child {
+                border-left: 1px solid #000 !important;
+            }
+            
+            /* Labels - adicionar borda superior E inferior */
+            table td.field-label,
+            table td.item-column,
+            table td.section-title {
+                border-top: 1px solid #000 !important;
+                border-bottom: 1px solid #000 !important;
+            }
+            
+            /* Primeira linha de labels da primeira tabela de cada seção */
+            table:first-of-type tr:first-child td.field-label,
+            table:first-of-type tr:first-child td.item-column,
+            table:first-of-type tr:first-child td.section-title {
+                border-top: 1px solid #000 !important;
+            }
+            
+            /* Labels de tabelas consecutivas - sem borda superior (para evitar duplicação) */
+            table + table tr:first-child td.field-label,
+            table + table tr:first-child td.item-column,
+            table + table tr:first-child td.section-title {
+                border-top: none !important;
+                border-bottom: 1px solid #000 !important;
+            }
+            
+            .field-label {
+                padding: 1px !important;
+                font-size: 7px !important;
+                background: white !important;
+                color: #000 !important;
+                border: 1px solid #000 !important;
+                line-height: 1.1 !important;
+                font-weight: normal !important;
+            }
+            
+            .input-field {
+                padding: 2px !important;
+                font-size: 8px !important;
+                min-height: auto !important;
+                border: none !important;
+                color: #000 !important;
+                line-height: 1.2 !important;
+            }
+            
+            /* Regra geral para todos os textareas */
+            textarea.input-field {
+                font-size: 12px !important;
+                line-height: 1.3 !important;
+            }
+            
+            /* Aumentar altura específica para textareas grandes */
+            textarea.large-text-area,
+            textarea.input-field.large-text-area {
+                min-height: 50px !important;
+                height: 50px !important;
+                font-size: 12px !important;
+            }
+            
+            textarea.medium-text-area,
+            textarea.input-field.medium-text-area {
+                min-height: 40px !important;
+                height: 40px !important;
+                font-size: 12px !important;
+            }
+            
+            /* Altura para textarea de 2 linhas */
+            textarea.instruction-2lines {
+                min-height: 35px !important;
+                height: 35px !important;
+                line-height: 1.3 !important;
+                font-size: 12px !important;
+            }
+            
+            /* Regra por ID para máxima especificidade */
+            #description,
+            #instruction_retrabalho,
+            #cause_rnc,
+            #action_rnc {
+                font-size: 12px !important;
+            }
+            
+            /* FORÇAR TODAS AS BORDAS PARA 1PX - REGRA MÁXIMA PRIORIDADE */
+            *,
+            *::before,
+            *::after,
+            div,
+            input,
+            select,
+            textarea,
+            table,
+            td,
+            th,
+            tr {
+                border-width: 1px !important;
+            }
+            
+            /* Forçar bordas 1px em elementos com style inline */
+            *[style*="border: 2px"],
+            *[style*="border:2px"],
+            *[style*="border: 3px"],
+            *[style*="border:3px"],
+            *[style*="border-right: 2px"],
+            *[style*="border-bottom: 2px"],
+            *[style*="border-top: 2px"],
+            *[style*="border-left: 2px"] {
+                border-width: 1px !important;
+                border-style: solid !important;
+                border-color: #000 !important;
+            }
+            
+            div[style*="border"],
+            section[style*="border"],
+            div,
+            section,
+            table,
+            tr,
+            td,
+            th {
+                border-width: 1px !important;
+                border-style: solid !important;
+                border-color: #000 !important;
+            }
+            
+            /* Bordas de seções específicas - SEMPRE 1px - MÁXIMA PRIORIDADE */
+            div[style*="border: 2px solid"],
+            div[style*="border:2px"],
+            div[style*="border: 3px"],
+            div[style*="border:3px"],
+            div[style*="border: 2px solid #6c757d"],
+            div[style*="margin: 25px 0; border"],
+            section[style*="border:"],
+            div[style*="margin: 25px 0"],
+            div[style*="border-radius"],
+            div[style*="box-shadow"] {
+                border: 1px solid #000 !important;
+                border-width: 1px !important;
+                border-style: solid !important;
+                border-color: #000 !important;
+                box-shadow: none !important;
+            }
+            
+            /* Remover bordas de elementos internos que não precisam */
+            body,
+            .container,
+            .container > div:not([style*="border"]),
+            .title-section,
+            .main-title,
+            .subtitle,
+            .form-code,
+            .logos,
+            .header,
+            div[style*="width: 60px; height: 2px"],
+            div[style*="background: linear-gradient(90deg, transparent"],
+            span:not(.field-label) {
+                border: none !important;
+                box-shadow: none !important;
+            }
+            
+            /* Manter bordas apenas onde necessário */
+            input.input-field,
+            select.input-field,
+            textarea.input-field,
+            table,
+            td.field-label,
+            td.item-column,
+            td.section-title,
+            div[style*="border: 2px"],
+            div[style*="border-radius"],
+            .sign-col {
+                border: 1px solid #000 !important;
+            }
+            
+            /* Reduzir tamanho dos cabeçalhos de seção - FUNDO BRANCO com LETRAS PRETAS */
+            div[style*="background: linear-gradient(135deg, #6c757d"],
+            div[style*="background: linear-gradient(135deg, #28a745"],
+            div[style*="background:#6c757d"],
+            div[style*="padding: 12px 20px"],
+            div[style*="font-weight: bold; font-size: 15px"] {
+                padding: 2px 4px !important;
+                font-size: 8px !important;
+                background: #fff !important;
+                color: #000 !important;
+                line-height: 1.1 !important;
+                margin-bottom: 1px !important;
+                border: 1px solid #000 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            
+            /* Ajustar assinaturas */
+            .sign-col,
+            div[id^="assinatura_coluna"] {
+                padding: 4px !important;
+                font-size: 10px !important;
+                border: 1px solid #000 !important;
+                line-height: 1.2 !important;
+            }
+            
+            /* Corrigir bordas das colunas de assinatura */
+            div[style*="border-right: 2px solid #cccccc"] {
+                border-right: 1px solid #000 !important;
+            }
+            
+            div[id^="nome_coluna"] {
+                margin-bottom: 3px !important;
+                font-size: 10px !important;
+                color: #000 !important;
+                line-height: 1.2 !important;
+            }
+            
+            /* Compactar área de vistos/assinaturas */
+            div[style*="margin-bottom: 25px"] {
+                margin-bottom: 1px !important;
+            }
+            
+            div[style*="padding: 8px; text-align: center"] {
+                padding: 2px !important;
+            }
+            
+            /* Reduzir espaçamento dos checkboxes */
+            .checkbox,
+            div[style*="display: flex; align-items: center"] {
+                margin: 0 !important;
+                font-size: 9px !important;
+                color: #000 !important;
+                line-height: 1.2 !important;
+            }
+            
+            input[type="checkbox"] {
+                width: 12px !important;
+                height: 12px !important;
+                border: 1px solid #000 !important;
+                margin: 2px !important;
+                margin-right: 4px !important;
+            }
+            
+            /* Compactar seção de disposição e inspeção */
+            div[style*="display: grid; grid-template-columns: 1fr 1fr"] {
+                gap: 2px !important;
+            }
+            
+            div[style*="padding: 15px"] {
+                padding: 4px !important;
+            }
+            
+            div[style*="margin-top: 15px"] {
+                margin-top: 4px !important;
+            }
+            
+            /* Reduzir espaço dos labels dos checkboxes */
+            input[type="checkbox"] + label,
+            label[for] {
+                font-size: 9px !important;
+                margin: 0 !important;
+            }
+            
+            /* Compactar header das seções */
+            div[style*="padding: 12px 0"] {
+                padding: 3px 0 !important;
+                font-size: 8px !important;
+                background: #fff !important;
+                color: #000 !important;
+                border: 1px solid #000 !important;
+            }
+            
+            /* Uniformizar bordas das seções de disposição e inspeção */
+            div[style*="display: flex"] {
+                border: 1px solid #000 !important;
+            }
+            
+            /* Corrigir borda branca divisória */
+            div[style*="border-right: 2px solid white"] {
+                border-right: 1px solid #000 !important;
+            }
+            
+            div[style*="border-radius: 8px 8px 0 0"],
+            div[style*="border-radius: 0 0 8px 8px"],
+            div[style*="border-radius"] {
+                border-radius: 0 !important;
+            }
+            
+            /* Ajustar campos de data */
+            input[id*="_d"],
+            input[id*="_m"],
+            input[id*="_y"] {
+                font-size: 9px !important;
+                padding: 2px !important;
+                border: none !important;
+            }
+            
+            .input-field,
+            .field-label,
+            section,
+            span,
+            label {
+                border-radius: 0 !important;
+                -webkit-border-radius: 0 !important;
+                -moz-border-radius: 0 !important;
+            }
+            
+            /* FORÇAR TODAS AS LETRAS EM PRETO E REMOVER NEGRITOS */
+            *,
+            body,
+            div,
+            span,
+            label,
+            input,
+            textarea,
+            select,
+            option,
+            td,
+            th,
+            p,
+            h1, h2, h3, h4, h5, h6,
+            .item-column,
+            .section-title,
+            .field-label {
+                color: #000 !important;
+                font-weight: normal !important;
+            }
+            
+            /* Títulos de seção - PRETO sobre fundo BRANCO SEM NEGRITO */
+            div[style*="background: linear-gradient"],
+            div[style*="background:linear-gradient"],
+            div[style*="background: linear-gradient(135deg, #6c757d"],
+            div[style*="background:linear-gradient(135deg,#6c757d"],
+            div[style*="background: linear-gradient(135deg, #28a745"],
+            div[style*="background:#6c757d"],
+            div[style*="background: #6c757d"] {
+                color: #000 !important;
+                background: #fff !important;
+                border: 1px solid #000 !important;
+                font-weight: normal !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            
+            /* Força texto preto em headers de seção SEM NEGRITO */
+            div[style*="padding: 12px"] {
+                color: #000 !important;
+                background: #fff !important;
+                border: 1px solid #000 !important;
+                font-weight: normal !important;
+            }
+            
+            /* Labels de campo em preto com fundo BRANCO E SEM NEGRITO */
+            td.field-label,
+            .field-label {
+                color: #000 !important;
+                background: #fff !important;
+                font-weight: normal !important;
+            }
+            
+            /* Labels de checkboxes em preto SEM NEGRITO */
+            label[for] {
+                color: #000 !important;
+                font-weight: normal !important;
+            }
+            
+            /* Item column em preto com fundo BRANCO E SEM NEGRITO */
+            td.item-column,
+            .item-column {
+                color: #000 !important;
+                background: #fff !important;
+                font-weight: normal !important;
+            }
+            
+            /* Section title em preto com fundo BRANCO E SEM NEGRITO */
+            td.section-title,
+            .section-title {
+                color: #000 !important;
+                background: #fff !important;
+                font-weight: normal !important;
+            }
+            
+            /* Opções de select em preto */
+            select option {
+                color: #000 !important;
+                font-weight: normal !important;
+            }
+            
+            /* Texto em inputs e selects em preto */
+            input[type="text"],
+            input[type="number"],
+            textarea,
+            select {
+                color: #000 !important;
+                font-weight: normal !important;
+            }
+            
+            /* Garantir que todo texto dentro de tabelas seja preto E SEM NEGRITO */
+            table,
+            table td,
+            table th,
+            table tr {
+                color: #000 !important;
+                font-weight: normal !important;
+            }
+            
+            /* Remover espaços extras */
+            body * {
+                line-height: 1.1 !important;
+            }
+            
+            .container {
+                padding: 5px !important;
+            }
+            
+            /* REMOVER PLACEHOLDERS COMPLETAMENTE - MÉTODO AGRESSIVO */
+            input[placeholder],
+            textarea[placeholder] {
+                text-indent: -9999px !important;
+            }
+            
+            input::placeholder,
+            textarea::placeholder {
+                color: transparent !important;
+                opacity: 0 !important;
+                visibility: hidden !important;
+                display: none !important;
+                content: '' !important;
+                font-size: 0 !important;
+            }
+            
+            input::-webkit-input-placeholder,
+            textarea::-webkit-input-placeholder {
+                color: transparent !important;
+                opacity: 0 !important;
+                visibility: hidden !important;
+                display: none !important;
+                content: '' !important;
+                font-size: 0 !important;
+            }
+            
+            input::-moz-placeholder,
+            textarea::-moz-placeholder {
+                color: transparent !important;
+                opacity: 0 !important;
+                visibility: hidden !important;
+                display: none !important;
+                content: '' !important;
+                font-size: 0 !important;
+            }
+            
+            input:-ms-input-placeholder,
+            textarea:-ms-input-placeholder {
+                color: transparent !important;
+                opacity: 0 !important;
+                visibility: hidden !important;
+                display: none !important;
+                content: '' !important;
+                font-size: 0 !important;
+            }
+            
+            input::-ms-input-placeholder,
+            textarea::-ms-input-placeholder {
+                color: transparent !important;
+                opacity: 0 !important;
+                visibility: hidden !important;
+                display: none !important;
+                content: '' !important;
+                font-size: 0 !important;
+            }
+            
+            input::after,
+            textarea::after,
+            input::before,
+            textarea::before {
+                content: '' !important;
+                display: none !important;
+            }
+            
+            /* Garantir que os campos apareçam vazios e limpos */
+            input.input-field,
+            textarea.input-field,
+            input[type="text"],
+            textarea {
+                background: white !important;
+                color: #000 !important;
+            }
+            
+            /* Forçar campos vazios sem placeholder */
+            input.input-field:not([value]),
+            textarea.input-field:empty {
+                text-indent: 0 !important;
+            }
+            
+            /* Forçar quebra de página apenas no final */
+            * {
+                page-break-inside: avoid !important;
+            }
+            
+            .container {
+                page-break-after: avoid !important;
+            }
+            
+            /* REGRA UNIVERSAL SUPREMA - TODAS AS BORDAS 1PX SEM EXCEÇÃO */
+            * {
+                border-width: 1px !important;
+            }
+            
+            *[style*="border"],
+            *[style*="border: 2px"],
+            *[style*="border:2px"],
+            *[style*="border: 3px"],
+            *[style*="border:3px"],
+            *[style*="border-width"],
+            *[style*="border-right"],
+            *[style*="border-left"],
+            *[style*="border-top"],
+            *[style*="border-bottom"],
+            div,
+            input,
+            select,
+            textarea,
+            table,
+            td,
+            th,
+            tr {
+                border-width: 1px !important;
+            }
+            
+            /* Forçar cor preta em todas as bordas */
+            *[style*="border"] {
+                border-color: #000 !important;
+                border-style: solid !important;
+            }
+        }
+        
+        .print-btn {
+            background: #28a745;
+        }
+        
+        .print-btn:hover {
+            background: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Banner de modo de criação -->
+        <div class="create-mode-banner no-print">
+            ✨ CRIAÇÃO DE NOVA RNC - Sistema IPPEL
+        </div>
+
+        <!-- Header with Logo -->
+        <div class="header">
+            <div class="logos" style="display:flex; gap:12px; align-items:center;">
+                <img src="{{ url_for('static', filename='LOGOSQI.jpg') }}" alt="SQI Logo" style="width: 120px; height: 120px; object-fit: contain; background: transparent; padding: 0; border: none;">
+                <img src="/IPPELLOGO.jpg" alt="IPPEL Logo" class="apply-logo" style="width: 120px; height: 120px; object-fit: contain; background: transparent; padding: 0; border: none;"
+                     data-logo-primary="/IPPELLOGO.jpg"
+                     data-logo-fallback1="/IPPELLOGO.jpg"
+                     data-logo-fallback2="{{ url_for('static', filename='LOGOSQI.jpg') }}"
+                     onerror="if(this.dataset.try1!=='1'){this.dataset.try1='1'; this.src=this.dataset.logoFallback1;} else if(this.dataset.try2!=='1'){this.dataset.try2='1'; this.src=this.dataset.logoFallback2;} else {this.style.display='none';}">
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <div class="action-bar" style="position: static; box-shadow: none; margin: 0;">
+                    <button class="action-btn dashboard-btn" title="Voltar ao Dashboard" onclick="window.location.href='/dashboard'">
+                        🏠 <span class="label">Dashboard</span>
+                    </button>
+                    <button class="action-btn save-btn" title="Criar RNC" onclick="criarRNC()">
+                        ✨ <span class="label">Criar RNC</span>
+                    </button>
+                    <button class="action-btn print-btn" title="Imprimir Formulário" onclick="imprimirFormulario()">
+                        🖨️ <span class="label">Imprimir</span>
+                    </button>
+                </div>
+                <span class="no-print" style="font-size: 12px; color: #6c757d; font-weight: 500; margin-left: 12px;">v2.0 | Sistema Premium</span>
+            </div>
+        </div>
+
+        <!-- Title Section -->
+        <div class="title-section">
+            <div style="margin-bottom: 10px;">
+                <div style="width: 60px; height: 2px; background: linear-gradient(90deg, transparent, #6c757d, transparent); margin: 0 auto;"></div>
+            </div>
+            <div class="main-title">Relatório De Não Conformidades Internas – RNC</div>
+            <div class="subtitle">FABRICAÇÃO / RECEBIMENTO</div>
+        </div>
+
+        <!-- Form Code -->
+        <div class="form-code">FQ – 002</div>
+
+        <!-- RNC Number -->
+        <div class="rnc-number" style="text-align: center; margin-bottom: 20px;">
+            <label style="font-weight: 600; color: #495057; margin-right: 10px;">RNC Nº.:</label>
+            <input type="text" id="rnc_number" name="rnc_number" value="[SERÁ GERADO AUTOMATICAMENTE]" 
+                   style="border: 1px solid #000; border-radius: 5px; padding: 8px; width: 100px; font-weight: 600; background: #f8f9fa;" readonly>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- SEÇÃO: DESENHO -->
+        <!-- ============================================ -->
+        <div style="margin: 25px 0; border: 1px solid #000; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);">
+
+            <!-- Cabeçalho da Seção -->
+            <div style="background: white; color: black; padding: 12px 20px; font-weight: bold; font-size: 15px; text-align: center; letter-spacing: 1px;">
+                 DESENHO
+            </div>
+
+            <!-- Conteúdo -->
+            <div style="padding: 20px; background: white;">
+                <!-- Linha 1: CLIENTES | NUMERO DE DESENHO | REVISÃO -->
+                <table style="margin-bottom: 0;">
+                    <tr>
+                        <td class="field-label" style="width: 33.33%;">CLIENTES</td>
+                        <td class="field-label" style="width: 33.33%;">NUMERO DE DESENHO</td>
+                        <td class="field-label" style="width: 33.33%;">REVISÃO</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <select id="client" name="client" class="input-field" data-field="client" style="padding: 8px; cursor: pointer;">
+                                <option value="">Selecione o cliente</option>
+                                {% for client in clients %}
+                                <option value="{{ client }}">{{ client }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td><input type="text" name="drawing" class="input-field" placeholder="Número do Desenho" data-field="drawing"></td>
+                        <td><input type="text" name="revision" class="input-field" placeholder="Revisão" data-field="revision"></td>
+                    </tr>
+                </table>
+
+                <!-- Linha 2: CONJ. | EQUIPAMENTO -->
+                <table style="margin-bottom: 0;">
+                    <tr>
+                        <td class="field-label" style="width: 50%;">CONJ.</td>
+                        <td class="field-label" style="width: 50%;">EQUIPAMENTO</td>
+                    </tr>
+                    <tr>
+                        <td><input type="text" name="conjunto" class="input-field" placeholder="Conjunto" data-field="conjunto"></td>
+                        <td><input type="text" id="equipment" name="equipment" class="input-field" placeholder="Equipamento" data-field="equipment"></td>
+                    </tr>
+                </table>
+
+                <!-- Linha 3: DESCRIÇÃO -->
+                <table style="margin-bottom: 0;">
+                    <tr>
+                        <td class="field-label" style="width: 100%;">DESCRIÇÃO</td>
+                    </tr>
+                    <tr>
+                        <td><input type="text" name="description_drawing" class="input-field" placeholder="Descrição do desenho" data-field="description_drawing"></td>
+                    </tr>
+                </table>
+
+                <!-- 🔖 CAMPOS MOVIDOS PARA SEÇÃO COMPLEMENTARES -->
+                <!-- CV, MOD, QTDE LOTE, MATERIAL, POSIÇÃO, MP e VALOR TOTAL agora estão na seção COMPLEMENTARES abaixo -->
+            </div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- SEÇÃO: COMPLEMENTARES -->
+        <!-- ============================================ -->
+        <div style="margin: 25px 0; border: 1px solid #000; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);">
+            <!-- Cabeçalho da Seção -->
+            <div style="background: white; color: black; padding: 12px 20px; font-weight: bold; font-size: 15px; text-align: center; letter-spacing: 1px;">
+                 COMPLEMENTARES
+            </div>
+
+            <!-- Conteúdo -->
+            <div style="padding: 20px; background: white;">
+                <!-- Linha 1: POSIÇÃO | MODELO | MATERIAL | QUANTIDADE -->
+                <table style="margin-bottom: 0;">
+                    <tr>
+                        <td class="field-label" style="width: 25%;">POSIÇÃO</td>
+                        <td class="field-label" style="width: 25%;">MODELO</td>
+                        <td class="field-label" style="width: 25%;">MATERIAL</td>
+                        <td class="field-label" style="width: 25%;">QUANTIDADE</td>
+                    </tr>
+                    <tr>
+                        <td><input type="text" name="position" class="input-field" placeholder="Posição" data-field="position"></td>
+                        <td><input type="text" name="modelo" class="input-field" placeholder="Modelo" data-field="modelo"></td>
+                        <td><input type="text" name="material" class="input-field" placeholder="Material" data-field="material"></td>
+                        <td><input type="number" id="quantity" name="quantity" class="input-field" placeholder="Quantidade" data-field="quantity" min="0" step="1"></td>
+                    </tr>
+                </table>
+
+                <!-- Linha 2: CV | MP -->
+                <table style="margin-bottom: 0;">
+                    <tr>
+                        <td class="field-label" style="width: 50%;">CV</td>
+                        <td class="field-label" style="width: 50%;">MP</td>
+                    </tr>
+                    <tr>
+                        <td><input type="text" name="cv" class="input-field" placeholder="CV" data-field="cv"></td>
+                        <td><input type="text" name="mp" class="input-field" placeholder="MP" data-field="mp"></td>
+                    </tr>
+                </table>
+
+                <!-- Linha 3: VALOR TOTAL | OBSERVAÇÃO -->
+                <table style="margin-bottom: 0;">
+                    <tr>
+                        <td class="field-label" style="width: 50%;">VALOR TOTAL (R$)</td>
+                        <td class="field-label" style="width: 50%;">OBSERVAÇÃO</td>
+                    </tr>
+                    <tr>
+                        <td style="position: relative;">
+                            <input type="text" id="price" name="price" class="input-field" placeholder="R$ 0,00" data-field="price"
+                                   inputmode="decimal" autocomplete="off" readonly style="background: #f8f9fa; cursor: pointer;">
+                            <button type="button" onclick="openValoresSelectionModal()" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); padding: 6px 12px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 11px; font-weight: 600;" onmouseover="this.style.background='#0056b3'" onmouseout="this.style.background='#007bff'">
+                                📋 Adicionar
+                            </button>
+                            <!-- Lista de itens selecionados -->
+                            <div id="selectedValoresList" style="margin-top: 10px; max-height: 200px; overflow-y: auto; display: none; border: 1px solid #ddd; border-radius: 5px; padding: 10px; background: white;">
+                                <!-- Itens serão adicionados aqui dinamicamente -->
+                            </div>
+                        </td>
+                        <td><input type="text" id="price_note" class="input-field" placeholder="Ex.: custo estimado, nota de orçamento" data-field="price_note"></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- SEÇÃO: ASSINATURAS CABEÇALHO -->
+        <!-- ============================================ -->
+        <div style="margin: 25px 0; border: 1px solid #000; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);">
+            <!-- Cabeçalho da Seção -->
+            <div style="background: white; color: black; padding: 12px 20px; font-weight: bold; font-size: 15px; text-align: center; letter-spacing: 1px;">
+                 ASSINATURAS CABEÇALHO
+            </div>
+
+            <!-- Conteúdo -->
+            <div style="padding: 20px; background: white;">
+                <!-- Linha 1: Setor responsável | Assinatura responsável | Data -->
+                <table style="margin-bottom: 0;">
+                    <tr>
+                        <td class="field-label" style="width: 33.33%;">SETOR RESPONSÁVEL</td>
+                        <td class="field-label" style="width: 33.33%;">ASSINATURA RESPONSÁVEL</td>
+                        <td class="field-label" style="width: 33.33%;">DATA</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <select id="area_responsavel_select" name="area_responsavel" class="input-field" data-field="area_responsavel" onchange="onAreaResponsavelChange()" style="padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; width: 100%; background: white; cursor: pointer; transition: all 0.2s;">
+                                <option value="">Selecione a Área Responsável</option>
+                            </select>
+                        </td>
+                        <td><input type="text" id="ass_responsavel" name="ass_responsavel" class="input-field" placeholder="Assinatura Responsável" data-field="signature_inspection_name"></td>
+                        <td><input type="text" id="data_emissao" name="data_emissao" class="input-field" data-field="created_at"></td>
+                    </tr>
+                </table>
+
+                <!-- Linha 2: Inspetor | Nome causador | Assinatura Causador -->
+                <table style="margin-bottom: 0;">
+                    <tr>
+                        <td class="field-label" style="width: 33.33%;">INSPETOR</td>
+                        <td class="field-label" style="width: 33.33%;">NOME CAUSADOR</td>
+                        <td class="field-label" style="width: 33.33%;">ASSINATURA CAUSADOR</td>
+                    </tr>
+                    <tr>
+                        <td><input type="text" name="inspetor" class="input-field" placeholder="Inspetor" data-field="inspetor"></td>
+                        <td>
+                            <select id="nome_responsavel" name="nome_responsavel" class="input-field" data-field="responsavel" onchange="onNomeResponsavelChange()" style="padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; width: 100%; background: white; cursor: pointer; transition: all 0.2s;">
+                                <option value="">Selecione o Usuário Causador</option>
+                            </select>
+                        </td>
+                        <td><input type="text" name="assinatura_lider" id="assinatura_lider" class="input-field" placeholder="Digite a assinatura manualmente" data-field="signature_inspection2_name"></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- 🔖 CAMPOS ANTIGOS REMOVIDOS (Agora estão na seção ASSINATURAS CABEÇALHO) -->
+        <!--
+        <table>
+            <tr>
+                <td class="field-label" style="width: 25%;">ASSINATURA GERENTE</td>
+                <td class="field-label" style="width: 25%;">ASSINATURA LÍDER SETOR</td>
+                <td class="field-label" style="width: 25%;">NOME RESP.</td>
+            </tr>
+            <tr>
+                <td><input type="text" name="assinatura_gerente" class="input-field" placeholder="Assinatura Gerente" data-field="signature_engineering_name"></td>
+                <td><input type="text" name="assinatura_lider" class="input-field" placeholder="Assinatura Líder" data-field="signature_inspection2_name"></td>
+                <td><input type="text" name="nome_responsavel_antigo" class="input-field" placeholder="Nome Responsável" data-field="responsavel"></td>
+            </tr>
+        </table>
+
+        <table>
+            <tr>
+                <td class="field-label" style="width: 35%;">INSPETOR:</td>
+                <td class="field-label" style="width: 20%;">DATA EMISSÃO</td>
+                <td class="field-label" style="width: 30%;">ÁREA RESPONSÁVEL</td>
+                <td class="field-label" style="width: 15%;">ASS. RESP.</td>
+            </tr>
+            <tr>
+                <td><input type="text" name="inspetor" class="input-field" placeholder="Inspetor" data-field="inspetor"></td>
+                <td><input type="text" id="data_emissao" name="data_emissao" class="input-field" data-field="created_at"></td>
+                <td>
+                    <select id="area_responsavel_select" name="area_responsavel" class="input-field" data-field="area_responsavel" onchange="onAreaResponsavelChange()" style="padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; width: 100%; background: white; cursor: pointer; transition: all 0.2s;">
+                        <option value="">Selecione a Área Responsável</option>
+                    </select>
+                </td>
+                <td><input type="text" id="ass_responsavel" name="ass_responsavel" class="input-field" placeholder="Preencher manualmente" data-field="signature_inspection_name"></td>
+            </tr>
+        </table>
+        -->
+
+        <!-- Description Section -->
+        <table>
+            <tr>
+                <td class="section-title">DESCRIÇÃO DA NÃO CONFORMIDADE</td>
+            </tr>
+            <tr>
+                <td><textarea id="description" name="description" class="input-field large-text-area" placeholder="Descreva a não conformidade identificada..." data-field="description" style="font-size: 12px !important;"></textarea></td>
+            </tr>
+        </table>
+
+        <!-- Instruction Section -->
+        <table>
+            <tr>
+                <td class="section-title">INSTRUÇÃO PARA RETRABALHO</td>
+            </tr>
+            <tr>
+                <td><textarea id="instruction_retrabalho" name="instruction_retrabalho" class="input-field instruction-2lines" placeholder="Instruções detalhadas para correção..." data-field="instruction_retrabalho" style="font-size: 12px !important;"></textarea></td>
+            </tr>
+        </table>
+
+        <!-- Cause Section -->
+        <table>
+            <tr>
+                <td class="section-title">CAUSA DA RNC</td>
+            </tr>
+            <tr>
+                <td><textarea id="cause_rnc" name="cause_rnc" class="input-field medium-text-area" placeholder="Análise da causa raiz..." data-field="cause_rnc" style="font-size: 12px !important;"></textarea></td>
+            </tr>
+        </table>
+
+        <!-- Action Section -->
+        <table>
+            <tr>
+                <td class="section-title">AÇÃO A SER TOMADA</td>
+            </tr>
+            <tr>
+                <td><textarea id="action_rnc" name="action_rnc" class="input-field medium-text-area" placeholder="Ações corretivas e preventivas..." data-field="action_rnc" style="font-size: 12px !important;"></textarea></td>
+            </tr>
+        </table>
+
+        <!-- Header Banner -->
+        <div style="width: 100%; background: white; color: black; text-align: center; padding: 12px 0; margin-bottom: 0; border-radius: 8px 8px 0 0; font-weight: bold; font-size: 14px; display: flex; border: 1px solid #000; border-bottom: none;">
+            <div style="width: 50%; text-align: center; border-right: 1px solid #000;">DISPOSIÇÃO DO MATERIAL NÃO-CONFORME</div>
+            <div style="width: 50%; text-align: center;">INSPEÇÃO DO RETRABALHO</div>
+        </div>
+
+        <!-- Main Content Section -->
+        <div style="border: 1px solid #000; border-top: none; border-radius: 0 0 8px 8px; background: white; display: flex;">
+            <!-- Left Section: Disposição do Material -->
+            <div style="width: 50%; padding: 15px; border-right: 1px solid #000;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px; font-weight: bold;">
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" id="usar" name="disposition_usar" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #6c757d;" data-field="disposition_usar">
+                        <label for="usar">USAR COMO ESTÁ</label>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" id="retrabalhar" name="disposition_retrabalhar" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #6c757d;" data-field="disposition_retrabalhar">
+                        <label for="retrabalhar">RETRABALHAR</label>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" id="rejeitar" name="disposition_rejeitar" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #6c757d;" data-field="disposition_rejeitar">
+                        <label for="rejeitar">REJEITAR</label>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" id="sucata" name="disposition_sucata" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #6c757d;" data-field="disposition_sucata">
+                        <label for="sucata">SUCATA</label>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" id="devolver_estoque" name="disposition_devolver_estoque" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #6c757d;" data-field="disposition_devolver_estoque">
+                        <label for="devolver_estoque">DEVOLVER AO ESTOQUE</label>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" id="devolver_fornecedor" name="disposition_devolver_fornecedor" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #6c757d;" data-field="disposition_devolver_fornecedor">
+                        <label for="devolver_fornecedor">DEVOLVER AO FORNECEDOR</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Section: Inspeção do Retrabalho -->
+            <div style="width: 50%; padding: 15px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px; font-weight: bold;">
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" id="aprovado" name="inspection_aprovado" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #28a745;" data-field="inspection_aprovado">
+                        <label for="aprovado">APROVADO</label>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" id="reprovado" name="inspection_reprovado" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #dc3545;" data-field="inspection_reprovado">
+                        <label for="reprovado">REPROVADO</label>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" id="ver-rnc" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #ffc107;">
+                        <label for="ver-rnc">VER RNC. Nº:</label>
+                        <input type="text" id="ver_rnc_input" name="inspection_ver_rnc" style="border: none; border-bottom: 1px solid #000; width: 120px; margin-left: 8px; font-size: 11px; padding: 2px; background: transparent;" data-field="inspection_ver_rnc">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Signature Section -->
+        <div style="margin-top: 15px; border: 1px solid #000; border-radius: 4px; background: white;">
+            <!-- Date Row -->
+            <div style="display: flex; border-bottom: 1px solid #000;">
+                <div style="width: 33.33%; padding: 8px; text-align: center; font-size: 10px; font-weight: bold;">
+                    <span>DATA: </span>
+                    <input id="insp1_d" type="text" style="border: none; border-bottom: 1px solid #000; width: 20px; text-align: center; font-size: 10px;" placeholder="__">
+                    <span>/</span>
+                    <input id="insp1_m" type="text" style="border: none; border-bottom: 1px solid #000; width: 20px; text-align: center; font-size: 10px;" placeholder="__">
+                    <span>/</span>
+                    <input id="insp1_y" type="text" style="border: none; border-bottom: 1px solid #000; width: 40px; text-align: center; font-size: 10px;" placeholder="____">
+                </div>
+                <div style="width: 33.33%; padding: 8px; text-align: center; font-size: 10px; font-weight: bold;">
+                    <span>DATA: </span>
+                    <input id="eng_d" type="text" style="border: none; border-bottom: 1px solid #000; width: 20px; text-align: center; font-size: 10px;" placeholder="__">
+                    <span>/</span>
+                    <input id="eng_m" type="text" style="border: none; border-bottom: 1px solid #000; width: 20px; text-align: center; font-size: 10px;" placeholder="__">
+                    <span>/</span>
+                    <input id="eng_y" type="text" style="border: none; border-bottom: 1px solid #000; width: 40px; text-align: center; font-size: 10px;" placeholder="____">
+                </div>
+                <div style="width: 33.33%; padding: 8px; text-align: center; font-size: 10px; font-weight: bold;">
+                    <span>DATA: </span>
+                    <input id="insp2_d" type="text" style="border: none; border-bottom: 1px solid #000; width: 20px; text-align: center; font-size: 10px;" placeholder="__">
+                    <span>/</span>
+                    <input id="insp2_m" type="text" style="border: none; border-bottom: 1px solid #000; width: 20px; text-align: center; font-size: 10px;" placeholder="__">
+                    <span>/</span>
+                    <input id="insp2_y" type="text" style="border: none; border-bottom: 1px solid #000; width: 40px; text-align: center; font-size: 10px;" placeholder="____">
+                </div>
+            </div>
+
+            <!-- Signature Row -->
+            <div style="display: flex;">
+                <div id="assinatura_coluna1" style="width: 33.33%; padding: 15px; text-align: center; font-size: 11px; font-weight: bold; background: #ffffff; color: rgb(0, 0, 0); cursor: pointer;" onclick="preencherAssinatura(this)">
+                    <div id="nome_coluna1" style="margin-bottom: 25px;">NOME</div>
+                    <div style="border-top: 1px solid #000; padding-top: 8px;">VISTO - Qualidade</div>
+                </div>
+                <div id="assinatura_coluna2" style="width: 33.33%; padding: 15px; text-align: center; font-size: 11px; font-weight: bold; cursor: pointer;" onclick="preencherAssinatura(this)">
+                    <div id="nome_coluna2" style="margin-bottom: 25px;">NOME</div>
+                    <div style="border-top: 1px solid #000; padding-top: 8px;">VISTO - Gerente do Setor</div>
+                </div>
+                <div id="assinatura_coluna3" style="width: 33.33%; padding: 15px; text-align: center; font-size: 11px; font-weight: bold; cursor: pointer;" onclick="preencherAssinatura(this)">
+                    <div id="nome_coluna3" style="margin-bottom: 25px;">NOME</div>
+                    <div style="border-top: 1px solid #000; padding-top: 8px;">VISTO - Causador</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para notificação de campo bloqueado -->
+    <div id="blockFieldModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 3000; justify-content: center; align-items: center; backdrop-filter: blur(5px);">
+        <div id="blockModalContent" style="background: white; padding: 30px; border-radius: 15px; max-width: 400px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transform: scale(0.8); opacity: 0; transition: all 0.3s ease;">
+            <div style="font-size: 48px; margin-bottom: 15px; animation: bounceBlock 0.6s ease-in-out;">🔒</div>
+            <h3 style="color: #dc3545; margin-bottom: 15px; font-weight: 700;">Campo Bloqueado</h3>
+            <p id="blockFieldMessage" style="color: #6c757d; margin-bottom: 20px; line-height: 1.5;"></p>
+            <button onclick="fecharModalBloqueio()" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);" 
+                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(220, 53, 69, 0.4)'"
+                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(220, 53, 69, 0.3)'">
+                Entendi
+            </button>
+        </div>
+    </div>
+
+    <!-- ⚡ DEFINIR FUNÇÕES GLOBAIS ANTES DO HTML QUE AS USA -->
+    <script>
+        console.log('🔧 Definindo funções globais essenciais...');
+        
+        // Função para preencher assinatura automaticamente (DEVE estar disponível antes dos onclick)
+        window.preencherAssinatura = function(elemento) {
+            console.log('✍️ preencherAssinatura chamado! Elemento:', elemento && elemento.id);
+            
+            if (!elemento) {
+                console.error('❌ Elemento não fornecido');
+                return;
+            }
+            
+            const nomeElement = elemento.querySelector('div[id^="nome_coluna"]');
+            
+            if (!nomeElement) {
+                console.error('❌ Elemento de nome não encontrado dentro de', elemento.id);
+                return;
+            }
+            
+            console.log('📝 Elemento de nome encontrado:', nomeElement.id, 'Texto atual:', nomeElement.textContent);
+            
+            // Se já existe assinatura, REMOVER (toggle)
+            if (nomeElement.textContent && nomeElement.textContent.trim() !== '' && nomeElement.textContent !== 'NOME') {
+                console.log('🗑️ Removendo assinatura existente:', nomeElement.textContent);
+                
+                // Limpar o nome
+                nomeElement.textContent = 'NOME';
+                
+                // Limpar a data correspondente
+                let datePrefix = null;
+                if (elemento.id === 'assinatura_coluna1') {
+                    datePrefix = 'insp1';
+                } else if (elemento.id === 'assinatura_coluna2') {
+                    datePrefix = 'eng';
+                } else if (elemento.id === 'assinatura_coluna3') {
+                    datePrefix = 'insp2';
+                }
+                
+                if (datePrefix) {
+                    const dInput = document.getElementById(datePrefix + '_d');
+                    const mInput = document.getElementById(datePrefix + '_m');
+                    const yInput = document.getElementById(datePrefix + '_y');
+                    
+                    if (dInput && mInput && yInput) {
+                        dInput.value = '';
+                        mInput.value = '';
+                        yInput.value = '';
+                        console.log(`🧹 Data limpa para ${datePrefix}`);
+                    }
+                }
+                
+                if (typeof mostrarNotificacao === 'function') {
+                    mostrarNotificacao('🗑️ Assinatura removida', 'info');
+                }
+                return;
+            }
+            
+            console.log('🔄 Buscando informações do usuário...');
+            
+            // Buscar informações do usuário
+            fetch('/api/user/info')
+                .then(response => {
+                    console.log('📡 Resposta recebida, status:', response.status);
+                    if (!response.ok) {
+                        throw new Error('Erro ao buscar dados do usuário');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('✅ Dados recebidos:', data);
+                    
+                    if (data.success && data.user) {
+                        const userName = data.user.name || 'USUÁRIO';
+                        const userDept = data.user.department || '';
+                        
+                        console.log('👤 Preenchendo assinatura com:', userName, '/', userDept);
+                        
+                        // Preencher nome
+                        nomeElement.textContent = userName;
+                        
+                        // Preencher APENAS a data correspondente à coluna clicada
+                        const hoje = new Date();
+                        const dia = String(hoje.getDate()).padStart(2, '0');
+                        const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+                        const ano = String(hoje.getFullYear());
+                        
+                        // Determinar qual prefixo de data usar baseado no ID do elemento clicado
+                        let datePrefix = null;
+                        if (elemento.id === 'assinatura_coluna1') {
+                            datePrefix = 'insp1';
+                        } else if (elemento.id === 'assinatura_coluna2') {
+                            datePrefix = 'eng';
+                        } else if (elemento.id === 'assinatura_coluna3') {
+                            datePrefix = 'insp2';
+                        }
+                        
+                        // Preencher apenas a data correspondente
+                        if (datePrefix) {
+                            const dInput = document.getElementById(datePrefix + '_d');
+                            const mInput = document.getElementById(datePrefix + '_m');
+                            const yInput = document.getElementById(datePrefix + '_y');
+                            
+                            if (dInput && mInput && yInput) {
+                                dInput.value = dia;
+                                mInput.value = mes;
+                                yInput.value = ano;
+                                console.log(`📅 Data preenchida APENAS para ${datePrefix}: ${dia}/${mes}/${ano}`);
+                            } else {
+                                console.warn(`⚠️ Campos de data não encontrados para ${datePrefix}`);
+                            }
+                        } else {
+                            console.warn('⚠️ ID do elemento não reconhecido:', elemento.id);
+                        }
+                        
+                        if (typeof mostrarNotificacao === 'function') {
+                            mostrarNotificacao(`✅ Assinatura registrada: ${userName}`, 'success');
+                        }
+                    } else {
+                        console.error('❌ Dados do usuário inválidos:', data);
+                        if (typeof mostrarNotificacao === 'function') {
+                            mostrarNotificacao('❌ Erro ao obter dados do usuário', 'error');
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Erro ao buscar usuário:', error);
+                    if (typeof mostrarNotificacao === 'function') {
+                        mostrarNotificacao('❌ Erro ao buscar informações do usuário', 'error');
+                    }
+                });
+        };
+        
+        // Função para fechar modal de bloqueio (usada no botão do modal acima)
+        window.fecharModalBloqueio = function() {
+            const modal = document.getElementById('blockFieldModal');
+            const modalContent = document.getElementById('blockModalContent');
+            
+            if (modal && modalContent) {
+                modalContent.style.transform = 'scale(0.8)';
+                modalContent.style.opacity = '0';
+                
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                }, 300);
+            }
+        };
+        
+        console.log('✅ Funções globais definidas: preencherAssinatura, fecharModalBloqueio');
+        
+        // Função para imprimir o formulário
+        window.imprimirFormulario = function() {
+            console.log('🖨️ Preparando impressão do formulário...');
+            
+            // Salvar título original
+            const tituloOriginal = document.title;
+            
+            // Definir título para impressão
+            const rncNumber = document.getElementById('rnc_number')?.value || 'NOVA';
+            document.title = `RNC ${rncNumber} - IPPEL`;
+            
+            // REMOVER PLACEHOLDERS ANTES DA IMPRESSÃO
+            const allInputs = document.querySelectorAll('input[placeholder], textarea[placeholder]');
+            const savedPlaceholders = [];
+            
+            allInputs.forEach((element) => {
+                // Salvar placeholder original
+                savedPlaceholders.push({
+                    element: element,
+                    placeholder: element.getAttribute('placeholder')
+                });
+                // Remover placeholder temporariamente
+                element.removeAttribute('placeholder');
+                console.log(`🗑️ Placeholder removido: ${savedPlaceholders[savedPlaceholders.length - 1].placeholder}`);
+            });
+            
+            console.log(`✅ ${savedPlaceholders.length} placeholders removidos para impressão`);
+            
+            // Aguardar um momento para aplicar estilos de impressão
+            setTimeout(() => {
+                window.print();
+                
+                // RESTAURAR PLACEHOLDERS APÓS IMPRESSÃO
+                setTimeout(() => {
+                    document.title = tituloOriginal;
+                    
+                    savedPlaceholders.forEach(({element, placeholder}) => {
+                        element.setAttribute('placeholder', placeholder);
+                    });
+                    
+                    console.log(`✅ ${savedPlaceholders.length} placeholders restaurados`);
+                }, 100);
+            }, 100);
+        };
+        
+        console.log('✅ Função de impressão definida: imprimirFormulario');
+    </script>
+
+    <script>
+        console.log('🔧 Script carregado - verificando funções...');
+        
+        // Cache do usuário atual para uso em assinaturas
+        let __CURRENT_USER_NAME = null;
+        let __CURRENT_USER_DEPT = null;
+        let __USER_GROUP_ID = null;
+        let __LOCKED_FIELDS = [];
+        
+        // Função para mostrar notificações
+        window.mostrarNotificacao = function(mensagem, tipo = 'success') {
+            console.log('📢 Notificação:', mensagem, tipo);
+            const notificacao = document.createElement('div');
+            
+            let background, shadow;
+            if (tipo === 'error') {
+                background = 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)';
+                shadow = 'rgba(220, 53, 69, 0.3)';
+            } else if (tipo === 'info') {
+                background = 'linear-gradient(135deg, #17a2b8 0%, #138496 100%)';
+                shadow = 'rgba(23, 162, 184, 0.3)';
+            } else {
+                background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
+                shadow = 'rgba(40, 167, 69, 0.3)';
+            }
+            
+            notificacao.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${background};
+                color: white;
+                padding: 12px 20px;
+                border-radius: 8px;
+                box-shadow: 0 4px 15px ${shadow};
+                z-index: 3000;
+                animation: slideInRight 0.3s ease-out;
+                font-size: 14px;
+                font-weight: 500;
+            `;
+            
+            notificacao.textContent = mensagem;
+            document.body.appendChild(notificacao);
+            
+            setTimeout(() => {
+                notificacao.style.animation = 'slideOutRight 0.3s ease-in';
+                setTimeout(() => {
+                    if (document.body.contains(notificacao)) {
+                        document.body.removeChild(notificacao);
+                    }
+                }, 300);
+            }, 3000);
+        };
+
+        // Função para verificar se há pelo menos uma assinatura
+        function verificarAssinaturas() {
+            console.log('🔍 Verificando assinaturas...');
+            const assinaturas = [
+                document.getElementById('nome_coluna1')?.textContent || '',
+                document.getElementById('nome_coluna2')?.textContent || '',
+                document.getElementById('nome_coluna3')?.textContent || ''
+            ];
+            
+            console.log('📝 Assinaturas encontradas:', assinaturas);
+            return assinaturas.some(assinatura => assinatura && assinatura !== 'NOME' && assinatura.trim() !== '');
+        }
+
+        // NOTA: window.preencherAssinatura já foi definida no script anterior (antes dos elementos HTML)
+        // para garantir que esteja disponível quando os onclick forem configurados
+
+        window.setDateInputs = function(prefix, d, m, y) {
+            const di = document.getElementById(prefix + '_d');
+            const mi = document.getElementById(prefix + '_m');
+            const yi = document.getElementById(prefix + '_y');
+            if (di && mi && yi) {
+                di.value = d; mi.value = m; yi.value = y;
+                di.readOnly = true; mi.readOnly = true; yi.readOnly = true;
+                di.style.pointerEvents='none'; mi.style.pointerEvents='none'; yi.style.pointerEvents='none';
+            }
+        };
+
+        // Função para carregar campos bloqueados
+        async function carregarCamposBloqueados() {
+            try {
+                if (!__USER_GROUP_ID) {
+                    console.log('❌ Grupo do usuário não definido');
+                    return;
+                }
+
+                const response = await fetch(`/admin/field-locks/api/user/locked-fields`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    __LOCKED_FIELDS = data.locked_fields || [];
+                    console.log('🔒 Campos bloqueados carregados:', __LOCKED_FIELDS);
+                    aplicarBloqueiosCampos();
+                } else {
+                    console.log('⚠️ Nenhum campo bloqueado ou erro:', data.message);
+                }
+            } catch (error) {
+                console.error('❌ Erro ao carregar campos bloqueados:', error);
+            }
+        }
+
+        // Função para aplicar bloqueios visuais
+        function aplicarBloqueiosCampos() {
+            __LOCKED_FIELDS.forEach(field => {
+                const elementos = document.querySelectorAll(`[data-field="${field}"]`);
+                elementos.forEach(elemento => {
+                    elemento.classList.add('field-blocked');
+                    elemento.disabled = true;
+                    elemento.title = `Campo bloqueado para seu grupo de usuário`;
+                    
+                    // Adicionar evento para mostrar modal com animação
+                    elemento.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        triggerBlockAnimation(elemento);
+                        mostrarModalBloqueio(field);
+                    });
+                    
+                    elemento.addEventListener('focus', (e) => {
+                        e.preventDefault();
+                        e.target.blur();
+                        triggerBlockAnimation(elemento);
+                        mostrarModalBloqueio(field);
+                    });
+
+                    // Animação especial para textarea e select
+                    elemento.addEventListener('keydown', (e) => {
+                        e.preventDefault();
+                        triggerBlockAnimation(elemento);
+                        mostrarModalBloqueio(field);
+                    });
+                
+                // 🔒 BLOQUEAR BOTÃO "Adicionar Valores" se campo price estiver bloqueado
+                if (field === 'price') {
+                    const addValoresBtn = document.querySelector('#addValoresBtn, button[onclick="openValoresSelectionModal()"]');
+                    if (addValoresBtn) {
+                        addValoresBtn.disabled = true;
+                        addValoresBtn.style.backgroundColor = '#6c757d';
+                        addValoresBtn.style.cursor = 'not-allowed';
+                        addValoresBtn.style.opacity = '0.5';
+                        addValoresBtn.title = ' Bloqueado: campo de valor está bloqueado para seu grupo';
+                        addValoresBtn.onmouseover = null;
+                        addValoresBtn.onmouseout = null;
+                        addValoresBtn.onclick = (e) => {
+                            e.preventDefault();
+                            mostrarModalBloqueio('price');
+                        };
+                        console.log('🔒 Botão "Adicionar Valores" bloqueado junto com campo price');
+                    }
+                }
+
+                    // Animação ao tentar mudar o valor
+                    elemento.addEventListener('input', (e) => {
+                        e.preventDefault();
+                        e.target.value = '';
+                        triggerBlockAnimation(elemento);
+                        mostrarModalBloqueio(field);
+                    });
+                });
+            });
+        }
+
+        // Função para trigger da animação de bloqueio
+        function triggerBlockAnimation(elemento) {
+            elemento.classList.remove('field-blocked-animation');
+            setTimeout(() => {
+                elemento.classList.add('field-blocked-animation');
+                setTimeout(() => {
+                    elemento.classList.remove('field-blocked-animation');
+                }, 800);
+            }, 10);
+        }
+
+        // Função para mostrar modal de campo bloqueado
+        function mostrarModalBloqueio(fieldName) {
+            const modal = document.getElementById('blockFieldModal');
+            const modalContent = document.getElementById('blockModalContent');
+            const message = document.getElementById('blockFieldMessage');
+            
+            message.textContent = `O campo "${fieldName}" está bloqueado para seu grupo de usuário. Entre em contato com o administrador para alterar as permissões.`;
+            
+            modal.style.display = 'flex';
+            
+            // Animação de entrada
+            setTimeout(() => {
+                modalContent.style.transform = 'scale(1)';
+                modalContent.style.opacity = '1';
+            }, 10);
+        }
+
+        // NOTA: window.fecharModalBloqueio já foi definida no script anterior (antes dos elementos HTML)
+
+        // Função para criar RNC
+        window.criarRNC = function() {
+            console.log('✨ Função criarRNC chamada!');
+            
+                // Validação do campo CV: mínimo 11 dígitos
+                const cvInput = document.querySelector('[data-field="cv"]');
+                if (cvInput) {
+                    const cvValue = cvInput.value.replace(/\D/g, ''); // Remove não dígitos
+                    if (cvValue.length < 11) {
+                        mostrarNotificacao('❌ O campo CV deve conter pelo menos 11 dígitos!', 'error');
+                        cvInput.focus();
+                        return;
+                    }
+                }
+            // Verificar se há pelo menos uma assinatura
+            if (!verificarAssinaturas()) {
+                mostrarNotificacao('❌ É obrigatório preencher pelo menos uma assinatura!', 'error');
+                return;
+            }
+
+            // Verificar campos bloqueados
+            const formData = {};
+            let camposBloqueadosViolados = [];
+            
+            // Coletar dados do formulário
+            const campos = [
+                'title', 'description', 'equipment', 'client', 'mp', 'revision', 'position', 'cv',
+                'drawing', 'conjunto', 'modelo', 'description_drawing', 'quantity', 'material', 'purchase_order',
+                'responsavel', 'inspetor', 'area_responsavel', 'setor', 'instruction_retrabalho', 'cause_rnc', 'action_rnc',
+                'price', 'price_note', 'assigned_user_id'
+            ];
+
+            campos.forEach(campo => {
+                const elemento = document.querySelector(`[data-field="${campo}"]`);
+                if (elemento) {
+                    let valor = elemento.value || '';
+                    // Normalizar valor monetário para número
+                    if (campo === 'price') {
+                        valor = brlToFloat(valor);
+                    }
+                    if (valor && __LOCKED_FIELDS.includes(campo)) {
+                        camposBloqueadosViolados.push(campo);
+                    }
+                    formData[campo] = valor;
+                }
+            });
+
+            // Verificar violação de campos bloqueados
+            if (camposBloqueadosViolados.length > 0) {
+                mostrarNotificacao(`❌ Os seguintes campos estão bloqueados: ${camposBloqueadosViolados.join(', ')}`, 'error');
+                return;
+            }
+
+            // Coletar assinaturas
+            formData.signature_inspection_name = document.getElementById('nome_coluna1').textContent !== 'NOME' ? document.getElementById('nome_coluna1').textContent : '';
+            formData.signature_engineering_name = document.getElementById('nome_coluna2').textContent !== 'NOME' ? document.getElementById('nome_coluna2').textContent : '';
+            formData.signature_inspection2_name = document.getElementById('nome_coluna3').textContent !== 'NOME' ? document.getElementById('nome_coluna3').textContent : '';
+            
+            // Coletar disposições
+            formData.disposition_usar = document.getElementById('usar')?.checked || false;
+            formData.disposition_retrabalhar = document.getElementById('retrabalhar')?.checked || false;
+            formData.disposition_rejeitar = document.getElementById('rejeitar')?.checked || false;
+            formData.disposition_sucata = document.getElementById('sucata')?.checked || false;
+            formData.disposition_devolver_estoque = document.getElementById('devolver_estoque')?.checked || false;
+            formData.disposition_devolver_fornecedor = document.getElementById('devolver_fornecedor')?.checked || false;
+            
+            // Coletar inspeções
+            formData.inspection_aprovado = document.getElementById('aprovado')?.checked || false;
+            formData.inspection_reprovado = document.getElementById('reprovado')?.checked || false;
+            formData.inspection_ver_rnc = document.getElementById('ver_rnc_input')?.value || '';
+            
+            // Coletar datas de assinatura
+            formData.signature_inspection_date = [document.getElementById('insp1_d')?.value||'', document.getElementById('insp1_m')?.value||'', document.getElementById('insp1_y')?.value||''].join('/');
+            formData.signature_engineering_date = [document.getElementById('eng_d')?.value||'', document.getElementById('eng_m')?.value||'', document.getElementById('eng_y')?.value||''].join('/');
+            formData.signature_inspection2_date = [document.getElementById('insp2_d')?.value||'', document.getElementById('insp2_m')?.value||'', document.getElementById('insp2_y')?.value||''].join('/');
+
+            // Coletar grupo selecionado para compartilhamento
+            if (selectedGroupId) {
+                formData.shared_group_ids = [selectedGroupId];
+                console.log('👥 Compartilhando RNC com grupo:', selectedGroupId);
+            } else {
+                formData.shared_group_ids = [];
+                console.log('⚠️ Nenhum grupo selecionado para compartilhamento');
+            }
+
+            // Adicionar itens de valores selecionados
+            if (selectedValoresData && selectedValoresData.length > 0) {
+                formData.valores_itens = selectedValoresData;
+                console.log('💰 Incluindo', selectedValoresData.length, 'itens de valores/hora');
+            }
+            
+            // Adicionar usuário causador (se selecionado)
+            const causadorSelector = document.getElementById('causadorSelector');
+            if (causadorSelector && causadorSelector.value) {
+                formData.causador_user_id = causadorSelector.value;
+                console.log('⚠️ Usuário causador definido: ID', causadorSelector.value);
+            }
+
+            console.log('📤 Enviando dados:', formData);
+
+            fetch('/api/rnc/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    try { localStorage.removeItem('dashboardCacheV1'); } catch(e){}
+                    mostrarNotificacao('✅ RNC criada com sucesso!');
+                    setTimeout(() => {
+                        window.location.href = '/dashboard';
+                    }, 1500);
+                } else {
+                    mostrarNotificacao('❌ Erro ao criar RNC: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao criar RNC:', error);
+                mostrarNotificacao('❌ Erro ao criar RNC', 'error');
+            });
+        }
+
+        // Variáveis globais para controle
+        let selectedGroupId = null;
+        let selectedUserIds = []; // Array para múltiplos usuários
+        let allGroups = [];
+        let allUsers = [];
+
+        // Função para carregar grupos
+        async function loadGroups() {
+            try {
+                const response = await fetch('/api/groups');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success && data.groups && data.groups.length > 0) {
+                    allGroups = data.groups;
+                    const groupSelector = document.getElementById('groupSelector');
+                    groupSelector.innerHTML = '<option value="">Selecionar Grupo...</option>';
+                    
+                    allGroups.forEach(group => {
+                        const option = document.createElement('option');
+                        option.value = group.id;
+                        option.textContent = `${group.name} (${group.user_count || 0} usuários)`;
+                        groupSelector.appendChild(option);
+                    });
+                    
+                    console.log(`✅ ${allGroups.length} grupos carregados`);
+                } else {
+                    console.warn('⚠️ Nenhum grupo disponível');
+                    document.getElementById('groupSelector').innerHTML = '<option value="">Nenhum grupo disponível</option>';
+                }
+            } catch (error) {
+                console.error('❌ Erro ao carregar grupos:', error);
+                mostrarNotificacao('❌ Erro ao carregar grupos', 'error');
+            }
+        }
+
+        // Função para carregar usuários
+        async function loadUsers() {
+            try {
+                const response = await fetch('/api/users/list');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success && data.users && data.users.length > 0) {
+                    allUsers = data.users;
+                    console.log(`✅ ${allUsers.length} usuários carregados`);
+                    // Usuários já carregados, pronto para usar
+                    console.log('✅ Lista de usuários carregada com sucesso');
+                } else {
+                    console.warn('⚠️ Nenhum usuário disponível');
+                    allUsers = [];
+                }
+            } catch (error) {
+                console.error('❌ Erro ao carregar usuários:', error);
+                mostrarNotificacao('❌ Erro ao carregar usuários', 'error');
+                allUsers = [];
+            }
+        }
+
+        // Função para popular o dropdown de Área Responsável
+        async function loadAreaResponsavel() {
+            console.log('🏢 [loadAreaResponsavel] Iniciando carregamento de setores...');
+            
+            try {
+                console.log('📡 [loadAreaResponsavel] Fazendo fetch para /api/groups...');
+                const response = await fetch('/api/groups');
+                console.log('📡 [loadAreaResponsavel] Resposta recebida, status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log('📦 [loadAreaResponsavel] Dados recebidos:', data);
+                
+                if (data.success && data.groups && data.groups.length > 0) {
+                    const selectElement = document.getElementById('area_responsavel_select');
+                    console.log('🔍 [loadAreaResponsavel] Elemento select encontrado:', !!selectElement);
+                    
+                    if (!selectElement) {
+                        console.error('❌ [loadAreaResponsavel] Elemento area_responsavel_select NÃO encontrado no DOM!');
+                        return;
+                    }
+                    
+                    selectElement.innerHTML = '<option value="">Selecione a Área Responsável</option>';
+                    
+                    data.groups.forEach(group => {
+                        const option = document.createElement('option');
+                        option.value = group.id;
+                        option.textContent = group.name;
+                        option.dataset.groupName = group.name;
+                        selectElement.appendChild(option);
+                        console.log(`  ➕ Adicionado: ${group.name} (ID: ${group.id})`);
+                    });
+                    
+                    console.log(`✅ [loadAreaResponsavel] ${data.groups.length} áreas responsáveis carregadas no dropdown`);
+                } else {
+                    console.warn('⚠️ [loadAreaResponsavel] Nenhuma área responsável disponível ou dados inválidos');
+                    console.warn('   - data.success:', data.success);
+                    console.warn('   - data.groups:', data.groups);
+                    console.warn('   - data.groups?.length:', data.groups?.length);
+                }
+            } catch (error) {
+                console.error('❌ [loadAreaResponsavel] Erro ao carregar áreas responsáveis:', error);
+                console.error('   Detalhes do erro:', error.message, error.stack);
+            }
+        }
+
+        // Função chamada quando o usuário seleciona uma Área Responsável
+        async function onAreaResponsavelChange() {
+            const selectElement = document.getElementById('area_responsavel_select');
+            const assinaturaLiderInput = document.querySelector('[name="assinatura_lider"]');
+            const assResponsavelInput = document.getElementById('ass_responsavel');
+            const dataEmissaoInput = document.getElementById('data_emissao');
+            const nomeResponsavelSelect = document.getElementById('nome_responsavel');
+            
+            if (!selectElement) return;
+            
+            const selectedAreaGroupId = selectElement.value;
+            
+            // Limpar campos quando nenhuma área é selecionada
+            if (!selectedAreaGroupId) {
+                if (assinaturaLiderInput) assinaturaLiderInput.value = '';
+                if (assResponsavelInput) assResponsavelInput.value = '';
+                if (nomeResponsavelSelect) {
+                    nomeResponsavelSelect.innerHTML = '<option value="">Selecione o Usuário Causador</option>';
+                    nomeResponsavelSelect.disabled = true;
+                }
+                return;
+            }
+            
+            // Pegar o nome do grupo selecionado
+            const selectedOption = selectElement.options[selectElement.selectedIndex];
+            const groupName = selectedOption.dataset.groupName || selectedOption.textContent;
+            
+            // Mostrar indicador de carregamento
+            mostrarNotificacao(`🔄 Carregando informações do setor "${groupName}"...`, 'info');
+            
+            try {
+                // 1. Buscar o líder/gerente do grupo/setor da área responsável
+                console.log(`🔍 Buscando gerente do setor "${groupName}" (ID: ${selectedAreaGroupId})...`);
+                const managerResponse = await fetch(`/api/groups/${selectedAreaGroupId}/manager`);
+                
+                if (managerResponse.ok) {
+                    const managerData = await managerResponse.json();
+                    
+                    if (managerData.success && managerData.manager) {
+                        // Preencher o responsável em "Assinatura Responsável"
+                        if (assResponsavelInput) {
+                            assResponsavelInput.value = managerData.manager.name;
+                            console.log(`✅ Assinatura Responsável preenchida com: ${managerData.manager.name}`);
+                        }
+                        
+                        // Preencher a data atual em "DATA EMISSÃO"
+                        if (dataEmissaoInput) {
+                            const dataAtual = new Date().toLocaleDateString('pt-BR');
+                            dataEmissaoInput.value = dataAtual;
+                            console.log(`✅ Data de emissão preenchida: ${dataAtual}`);
+                        }
+                        
+                        // NÃO preencher "Assinatura Causador" - deve ficar em branco até o usuário selecionar no dropdown
+                        if (assinaturaLiderInput) {
+                            assinaturaLiderInput.value = '';
+                            console.log(`ℹ️ Assinatura Causador mantida em branco (será preenchida ao selecionar usuário)`);
+                        }
+                    } else {
+                        // Se não houver líder definido, deixar em branco
+                        if (assinaturaLiderInput) assinaturaLiderInput.value = '';
+                        if (assResponsavelInput) assResponsavelInput.value = '';
+                        console.log(`ℹ️ Nenhum líder definido para "${groupName}"`);
+                    }
+                }
+                
+                // 2. Carregar usuários do grupo selecionado para o dropdown "NOME CAUSADOR"
+                if (nomeResponsavelSelect) {
+                    console.log(`🔍 Carregando usuários do setor "${groupName}" (ID: ${selectedAreaGroupId})...`);
+                    
+                    // Limpar o dropdown e adicionar opção padrão
+                    nomeResponsavelSelect.innerHTML = '<option value="">Selecione o Usuário Causador</option>';
+                    nomeResponsavelSelect.disabled = true;
+                    
+                    // IMPORTANTE: Limpar também o campo de Assinatura Causador quando mudamos o setor
+                    if (assinaturaLiderInput) {
+                        assinaturaLiderInput.value = '';
+                        console.log('🧹 Campo "Assinatura Causador" limpo ao mudar setor');
+                    }
+                    
+                    try {
+                        // Se não temos a lista completa de usuários, vamos carregá-la
+                        if (!window.allUsers || window.allUsers.length === 0) {
+                            console.log('📋 Carregando todos os usuários do sistema...');
+                            const usersResponse = await fetch('/api/users/list');
+                            
+                            if (usersResponse.ok) {
+                                const usersData = await usersResponse.json();
+                                if (usersData.success && usersData.users && usersData.users.length > 0) {
+                                    window.allUsers = usersData.users;
+                                    console.log(`✅ ${window.allUsers.length} usuários carregados`);
+                                }
+                            }
+                        }
+                        
+                        // Filtrar usuários pelo grupo selecionado
+                        if (window.allUsers && window.allUsers.length > 0) {
+                            console.log('🔍 Filtrando usuários para o setor ID:', selectedAreaGroupId);
+                            console.log('📊 Estrutura de exemplo do primeiro usuário:', JSON.stringify(window.allUsers[0]));
+                            
+                            // Limpar o dropdown antes de adicionar novos itens
+                            nomeResponsavelSelect.innerHTML = '<option value="">Selecione o Usuário Causador</option>';
+                            
+                            try {
+                                // Filtrar usuários que pertencem ao grupo selecionado
+                                // Adaptamos para verificar diferentes formatos possíveis do objeto de grupos
+                                const groupUsers = window.allUsers.filter(user => {
+                                    if (!user) return false;
+                                    
+                                    // Verificar se o usuário tem grupos definidos
+                                    if (user.groups && Array.isArray(user.groups)) {
+                                        return user.groups.some(group => {
+                                            if (typeof group === 'object' && group !== null) {
+                                                return group.id === selectedAreaGroupId || group.id === parseInt(selectedAreaGroupId);
+                                            } else if (typeof group === 'string' || typeof group === 'number') {
+                                                return group === selectedAreaGroupId || group === parseInt(selectedAreaGroupId);
+                                            }
+                                            return false;
+                                        });
+                                    }
+                                    
+                                    // Verificar se o grupo está como string em group_ids
+                                    if (user.group_ids && Array.isArray(user.group_ids)) {
+                                        return user.group_ids.includes(selectedAreaGroupId) || 
+                                               user.group_ids.includes(parseInt(selectedAreaGroupId)) ||
+                                               user.group_ids.map(String).includes(String(selectedAreaGroupId));
+                                    }
+                                    
+                                    // Verificar se há um único group_id
+                                    if (user.group_id) {
+                                        return user.group_id === selectedAreaGroupId || 
+                                               user.group_id === parseInt(selectedAreaGroupId) ||
+                                               String(user.group_id) === String(selectedAreaGroupId);
+                                    }
+                                    
+                                    return false;
+                                });
+                                
+                                console.log(`🔍 Encontrados ${groupUsers.length} usuários para o setor ID: ${selectedAreaGroupId}`);
+                                
+                                if (groupUsers.length > 0) {
+                                    // Desabilitar temporariamente o evento onchange para evitar disparo automático
+                                    const originalOnchange = nomeResponsavelSelect.onchange;
+                                    nomeResponsavelSelect.onchange = null;
+                                    
+                                    // Adicionar usuários filtrados ao dropdown
+                                    groupUsers.forEach(user => {
+                                        const option = document.createElement('option');
+                                        option.value = user.id;
+                                        option.textContent = user.name;
+                                        nomeResponsavelSelect.appendChild(option);
+                                        console.log(`  ➕ Adicionado usuário: ${user.name} (ID: ${user.id})`);
+                                    });
+                                    
+                                    // Garantir que a opção padrão (vazia) esteja selecionada
+                                    nomeResponsavelSelect.value = '';
+                                    
+                                    // Reativar o evento onchange
+                                    nomeResponsavelSelect.onchange = originalOnchange;
+                                    
+                                    nomeResponsavelSelect.disabled = false;
+                                    console.log(`✅ ${groupUsers.length} usuários do setor "${groupName}" adicionados ao dropdown`);
+                                    mostrarNotificacao(`✅ ${groupUsers.length} usuários encontrados no setor "${groupName}"`, 'success');
+                                } else {
+                                    console.log(`ℹ️ Nenhum usuário encontrado no setor "${groupName}"`);
+                                    mostrarNotificacao(`ℹ️ Nenhum usuário encontrado no setor "${groupName}"`, 'info');
+                                    
+                                    // Adicionar opção para indicar que não há usuários
+                                    const option = document.createElement('option');
+                                    option.value = "";
+                                    option.textContent = `Nenhum usuário no setor "${groupName}"`;
+                                    option.disabled = true;
+                                    nomeResponsavelSelect.appendChild(option);
+                                }
+                            } catch (filterError) {
+                                console.error('❌ Erro ao filtrar usuários:', filterError);
+                                mostrarNotificacao('❌ Erro ao filtrar usuários por setor', 'error');
+                            }
+                        }
+                    } catch (userError) {
+                        console.error('❌ Erro ao carregar usuários do setor:', userError);
+                        mostrarNotificacao('❌ Erro ao carregar usuários do setor', 'error');
+                    }
+                }
+                
+            } catch (error) {
+                console.error('❌ Erro ao processar alteração de área responsável:', error);
+                mostrarNotificacao('❌ Erro ao processar alteração de área responsável', 'error');
+                
+                // Fallback: deixar em branco
+                if (assinaturaLiderInput) assinaturaLiderInput.value = '';
+                if (assResponsavelInput) assResponsavelInput.value = '';
+            }
+        }
+
+        // Função chamada quando o usuário seleciona um Nome Causador
+        function onNomeResponsavelChange() {
+            // ⚠️ ATENÇÃO: Esta função NÃO deve preencher automaticamente o campo "Assinatura Causador"
+            // O campo deve permanecer SEMPRE vazio para preenchimento manual
+            console.log('👤 [onNomeResponsavelChange] Usuário selecionado no dropdown');
+            console.log('ℹ️ Campo "Assinatura Causador" permanece vazio (não é preenchido automaticamente)');
+            
+            // Nenhuma ação é tomada - o campo permanece vazio
+            // O usuário deve preencher manualmente se desejar
+        }
+
+        // 👥 FUNÇÕES DE ATRIBUIÇÃO MÚLTIPLA DE USUÁRIOS
+        
+        function openAssignUsersModal() {
+            const modal = document.getElementById('assignUsersModal');
+            if (!modal) return;
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            populateAssignUsersList();
+        }
+        
+        function closeAssignUsersModal() {
+            const modal = document.getElementById('assignUsersModal');
+            if (!modal) return;
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+        
+        function populateAssignUsersList() {
+            const container = document.getElementById('assignUsersListContainer');
+            if (!container) return;
+            
+            container.innerHTML = '';
+            
+            if (!allUsers || allUsers.length === 0) {
+                container.innerHTML = '<div style="text-align: center; padding: 40px; color: #6c757d;">Nenhum usuário disponível</div>';
+                return;
+            }
+            
+            // Ordenar usuários por nome
+            const sortedUsers = [...allUsers].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+            
+            sortedUsers.forEach(user => {
+                const isSelected = selectedAssignedUsers.includes(user.id);
+                
+                const userCard = document.createElement('div');
+                userCard.className = 'assign-user-card';
+                userCard.id = `assign_user_${user.id}`;
+                userCard.style.cssText = `
+                    padding: 16px 18px;
+                    border: 2px solid ${isSelected ? '#667eea' : '#e9ecef'};
+                    border-radius: 12px;
+                    margin-bottom: 12px;
+                    cursor: pointer;
+                    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+                    background: ${isSelected ? 'linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%)' : 'white'};
+                    display: flex;
+                    align-items: center;
+                    gap: 16px;
+                    position: relative;
+                    overflow: hidden;
+                `;
+                
+                // Efeito de hover
+                userCard.onmouseover = () => {
+                    if (!isSelected) {
+                        userCard.style.borderColor = '#c7d2fe';
+                        userCard.style.background = 'linear-gradient(135deg, rgba(102, 126, 234, 0.03) 0%, rgba(118, 75, 162, 0.03) 100%)';
+                        userCard.style.transform = 'translateX(4px)';
+                    }
+                };
+                userCard.onmouseout = () => {
+                    if (!isSelected) {
+                        userCard.style.borderColor = '#e9ecef';
+                        userCard.style.background = 'white';
+                        userCard.style.transform = 'translateX(0)';
+                    }
+                };
+                
+                // Avatar com inicial
+                const initial = user.name ? user.name.charAt(0).toUpperCase() : '?';
+                const avatarColors = ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#fa709a'];
+                const colorIndex = user.id % avatarColors.length;
+                
+                userCard.innerHTML = `
+                    <div style="width: 44px; height: 44px; border-radius: 50%; background: ${avatarColors[colorIndex]}; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 18px; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);">
+                        ${initial}
+                    </div>
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="font-weight: 600; font-size: 15px; color: #2d3748; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${user.name}</div>
+                        <div style="font-size: 13px; color: #718096; display: flex; align-items: center; gap: 6px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0;">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                            <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${user.department || 'Sem departamento'}</span>
+                        </div>
+                    </div>
+                    <div style="width: 24px; height: 24px; border: 2px solid ${isSelected ? '#667eea' : '#cbd5e0'}; border-radius: 6px; display: flex; align-items: center; justify-content: center; background: ${isSelected ? '#667eea' : 'white'}; transition: all 0.2s; flex-shrink: 0;">
+                        ${isSelected ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>` : ''}
+                    </div>
+                `;
+                
+                userCard.addEventListener('click', () => {
+                    toggleAssignUser(user.id);
+                });
+                
+                container.appendChild(userCard);
+            });
+            
+            updateSelectedAssignUsersCount();
+        }
+        
+        function toggleAssignUser(userId) {
+            const index = selectedAssignedUsers.indexOf(userId);
+            if (index > -1) {
+                selectedAssignedUsers.splice(index, 1);
+            } else {
+                selectedAssignedUsers.push(userId);
+            }
+            populateAssignUsersList();
+        }
+        
+        function updateSelectedAssignUsersCount() {
+            const countEl = document.getElementById('selectedAssignUsersCount');
+            if (countEl) countEl.textContent = selectedAssignedUsers.length;
+        }
+        
+        function applyAssignUsers() {
+            updateAssignedUsersDisplay();
+            closeAssignUsersModal();
+            mostrarNotificacao(`✅ ${selectedAssignedUsers.length} usuário(s) selecionado(s)`);
+        }
+        
+        function updateAssignedUsersDisplay() {
+            const countSpan = document.getElementById('assignedUsersCount');
+            const preview = document.getElementById('assignedUsersPreview');
+            const tagsContainer = document.getElementById('assignedUsersTags');
+            const noUsersMsg = document.getElementById('noUsersMessage');
+            
+            if (selectedAssignedUsers.length === 0) {
+                countSpan.textContent = '0';
+                preview.style.display = 'none';
+                if (noUsersMsg) noUsersMsg.style.display = 'block';
+                return;
+            }
+            
+            countSpan.textContent = selectedAssignedUsers.length;
+            preview.style.display = 'block';
+            if (noUsersMsg) noUsersMsg.style.display = 'none';
+            
+            // Criar tags visuais para cada usuário
+            tagsContainer.innerHTML = '';
+            selectedAssignedUsers.forEach(userId => {
+                const user = allUsers.find(u => u.id === userId);
+                if (!user) return;
+                
+                const tag = document.createElement('div');
+                tag.style.cssText = `
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 6px;
+                    padding: 6px 12px;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    border-radius: 20px;
+                    font-size: 12px;
+                    font-weight: 500;
+                    box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
+                    transition: all 0.2s ease;
+                `;
+                
+                // Ícone de usuário
+                const icon = document.createElement('span');
+                               icon.innerHTML = `
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                `;
+                
+                // Nome do usuário
+                const name = document.createElement('span');
+                name.textContent = user.name;
+                
+                // Botão de remover
+                const removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.innerHTML = '×';
+                removeBtn.style.cssText = `
+                    background: rgba(255, 255, 255, 0.2);
+                    border: none;
+                    color: white;
+                    width: 18px;
+                    height: 18px;
+                    border-radius: 50%;
+                    cursor: pointer;
+                    font-size: 16px;
+                    line-height: 1;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: background 0.2s;
+                    padding: 0;
+                    margin-left: 2px;
+                `;
+                removeBtn.onmouseover = () => removeBtn.style.background = 'rgba(255, 255, 255, 0.3)';
+                removeBtn.onmouseout = () => removeBtn.style.background = 'rgba(255, 255, 255, 0.2)';
+                removeBtn.onclick = () => {
+                    selectedAssignedUsers = selectedAssignedUsers.filter(id => id !== userId);
+                    updateAssignedUsersDisplay();
+                    // Atualizar checkbox no modal se estiver aberto
+                    const checkbox = document.getElementById(`assign_user_${userId}`);
+                    if (checkbox) checkbox.checked = false;
+                };
+                
+                tag.appendChild(icon);
+                tag.appendChild(name);
+                tag.appendChild(removeBtn);
+                tagsContainer.appendChild(tag);
+            });
+        }
+        
+        function filterAssignUsers() {
+            const term = (document.getElementById('assignUsersSearch')?.value || '').toLowerCase();
+            document.querySelectorAll('.assign-user-card').forEach(card => {
+                const text = card.textContent.toLowerCase();
+                card.style.display = text.includes(term) ? 'flex' : 'none';
+            });
+        }
+
+        // Função para carregar o próximo número da RNC
+        async function loadNextRncNumber() {
+            try {
+                console.log('🔢 Carregando próximo número RNC...');
+                const response = await fetch('/api/rnc/next-number');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const rncNumberInput = document.getElementById('rnc_number');
+                    if (rncNumberInput) {
+                        rncNumberInput.value = data.next_number;
+                        console.log('✅ Próximo número RNC carregado:', data.next_number);
+                    }
+                } else {
+                    console.error('❌ Erro ao carregar próximo número:', data.message);
+                    const rncNumberInput = document.getElementById('rnc_number');
+                    if (rncNumberInput) {
+                        rncNumberInput.value = '[ERRO AO GERAR NÚMERO]';
+                    }
+                }
+            } catch (error) {
+                console.error('❌ Erro na requisição:', error);
+                const rncNumberInput = document.getElementById('rnc_number');
+                if (rncNumberInput) {
+                    rncNumberInput.value = '[ERRO DE CONEXÃO]';
+                }
+            }
+        }
+
+        // Carregar número RNC e setores quando a página carrega
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📄 Página carregada, iniciando carregamentos...');
+            
+            // FORÇAR FONTE DE 12PX NOS TEXTAREAS DE DESCRIÇÃO
+            const textareaIds = ['description', 'instruction_retrabalho', 'cause_rnc', 'action_rnc'];
+            textareaIds.forEach(id => {
+                const textarea = document.getElementById(id);
+                if (textarea) {
+                    textarea.style.fontSize = '12px';
+                    textarea.style.setProperty('font-size', '12px', 'important');
+                    console.log(`✅ Fonte de 12px aplicada em #${id}`);
+                }
+            });
+            
+            loadNextRncNumber();
+            loadAreaResponsavel(); // Carregar setores automaticamente do banco de dados
+            console.log('🏢 Carregando setores responsáveis do cadastro...');
+            loadUsers(); // Carregar todos os usuários do sistema para uso posterior
+            console.log('👥 Carregando usuários do sistema...');
+            
+            // Garantir que o campo "Assinatura Causador" inicie vazio
+            const assinaturaLiderInput = document.getElementById('assinatura_lider');
+            if (assinaturaLiderInput) {
+                assinaturaLiderInput.value = '';
+                console.log('🔒 Campo "Assinatura Causador" inicializado vazio');
+            }
+        });
+    </script>
+    <script>
+        // Conversores BRL ↔ número
+        function brlToFloat(str) {
+            if (!str) return 0;
+            try {
+                let s = String(str).trim();
+                s = s.replace(/[^0-9.,-]/g, ''); // removes everything that is not a digit, comma, dot or sign
+                if (s.includes(',') && s.includes('.')) {
+                    // BR pattern: thousand dot and decimal comma
+                    s = s.replace(/\./g, '').replace(',', '.');
+                } else if (s.includes(',') && !s.includes('.')) {
+                    s = s.replace(',', '.');
+                }
+                const n = parseFloat(s);
+                return isNaN(n) ? 0 : Number(n.toFixed(2));
+            } catch (e) {
+                return 0;
+            }
+        }
+
+        function floatToBRL(n) {
+            try {
+                const num = isNaN(n) ? 0 : Number(n);
+                return num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            } catch (e) {
+                return '0,00';
+            }
+        }
+
+        // Mascara no input de valor total
+        const priceInput = document.getElementById('price');
+        if (priceInput) {
+            priceInput.addEventListener('input', () => {
+                const digits = (priceInput.value || '').replace(/\D/g, '');
+                if (!digits) {
+                    priceInput.value = '';
+                    return;
+                }
+                const cents = parseInt(digits, 10);
+                const value = (isNaN(cents) ? 0 : cents) / 100;
+                priceInput.value = `R$ ${floatToBRL(value)}`;
+            });
+            priceInput.addEventListener('blur', () => {
+                const val = brlToFloat(priceInput.value);
+                priceInput.value = `R$ ${floatToBRL(val)}`;
+            });
+        }
+
+        // Adicione este trecho após a definição do campo CV (ou dentro do <script>)
+        document.addEventListener('DOMContentLoaded', function() {
+            const cvInput = document.querySelector('[data-field="cv"]');
+            if (cvInput) {
+                cvInput.setAttribute('maxlength', '11');
+                cvInput.addEventListener('input', function() {
+                    // Permite apenas números e limita a 11 dígitos
+                    this.value = this.value.replace(/\D/g, '').slice(0, 11);
+                });
+            }
+        });
+    </script>
+
+    <!-- Modal de Seleção de Valores -->
+    <div id="valoresSelectionModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; overflow-y: auto;">
+        <div style="background: white; margin: 30px auto; max-width: 1200px; border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); max-height: 90vh; display: flex; flex-direction: column;">
+            <!-- Cabeçalho -->
+            <div style="background: linear-gradient(135deg, #8b1538 0%, #6d1029 100%); color: white; padding: 25px 30px; border-radius: 15px 15px 0 0; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(139, 21, 56, 0.3);">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <span style="font-size: 32px;">💰</span>
+                    <h2 style="margin: 0; font-size: 24px; font-weight: 700;">Adicionar Valores ao Orçamento</h2>
+                </div>
+                <button onclick="closeValoresSelectionModal()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 28px; cursor: pointer; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.3s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">×</button>
+            </div>
+
+            <!-- Barra de Busca e Filtros -->
+            <div style="padding: 20px 30px; background: #f8f9fa; border-bottom: 1px solid #dee2e6;">
+                <!-- Busca por texto -->
+                <div style="margin-bottom: 15px;">
+                    <input type="text" id="valoresSelectionSearch" placeholder="🔍 Buscar por código ou descrição..." onkeyup="filterValoresSelection()" style="width: 100%; padding: 12px 20px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; transition: all 0.3s;" onfocus="this.style.borderColor='#007bff'" onblur="this.style.borderColor='#ddd'">
+                </div>
+                
+                <!-- Filtro por categoria/setor -->
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    <label style="font-weight: 600; color: #495057; font-size: 14px;">Filtrar por categoria:</label>
+                    <select id="modalSetorFilter" onchange="filterValoresSelection()" style="padding: 8px 12px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px; min-width: 200px; flex: 1; max-width: 300px;">
+                        <option value="">Todas as categorias</option>
+                        <!-- Será preenchido dinamicamente -->
+                    </select>
+                    <button onclick="clearModalSetorFilter()" style="padding: 8px 15px; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; white-space: nowrap;" onmouseover="this.style.background='#218838'" onmouseout="this.style.background='#28a745'">Mostrar Todos</button>
+                    <div id="modalSetorCount" style="padding: 6px 12px; background: #e3f2fd; border-radius: 4px; font-size: 13px; color: #1976d2; font-weight: 600;"></div>
+                </div>
+            </div>
+
+            <!-- Conteúdo com Tabela -->
+            <div style="flex: 1; overflow-y: auto; padding: 20px 30px;">
+                <table id="valoresSelectionTable" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                    <thead style="position: sticky; top: 0; background: #f8f9fa; z-index: 100;">
+                        <tr style="border-bottom: 2px solid #dee2e6;">
+                            <th style="padding: 12px 10px; text-align: center; width: 60px; font-weight: 600; color: #495057;">
+                                <input type="checkbox" id="selectAllValores" onchange="toggleAllValores()" style="width: 18px; height: 18px; cursor: pointer;">
+                            </th>
+                            <th style="padding: 12px 10px; text-align: left; width: 100px; font-weight: 600; color: #495057;">CÓDIGO</th>
+                            <th style="padding: 12px 10px; text-align: left; font-weight: 600; color: #495057;">DESCRIÇÃO</th>
+                            <th style="padding: 12px 10px; text-align: right; width: 120px; font-weight: 600; color: #495057;">VALOR/HORA</th>
+                            <th style="padding: 12px 10px; text-align: center; width: 150px; font-weight: 600; color: #495057;">HORAS</th>
+                            <th style="padding: 12px 10px; text-align: right; width: 120px; font-weight: 600; color: #495057;">SUBTOTAL</th>
+                        </tr>
+                    </thead>
+                    <tbody id="valoresSelectionTableBody">
+                        <!-- Será preenchido via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Resumo e Rodapé -->
+            <div style="background: #f8f9fa; padding: 20px 30px; border-radius: 0 0 15px 15px; border-top: 2px solid #dee2e6;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <div style="display: flex; gap: 20px; align-items: center;">
+                        <span style="font-size: 14px; color: #6c757d;">
+                            <strong id="selectedValoresCount">0</strong> itens selecionados
+                        </span>
+                        <span style="font-size: 16px; font-weight: 700; color: #28a745;">
+                            Total: <span id="modalTotalValue">R$ 0,00</span>
+                        </span>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="clearValoresSelection()" style="padding: 10px 20px; background: #dc3545; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600;" onmouseover="this.style.background='#c82333'" onmouseout="this.style.background='#dc3545'">🗑️ Limpar</button>
+                        <button onclick="applyValoresSelection()" style="padding: 10px 30px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600;" onmouseover="this.style.background='#218838'" onmouseout="this.style.background='#28a745'">✅ Aplicar Valores</button>
+                        <button onclick="closeValoresSelectionModal()" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600;" onmouseover="this.style.background='#5a6268'" onmouseout="this.style.background='#6c757d'">Cancelar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Seleção de Usuários para Atribuição -->
+    <div id="assignUsersModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); z-index: 10000; overflow-y: auto; backdrop-filter: blur(4px);">
+        <div style="background: white; margin: 30px auto; max-width: 900px; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); max-height: 90vh; display: flex; flex-direction: column; animation: modalFadeIn 0.3s ease;">
+            <!-- Cabeçalho -->
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 28px 35px; border-radius: 16px 16px 0 0; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div style="background: rgba(255,255,255,0.2); width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 style="margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px;">Selecionar Usuários</h2>
+                        <p style="margin: 4px 0 0 0; font-size: 13px; opacity: 0.9;">Escolha os responsáveis pela resolução desta RNC</p>
+                    </div>
+                </div>
+                <button onclick="closeAssignUsersModal()" style="background: rgba(255,255,255,0.15); border: none; color: white; font-size: 24px; cursor: pointer; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">×</button>
+            </div>
+
+            <!-- Barra de Busca -->
+            <div style="padding: 24px 35px; background: #f8f9fa; border-bottom: 1px solid #e9ecef;">
+                <div style="position: relative;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6c757d" stroke-width="2" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%);">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                </div>
+                <input type="text" id="assignUsersSearch" placeholder="🔍 Buscar por nome ou departamento..." onkeyup="filterAssignUsers()" style="width: 100%; padding: 12px 20px 12px 40px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; transition: all 0.3s;" onfocus="this.style.borderColor='#007bff'" onblur="this.style.borderColor='#ddd'">
+            </div>
+
+            <!-- Conteúdo com Lista de Usuários -->
+            <div id="assignUsersListContainer" style="flex: 1; overflow-y: auto; padding: 20px 35px;">
+                <!-- Usuários serão preenchidos via JavaScript -->
+            </div>
+
+            <!-- Rodapé com Ações -->
+            <div style="padding: 18px 35px; border-top: 1px solid #e9ecef; display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <div style="font-size: 14px; color: #495057;">
+                        Selecionados: <strong id="selectedAssignUsersCount">0</strong>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="closeAssignUsersModal()" style="padding: 10px 20px; background: #e9ecef; color: #495057; border: none; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='#dee2e6'" onmouseout="this.style.background='#e9ecef'">Cancelar</button>
+                    <button onclick="applyAssignUsers()" style="padding: 10px 28px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3); transition: all 0.2s; display: flex; align-items: center; gap: 8px;" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 16px rgba(102, 126, 234, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(102, 126, 234, 0.3)'">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Confirmar Seleção
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <style>
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+    </style>
+
+    <script>
+        // Array para armazenar valores selecionados
+        let selectedValoresData = [];
+        let valoresHoraDatabase = [];
+        
+        // Array para armazenar usuários atribuídos
+        let selectedAssignedUsers = [];
+
+        // Função para converter tempo HH:MM para decimal
+        function timeToDecimal(timeStr) {
+            const parts = timeStr.split(':');
+            const hours = parseInt(parts[0]) || 0;
+            const minutes = parseInt(parts[1]) || 0;
+            return hours + (minutes / 60);
+        }
+
+        // Função para converter decimal para HH:MM
+        function decimalToTime(decimal) {
+            const hours = Math.floor(decimal);
+            const minutes = Math.round((decimal - hours) * 60);
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+        }
+
+        // Gerar opções de tempo para select
+        function generateTimeOptions(selectedValue = '01:00') {
+            const times = [
+                '00:05', '00:10', '00:15', '00:20', '00:25', '00:30', 
+                '00:35', '00:40', '00:45', '00:50', '00:55', '01:00',
+                '01:05', '01:10', '01:15', '01:20', '01:25', '01:30',
+                '01:35', '01:40', '01:45', '01:50', '01:55', '02:00',
+                '02:30', '03:00', '03:30', '04:00', '04:30', '05:00',
+                '06:00', '07:00', '08:00', '09:00', '10:00', '12:00',
+                '16:00', '20:00', '24:00', '32:00', '40:00', '48:00'
+            ];
+            
+            let options = '';
+            times.forEach(time => {
+                const selected = time === selectedValue ? 'selected' : '';
+                options += `<option value="${time}" ${selected}>${time}</option>`;
+            });
+            
+            return options;
+        }
+
+        // Atualizar total do modal
+        function updateModalTotal() {
+            const total = selectedValoresData.reduce((sum, item) => sum + (item.subtotal || 0), 0);
+            const totalElement = document.getElementById('modalTotalValue');
+            if (totalElement) {
+                totalElement.textContent = `R$ ${total.toFixed(2).replace('.', ',')}`;
+            }
+        }
+
+        // Atualizar contador de itens selecionados
+        function updateSelectedCount() {
+            const count = selectedValoresData.length;
+            const countElement = document.getElementById('selectedValoresCount');
+            if (countElement) {
+                countElement.textContent = count;
+            }
+        }
+
+        // Filtrar tabela de valores por texto e setor
+        function filterValoresSelection() {
+            const searchValue = document.getElementById('valoresSelectionSearch').value.toLowerCase();
+            const setorFilter = document.getElementById('modalSetorFilter').value;
+            const rows = document.querySelectorAll('#valoresSelectionTableBody .valor-selection-row');
+            const headers = document.querySelectorAll('#valoresSelectionTableBody .setor-header');
+            let visibleCount = 0;
+            
+            // Primeiro, aplicar filtro de setor se selecionado
+            if (setorFilter) {
+                headers.forEach(header => {
+                    const setorName = header.textContent.trim();
+                    if (setorName === setorFilter) {
+                        header.style.display = '';
+                    } else {
+                        header.style.display = 'none';
+                    }
+                });
+            } else {
+                headers.forEach(header => {
+                    header.style.display = '';
+                });
+            }
+            
+            // Aplicar filtro de texto e setor
+            let currentSetor = '';
+            document.querySelectorAll('#valoresSelectionTableBody tr').forEach(row => {
+                if (row.classList.contains('setor-header')) {
+                    currentSetor = row.textContent.trim();
+                } else if (row.classList.contains('valor-selection-row')) {
+                    const codigo = row.getAttribute('data-codigo');
+                    const cells = row.querySelectorAll('td');
+                    const codigoText = cells[1] ? cells[1].textContent.toLowerCase() : '';
+                    const descricaoText = cells[2] ? cells[2].textContent.toLowerCase() : '';
+                    
+                    let showRow = true;
+                    
+                    // Filtro por setor
+                    if (setorFilter && currentSetor !== setorFilter) {
+                        showRow = false;
+                    }
+                    
+                    // Filtro por texto
+                    if (searchValue && showRow) {
+                        if (!codigoText.includes(searchValue) && !descricaoText.includes(searchValue)) {
+                            showRow = false;
+                        }
+                    }
+                    
+                    if (showRow) {
+                        row.style.display = '';
+                        visibleCount++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                }
+            });
+            
+            // Atualizar contador
+            updateModalSetorCount(visibleCount, setorFilter);
+        }
+
+        // Atualizar contador de itens filtrados
+        function updateModalSetorCount(count, setor) {
+            const countDiv = document.getElementById('modalSetorCount');
+            if (!countDiv) return;
+            
+            if (setor) {
+                countDiv.textContent = `${count} itens em ${setor}`;
+                countDiv.style.background = '#e3f2fd';
+                countDiv.style.color = '#1976d2';
+                countDiv.style.display = 'block';
+            } else if (count > 0) {
+                countDiv.textContent = `${count} itens encontrados`;
+                countDiv.style.background = '#f8f9fa';
+                countDiv.style.color = '#6c757d';
+                countDiv.style.display = 'block';
+            } else {
+                countDiv.textContent = 'Nenhum item encontrado';
+                countDiv.style.background = '#ffebee';
+                countDiv.style.color = '#d32f2f';
+                countDiv.style.display = 'block';
+            }
+        }
+
+        // Limpar filtro de setor
+        function clearModalSetorFilter() {
+            document.getElementById('modalSetorFilter').value = '';
+            document.getElementById('valoresSelectionSearch').value = '';
+            filterValoresSelection();
+        }
+
+        // Carregar valores/hora do banco de dados
+        async function loadValoresHoraDatabase() {
+            try {
+                const response = await fetch('/api/valores-hora/list');
+                const result = await response.json();
+                
+                if (result.success && result.valores) {
+                    valoresHoraDatabase = result.valores;
+                    populateValoresSelectionTable();
+                }
+            } catch (e) {
+                console.error('Erro ao carregar valores/hora:', e);
+                alert('Erro ao carregar valores do banco de dados');
+            }
+        }
+
+        // Popular filtro de setores dinamicamente
+        function populateSetorFilter() {
+            const select = document.getElementById('modalSetorFilter');
+            if (!select) return;
+            
+            // Limpar opções existentes (exceto a primeira "Todas as categorias")
+            select.innerHTML = '<option value="">Todas as categorias</option>';
+            
+            // Extrair setores únicos do banco de dados
+            const setoresUnicos = [...new Set(valoresHoraDatabase.map(item => item.setor).filter(setor => setor))];
+            
+            // Ordenar alfabeticamente
+            setoresUnicos.sort();
+            
+            // Adicionar opções
+            setoresUnicos.forEach(setor => {
+                const option = document.createElement('option');
+                option.value = setor;
+                option.textContent = setor;
+                select.appendChild(option);
+            });
+        }
+
+        // Popular tabela de seleção
+        function populateValoresSelectionTable() {
+            const tbody = document.getElementById('valoresSelectionTableBody');
+            tbody.innerHTML = '';
+            
+            // Popular filtro de setores
+            populateSetorFilter();
+            
+            let currentSetor = '';
+            
+            valoresHoraDatabase.forEach(item => {
+                // Adicionar header de setor se mudou
+                if (item.setor && item.setor !== currentSetor) {
+                    currentSetor = item.setor;
+                    const setorRow = document.createElement('tr');
+                    setorRow.className = 'setor-header';
+                    setorRow.innerHTML = `
+                        <td colspan="6" style="background: #8b1538; color: white; font-weight: bold; padding: 10px; font-size: 14px;">
+                            ${currentSetor}
+                        </td>
+                    `;
+                    tbody.appendChild(setorRow);
+                }
+                
+                // Adicionar linha de valor
+                const row = document.createElement('tr');
+                row.className = 'valor-selection-row';
+                row.setAttribute('data-codigo', item.codigo);
+                row.style.transition = 'all 0.2s';
+                
+                // Verificar se já está selecionado
+                const isSelected = selectedValoresData.some(v => v.codigo === item.codigo);
+                const horasValue = isSelected ? selectedValoresData.find(v => v.codigo === item.codigo).horas_formatted || '01:00' : '01:00';
+                const horasDecimal = timeToDecimal(horasValue);
+                
+                const selectStyle = isSelected 
+                    ? 'width: 100%; padding: 6px; border: 1px solid #ced4da; border-radius: 4px; text-align: center; font-size: 13px; cursor: pointer; background: white;'
+                    : 'width: 100%; padding: 6px; border: 1px solid #ced4da; border-radius: 4px; text-align: center; font-size: 13px; cursor: not-allowed; background: #e9ecef; color: #6c757d;';
+                
+                row.innerHTML = `
+                    <td style="padding: 10px; text-align: center; border-bottom: 1px solid #e9ecef;">
+                        <input type="checkbox" class="valor-checkbox" value="${item.codigo}" ${isSelected ? 'checked' : ''} onchange="toggleValorSelection('${item.codigo}')" style="width: 18px; height: 18px; cursor: pointer;">
+                    </td>
+                    <td style="padding: 10px; border-bottom: 1px solid #e9ecef; font-weight: 600; color: #495057;">${item.codigo}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #e9ecef; color: #6c757d;">${item.descricao}</td>
+                    <td style="padding: 10px; text-align: right; border-bottom: 1px solid #e9ecef; color: #28a745; font-weight: 600;">R$ ${parseFloat(item.valor_hora).toFixed(2).replace('.', ',')}</td>
+                    <td style="padding: 10px; text-align: center; border-bottom: 1px solid #e9ecef;">
+                        <select class="horas-input" data-codigo="${item.codigo}" ${isSelected ? '' : 'disabled'} onchange="updateHorasForValor('${item.codigo}', this.value)" style="${selectStyle}">
+                            ${generateTimeOptions(horasValue)}
+                        </select>
+                    </td>
+                    <td style="padding: 10px; text-align: right; border-bottom: 1px solid #e9ecef; font-weight: 700; color: #007bff;" class="subtotal-cell" data-codigo="${item.codigo}">
+                        R$ ${(parseFloat(item.valor_hora) * horasDecimal).toFixed(2).replace('.', ',')}
+                    </td>
+                `;
+                
+                if (isSelected) {
+                    row.style.background = '#e7f5ff';
+                }
+                
+                tbody.appendChild(row);
+                
+                // Adicionar event listener adicional para garantir funcionamento
+                const checkbox = row.querySelector('.valor-checkbox');
+                const horasSelect = row.querySelector('.horas-input');
+                
+                if (checkbox && horasSelect) {
+                    checkbox.addEventListener('change', function() {
+                        if (this.checked) {
+                            horasSelect.disabled = false;
+                            horasSelect.style.cursor = 'pointer';
+                            horasSelect.style.backgroundColor = 'white';
+                        } else {
+                            horasSelect.disabled = true;
+                            horasSelect.style.cursor = 'not-allowed';
+                            horasSelect.style.backgroundColor = '#e9ecef';
+                        }
+                    });
+                }
+            });
+            
+            updateModalTotal();
+            
+            // Inicializar contador de filtro com todos os itens
+            const totalRows = document.querySelectorAll('#valoresSelectionTableBody .valor-selection-row').length;
+            updateModalSetorCount(totalRows, '');
+        }
+
+        // Abrir modal
+        async function openValoresSelectionModal() {
+            document.getElementById('valoresSelectionModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            
+            if (valoresHoraDatabase.length === 0) {
+                await loadValoresHoraDatabase();
+            } else {
+                populateValoresSelectionTable();
+            }
+        }
+ 2
+        // Fechar modal
+        function closeValoresSelectionModal() {
+            document.getElementById('valoresSelectionModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+            
+            // Limpar filtros ao fechar
+            document.getElementById('modalSetorFilter').value = '';
+            document.getElementById('valoresSelectionSearch').value = '';
+        }
+
+        // Toggle seleção de valor
+        function toggleValorSelection(codigo) {
+            const checkbox = document.querySelector(`.valor-checkbox[value="${codigo}"]`);
+            const row = checkbox.closest('tr');
+            const horasInput = row.querySelector('.horas-input');
+            
+            console.log('Toggle:', codigo, 'Checked:', checkbox.checked, 'Input encontrado:', !!horasInput);
+            
+            if (checkbox.checked) {
+                // Adicionar aos selecionados
+                const valorItem = valoresHoraDatabase.find(v => v.codigo === codigo);
+                if (valorItem) {
+                    const horasFormatted = horasInput.value || '01:00';
+                    const horasDecimal = timeToDecimal(horasFormatted);
+                    selectedValoresData.push({
+                        codigo: valorItem.codigo,
+                        descricao: valorItem.descricao,
+                        setor: valorItem.setor,
+                        valor_hora: parseFloat(valorItem.valor_hora),
+                        horas: horasDecimal,
+                        horas_formatted: horasFormatted,
+                        subtotal: parseFloat(valorItem.valor_hora) * horasDecimal
+                    });
+                    
+                    // Habilitar select de horas
+                    horasInput.disabled = false;
+                    horasInput.style.cursor = 'pointer';
+                    horasInput.style.backgroundColor = 'white';
+                    row.style.background = '#e7f5ff';
+                    
+                    console.log('✅ Item adicionado:', codigo, horasFormatted);
+                }
+            } else {
+                // Remover dos selecionados
+                selectedValoresData = selectedValoresData.filter(v => v.codigo !== codigo);
+                horasInput.disabled = true;
+                horasInput.style.cursor = 'not-allowed';
+                horasInput.style.backgroundColor = '#e9ecef';
+                horasInput.value = '01:00';
+                row.style.background = '';
+                
+                console.log('❌ Item removido:', codigo);
+            }
+            
+            updateModalTotal();
+            updateSelectedCount();
+        }
+
+        // Atualizar horas de um valor
+        function updateHorasForValor(codigo, horasFormatted) {
+            const horasDecimal = timeToDecimal(horasFormatted);
+            
+            const valorItem = selectedValoresData.find(v => v.codigo === codigo);
+            if (valorItem) {
+                valorItem.horas = horasDecimal;
+                valorItem.horas_formatted = horasFormatted;
+                valorItem.subtotal = valorItem.valor_hora * horasDecimal;
+                
+                // Atualizar subtotal na tabela
+                const subtotalCell = document.querySelector(`.subtotal-cell[data-codigo="${codigo}"]`);
+                if (subtotalCell) {
+                    subtotalCell.textContent = `R$ ${valorItem.subtotal.toFixed(2).replace('.', ',')}`;
+                }
+                
+                updateModalTotal();
+            }
+        }
+
+        // Aplicar valores selecionados ao formulário
+        function applyValoresSelection() {
+            if (selectedValoresData.length === 0) {
+                alert('⚠️ Nenhum valor foi selecionado!');
+                return;
+            }
+            
+            console.log('✅ Aplicando', selectedValoresData.length, 'valores ao formulário');
+            console.log('Dados:', selectedValoresData);
+            
+            // Fechar modal
+            closeValoresSelectionModal();
+            
+            // Os valores já estão em selectedValoresData e serão incluídos no submit
+            alert(`✅ ${selectedValoresData.length} valores adicionados ao orçamento!\nTotal: R$ ${selectedValoresData.reduce((sum, item) => sum + item.subtotal, 0).toFixed(2).replace('.', ',')}`);
+        }
+
+        // Limpar seleção de valores
+        function clearValoresSelection() {
+            if (selectedValoresData.length === 0) {
+                alert('ℹ️ Nenhum valor selecionado para limpar.');
+                return;
+            }
+            
+            if (confirm(`🗑️ Deseja realmente limpar os ${selectedValoresData.length} valores selecionados?`)) {
+                // Desmarcar todos os checkboxes
+                document.querySelectorAll('.valor-checkbox:checked').forEach(checkbox => {
+                    checkbox.checked = false;
+                    const row = checkbox.closest('tr');
+                    row.style.background = '';
+                    
+                    const horasInput = row.querySelector('.horas-input');
+                    if (horasInput) {
+                        horasInput.disabled = true;
+                        horasInput.style.cursor = 'not-allowed';
+                        horasInput.style.backgroundColor = '#e9ecef';
+                        horasInput.value = '01:00';
+                    }
+                });
+                
+                // Limpar array
+                selectedValoresData = [];
+                
+                // Atualizar totais
+                updateModalTotal();
+                updateSelectedCount();
+                
+                console.log('🗑️ Todos os valores foram removidos');
+            }
+        }
+
+        // Toggle selecionar todos os valores
+        function toggleAllValores() {
+            const selectAllCheckbox = document.getElementById('selectAllValores');
+            const checkboxes = document.querySelectorAll('.valor-checkbox');
+            const isChecked = selectAllCheckbox.checked;
+            
+            checkboxes.forEach(checkbox => {
+                const codigo = checkbox.value;
+                const currentState = checkbox.checked;
+                
+                // Apenas alterar se o estado for diferente
+                if (currentState !== isChecked) {
+                    checkbox.checked = isChecked;
+                    toggleValorSelection(codigo);
+                }
+            });
+            
+            console.log(isChecked ? '✅ Todos selecionados' : '❌ Todos desmarcados');
+        }
+
+        // Helper para parsing de números (já existe mas está duplicado, mantendo aqui)
+        function parseValorHora(str) {
+            try {
+                let s = String(str).trim();
+                s = s.replace(/[^0-9.,-]/g, ''); // removes everything that is not a digit, comma, dot or sign
+                if (s.includes(',') && s.includes('.')) {
+                    // BR pattern: thousand dot and decimal comma
+                    s = s.replace(/\./g, '').replace(',', '.');
+                } else if (s.includes(',') && !s.includes('.')) {
+                    s = s.replace(',', '.');
+                }
+                const n = parseFloat(s);
+                return isNaN(n) ? 0 : Number(n.toFixed(2));
+            } catch (e) {
+                return 0;
+            }
+        }
+
+        function floatToBRL(n) {
+            try {
+                const num = isNaN(n) ? 0 : Number(n);
+                return num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            } catch (e) {
+                return '0,00';
+            }
+        }
+
+        // ❌ CÓDIGO DUPLICADO COMENTADO - máscara priceInput (já existe acima na linha 1681)
+        /*         // Mascara no input de valor total
+        /*         const priceInput = document.getElementById('price');
+        /*         if (priceInput) {
+        /*             priceInput.addEventListener('input', () => {
+        /*                 const digits = (priceInput.value || '').replace(/\D/g, '');
+        /*                 if (!digits) {
+        /*                     priceInput.value = '';
+        /*                     return;
+        /*                 }
+        /*                 const cents = parseInt(digits, 10);
+        /*                 const value = (isNaN(cents) ? 0 : cents) / 100;
+        /*                 priceInput.value = `R$ ${floatToBRL(value)}`;
+        /*             });
+        /*             priceInput.addEventListener('blur', () => {
+        /*                 const val = brlToFloat(priceInput.value);
+        /*                 priceInput.value = `R$ ${floatToBRL(val)}`;
+        /*             });
+        /*         } */
+
+        // Adicione este trecho após a definição do campo CV (ou dentro do <script>)
+        document.addEventListener('DOMContentLoaded', function() {
+            const cvInput = document.querySelector('[data-field="cv"]');
+            if (cvInput) {
+                cvInput.setAttribute('maxlength', '11');
+                cvInput.addEventListener('input', function() {
+                    // Permite apenas números e limita a 11 dígitos
+                    this.value = this.value.replace(/\D/g, '').slice(0, 11);
+                });
+            }
+        });
+    </script>
+
+
+<!-- ===== BLOCO DUPLICADO REMOVIDO (antigas linhas 2123-2662) ===== -->
+
+
+</body>
+</html>
+

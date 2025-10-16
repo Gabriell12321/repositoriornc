@@ -1,0 +1,85 @@
+# Docker Compose Override para Desenvolvimento - IPPEL RNC System
+# Configurações específicas para ambiente de desenvolvimento
+
+version: '3.8'
+
+services:
+  # Aplicação em modo desenvolvimento
+  ippel-app:
+    build:
+      target: development
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=true
+      - LOG_LEVEL=DEBUG
+    volumes:
+      # Hot reload para desenvolvimento
+      - .:/app
+      - /app/venv  # Excluir volume virtual env
+    ports:
+      - "5000:5000"
+      - "5678:5678"  # Porta para debugger (ptvsd/debugpy)
+    command: python -m flask run --host=0.0.0.0 --port=5000 --reload
+    depends_on:
+      - redis-cache
+      - mailhog
+
+  # Servidor de email para desenvolvimento
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: ippel-mailhog
+    restart: unless-stopped
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+    networks:
+      - ippel-network
+
+  # Nginx simplificado para desenvolvimento
+  nginx-proxy:
+    volumes:
+      - ./nginx/nginx-dev.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "80:80"
+
+  # Node.js para desenvolvimento frontend (se necessário)
+  nodejs-dev:
+    image: node:18-alpine
+    container_name: ippel-nodejs
+    working_dir: /app
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+    command: sh -c "npm install && npm run dev"
+    ports:
+      - "3000:3000"
+      - "35729:35729"  # LiveReload
+    networks:
+      - ippel-network
+    profiles:
+      - frontend-dev
+
+  # Base de dados de desenvolvimento com dados de teste
+  db-seed:
+    image: alpine:latest
+    container_name: ippel-db-seed
+    volumes:
+      - ./scripts/seed-dev-data.sql:/seed.sql:ro
+      - ippel-data:/data
+    command: |
+      sh -c '
+        apk add --no-cache sqlite &&
+        sqlite3 /data/ippel_system.db < /seed.sql &&
+        echo "Development database seeded successfully"
+      '
+    depends_on:
+      - ippel-app
+    profiles:
+      - seed-data
+
+volumes:
+  node_modules:
+
+networks:
+  ippel-network:
+    external: false

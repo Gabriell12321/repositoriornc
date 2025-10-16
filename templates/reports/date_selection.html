@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seleção de Período - Relatório RNCs Finalizados</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo {
+            width: 80px;
+            height: auto;
+            margin-bottom: 15px;
+        }
+        
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-label {
+            display: block;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+            background: #f8f9fa;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #3498db;
+            background: white;
+        }
+        
+        .date-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .submit-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            margin-top: 10px;
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(52, 152, 219, 0.3);
+        }
+        
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+        
+        .back-btn {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #7f8c8d;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s ease;
+        }
+        
+        .back-btn:hover {
+            color: #3498db;
+        }
+        
+        .info-box {
+            background: #e8f4fd;
+            border: 1px solid #bee5eb;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .info-title {
+            font-weight: 600;
+            color: #0c5460;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .info-text {
+            color: #0c5460;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        
+        .quick-dates {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .quick-date-btn {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .quick-date-btn:hover {
+            background: #e9ecef;
+            border-color: #3498db;
+        }
+        
+        .quick-date-btn.active {
+            background: #3498db;
+            color: white;
+            border-color: #3498db;
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .date-inputs {
+                grid-template-columns: 1fr;
+            }
+            
+            .quick-dates {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="/IPPELLOGO.jpg" alt="IPPEL Logo" class="logo">
+            <h1 class="title" id="reportTitle">Relatório de RNCs</h1>
+            <p class="subtitle" id="reportSubtitle">Selecione o período para gerar o relatório</p>
+        </div>
+        
+        <div class="info-box">
+            <div class="info-title">📋 Informações</div>
+            <div class="info-text" id="reportInfo">
+                Este relatório mostrará todos os RNCs que foram finalizados no período selecionado, 
+                incluindo estatísticas detalhadas e valores totais.
+            </div>
+        </div>
+        
+        <form id="dateForm" onsubmit="generateReport(event)">
+            <div class="quick-dates">
+                <button type="button" class="quick-date-btn" onclick="setQuickDate('last_month')">
+                    📅 Último Mês
+                </button>
+                <button type="button" class="quick-date-btn" onclick="setQuickDate('last_quarter')">
+                    📅 Último Trimestre
+                </button>
+                <button type="button" class="quick-date-btn" onclick="setQuickDate('last_year')">
+                    📅 Último Ano
+                </button>
+                <button type="button" class="quick-date-btn" onclick="setQuickDate('current_year')">
+                    📅 Ano Atual
+                </button>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Data Inicial</label>
+                <input type="date" id="start_date" name="start_date" class="form-input" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Data Final</label>
+                <input type="date" id="end_date" name="end_date" class="form-input" required>
+            </div>
+            
+            <button type="submit" class="submit-btn">
+                📊 Gerar Relatório
+            </button>
+        </form>
+        
+        <a href="/dashboard" class="back-btn">
+            ← Voltar ao Dashboard
+        </a>
+    </div>
+    
+    <script>
+        // Definir datas padrão (último mês)
+        window.onload = function() {
+            // Obter tipo de relatório da URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const reportType = urlParams.get('type') || 'finalized';
+            
+            // Atualizar título e informações baseado no tipo
+            updateReportInfo(reportType);
+            
+            // Usar a mesma lógica dos botões rápidos para consistência
+            setQuickDate('last_month');
+        };
+        
+        // Função para atualizar informações do relatório
+        function updateReportInfo(reportType) {
+            const titles = {
+                'finalized': 'Relatório de RNCs Finalizados',
+                'total_detailed': 'Relatório Total Detalhado',
+                'by_operator': 'Relatório por Operador',
+                'by_sector': 'Relatório por Setor'
+            };
+            
+            const subtitles = {
+                'finalized': 'Selecione o período para gerar o relatório',
+                'total_detailed': 'Selecione o período para gerar o relatório',
+                'by_operator': 'Selecione o período para gerar o relatório',
+                'by_sector': 'Selecione o período para gerar o relatório'
+            };
+            
+            const infos = {
+                'finalized': 'Este relatório mostrará todos os RNCs que foram finalizados no período selecionado, incluindo estatísticas detalhadas e valores totais.',
+                'total_detailed': 'Este relatório mostrará todos os RNCs criados no período selecionado, independente do status, com análise completa por status e prioridade.',
+                'by_operator': 'Este relatório organizará os RNCs por operador, mostrando a performance individual de cada usuário no período selecionado.',
+                'by_sector': 'Este relatório organizará os RNCs por setor/departamento, ideal para análise gerencial e distribuição de responsabilidades.'
+            };
+            
+            document.getElementById('reportTitle').textContent = titles[reportType] || titles['finalized'];
+            document.getElementById('reportSubtitle').textContent = subtitles[reportType] || subtitles['finalized'];
+            document.getElementById('reportInfo').textContent = infos[reportType] || infos['finalized'];
+        }
+        
+        // Função para definir datas rápidas
+        function setQuickDate(period) {
+            const today = new Date();
+            let startDate, endDate;
+            
+            switch(period) {
+                case 'last_month':
+                    // Último mês: primeiro dia do mês anterior até hoje
+                    startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                    endDate = today;
+                    break;
+                case 'last_quarter':
+                    // Último trimestre: 3 meses atrás até hoje
+                    startDate = new Date(today.getFullYear(), today.getMonth() - 3, today.getDate());
+                    endDate = today;
+                    break;
+                case 'last_year':
+                    // Último ano: mesmo dia do ano anterior até hoje
+                    startDate = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate());
+                    endDate = today;
+                    break;
+                case 'current_year':
+                    // Ano atual: 1º de janeiro até hoje
+                    startDate = new Date(today.getFullYear(), 0, 1);
+                    endDate = today;
+                    break;
+                default:
+                    console.error('Período não reconhecido:', period);
+                    return;
+            }
+            
+            // Formatar datas para o formato YYYY-MM-DD
+            const formatDate = (date) => {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            };
+            
+            // Atualizar os campos de data
+            document.getElementById('start_date').value = formatDate(startDate);
+            document.getElementById('end_date').value = formatDate(endDate);
+            
+            // Feedback visual - remover classe active de todos os botões
+            document.querySelectorAll('.quick-date-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Adicionar classe active ao botão clicado
+            const clickedButton = event.target.closest('.quick-date-btn');
+            if (clickedButton) {
+                clickedButton.classList.add('active');
+            }
+            
+            // Feedback visual
+            console.log(`Período selecionado: ${period}`);
+            console.log(`Data inicial: ${formatDate(startDate)}`);
+            console.log(`Data final: ${formatDate(endDate)}`);
+        }
+        
+        // Função para gerar relatório
+        function generateReport(event) {
+            event.preventDefault();
+            
+            const startDate = document.getElementById('start_date').value;
+            const endDate = document.getElementById('end_date').value;
+            
+            if (!startDate || !endDate) {
+                alert('Por favor, selecione as datas inicial e final.');
+                return;
+            }
+            
+            if (startDate > endDate) {
+                alert('A data inicial não pode ser maior que a data final.');
+                return;
+            }
+            
+            // Obter tipo de relatório da URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const reportType = urlParams.get('type') || 'finalized';
+            
+            // Redirecionar para o relatório com as datas e tipo
+            window.location.href = `/reports/generate?start_date=${startDate}&end_date=${endDate}&type=${reportType}`;
+        }
+        
+        // Validação em tempo real
+        document.getElementById('end_date').addEventListener('change', function() {
+            const startDate = document.getElementById('start_date').value;
+            const endDate = this.value;
+            
+            if (startDate && endDate && startDate > endDate) {
+                this.setCustomValidity('A data final deve ser maior que a data inicial');
+            } else {
+                this.setCustomValidity('');
+            }
+        });
+    </script>
+</body>
+</html>
