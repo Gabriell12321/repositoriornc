@@ -617,20 +617,32 @@
             }
             
             /* Reduzir espaçamento das seções */
-            div[style*="margin: 25px 0"] {
-                margin: 1px 0 !important;
+            div[style*="margin: 25px 0"],
+            div[style*="margin: 20px 0"] {
+                margin: 0 0 3px 0 !important;
             }
             
             /* Reduzir padding das seções */
-            div[style*="padding: 20px"] {
-                padding: 2px !important;
+            div[style*="padding: 20px"],
+            div[style*="padding: 12px"] {
+                padding: 4px 6px !important;
+            }
+            
+            /* Reduzir cabeçalhos das seções */
+            div[style*="padding: 12px 20px"],
+            div[style*="padding: 10px 15px"] {
+                padding: 5px 10px !important;
+                font-size: 10px !important;
+                line-height: 1.2 !important;
+                font-weight: 700 !important;
+                letter-spacing: 0.5px !important;
             }
             
             /* Configuração das tabelas - IGUAL AO MODO DE CRIAÇÃO */
             table {
                 width: 100% !important;
                 border-collapse: collapse !important;
-                margin-bottom: 8px !important;
+                margin-bottom: 4px !important;
             }
             
             /* SOLUÇÃO RADICAL: Remover TODAS as bordas horizontais entre linhas */
@@ -675,20 +687,84 @@
                 border-bottom: 1px solid #000 !important;
             }
             
+            /* ============================================ */
+            /* REMOVER LINHAS DUPLAS/ESCURAS */
+            /* ============================================ */
+            
+            /* Forçar todas as bordas a serem apenas 1px */
+            * {
+                border-width: 1px !important;
+            }
+            
+            /* Containers de seção sem bordas top duplicadas */
+            div[style*="margin: 25px 0"] > div[style*="background: white"],
+            div[style*="margin: 20px 0"] > div[style*="background: white"],
+            div[style*="margin: 25px 0"] > div[style*="background: linear-gradient"],
+            div[style*="margin: 20px 0"] > div[style*="background: linear-gradient"] {
+                border-top: none !important;
+            }
+            
+            /* Cabeçalhos de seção sem bordas extras */
+            div[style*="padding: 12px 20px"],
+            div[style*="padding: 10px 15px"],
+            div[style*="background: linear-gradient"] {
+                border-left: none !important;
+                border-right: none !important;
+                border-top: none !important;
+            }
+            
+            /* ============================================ */
+            /* REGRAS ESPECÍFICAS PARA SEÇÃO COMPLEMENTARES - ESPAÇAMENTO E SEM DUPLICAÇÃO */
+            table[style*="margin-bottom: 8px"] {
+                margin-bottom: 3px !important;
+                border: 1px solid #000 !important;
+                border-radius: 0 !important;
+            }
+            
+            /* Espaçamento entre tabelas na seção complementares */
+            table[style*="margin-bottom: 8px"] + table[style*="margin-bottom: 8px"] {
+                margin-top: 1px !important;
+            }
+            
+            /* Labels da seção complementares */
+            table[style*="margin-bottom: 8px"] td.field-label,
+            table[style*="margin-bottom: 0"] td.field-label {
+                background: #f8f9fa !important;
+                font-size: 8px !important;
+                padding: 2px 4px !important;
+                font-weight: 600 !important;
+                height: 16px !important;
+            }
+            
+            /* Inputs da seção complementares */
+            table[style*="margin-bottom: 8px"] td[style*="padding: 4px"],
+            table[style*="margin-bottom: 0"] td[style*="padding: 4px"] {
+                padding: 2px !important;
+            }
+            
+            table[style*="margin-bottom: 8px"] input,
+            table[style*="margin-bottom: 0"] input {
+                height: 22px !important;
+                font-size: 9px !important;
+                padding: 2px 4px !important;
+            }
+            
             .field-label {
-                padding: 1px !important;
-                font-size: 7px !important;
-                background: white !important;
+                padding: 2px !important;
+                font-size: 8px !important;
+                background: #f8f9fa !important;
                 color: #000 !important;
                 border: 1px solid #000 !important;
                 line-height: 1.1 !important;
-                font-weight: normal !important;
+                font-weight: 600 !important;
+                height: 16px !important;
             }
             
             .input-field {
                 padding: 2px !important;
-                font-size: 8px !important;
+                font-size: 9px !important;
                 min-height: auto !important;
+                height: 22px !important;
                 border: none !important;
                 color: #000 !important;
                 line-height: 1.2 !important;
@@ -703,24 +779,26 @@
             /* Aumentar altura específica para textareas grandes */
             textarea.large-text-area,
             textarea.input-field.large-text-area {
-                min-height: 50px !important;
-                height: 50px !important;
-                font-size: 12px !important;
+                min-height: 60px !important;
+                height: 60px !important;
+                font-size: 10px !important;
+                line-height: 1.3 !important;
             }
             
             textarea.medium-text-area,
             textarea.input-field.medium-text-area {
                 min-height: 40px !important;
                 height: 40px !important;
-                font-size: 12px !important;
+                font-size: 10px !important;
+                line-height: 1.3 !important;
             }
             
             /* Altura para textarea de 2 linhas */
             textarea.instruction-2lines {
-                min-height: 35px !important;
-                height: 35px !important;
+                min-height: 30px !important;
+                height: 30px !important;
                 line-height: 1.3 !important;
-                font-size: 12px !important;
+                font-size: 10px !important;
             }
             
             /* Regra por ID para máxima especificidade */
@@ -842,22 +920,39 @@
             /* Ajustar assinaturas */
             .sign-col,
             div[id^="assinatura_coluna"] {
-                padding: 4px !important;
-                font-size: 10px !important;
-                border: 1px solid #000 !important;
+                padding: 6px !important;
+                font-size: 9px !important;
+                border-right: 1px solid #000 !important;
+                border-left: none !important;
+                border-top: none !important;
+                border-bottom: none !important;
                 line-height: 1.2 !important;
             }
             
-            /* Corrigir bordas das colunas de assinatura */
-            div[style*="border-right: 2px solid #cccccc"] {
-                border-right: 1px solid #000 !important;
+            div[id^="assinatura_coluna"]:first-child {
+                border-left: 1px solid #000 !important;
+            }
+            
+            /* Corrigir bordas das colunas de data */
+            div[style*="padding: 6px"] {
+                padding: 4px !important;
+                font-size: 8px !important;
+                background: #f8f9fa !important;
             }
             
             div[id^="nome_coluna"] {
-                margin-bottom: 3px !important;
-                font-size: 10px !important;
+                margin-bottom: 8px !important;
+                font-size: 9px !important;
                 color: #000 !important;
                 line-height: 1.2 !important;
+                min-height: 15px !important;
+            }
+            
+            /* Linha do VISTO mais fina */
+            div[style*="border-top: 1px solid"] {
+                padding-top: 4px !important;
+                font-size: 7px !important;
+                color: #666 !important;
             }
             
             /* Compactar área de vistos/assinaturas */
@@ -1303,61 +1398,61 @@
         <!-- ============================================ -->
         <!-- SEÇÃO: COMPLEMENTARES -->
         <!-- ============================================ -->
-        <div style="margin: 25px 0; border: 1px solid #000; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);">
+        <div style="margin: 20px 0; border: 1px solid #2c3e50; border-radius: 8px; overflow: hidden; box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);">
             <!-- Cabeçalho da Seção -->
-            <div style="background: white; color: black; padding: 12px 20px; font-weight: bold; font-size: 15px; text-align: center; letter-spacing: 1px;">
+            <div style="background: linear-gradient(135deg, #34495e, #2c3e50); color: white; padding: 10px 15px; font-weight: bold; font-size: 14px; text-align: center; letter-spacing: 1px;">
                  COMPLEMENTARES
             </div>
 
             <!-- Conteúdo -->
-            <div style="padding: 20px; background: white;">
+            <div style="padding: 12px 15px; background: #f8f9fa;">
                 <!-- Linha 1: POSIÇÃO | MODELO | MATERIAL | QUANTIDADE -->
-                <table style="margin-bottom: 0;">
+                <table style="margin-bottom: 8px; border: 1px solid #dee2e6; border-radius: 4px; overflow: hidden;">
                     <tr>
-                        <td class="field-label" style="width: 25%;">POSIÇÃO</td>
-                        <td class="field-label" style="width: 25%;">MODELO</td>
-                        <td class="field-label" style="width: 25%;">MATERIAL</td>
-                        <td class="field-label" style="width: 25%;">QUANTIDADE</td>
+                        <td class="field-label" style="width: 25%; background: #e9ecef; font-size: 12px; padding: 6px;">POSIÇÃO</td>
+                        <td class="field-label" style="width: 25%; background: #e9ecef; font-size: 12px; padding: 6px;">MODELO</td>
+                        <td class="field-label" style="width: 25%; background: #e9ecef; font-size: 12px; padding: 6px;">MATERIAL</td>
+                        <td class="field-label" style="width: 25%; background: #e9ecef; font-size: 12px; padding: 6px;">QUANTIDADE</td>
                     </tr>
                     <tr>
-                        <td><input type="text" name="position" class="input-field" placeholder="Posição" data-field="position"></td>
-                        <td><input type="text" name="modelo" class="input-field" placeholder="Modelo" data-field="modelo"></td>
-                        <td><input type="text" name="material" class="input-field" placeholder="Material" data-field="material"></td>
-                        <td><input type="number" id="quantity" name="quantity" class="input-field" placeholder="Quantidade" data-field="quantity" min="0" step="1"></td>
+                        <td style="padding: 4px;"><input type="text" name="position" class="input-field" placeholder="Posição" data-field="position" style="height: 38px; font-size: 13px;"></td>
+                        <td style="padding: 4px;"><input type="text" name="modelo" class="input-field" placeholder="Modelo" data-field="modelo" style="height: 38px; font-size: 13px;"></td>
+                        <td style="padding: 4px;"><input type="text" name="material" class="input-field" placeholder="Material" data-field="material" style="height: 38px; font-size: 13px;"></td>
+                        <td style="padding: 4px;"><input type="number" id="quantity" name="quantity" class="input-field" placeholder="Quantidade" data-field="quantity" min="0" step="1" style="height: 38px; font-size: 13px;"></td>
                     </tr>
                 </table>
 
                 <!-- Linha 2: CV | MP -->
-                <table style="margin-bottom: 0;">
+                <table style="margin-bottom: 8px; border: 1px solid #dee2e6; border-radius: 4px; overflow: hidden;">
                     <tr>
-                        <td class="field-label" style="width: 50%;">CV</td>
-                        <td class="field-label" style="width: 50%;">MP</td>
+                        <td class="field-label" style="width: 50%; background: #e9ecef; font-size: 12px; padding: 6px;">CV</td>
+                        <td class="field-label" style="width: 50%; background: #e9ecef; font-size: 12px; padding: 6px;">MP</td>
                     </tr>
                     <tr>
-                        <td><input type="text" name="cv" class="input-field" placeholder="CV" data-field="cv"></td>
-                        <td><input type="text" name="mp" class="input-field" placeholder="MP" data-field="mp"></td>
+                        <td style="padding: 4px;"><input type="text" name="cv" class="input-field" placeholder="CV" data-field="cv" style="height: 38px; font-size: 13px;"></td>
+                        <td style="padding: 4px;"><input type="text" name="mp" class="input-field" placeholder="MP" data-field="mp" style="height: 38px; font-size: 13px;"></td>
                     </tr>
                 </table>
 
                 <!-- Linha 3: VALOR TOTAL | OBSERVAÇÃO -->
-                <table style="margin-bottom: 0;">
+                <table style="margin-bottom: 0; border: 1px solid #dee2e6; border-radius: 4px; overflow: hidden;">
                     <tr>
-                        <td class="field-label" style="width: 50%;">VALOR TOTAL (R$)</td>
-                        <td class="field-label" style="width: 50%;">OBSERVAÇÃO</td>
+                        <td class="field-label" style="width: 50%; background: #e9ecef; font-size: 12px; padding: 6px;">VALOR TOTAL (R$)</td>
+                        <td class="field-label" style="width: 50%; background: #e9ecef; font-size: 12px; padding: 6px;">OBSERVAÇÃO</td>
                     </tr>
                     <tr>
-                        <td style="position: relative;">
+                        <td style="position: relative; padding: 4px;">
                             <input type="text" id="price" name="price" class="input-field" placeholder="R$ 0,00" data-field="price"
-                                   inputmode="decimal" autocomplete="off" readonly style="background: #f8f9fa; cursor: pointer;">
-                            <button type="button" onclick="openValoresSelectionModal()" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); padding: 6px 12px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 11px; font-weight: 600;" onmouseover="this.style.background='#0056b3'" onmouseout="this.style.background='#007bff'">
-                                📋 Adicionar
+                                   inputmode="decimal" autocomplete="off" readonly style="background: #f8f9fa; cursor: pointer; height: 38px; font-size: 13px;">
+                            <button type="button" onclick="openValoresSelectionModal()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); padding: 6px 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600;" onmouseover="this.style.background='#0056b3'" onmouseout="this.style.background='#007bff'">
+                                Adicionar
                             </button>
                             <!-- Lista de itens selecionados -->
-                            <div id="selectedValoresList" style="margin-top: 10px; max-height: 200px; overflow-y: auto; display: none; border: 1px solid #ddd; border-radius: 5px; padding: 10px; background: white;">
+                            <div id="selectedValoresList" style="margin-top: 8px; max-height: 180px; overflow-y: auto; display: none; border: 1px solid #ddd; border-radius: 4px; padding: 8px; background: white;">
                                 <!-- Itens serão adicionados aqui dinamicamente -->
                             </div>
                         </td>
-                        <td><input type="text" id="price_note" class="input-field" placeholder="Ex.: custo estimado, nota de orçamento" data-field="price_note"></td>
+                        <td style="padding: 4px;"><input type="text" id="price_note" class="input-field" placeholder="Ex.: custo estimado, nota de orçamento" data-field="price_note" style="height: 38px; font-size: 13px;"></td>
                     </tr>
                 </table>
             </div>
@@ -1473,7 +1568,7 @@
                 <td class="section-title">CAUSA DA RNC</td>
             </tr>
             <tr>
-                <td><textarea id="cause_rnc" name="cause_rnc" class="input-field medium-text-area" placeholder="Análise da causa raiz..." data-field="cause_rnc" style="font-size: 12px !important;"></textarea></td>
+                <td><textarea id="cause_rnc" name="cause_rnc" class="input-field medium-text-area" placeholder="Análise da causa raiz..." data-field="cause_rnc" style="font-size: 0px !important;"></textarea></td>
             </tr>
         </table>
 
@@ -1546,48 +1641,48 @@
         </div>
 
         <!-- Signature Section -->
-        <div style="margin-top: 15px; border: 1px solid #000; border-radius: 4px; background: white;">
+        <div style="margin-top: 12px; border: 1px solid #000; border-radius: 4px; background: white; overflow: hidden;">
             <!-- Date Row -->
-            <div style="display: flex; border-bottom: 1px solid #000;">
-                <div style="width: 33.33%; padding: 8px; text-align: center; font-size: 10px; font-weight: bold;">
+            <div style="display: flex; border-bottom: 1px solid #000; background: #f8f9fa;">
+                <div style="width: 33.33%; padding: 6px; text-align: center; font-size: 10px; font-weight: 600; border-right: 1px solid #000;">
                     <span>DATA: </span>
-                    <input id="insp1_d" type="text" style="border: none; border-bottom: 1px solid #000; width: 20px; text-align: center; font-size: 10px;" placeholder="__">
-                    <span>/</span>
-                    <input id="insp1_m" type="text" style="border: none; border-bottom: 1px solid #000; width: 20px; text-align: center; font-size: 10px;" placeholder="__">
-                    <span>/</span>
-                    <input id="insp1_y" type="text" style="border: none; border-bottom: 1px solid #000; width: 40px; text-align: center; font-size: 10px;" placeholder="____">
+                    <input id="insp1_d" type="text" style="border: none; border-bottom: 1px solid #333; width: 18px; text-align: center; font-size: 9px; background: transparent;" placeholder="__">
+                    <span style="margin: 0 2px;">/</span>
+                    <input id="insp1_m" type="text" style="border: none; border-bottom: 1px solid #333; width: 18px; text-align: center; font-size: 9px; background: transparent;" placeholder="__">
+                    <span style="margin: 0 2px;">/</span>
+                    <input id="insp1_y" type="text" style="border: none; border-bottom: 1px solid #333; width: 36px; text-align: center; font-size: 9px; background: transparent;" placeholder="____">
                 </div>
-                <div style="width: 33.33%; padding: 8px; text-align: center; font-size: 10px; font-weight: bold;">
+                <div style="width: 33.33%; padding: 6px; text-align: center; font-size: 10px; font-weight: 600; border-right: 1px solid #000;">
                     <span>DATA: </span>
-                    <input id="eng_d" type="text" style="border: none; border-bottom: 1px solid #000; width: 20px; text-align: center; font-size: 10px;" placeholder="__">
-                    <span>/</span>
-                    <input id="eng_m" type="text" style="border: none; border-bottom: 1px solid #000; width: 20px; text-align: center; font-size: 10px;" placeholder="__">
-                    <span>/</span>
-                    <input id="eng_y" type="text" style="border: none; border-bottom: 1px solid #000; width: 40px; text-align: center; font-size: 10px;" placeholder="____">
+                    <input id="eng_d" type="text" style="border: none; border-bottom: 1px solid #333; width: 18px; text-align: center; font-size: 9px; background: transparent;" placeholder="__">
+                    <span style="margin: 0 2px;">/</span>
+                    <input id="eng_m" type="text" style="border: none; border-bottom: 1px solid #333; width: 18px; text-align: center; font-size: 9px; background: transparent;" placeholder="__">
+                    <span style="margin: 0 2px;">/</span>
+                    <input id="eng_y" type="text" style="border: none; border-bottom: 1px solid #333; width: 36px; text-align: center; font-size: 9px; background: transparent;" placeholder="____">
                 </div>
-                <div style="width: 33.33%; padding: 8px; text-align: center; font-size: 10px; font-weight: bold;">
+                <div style="width: 33.33%; padding: 6px; text-align: center; font-size: 10px; font-weight: 600;">
                     <span>DATA: </span>
-                    <input id="insp2_d" type="text" style="border: none; border-bottom: 1px solid #000; width: 20px; text-align: center; font-size: 10px;" placeholder="__">
-                    <span>/</span>
-                    <input id="insp2_m" type="text" style="border: none; border-bottom: 1px solid #000; width: 20px; text-align: center; font-size: 10px;" placeholder="__">
-                    <span>/</span>
-                    <input id="insp2_y" type="text" style="border: none; border-bottom: 1px solid #000; width: 40px; text-align: center; font-size: 10px;" placeholder="____">
+                    <input id="insp2_d" type="text" style="border: none; border-bottom: 1px solid #333; width: 18px; text-align: center; font-size: 9px; background: transparent;" placeholder="__">
+                    <span style="margin: 0 2px;">/</span>
+                    <input id="insp2_m" type="text" style="border: none; border-bottom: 1px solid #333; width: 18px; text-align: center; font-size: 9px; background: transparent;" placeholder="__">
+                    <span style="margin: 0 2px;">/</span>
+                    <input id="insp2_y" type="text" style="border: none; border-bottom: 1px solid #333; width: 36px; text-align: center; font-size: 9px; background: transparent;" placeholder="____">
                 </div>
             </div>
 
             <!-- Signature Row -->
             <div style="display: flex;">
-                <div id="assinatura_coluna1" style="width: 33.33%; padding: 15px; text-align: center; font-size: 11px; font-weight: bold; background: #ffffff; color: rgb(0, 0, 0); cursor: pointer;" onclick="preencherAssinatura(this)">
-                    <div id="nome_coluna1" style="margin-bottom: 25px;">NOME</div>
-                    <div style="border-top: 1px solid #000; padding-top: 8px;">VISTO - Qualidade</div>
+                <div id="assinatura_coluna1" style="width: 33.33%; padding: 12px; text-align: center; font-size: 10px; font-weight: 600; background: #ffffff; color: #000; cursor: pointer; border-right: 1px solid #000;" onclick="preencherAssinatura(this)">
+                    <div id="nome_coluna1" style="margin-bottom: 20px; min-height: 18px;">NOME</div>
+                    <div style="border-top: 1px solid #333; padding-top: 6px; font-size: 9px; color: #555;">VISTO - Qualidade</div>
                 </div>
-                <div id="assinatura_coluna2" style="width: 33.33%; padding: 15px; text-align: center; font-size: 11px; font-weight: bold; cursor: pointer;" onclick="preencherAssinatura(this)">
-                    <div id="nome_coluna2" style="margin-bottom: 25px;">NOME</div>
-                    <div style="border-top: 1px solid #000; padding-top: 8px;">VISTO - Gerente do Setor</div>
+                <div id="assinatura_coluna2" style="width: 33.33%; padding: 12px; text-align: center; font-size: 10px; font-weight: 600; cursor: pointer; border-right: 1px solid #000;" onclick="preencherAssinatura(this)">
+                    <div id="nome_coluna2" style="margin-bottom: 20px; min-height: 18px;">NOME</div>
+                    <div style="border-top: 1px solid #333; padding-top: 6px; font-size: 9px; color: #555;">VISTO - Gerente do Setor</div>
                 </div>
-                <div id="assinatura_coluna3" style="width: 33.33%; padding: 15px; text-align: center; font-size: 11px; font-weight: bold; cursor: pointer;" onclick="preencherAssinatura(this)">
-                    <div id="nome_coluna3" style="margin-bottom: 25px;">NOME</div>
-                    <div style="border-top: 1px solid #000; padding-top: 8px;">VISTO - Causador</div>
+                <div id="assinatura_coluna3" style="width: 33.33%; padding: 12px; text-align: center; font-size: 10px; font-weight: 600; cursor: pointer;" onclick="preencherAssinatura(this)">
+                    <div id="nome_coluna3" style="margin-bottom: 20px; min-height: 18px;">NOME</div>
+                    <div style="border-top: 1px solid #333; padding-top: 6px; font-size: 9px; color: #555;">VISTO - Causador</div>
                 </div>
             </div>
         </div>
@@ -2801,7 +2896,7 @@
             <div style="padding: 20px 30px; background: #f8f9fa; border-bottom: 1px solid #dee2e6;">
                 <!-- Busca por texto -->
                 <div style="margin-bottom: 15px;">
-                    <input type="text" id="valoresSelectionSearch" placeholder="🔍 Buscar por código ou descrição..." onkeyup="filterValoresSelection()" style="width: 100%; padding: 12px 20px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; transition: all 0.3s;" onfocus="this.style.borderColor='#007bff'" onblur="this.style.borderColor='#ddd'">
+                <input type="text" id="valoresSelectionSearch" placeholder="🔍 Buscar por código ou descrição..." onkeyup="filterValoresSelection()" style="width: 100%; padding: 12px 20px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; transition: all 0.3s;" onfocus="this.style.borderColor='#007bff'" onblur="this.style.borderColor='#ddd'">
                 </div>
                 
                 <!-- Filtro por categoria/setor -->

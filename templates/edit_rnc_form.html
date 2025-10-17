@@ -118,7 +118,7 @@
         .input-field {
             width: 100%;
             padding: 8px;
-            border: 2px solid #cccccc;
+            border: 1px solid #000;
             border-radius: 5px;
             font-size: 11px;
             background: white;
@@ -160,7 +160,7 @@
         }
 
         table td {
-            border: 1px solid #cccccc;
+            border: 1px solid #000;
         }
 
         /* Barra de ações moderna */
@@ -189,10 +189,12 @@
             // Flag para saber se é modo Responder
             const IS_REPLY = {{ 'true' if is_reply else 'false' }};
         </script>
-        <!-- Banner de modo de edição -->
+        <!-- Banner de modo de edição (apenas para edição, não para resposta) -->
+        {% if not is_reply %}
         <div class="edit-mode-banner">
             ✏️ MODO DE EDIÇÃO - RNC: {{ rnc.rnc_number }}
         </div>
+        {% endif %}
 
         <!-- Header with Logo -->
         <div class="header">
@@ -222,257 +224,357 @@
         <div class="form-code">FQ – 002</div>
 
         <!-- RNC Number -->
-        <div class="rnc-number">
+        <div class="rnc-number" style="text-align: center; margin-bottom: 20px;">
             <label style="font-weight: 600; color: #495057; margin-right: 10px;">RNC Nº.:</label>
             <input type="text" id="rnc_number" name="rnc_number" value="{{ rnc.rnc_number }}" 
-                   style="border: 2px solid #cccccc; border-radius: 5px; padding: 8px; width: 200px; font-weight: 600;">
+                   style="border: 1px solid #000; border-radius: 5px; padding: 8px; width: 200px; font-weight: 600;">
         </div>
 
-        <!-- Main Information Table -->
-        <table>
-            <tr>
-                <td class="field-label" style="width: 40%;">DES.</td>
-                <td class="field-label" style="width: 15%;">MP.</td>
-                <td class="field-label" style="width: 15%;">REV.</td>
-                <td class="field-label" style="width: 15%;">POS.</td>
-                <td class="field-label" style="width: 15%;">CV.</td>
-            </tr>
-            <tr>
-                <td><input type="text" id="title" class="input-field" value="{{ rnc.title or txt_fields.get('Desenho') or '' }}" data-field="title"></td>
-                <td><input type="text" id="mp" class="input-field" value="{{ rnc.mp or txt_fields.get('MP') or '' }}" data-field="mp"></td>
-                <td><input type="text" id="revision" class="input-field" value="{{ rnc.revision or txt_fields.get('Revisão') or txt_fields.get('REVISAO') or '' }}" data-field="revision"></td>
-                <td><input type="text" id="position" class="input-field" value="{{ rnc.position or txt_fields.get('POS') or '' }}" data-field="position"></td>
-                <td><input type="text" id="cv" class="input-field" value="{{ rnc.cv or txt_fields.get('CV') or '' }}" data-field="cv"></td>
-            </tr>
-        </table>
+        <!-- ============================================ -->
+        <!-- SEÇÃO: DESENHO -->
+        <!-- ============================================ -->
+        <div style="margin: 25px 0; border: 1px solid #000; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);">
 
-        <table>
-            <tr>
-                <td class="field-label" style="width: 50%;">EQUIPAMENTO</td>
-                <td class="field-label" style="width: 30%;">CONJUNTO</td>
-                <td class="field-label" style="width: 20%;">MOD.</td>
-            </tr>
-            <tr>
-                <td><input type="text" id="equipment" class="input-field" value="{{ rnc.equipment or '' }}" data-field="equipment"></td>
-                <td><input type="text" id="conjunto" class="input-field" value="{{ rnc.conjunto or txt_fields.get('Conjunto') or '' }}" data-field="conjunto"></td>
-                <td><input type="text" id="modelo" class="input-field" value="{{ rnc.modelo or txt_fields.get('Modelo') or '' }}" data-field="modelo"></td>
-            </tr>
-        </table>
-
-        <table>
-            <tr>
-                <td class="field-label" style="width: 40%;">DESCRIÇÃO DES.</td>
-                <td class="field-label" style="width: 20%;">QTDE LOTE</td>
-                <td class="field-label" style="width: 20%;">CLIENTE</td>
-                <td class="field-label" style="width: 20%;">MATERIAL</td>
-            </tr>
-            <tr>
-                <td><input type="text" id="description_drawing" class="input-field" value="{{ rnc.description_drawing or txt_fields.get('Descrição da RNC') or txt_fields.get('Descrição do desenho') or '' }}" data-field="description_drawing"></td>
-                <td><input type="text" id="quantity" class="input-field" value="{{ rnc.quantity or txt_fields.get('Quantidade') or '' }}" data-field="quantity"></td>
-                <td><input type="text" id="client" class="input-field" value="{{ rnc.client or '' }}" data-field="client"></td>
-                <td><input type="text" id="material" class="input-field" value="{{ rnc.material or txt_fields.get('Material') or '' }}" data-field="material"></td>
-            </tr>
-        </table>
-
-        <!-- Campo de Atribuição de Usuário -->
-        <table>
-            <tr>
-                <td class="field-label" style="width: 50%;">👤 ATRIBUIR RNC PARA</td>
-                <td class="field-label" style="width: 50%;">ORDEM DE COMPRA</td>
-            </tr>
-            <tr>
-                <td>
-                    <select id="assigned_user_id" class="input-field" style="padding: 8px; cursor: pointer;">
-                        <option value="">Não atribuir (padrão)</option>
-                        <!-- Será preenchido via JavaScript -->
-                    </select>
-                </td>
-                <td><input type="text" id="purchase_order" class="input-field" value="{{ txt_fields.get('OC') or '' }}"></td>
-            </tr>
-        </table>
-
-        <table>
-            <tr>
-                <td class="field-label" style="width: 33%;">ASSINATURA GERENTE</td>
-                <td class="field-label" style="width: 33%;">ASSINATURA LÍDER SETOR</td>
-                <td class="field-label" style="width: 34%;">NOME RESP.</td>
-            </tr>
-            <tr>
-                <td><input type="text" id="assinatura_gerente" class="input-field" value="{{ rnc.signature_engineering_name or rnc.user_name or '' }}"></td>
-                <td><input type="text" id="signature_inspection2_name" class="input-field" value="{{ rnc.signature_inspection2_name or '' }}"></td>
-                <td><input type="text" id="responsavel" class="input-field" value="{{ rnc.user_name or '' }}"></td>
-            </tr>
-        </table>
-
-        <table>
-            <tr>
-                <td class="field-label" style="width: 35%;">INSPETOR:</td>
-                <td class="field-label" style="width: 20%;">DATA EMISSÃO</td>
-                <td class="field-label" style="width: 30%;">ÁREA RESPONSÁVEL</td>
-                <td class="field-label" style="width: 15%;">ASS. RESP.</td>
-            </tr>
-            <tr>
-                <td><input type="text" id="inspetor" class="input-field" value="{{ rnc.inspetor or rnc.signature_inspection_name or '' }}" data-field="inspetor"></td>
-                <td><input type="text" id="created_at" class="input-field" value="{{ (rnc.created_at or '')[:10] if rnc.created_at else '' }}" data-field="created_at"></td>
-                <td><input type="text" id="area_responsavel" class="input-field" value="{{ rnc.area_responsavel or rnc.department or rnc.user_department or '' }}" data-field="area_responsavel"></td>
-                <td><input type="text" id="signature_inspection_name" class="input-field" value="{{ rnc.user_name or '' }}" data-field="signature_inspection_name"></td>
-            </tr>
-        </table>
-
-        <!-- Description Section -->
-        <table>
-            <tr>
-                <td class="item-column">ITEM</td>
-                <td class="section-title">DESCRIÇÃO DA NÃO CONFORMIDADE</td>
-            </tr>
-            <tr>
-                <td style="width: 60px;"></td>
-                <td><textarea id="description" name="description" class="input-field large-text-area" placeholder="Descreva a não conformidade identificada...">{{ txt_fields.get('Descrição da RNC', '') or txt_fields.get('Descrição do desenho', '') or rnc.description or '' }}</textarea></td>
-            </tr>
-        </table>
-
-        <!-- Instruction Section -->
-        <table>
-            <tr>
-                <td class="item-column">ITEM</td>
-                <td class="section-title">INSTRUÇÃO PARA RETRABALHO</td>
-            </tr>
-            <tr>
-                <td style="width: 60px;"></td>
-                <td><textarea id="instruction_retrabalho" class="input-field medium-text-area" placeholder="Instruções detalhadas para correção...">{{ rnc.instruction_retrabalho or '' }}</textarea></td>
-            </tr>
-        </table>
-
-        <!-- Cause Section -->
-        <table>
-            <tr>
-                <td class="item-column">ITEM</td>
-                <td class="section-title">CAUSA DA RNC</td>
-            </tr>
-            <tr>
-                <td style="width: 60px;"></td>
-                <td><textarea id="cause_rnc" class="input-field medium-text-area" placeholder="Análise da causa raiz...">{{ rnc.cause_rnc or '' }}</textarea></td>
-            </tr>
-        </table>
-
-        <!-- Action Section -->
-        <table>
-            <tr>
-                <td class="item-column">ITEM</td>
-                <td class="section-title">AÇÃO A SER TOMADA</td>
-            </tr>
-            <tr>
-                <td style="width: 60px;"></td>
-                <td><textarea id="action_rnc" class="input-field medium-text-area" placeholder="Ações corretivas e preventivas...">{{ rnc.action_rnc or '' }}</textarea></td>
-            </tr>
-        </table>
-
-        <!-- Header Banner -->
-        <div style="width: 100%; background: #6c757d; color: white; text-align: center; padding: 12px 0; margin-bottom: 0; border-radius: 8px 8px 0 0; font-weight: bold; font-size: 14px; display: flex;">
-            <div style="width: 50%; text-align: center; border-right: 2px solid white;">DISPOSIÇÃO DO MATERIAL NÃO-CONFORME</div>
-            <div style="width: 50%; text-align: center;">INSPEÇÃO DO RETRABALHO</div>
-        </div>
-
-        <!-- Main Content Section -->
-        <div style="border: 2px solid #cccccc; border-top: none; border-radius: 0 0 8px 8px; background: white; display: flex;">
-            <!-- Left Section: Disposição do Material -->
-            <div style="width: 50%; padding: 15px; border-right: 1px solid #cccccc;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px; font-weight: bold;">
-                    <div style="display: flex; align-items: center;">
-                        <input type="checkbox" id="usar" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #6c757d;" {% if rnc.disposition_usar %}checked{% endif %}>
-                        <label for="usar">USAR COMO ESTÁ</label>
-                    </div>
-                    <div style="display: flex; align-items: center;">
-                        <input type="checkbox" id="retrabalhar" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #6c757d;" {% if rnc.disposition_retrabalhar %}checked{% endif %}>
-                        <label for="retrabalhar">RETRABALHAR</label>
-                    </div>
-                    <div style="display: flex; align-items: center;">
-                        <input type="checkbox" id="rejeitar" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #6c757d;" {% if rnc.disposition_rejeitar %}checked{% endif %}>
-                        <label for="rejeitar">REJEITAR</label>
-                    </div>
-                    <div style="display: flex; align-items: center;">
-                        <input type="checkbox" id="sucata" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #6c757d;" {% if rnc.disposition_sucata %}checked{% endif %}>
-                        <label for="sucata">SUCATA</label>
-                    </div>
-                    <div style="display: flex; align-items: center;">
-                        <input type="checkbox" id="devolver_estoque" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #6c757d;" {% if rnc.disposition_devolver_estoque %}checked{% endif %}>
-                        <label for="devolver_estoque">DEVOLVER AO ESTOQUE</label>
-                    </div>
-                    <div style="display: flex; align-items: center;">
-                        <input type="checkbox" id="devolver_fornecedor" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #6c757d;" {% if rnc.disposition_devolver_fornecedor %}checked{% endif %}>
-                        <label for="devolver_fornecedor">DEVOLVER AO FORNECEDOR</label>
-                    </div>
-                </div>
+            <!-- Cabeçalho da Seção -->
+            <div style="background: white; color: black; padding: 12px 20px; font-weight: bold; font-size: 15px; text-align: center; letter-spacing: 1px;">
+                 DESENHO
             </div>
 
-            <!-- Right Section: Inspeção do Retrabalho -->
-            <div style="width: 50%; padding: 15px;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px; font-weight: bold;">
-                    <div style="display: flex; align-items: center;">
-                        <input type="checkbox" id="aprovado" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #28a745;" {% if rnc.inspection_aprovado %}checked{% endif %}>
-                        <label for="aprovado">APROVADO</label>
-                    </div>
-                    <div style="display: flex; align-items: center;">
-                        <input type="checkbox" id="reprovado" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #dc3545;" {% if rnc.inspection_reprovado %}checked{% endif %}>
-                        <label for="reprovado">REPROVADO</label>
-                    </div>
-                    <div style="display: flex; align-items: center;">
-                        <input type="checkbox" id="ver-rnc" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #ffc107;" {% if rnc.inspection_ver_rnc %}checked{% endif %}>
-                        <label for="ver-rnc">VER RNC. Nº:</label>
-                        <input type="text" id="ver_rnc_input" value="{{ rnc.inspection_ver_rnc or '' }}" style="border: none; border-bottom: 2px solid #6c757d; width: 120px; margin-left: 8px; font-size: 11px; padding: 2px; background: transparent;">
-                    </div>
-                </div>
+            <!-- Conteúdo -->
+            <div style="padding: 20px; background: white;">
+                <!-- Linha 1: CLIENTES | NUMERO DE DESENHO | REVISÃO -->
+                <table style="margin-bottom: 0;">
+                    <tr>
+                        <td class="field-label" style="width: 33.33%;">CLIENTES</td>
+                        <td class="field-label" style="width: 33.33%;">NUMERO DE DESENHO</td>
+                        <td class="field-label" style="width: 33.33%;">REVISÃO</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <select id="client" name="client" class="input-field" data-field="client" style="padding: 8px; cursor: pointer;">
+                                <option value="">Selecione o cliente</option>
+                                {% for client in clients %}
+                                <option value="{{ client }}" {% if rnc.client == client %}selected{% endif %}>{{ client }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td><input type="text" name="drawing" class="input-field" placeholder="Número do Desenho" data-field="drawing" value="{{ rnc.title or txt_fields.get('Desenho') or '' }}"></td>
+                        <td><input type="text" name="revision" class="input-field" placeholder="Revisão" data-field="revision" value="{{ rnc.revision or txt_fields.get('Revisão') or txt_fields.get('REVISAO') or '' }}"></td>
+                    </tr>
+                </table>
+
+                <!-- Linha 2: CONJ. | EQUIPAMENTO -->
+                <table style="margin-bottom: 0;">
+                    <tr>
+                        <td class="field-label" style="width: 50%;">CONJ.</td>
+                        <td class="field-label" style="width: 50%;">EQUIPAMENTO</td>
+                    </tr>
+                    <tr>
+                        <td><input type="text" name="conjunto" class="input-field" placeholder="Conjunto" data-field="conjunto" value="{{ rnc.conjunto or txt_fields.get('Conjunto') or '' }}"></td>
+                        <td><input type="text" id="equipment" name="equipment" class="input-field" placeholder="Equipamento" data-field="equipment" value="{{ rnc.equipment or '' }}"></td>
+                    </tr>
+                </table>
+
+                <!-- Linha 3: DESCRIÇÃO -->
+                <table style="margin-bottom: 0;">
+                    <tr>
+                        <td class="field-label" style="width: 100%;">DESCRIÇÃO</td>
+                    </tr>
+                    <tr>
+                        <td><input type="text" name="description_drawing" class="input-field" placeholder="Descrição do desenho" data-field="description_drawing" value="{{ rnc.description_drawing or txt_fields.get('Descrição da RNC') or txt_fields.get('Descrição do desenho') or '' }}"></td>
+                    </tr>
+                </table>
+
+                <!-- 🔖 CAMPOS MOVIDOS PARA SEÇÃO COMPLEMENTARES -->
+                <!-- CV, MOD, QTDE LOTE, MATERIAL, POSIÇÃO, MP e VALOR TOTAL agora estão na seção COMPLEMENTARES abaixo -->
             </div>
         </div>
 
-        <!-- Valor/Custo Section -->
-        <!-- Novo bloco: Valor Total com seleção de valores e Observação -->
-        <table style="margin-top: 15px; width: 100%;">
-            <tr>
-                <td class="field-label" style="width: 50%;">VALOR TOTAL (R$)</td>
-                <td class="field-label" style="width: 50%;">OBSERVAÇÃO</td>
-            </tr>
-            <tr>
-                <td style="position: relative; padding: 10px;">
-                    <input type="text" id="price" name="price" class="input-field" placeholder="R$ 0,00" data-field="price"
-                           value="{% if rnc.price %}R$ {{ ('%.2f' % (rnc.price|float)).replace('.', ',') }}{% else %}{% endif %}"
-                           inputmode="decimal" autocomplete="off" readonly style="background: #f8f9fa; cursor: pointer; font-weight: 700; color: #28a745;">
-                    <button type="button" id="addValoresBtn" onclick="openValoresSelectionModal()" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); padding: 8px 15px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 12px; font-weight: 600;" onmouseover="this.style.background='#0056b3'" onmouseout="this.style.background='#007bff'">
-                        📋 Adicionar Valores
-                    </button>
-                    <!-- Lista de itens selecionados -->
-                    <div id="selectedValoresList" style="margin-top: 10px; max-height: 200px; overflow-y: auto; display: none; border: 1px solid #ddd; border-radius: 5px; padding: 10px; background: white;">
-                        <!-- Itens serão adicionados aqui dinamicamente -->
+        <!-- ============================================ -->
+        <!-- SEÇÃO: COMPLEMENTARES -->
+        <!-- ============================================ -->
+        <div style="margin: 20px 0; border: 1px solid #2c3e50; border-radius: 8px; overflow: hidden; box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);">
+            <!-- Cabeçalho da Seção -->
+            <div style="background: linear-gradient(135deg, #34495e, #2c3e50); color: white; padding: 10px 15px; font-weight: bold; font-size: 14px; text-align: center; letter-spacing: 1px;">
+                 COMPLEMENTARES
+            </div>
+
+            <!-- Conteúdo -->
+            <div style="padding: 12px 15px; background: #f8f9fa;">
+                <!-- Linha 1: POSIÇÃO | MODELO | MATERIAL | QUANTIDADE -->
+                <table style="margin-bottom: 8px; border: 1px solid #dee2e6; border-radius: 4px; overflow: hidden;">
+                    <tr>
+                        <td class="field-label" style="width: 25%; background: #e9ecef; font-size: 12px; padding: 6px;">POSIÇÃO</td>
+                        <td class="field-label" style="width: 25%; background: #e9ecef; font-size: 12px; padding: 6px;">MODELO</td>
+                        <td class="field-label" style="width: 25%; background: #e9ecef; font-size: 12px; padding: 6px;">MATERIAL</td>
+                        <td class="field-label" style="width: 25%; background: #e9ecef; font-size: 12px; padding: 6px;">QUANTIDADE</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 4px;"><input type="text" name="position" class="input-field" placeholder="Posição" data-field="position" style="height: 38px; font-size: 13px;" value="{{ rnc.position or txt_fields.get('POS') or '' }}"></td>
+                        <td style="padding: 4px;"><input type="text" name="modelo" class="input-field" placeholder="Modelo" data-field="modelo" style="height: 38px; font-size: 13px;" value="{{ rnc.modelo or txt_fields.get('Modelo') or '' }}"></td>
+                        <td style="padding: 4px;"><input type="text" name="material" class="input-field" placeholder="Material" data-field="material" style="height: 38px; font-size: 13px;" value="{{ rnc.material or txt_fields.get('Material') or '' }}"></td>
+                        <td style="padding: 4px;"><input type="number" id="quantity" name="quantity" class="input-field" placeholder="Quantidade" data-field="quantity" min="0" step="1" style="height: 38px; font-size: 13px;" value="{{ rnc.quantity or txt_fields.get('Quantidade') or '' }}"></td>
+                    </tr>
+                </table>
+
+                <!-- Linha 2: CV | MP -->
+                <table style="margin-bottom: 8px; border: 1px solid #dee2e6; border-radius: 4px; overflow: hidden;">
+                    <tr>
+                        <td class="field-label" style="width: 50%; background: #e9ecef; font-size: 12px; padding: 6px;">CV</td>
+                        <td class="field-label" style="width: 50%; background: #e9ecef; font-size: 12px; padding: 6px;">MP</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 4px;"><input type="text" name="cv" class="input-field" placeholder="CV" data-field="cv" style="height: 38px; font-size: 13px;" value="{{ rnc.cv or txt_fields.get('CV') or '' }}"></td>
+                        <td style="padding: 4px;"><input type="text" name="mp" class="input-field" placeholder="MP" data-field="mp" style="height: 38px; font-size: 13px;" value="{{ rnc.mp or txt_fields.get('MP') or '' }}"></td>
+                    </tr>
+                </table>
+
+                <!-- Linha 3: VALOR TOTAL | OBSERVAÇÃO -->
+                <table style="margin-bottom: 0; border: 1px solid #dee2e6; border-radius: 4px; overflow: hidden;">
+                    <tr>
+                        <td class="field-label" style="width: 50%; background: #e9ecef; font-size: 12px; padding: 6px;">VALOR TOTAL (R$)</td>
+                        <td class="field-label" style="width: 50%; background: #e9ecef; font-size: 12px; padding: 6px;">OBSERVAÇÃO</td>
+                    </tr>
+                    <tr>
+                        <td style="position: relative; padding: 4px;">
+                            <input type="text" id="price" name="price" class="input-field" placeholder="R$ 0,00" data-field="price"
+                                   inputmode="decimal" autocomplete="off" readonly style="background: #f8f9fa; cursor: pointer; height: 38px; font-size: 13px;"
+                                   value="{% if rnc.price %}R$ {{ ('%.2f' % (rnc.price|float)).replace('.', ',') }}{% else %}{% endif %}">
+                            <button type="button" onclick="openValoresSelectionModal()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); padding: 6px 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600;" onmouseover="this.style.background='#0056b3'" onmouseout="this.style.background='#007bff'">
+                                Adicionar
+                            </button>
+                            <!-- Lista de itens selecionados -->
+                            <div id="selectedValoresList" style="margin-top: 8px; max-height: 180px; overflow-y: auto; display: none; border: 1px solid #ddd; border-radius: 4px; padding: 8px; background: white;">
+                                <!-- Itens serão adicionados aqui dinamicamente -->
+                            </div>
+                        </td>
+                        <td style="padding: 4px;"><input type="text" id="price_note" class="input-field" placeholder="Ex.: custo estimado, nota de orçamento" data-field="price_note" style="height: 38px; font-size: 13px;" value="{{ rnc.price_note or '' }}"></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- SEÇÃO: ASSINATURAS CABEÇALHO -->
+        <!-- ============================================ -->
+        <div style="margin: 25px 0; border: 1px solid #000; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);">
+            <!-- Cabeçalho da Seção -->
+            <div style="background: white; color: black; padding: 12px 20px; font-weight: bold; font-size: 15px; text-align: center; letter-spacing: 1px;">
+                 ASSINATURAS CABEÇALHO
+            </div>
+
+            <!-- Conteúdo -->
+            <div style="padding: 20px; background: white;">
+                <!-- Linha 1: Setor responsável | Assinatura responsável | Data -->
+                <table style="margin-bottom: 0;">
+                    <tr>
+                        <td class="field-label" style="width: 33.33%;">SETOR RESPONSÁVEL</td>
+                        <td class="field-label" style="width: 33.33%;">ASSINATURA RESPONSÁVEL</td>
+                        <td class="field-label" style="width: 33.33%;">DATA</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <select id="area_responsavel_select" name="area_responsavel" class="input-field" data-field="area_responsavel" onchange="onAreaResponsavelChange()" style="padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; width: 100%; background: white; cursor: pointer; transition: all 0.2s;">
+                                <option value="">Selecione a Área Responsável</option>
+                            </select>
+                        </td>
+                        <td><input type="text" id="ass_responsavel" name="ass_responsavel" class="input-field" placeholder="Assinatura Responsável" data-field="signature_inspection_name" value="{{ rnc.signature_inspection_name or '' }}"></td>
+                        <td><input type="text" id="data_emissao" name="data_emissao" class="input-field" data-field="created_at" value="{{ (rnc.created_at or '')[:10] if rnc.created_at else '' }}"></td>
+                    </tr>
+                </table>
+
+                <!-- Linha 2: Inspetor | Nome causador | Assinatura Causador -->
+                <table style="margin-bottom: 0;">
+                    <tr>
+                        <td class="field-label" style="width: 33.33%;">INSPETOR</td>
+                        <td class="field-label" style="width: 33.33%;">NOME CAUSADOR</td>
+                        <td class="field-label" style="width: 33.33%;">ASSINATURA CAUSADOR</td>
+                    </tr>
+                    <tr>
+                        <td><input type="text" name="inspetor" class="input-field" placeholder="Inspetor" data-field="inspetor" value="{{ rnc.inspetor or '' }}"></td>
+                        <td>
+                            <select id="nome_responsavel" name="nome_responsavel" class="input-field" data-field="responsavel" onchange="onNomeResponsavelChange()" style="padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; width: 100%; background: white; cursor: pointer; transition: all 0.2s;">
+                                <option value="">Selecione o Usuário Causador</option>
+                            </select>
+                        </td>
+                        <td><input type="text" name="assinatura_lider" id="assinatura_lider" class="input-field" placeholder="Digite a assinatura manualmente" data-field="signature_inspection2_name" value="{{ rnc.signature_inspection2_name or '' }}"></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- SEÇÃO: DESCRIÇÃO DA NÃO CONFORMIDADE -->
+        <!-- ============================================ -->
+        <div style="margin: 25px 0; border: 1px solid #000; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);">
+            <!-- Cabeçalho da Seção -->
+            <div style="background: white; color: black; padding: 12px 20px; font-weight: bold; font-size: 15px; text-align: center; letter-spacing: 1px;">
+                 DESCRIÇÃO DA NÃO CONFORMIDADE
+            </div>
+
+            <!-- Conteúdo -->
+            <div style="padding: 20px; background: white;">
+                <table style="margin-bottom: 0;">
+                    <tr>
+                        <td class="item-column">ITEM</td>
+                        <td class="section-title">DESCRIÇÃO DA NÃO CONFORMIDADE</td>
+                    </tr>
+                    <tr>
+                        <td style="width: 60px;"></td>
+                        <td><textarea id="description" name="description" class="input-field large-text-area" placeholder="Descreva a não conformidade identificada...">{{ txt_fields.get('Descrição da RNC', '') or txt_fields.get('Descrição do desenho', '') or rnc.description or '' }}</textarea></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- SEÇÃO: INSTRUÇÃO PARA RETRABALHO -->
+        <!-- ============================================ -->
+        <div style="margin: 25px 0; border: 1px solid #000; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);">
+            <!-- Cabeçalho da Seção -->
+            <div style="background: white; color: black; padding: 12px 20px; font-weight: bold; font-size: 15px; text-align: center; letter-spacing: 1px;">
+                 INSTRUÇÃO PARA RETRABALHO
+            </div>
+
+            <!-- Conteúdo -->
+            <div style="padding: 20px; background: white;">
+                <table style="margin-bottom: 0;">
+                    <tr>
+                        <td class="item-column">ITEM</td>
+                        <td class="section-title">INSTRUÇÃO PARA RETRABALHO</td>
+                    </tr>
+                    <tr>
+                        <td style="width: 60px;"></td>
+                        <td><textarea id="instruction_retrabalho" class="input-field medium-text-area" placeholder="Instruções detalhadas para correção...">{{ rnc.instruction_retrabalho or '' }}</textarea></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- SEÇÃO: CAUSA DA RNC -->
+        <!-- ============================================ -->
+        <div style="margin: 25px 0; border: 1px solid #000; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);">
+            <!-- Cabeçalho da Seção -->
+            <div style="background: white; color: black; padding: 12px 20px; font-weight: bold; font-size: 15px; text-align: center; letter-spacing: 1px;">
+                 CAUSA DA RNC
+            </div>
+
+            <!-- Conteúdo -->
+            <div style="padding: 20px; background: white;">
+                <table style="margin-bottom: 0;">
+                    <tr>
+                        <td class="item-column">ITEM</td>
+                        <td class="section-title">CAUSA DA RNC</td>
+                    </tr>
+                    <tr>
+                        <td style="width: 60px;"></td>
+                        <td><textarea id="cause_rnc" class="input-field medium-text-area" placeholder="Análise da causa raiz...">{{ rnc.cause_rnc or '' }}</textarea></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- SEÇÃO: AÇÃO A SER TOMADA -->
+        <!-- ============================================ -->
+        <div style="margin: 25px 0; border: 1px solid #000; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);">
+            <!-- Cabeçalho da Seção -->
+            <div style="background: white; color: black; padding: 12px 20px; font-weight: bold; font-size: 15px; text-align: center; letter-spacing: 1px;">
+                 AÇÃO A SER TOMADA
+            </div>
+
+            <!-- Conteúdo -->
+            <div style="padding: 20px; background: white;">
+                <table style="margin-bottom: 0;">
+                    <tr>
+                        <td class="item-column">ITEM</td>
+                        <td class="section-title">AÇÃO A SER TOMADA</td>
+                    </tr>
+                    <tr>
+                        <td style="width: 60px;"></td>
+                        <td><textarea id="action_rnc" class="input-field medium-text-area" placeholder="Ações corretivas e preventivas...">{{ rnc.action_rnc or '' }}</textarea></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- SEÇÃO: DISPOSIÇÃO E INSPEÇÃO -->
+        <!-- ============================================ -->
+        <div style="margin: 25px 0; border: 1px solid #000; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);">
+            <!-- Cabeçalho da Seção -->
+            <div style="background: white; color: black; padding: 12px 20px; font-weight: bold; font-size: 15px; text-align: center; letter-spacing: 1px;">
+                 DISPOSIÇÃO E INSPEÇÃO
+            </div>
+
+            <!-- Conteúdo -->
+            <div style="padding: 20px; background: white;">
+                <!-- Header Banner -->
+                <div style="width: 100%; background: #6c757d; color: white; text-align: center; padding: 12px 0; margin-bottom: 0; border-radius: 8px 8px 0 0; font-weight: bold; font-size: 14px; display: flex;">
+                    <div style="width: 50%; text-align: center; border-right: 1px solid white;">DISPOSIÇÃO DO MATERIAL NÃO-CONFORME</div>
+                    <div style="width: 50%; text-align: center;">INSPEÇÃO DO RETRABALHO</div>
+                </div>
+
+                <!-- Main Content Section -->
+                <div style="border: 1px solid #000; border-top: none; border-radius: 0 0 8px 8px; background: white; display: flex;">
+                    <!-- Left Section: Disposição do Material -->
+                    <div style="width: 50%; padding: 15px; border-right: 1px solid #000;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px; font-weight: bold;">
+                            <div style="display: flex; align-items: center;">
+                                <input type="checkbox" id="usar" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #6c757d;" {% if rnc.disposition_usar %}checked{% endif %}>
+                                <label for="usar">USAR COMO ESTÁ</label>
+                            </div>
+                            <div style="display: flex; align-items: center;">
+                                <input type="checkbox" id="retrabalhar" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #6c757d;" {% if rnc.disposition_retrabalhar %}checked{% endif %}>
+                                <label for="retrabalhar">RETRABALHAR</label>
+                            </div>
+                            <div style="display: flex; align-items: center;">
+                                <input type="checkbox" id="rejeitar" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #6c757d;" {% if rnc.disposition_rejeitar %}checked{% endif %}>
+                                <label for="rejeitar">REJEITAR</label>
+                            </div>
+                            <div style="display: flex; align-items: center;">
+                                <input type="checkbox" id="sucata" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #6c757d;" {% if rnc.disposition_sucata %}checked{% endif %}>
+                                <label for="sucata">SUCATA</label>
+                            </div>
+                            <div style="display: flex; align-items: center;">
+                                <input type="checkbox" id="devolver_estoque" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #6c757d;" {% if rnc.disposition_devolver_estoque %}checked{% endif %}>
+                                <label for="devolver_estoque">DEVOLVER AO ESTOQUE</label>
+                            </div>
+                            <div style="display: flex; align-items: center;">
+                                <input type="checkbox" id="devolver_fornecedor" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #6c757d;" {% if rnc.disposition_devolver_fornecedor %}checked{% endif %}>
+                                <label for="devolver_fornecedor">DEVOLVER AO FORNECEDOR</label>
+                            </div>
+                        </div>
                     </div>
-                </td>
-                <td style="padding: 10px;">
-                    <input type="text" id="price_note" class="input-field" placeholder="Ex.: custo estimado, nota de orçamento" data-field="price_note" value="{{ rnc.price_note or '' }}">
-                </td>
-            </tr>
-        </table>
-        <table style="margin-top: 15px; display: none;">
-            <tr>
-                <td class="field-label" style="width: 30%; background: #6c757d; color: white; font-weight: bold; padding: 10px;">
-                    💰 VALOR / CUSTO ESTIMADO (R$)
-                </td>
-                <td style="padding: 10px;">
-                    <input type="number" 
-                           id="price_old_hidden" 
-                           class="input-field" 
-                           value="{{ rnc.price or '' }}" 
-                           placeholder="0.00" 
-                           step="0.01" 
-                           min="0"
-                           style="width: 200px; font-size: 16px; font-weight: bold; color: #28a745;">
-                </td>
-            </tr>
-        </table>
+
+                    <!-- Right Section: Inspeção do Retrabalho -->
+                    <div style="width: 50%; padding: 15px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px; font-weight: bold;">
+                            <div style="display: flex; align-items: center;">
+                                <input type="checkbox" id="aprovado" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #28a745;" {% if rnc.inspection_aprovado %}checked{% endif %}>
+                                <label for="aprovado">APROVADO</label>
+                            </div>
+                            <div style="display: flex; align-items: center;">
+                                <input type="checkbox" id="reprovado" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #dc3545;" {% if rnc.inspection_reprovado %}checked{% endif %}>
+                                <label for="reprovado">REPROVADO</label>
+                            </div>
+                            <div style="display: flex; align-items: center;">
+                                <input type="checkbox" id="ver-rnc" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #ffc107;" {% if rnc.inspection_ver_rnc %}checked{% endif %}>
+                                <label for="ver-rnc">VER RNC. Nº:</label>
+                                <input type="text" id="ver_rnc_input" value="{{ rnc.inspection_ver_rnc or '' }}" style="border: none; border-bottom: 2px solid #6c757d; width: 120px; margin-left: 8px; font-size: 11px; padding: 2px; background: transparent;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- Signature Section -->
-        <div style="margin-top: 15px; border: 2px solid #cccccc; border-radius: 4px; background: white;">
+        <div style="margin-top: 15px; border: 1px solid #000; border-radius: 4px; background: white;">
             <!-- Date Row -->
-            <div style="display: flex; border-bottom: 2px solid #cccccc;">
-                <div style="width: 33.33%; padding: 8px; text-align: center; font-size: 10px; font-weight: bold; border-right: 2px solid #cccccc;">
+            <div style="display: flex; border-bottom: 1px solid #000;">
+                <div style="width: 33.33%; padding: 8px; text-align: center; font-size: 10px; font-weight: bold; border-right: 1px solid #000;">
                     <span>INSPEÇÃO: </span>
                     <input id="insp1_d" type="text" style="border: none; border-bottom: 1px solid #000; width: 20px; text-align: center; font-size: 10px;" placeholder="__">
                     <span>/</span>
@@ -480,7 +582,7 @@
                     <span>/</span>
                     <input id="insp1_y" type="text" style="border: none; border-bottom: 1px solid #000; width: 40px; text-align: center; font-size: 10px;" placeholder="____">
                 </div>
-                <div style="width: 33.33%; padding: 8px; text-align: center; font-size: 10px; font-weight: bold; border-right: 2px solid #cccccc;">
+                <div style="width: 33.33%; padding: 8px; text-align: center; font-size: 10px; font-weight: bold; border-right: 1px solid #000;">
                     <span>INSPEÇÃO: </span>
                     <input id="eng_d" type="text" style="border: none; border-bottom: 1px solid #000; width: 20px; text-align: center; font-size: 10px;" placeholder="__">
                     <span>/</span>
@@ -500,11 +602,11 @@
 
                          <!-- Signature Row -->
              <div style="display: flex;">
-                 <div id="assinatura_coluna1" style="width: 33.33%; padding: 15px; text-align: center; font-size: 11px; font-weight: bold; border-right: 2px solid #cccccc; background: #6c757d; color: white; cursor: pointer;" onclick="preencherAssinatura(this)">
+                 <div id="assinatura_coluna1" style="width: 33.33%; padding: 15px; text-align: center; font-size: 11px; font-weight: bold; border-right: 1px solid #000; background: #6c757d; color: white; cursor: pointer;" onclick="preencherAssinatura(this)">
                      <div id="nome_coluna1" style="margin-bottom: 25px;">{{ rnc.signature_inspection_name or 'NOME' }}</div>
                      <div style="border-top: 1px solid #6c757d; padding-top: 8px;">VISTO</div>
                  </div>
-                 <div id="assinatura_coluna2" style="width: 33.33%; padding: 15px; text-align: center; font-size: 11px; font-weight: bold; border-right: 2px solid #cccccc; cursor: pointer;" onclick="preencherAssinatura(this)">
+                 <div id="assinatura_coluna2" style="width: 33.33%; padding: 15px; text-align: center; font-size: 11px; font-weight: bold; border-right: 1px solid #000; cursor: pointer;" onclick="preencherAssinatura(this)">
                      <div id="nome_coluna2" style="margin-bottom: 25px;">{{ rnc.signature_engineering_name or 'NOME' }}</div>
                      <div style="border-top: 1px solid #6c757d; padding-top: 8px;">VISTO</div>
                  </div>

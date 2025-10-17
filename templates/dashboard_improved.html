@@ -150,6 +150,13 @@
                           if (filtersContainer) {
                               filtersContainer.style.display = 'none';
                           }
+                          
+                          // Mostrar/ocultar subtópicos para aba active
+                          var activeSubtopicsContainer = document.getElementById('activeSubtopicsContainer');
+                          if (activeSubtopicsContainer) {
+                              activeSubtopicsContainer.style.display = (tab === 'active') ? 'block' : 'none';
+                          }
+                          
                           if (typeof window.loadRNCs === 'function') {
                               window.loadRNCs(tab);
                           }
@@ -164,6 +171,122 @@
           } catch(e) {
               console.error('❌ Erro em switchTab:', e);
           }
+      };
+      
+      // ==========================================
+      // SISTEMA DE SUBTÓPICOS PARA RNCs ATIVAS
+      // ==========================================
+      
+      // Variável global para armazenar o subtópico atual
+      window.currentActiveSubtopic = 'all';
+      
+      // Função para determinar o status de uma RNC
+      window.getRNCStatus = function(rnc) {
+          if (!rnc) return 'awaiting-response';
+          
+          // Verificar se tem assinatura do Gerente do Setor (signature_inspection_name)
+          const hasGerenteSignature = rnc.signature_inspection_name && 
+                                      rnc.signature_inspection_name !== 'NOME' &&
+                                      rnc.signature_inspection_name.trim() !== '';
+          
+          // Verificar se tem assinatura do Causador (signature_inspection2_name)
+          const hasCausadorSignature = rnc.signature_inspection2_name && 
+                                       rnc.signature_inspection2_name !== 'NOME' &&
+                                       rnc.signature_inspection2_name.trim() !== '';
+          
+          // Verificar se tem valor total preenchido
+          const hasValue = rnc.price && parseFloat(rnc.price) > 0;
+          
+          // Lógica de status:
+          // 1. Se não tem assinaturas → Aguardando Resposta
+          // 2. Se tem assinaturas mas não tem valor → Aguardando Valor
+          // 3. Se tem assinaturas E valor → Aguardando Finalização
+          
+          if (!hasGerenteSignature && !hasCausadorSignature) {
+              return 'awaiting-response';
+          } else if ((hasGerenteSignature || hasCausadorSignature) && !hasValue) {
+              return 'awaiting-value';
+          } else if (hasValue) {
+              return 'awaiting-finalization';
+          }
+          
+          return 'awaiting-response';
+      };
+      
+      // Função para trocar de subtópico
+      window.switchActiveSubtopic = function(subtopic) {
+          try {
+              console.log('🔄 Mudando para subtópico:', subtopic);
+              
+              // Atualizar estado visual dos botões
+              document.querySelectorAll('.subtopic-button').forEach(function(btn) {
+                  btn.classList.remove('active');
+              });
+              var btn = document.querySelector('[data-subtopic="' + subtopic + '"]');
+              if (btn) btn.classList.add('active');
+              
+              // Atualizar variável global
+              window.currentActiveSubtopic = subtopic;
+              
+              // Re-renderizar RNCs filtradas
+              if (typeof window.renderRNCs === 'function' && window.rncsData && window.rncsData.active) {
+                  window.renderRNCs('active');
+              }
+              
+              console.log('✅ Subtópico alterado para:', subtopic);
+          } catch(e) {
+              console.error('❌ Erro em switchActiveSubtopic:', e);
+          }
+      };
+      
+      // Função para filtrar RNCs por subtópico
+      window.filterBySubtopic = function(rncs) {
+          if (!rncs || rncs.length === 0) return [];
+          if (window.currentActiveSubtopic === 'all') return rncs;
+          
+          return rncs.filter(function(rnc) {
+              var status = window.getRNCStatus(rnc);
+              return status === window.currentActiveSubtopic;
+          });
+      };
+      
+      // Função para atualizar contadores de subtópicos
+      window.updateSubtopicCounts = function(rncs) {
+          if (!rncs || rncs.length === 0) {
+              document.getElementById('count-subtopic-all').textContent = '0';
+              document.getElementById('count-subtopic-awaiting-response').textContent = '0';
+              document.getElementById('count-subtopic-awaiting-value').textContent = '0';
+              document.getElementById('count-subtopic-awaiting-finalization').textContent = '0';
+              return;
+          }
+          
+          var counts = {
+              'awaiting-response': 0,
+              'awaiting-value': 0,
+              'awaiting-finalization': 0
+          };
+          
+          rncs.forEach(function(rnc) {
+              var status = window.getRNCStatus(rnc);
+              if (counts[status] !== undefined) {
+                  counts[status]++;
+              }
+          });
+          
+          document.getElementById('count-subtopic-all').textContent = rncs.length;
+          document.getElementById('count-subtopic-awaiting-response').textContent = counts['awaiting-response'];
+          document.getElementById('count-subtopic-awaiting-value').textContent = counts['awaiting-value'];
+          document.getElementById('count-subtopic-awaiting-finalization').textContent = counts['awaiting-finalization'];
+      };
+      
+      // Função para obter badge HTML do status
+      window.getStatusBadgeHTML = function(status) {
+          var badges = {
+              'awaiting-response': '<div class="rnc-status-badge awaiting-response">⏳ Aguardando Resposta</div>',
+              'awaiting-value': '<div class="rnc-status-badge awaiting-value">💰 Aguardando Valor</div>',
+              'awaiting-finalization': '<div class="rnc-status-badge awaiting-finalization">✅ Aguardando Finalização</div>'
+          };
+          return badges[status] || '';
       };
     </script>
     <!-- Preload removido - logo carrega rápido sem necessidade de preload -->
@@ -1513,6 +1636,109 @@
                     </button>
                     {% endif %}
                 </div>
+                
+                <!-- Subtópicos para RNCs Ativas -->
+                <div id="activeSubtopicsContainer" class="subtopics-container" style="display: none;">
+                    <div class="subtopics-header">
+                        <button class="subtopic-button active" data-subtopic="all" onclick="switchActiveSubtopic('all')">
+                            📋 Todos
+                            <span class="count" id="count-subtopic-all">0</span>
+                        </button>
+                        <button class="subtopic-button" data-subtopic="awaiting-response" onclick="switchActiveSubtopic('awaiting-response')">
+                            ⏳ Aguardando Resposta
+                            <span class="count" id="count-subtopic-awaiting-response">0</span>
+                        </button>
+                        <button class="subtopic-button" data-subtopic="awaiting-value" onclick="switchActiveSubtopic('awaiting-value')">
+                            💰 Aguardando Valor
+                            <span class="count" id="count-subtopic-awaiting-value">0</span>
+                        </button>
+                        <button class="subtopic-button" data-subtopic="awaiting-finalization" onclick="switchActiveSubtopic('awaiting-finalization')">
+                            ✅ Aguardando Finalização
+                            <span class="count" id="count-subtopic-awaiting-finalization">0</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <style>
+                    /* Estilo para subtópicos */
+                    .subtopics-container {
+                        background: #f8f9fa;
+                        padding: 12px 20px;
+                        border-bottom: 1px solid #dee2e6;
+                    }
+                    
+                    .subtopics-header {
+                        display: flex;
+                        gap: 10px;
+                        flex-wrap: wrap;
+                    }
+                    
+                    .subtopic-button {
+                        padding: 8px 16px;
+                        border: 2px solid #dee2e6;
+                        background: white;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        font-size: 13px;
+                        font-weight: 600;
+                        color: #495057;
+                        transition: all 0.3s;
+                        display: flex;
+                        align-items: center;
+                        gap: 6px;
+                    }
+                    
+                    .subtopic-button:hover {
+                        background: #e9ecef;
+                        border-color: #adb5bd;
+                    }
+                    
+                    .subtopic-button.active {
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        border-color: #667eea;
+                        color: white;
+                    }
+                    
+                    .subtopic-button .count {
+                        background: rgba(255,255,255,0.2);
+                        padding: 2px 8px;
+                        border-radius: 12px;
+                        font-size: 11px;
+                        font-weight: 700;
+                    }
+                    
+                    .subtopic-button.active .count {
+                        background: rgba(255,255,255,0.3);
+                    }
+                    
+                    /* Badge de status na RNC */
+                    .rnc-status-badge {
+                        display: inline-block;
+                        padding: 4px 10px;
+                        border-radius: 12px;
+                        font-size: 11px;
+                        font-weight: 600;
+                        margin-bottom: 8px;
+                    }
+                    
+                    .rnc-status-badge.awaiting-response {
+                        background: #fff3cd;
+                        color: #856404;
+                        border: 1px solid #ffeaa7;
+                    }
+                    
+                    .rnc-status-badge.awaiting-value {
+                        background: #d1ecf1;
+                        color: #0c5460;
+                        border: 1px solid #bee5eb;
+                    }
+                    
+                    .rnc-status-badge.awaiting-finalization {
+                        background: #d4edda;
+                        color: #155724;
+                        border: 1px solid #c3e6cb;
+                    }
+                </style>
                 
                 <!-- Filtros para aba Finalizados -->
                 <div id="filtersContainer" class="filters-container" style="display: none;">
@@ -2971,7 +3197,18 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
                 grid.innerHTML = createRNCTable(rncs, tab);
             } else {
                 // Aplicar filtros extras para 'active' também
-                const filtered = tab === 'active' ? filterActive(rncs) : rncs;
+                let filtered = tab === 'active' ? filterActive(rncs) : rncs;
+                
+                // Atualizar contadores de subtópicos para tab active
+                if (tab === 'active' && typeof window.updateSubtopicCounts === 'function') {
+                    window.updateSubtopicCounts(filtered);
+                }
+                
+                // Aplicar filtro de subtópico se estiver na aba active
+                if (tab === 'active' && typeof window.filterBySubtopic === 'function') {
+                    filtered = window.filterBySubtopic(filtered);
+                }
+                
                 grid.innerHTML = filtered.map(rnc => safeCreateRNCCard(rnc, tab)).join('');
             }
         }
@@ -3102,6 +3339,10 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
             if (tab === 'finalized' && rnc.finalized_at) {
                 const date = new Date(rnc.finalized_at).toLocaleDateString('pt-BR');
                 statusBadge = `<div class="finalized-date">Finalizado em ${date}</div>`;
+            } else if (tab === 'active' && typeof window.getRNCStatus === 'function' && typeof window.getStatusBadgeHTML === 'function') {
+                // Adicionar badge de status para RNCs ativas
+                const rncStatus = window.getRNCStatus(rnc);
+                statusBadge = window.getStatusBadgeHTML(rncStatus);
             }
             
             const actions = getActionsForTab(rnc, tab);
