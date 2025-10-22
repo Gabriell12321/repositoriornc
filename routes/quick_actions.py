@@ -243,12 +243,12 @@ def manage_permissions():
 <body>
     <div class="permissions-container">
         <div class="header">
-            <h1>🔐 Gerenciar Permissões - Ações Rápidas</h1>
+            <h1> Gerenciar Permissões - Ações Rápidas</h1>
             <p>Configure quais grupos podem visualizar cada ação rápida no dashboard</p>
         </div>
         
         <div class="alert alert-info">
-            <strong>ℹ️ Como funciona:</strong> 
+            <strong> Como funciona:</strong> 
             Por padrão, as ações rápidas não aparecem para ninguém. 
             Marque os grupos que devem ter acesso a cada ação.
         </div>
@@ -302,10 +302,10 @@ def manage_permissions():
             {% endfor %}
             
             <div class="actions-buttons">
-                <button type="submit" class="btn btn-success">💾 Salvar Permissões</button>
-                <a href="/dashboard" class="btn btn-secondary">🔙 Voltar ao Dashboard</a>
-                <button type="button" class="btn" onclick="selectAllGroups()">✅ Marcar Todos</button>
-                <button type="button" class="btn" onclick="clearAllGroups()">❌ Desmarcar Todos</button>
+                <button type="submit" class="btn btn-success"> Salvar Permissões</button>
+                <a href="/dashboard" class="btn btn-secondary"> Voltar ao Dashboard</a>
+                <button type="button" class="btn" onclick="selectAllGroups()"> Marcar Todos</button>
+                <button type="button" class="btn" onclick="clearAllGroups()"> Desmarcar Todos</button>
             </div>
         </form>
     </div>
@@ -389,11 +389,11 @@ def save_permissions():
                     ''', (action_key, group_id, permission_level))
         
         conn.commit()
-        flash('✅ Permissões salvas com sucesso!', 'success')
+        flash(' Permissões salvas com sucesso!', 'success')
         
     except Exception as e:
         conn.rollback()
-        flash(f'❌ Erro ao salvar permissões: {str(e)}', 'error')
+        flash(f' Erro ao salvar permissões: {str(e)}', 'error')
     
     finally:
         conn.close()

@@ -2155,6 +2155,19 @@
             <div id="setoresContent" style="display: none;">
                 <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
                     <h3 id="setorTitle" style="margin-bottom: 20px; color: #333;"> RNCs Mensais por Setor</h3>
+                    <div style="display:flex; gap:12px; align-items:center; margin-bottom:12px;">
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <label style="font-size:13px; color:#495057; margin-right:6px;">Ano:</label>
+                            <select id="filterYear" style="padding:6px 8px; border:1px solid #ddd; border-radius:6px; min-width:120px;"></select>
+                        </div>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <label style="font-size:13px; color:#495057; margin-right:6px;">Status:</label>
+                            <select id="filterStatus" style="padding:6px 8px; border:1px solid #ddd; border-radius:6px; min-width:160px;"></select>
+                        </div>
+                        <div>
+                            <button id="applySetorFilters" onclick="applySetorFilters()" style="padding:8px 12px; border:none; border-radius:6px; background:#198754; color:#fff; font-weight:600; cursor:pointer;">Aplicar</button>
+                        </div>
+                    </div>
                     <div style="background: #f8f9fa; border-radius: 8px; padding: 20px;">
                         <canvas id="setorSingleChart" style="max-height: 400px;"></canvas>
                     </div>
@@ -4786,11 +4799,15 @@ Status: ${data.debug_info.inspection2_empty ? ' VAZIO' : ' PREENCHIDO'}`);
             // Mostrar/ocultar filtros baseado na aba
             const filtersContainer = document.getElementById('filtersContainer');
             if (filtersContainer) {
-                if (tab === 'finalized') {
+                // Exibir filtros tanto para a aba 'finalized' (lista de finalizados)
+                // quanto para 'setores' (gráficos por setor) — usuários esperam
+                // poder filtrar quando visualizam RNCs por setor.
+                if (tab === 'finalized' || tab === 'setores') {
                     filtersContainer.style.display = 'block';
-                    console.log(` Filtros mostrados para aba finalizados`);
+                    console.log(` Filtros mostrados para aba ${tab}`);
                 } else {
                     filtersContainer.style.display = 'none';
+                    // Limpar filtros apenas quando saindo de abas que usam lista
                     if (typeof clearFilters === 'function') clearFilters();
                     console.log(` Filtros ocultados para aba ${tab}`);
                 }
@@ -4878,6 +4895,22 @@ Status: ${data.debug_info.inspection2_empty ? ' VAZIO' : ' PREENCHIDO'}`);
                 if (typeof fillYearSelect === 'function') fillYearSelect();
                 if (typeof loadLev1415 === 'function') loadLev1415();
                 if (typeof loadLevByYear === 'function') loadLevByYear();
+            } else if (tab === 'setores') {
+                console.log(' Carregando visualização por setores...');
+                // Garantir que os seletores de setor sejam populados e carregar dados
+                try {
+                    // Preencher lista de setores para seleção
+                    if (typeof ensureSectorsLoadedSelect === 'function') ensureSectorsLoadedSelect();
+                } catch(e) { console.warn('ensureSectorsLoadedSelect falhou', e); }
+
+                // Dar um pequeno atraso para o DOM e select atualizarem
+                setTimeout(() => {
+                    if (typeof loadSetorData === 'function') {
+                        loadSetorData();
+                    } else if (typeof loadDefaultSectorChart === 'function') {
+                        loadDefaultSectorChart();
+                    }
+                }, 150);
             } else {
                 // Carregar RNCs para abas active/finalized
                 console.log(` Carregando RNCs para aba ${tab}`);
