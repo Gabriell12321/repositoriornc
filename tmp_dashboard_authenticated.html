@@ -1631,13 +1631,13 @@
             <div class="header">
                 <div class="logo">
                     <!-- SQI logo (à esquerda) -->
-                    <img src="{{ url_for('static', filename='LOGOSQI.jpg') }}" alt="SQI Logo">
+                    <img src="/static/LOGOSQI.jpg" alt="SQI Logo">
                     <!-- IPPEL logo (à direita da SQI) -->
                     <img class="apply-logo" src="/IPPELLOGO.jpg"
                         alt="IPPEL Logo"
                         data-logo-primary="/IPPELLOGO.jpg"
                         data-logo-fallback1="/IPPELLOGO.jpg"
-                        data-logo-fallback2="{{ url_for('static', filename='LOGOSQI.jpg') }}"
+                        data-logo-fallback2="/static/LOGOSQI.jpg"
                         onerror="if(this.dataset.try1!=='1'){this.dataset.try1='1'; this.src=this.dataset.logoFallback1;} else if(this.dataset.try2!=='1'){this.dataset.try2='1'; this.src=this.dataset.logoFallback2;} else {this.style.display='none';}">
                     <h1>IPPEL RNC System</h1>
                 </div>
@@ -1681,28 +1681,28 @@
                         Ativos
                         <span class="count" id="count-active">0</span>
                     </button>
-                    {% if user_permissions.canViewEngineeringRncs %}
+                    
                     <button class="tab-button" data-tab="setores" onclick="switchTab('setores')">
                         RNCs Mensais por Setor
                     </button>
-                    {% endif %}
-                    {% if user_permissions.canViewFinalizedRncs %}
+                    
+                    
                     <button class="tab-button" data-tab="finalized" onclick="switchTab('finalized')">
                          Finalizados
                         <span class="count" id="count-finalized">0</span>
                     </button>
-                    {% endif %}
-                    {% if user_permissions.canViewCharts %}
+                    
+                    
                     <!-- STANDBY: Aba Evidências temporariamente oculta - Remova o style="display:none;" para reativar -->
                     <button class="tab-button" data-tab="evidencias" onclick="switchTab('evidencias')" style="display:none;">
                          Evidências
                     </button>
-                    {% endif %}
-                    {% if user_permissions.canViewLevantamento1415 %}
+                    
+                    
                     <button class="tab-button" data-tab="lev1415" onclick="switchTab('lev1415')">
                         Levantamento 14-15
                     </button>
-                    {% endif %}
+                    
                 </div>
                 
                 <!-- Subtópicos para RNCs Ativas -->
@@ -1876,12 +1876,12 @@
                             <div class="stat-number" id="stat-active">0</div>
                             <div class="stat-label">Ativos</div>
                         </div>
-                        {% if user_permissions.canViewFinalizedRncs %}
+                        
                         <div class="stat-item stat-finalized">
                             <div class="stat-number" id="stat-finalized">0</div>
                             <div class="stat-label">Finalizados</div>
                         </div>
-                        {% endif %}
+                        
                         
                     </div>
                 </div>
@@ -2212,7 +2212,7 @@
             
             <!-- Botões de Ação -->
             <div style="margin-bottom: 30px; display: flex; flex-direction: column; gap: 10px;">
-                {% if user_permissions and user_permissions.canCreateRnc %}
+                
                 <button onclick="window.location.href='/form'" style="
                     width: 100%;
                     padding: 15px;
@@ -2231,8 +2231,8 @@
                 ">
                     Novo RNC
                 </button>
-                {% endif %}
-                {% if user_permissions and user_permissions.canViewCharts %}
+                
+                
                 <button onclick="window.location.href='/chat'" style="
                     width: 100%;
                     padding: 15px;
@@ -2251,7 +2251,7 @@
                 ">
                      Mensagens
                 </button>
-                {% endif %}
+                
                 
                 <!-- Botão de Atualizar sempre visível -->
                 <button onclick="forceRefreshDashboard()" style="
@@ -2601,9 +2601,9 @@
             finalized: [] 
         };
         
-        {% if user_permissions.canViewEngineeringRncs %}
+        
         rncsData.engenharia = [];
-        {% endif %}
+        
         
         // Variáveis para filtros
         let currentFilters = {
@@ -2995,19 +2995,19 @@
                     finalized: [] 
                 };
                 
-                {% if user_permissions.canViewEngineeringRncs %}
+                
                 rncsData.engenharia = [];
-                {% endif %}
+                
                 
                 // 4. Recarregar todas as abas com forceRefresh
                 console.log(' Recarregando aba ativa...');
                 // CORRIGIDO: Carregar a aba ATIVOS, não finalizados!
                 await loadRNCs('active', true);
                 
-                {% if user_permissions.canViewEngineeringRncs %}
+                
                 console.log(' Recarregando aba engenharia...');
                 await loadRNCs('engenharia', true);
-                {% endif %}
+                
                 
                 console.log(' Recarregando aba finalizados...');
                 await loadRNCs('finalized', true);
@@ -3190,9 +3190,9 @@ Status: ${data.debug_info.inspection2_empty ? ' VAZIO' : ' PREENCHIDO'}`);
             );
             
             // Carregar dados de engenharia apenas se o usuário tiver permissão
-            {% if user_permissions.canViewEngineeringRncs %}
+            
             promises.push(loadRNCs('engenharia', false).catch(() => {}));
-            {% endif %}
+            
             
             return Promise.allSettled(promises);
         }
@@ -3463,11 +3463,9 @@ Status: ${data.debug_info.inspection2_empty ? ' VAZIO' : ' PREENCHIDO'}`);
             if (currentTab === 'finalized') {
                 rows = (filteredRNCs.length > 0 ? filteredRNCs : rncsData.finalized) || [];
             } else if (currentTab === 'engenharia') {
-                {% if user_permissions.canViewEngineeringRncs %}
+                
                 rows = rncsData.engenharia || [];
-                {% else %}
-                rows = [];
-                {% endif %}
+                
             } else {
                 rows = (filteredRNCs.length > 0 ? filteredRNCs : rncsData.active) || [];
             }
@@ -3627,11 +3625,11 @@ Status: ${data.debug_info.inspection2_empty ? ' VAZIO' : ' PREENCHIDO'}`);
                     if (rncsData.active) {
                         rncsData.active = rncsData.active.filter(rnc => rnc.id != rncId);
                     }
-                    {% if user_permissions.canViewEngineeringRncs %}
+                    
                     if (rncsData.engenharia) {
                         rncsData.engenharia = rncsData.engenharia.filter(rnc => rnc.id != rncId);
                     }
-                    {% endif %}
+                    
                     if (rncsData.finalized) {
                         rncsData.finalized = rncsData.finalized.filter(rnc => rnc.id != rncId);
                     }
@@ -3787,11 +3785,9 @@ Status: ${data.debug_info.inspection2_empty ? ' VAZIO' : ' PREENCHIDO'}`);
             });
             
             if (countActiveEl) countActiveEl.textContent = activeCount;
-            {% if user_permissions.canViewEngineeringRncs %}
+            
             if (countEngenhariaEl) countEngenhariaEl.textContent = engenhariaCount;
-            {% else %}
-            if (countEngenhariaEl) countEngenhariaEl.textContent = 0;
-            {% endif %}
+            
             if (countFinalizedEl) countFinalizedEl.textContent = finalizedCount;
             
             // Corrigir: usar dados corretos para cada contador
@@ -5368,9 +5364,9 @@ Status: ${data.debug_info.inspection2_empty ? ' VAZIO' : ' PREENCHIDO'}`);
                         
                         rncsData.active = activeFromCache;
                         rncsData.finalized = dc.rncs.finalized || [];
-                        {% if user_permissions.canViewEngineeringRncs %}
+                        
                         rncsData.engenharia = dc.rncs.engenharia || [];
-                        {% endif %}
+                        
                         console.log(' Dados do cache carregados (aguardando atualização)');
                     }
                 }
@@ -5392,9 +5388,9 @@ Status: ${data.debug_info.inspection2_empty ? ' VAZIO' : ' PREENCHIDO'}`);
                     // Inicializar contadores para auto-update (evitar falsos positivos)
                     lastRNCCounts.active = (rncsData.active || []).length;
                     lastRNCCounts.finalized = (rncsData.finalized || []).length;
-                    {% if user_permissions.canViewEngineeringRncs %}
+                    
                     lastRNCCounts.engenharia = (rncsData.engenharia || []).length;
-                    {% endif %}
+                    
                     console.log(' Contadores iniciais:', lastRNCCounts);
                     
                     saveDashboardCache({ user: null, rncs: rncsData });
@@ -13313,9 +13309,9 @@ Status: ${data.debug_info.inspection2_empty ? ' VAZIO' : ' PREENCHIDO'}`);
                 // Reset
                 if(!monthKey){ 
                     if (currentTab === 'engenharia') {
-                        {% if user_permissions.canViewEngineeringRncs %}
+                        
                         buildEngineeringCharts((rncsData && rncsData.engenharia)||[]);
-                        {% endif %} 
+                         
                     }
                     return; 
                 }
@@ -13331,9 +13327,9 @@ Status: ${data.debug_info.inspection2_empty ? ' VAZIO' : ' PREENCHIDO'}`);
                 if(c3){
                     // Filter month RNCs
                     let monthRncs = [];
-                    {% if user_permissions.canViewEngineeringRncs %}
+                    
                     monthRncs = (rncsData.engenharia||[]).filter(r=>{ const raw=r.finalized_at||r.created_at||r.updated_at; if(!raw) return false; const d=new Date(raw); if(isNaN(d)) return false; const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); return key===monthKey; });
-                    {% endif %}
+                    
                     const byDay={}; monthRncs.forEach(r=>{ const d=new Date(r.finalized_at||r.created_at||r.updated_at); const day=String(d.getDate()).padStart(2,'0'); byDay[day]=(byDay[day]||0)+1; });
                     const days=Object.keys(byDay).sort((a,b)=>parseInt(a)-parseInt(b));
                     const dayValues=days.map(d=>byDay[d]);
@@ -13353,9 +13349,9 @@ Status: ${data.debug_info.inspection2_empty ? ' VAZIO' : ' PREENCHIDO'}`);
             function resetEngineeringSelection(){
                 const sel=document.getElementById('engineeringMonthSelect'); if(sel) sel.value='';
                 if(window._engDataCache && currentTab === 'engenharia'){
-                    {% if user_permissions.canViewEngineeringRncs %}
+                    
                     buildEngineeringCharts((rncsData && rncsData.engenharia)||[]);
-                    {% endif %}
+                    
                 }
             }
             function updateEngineeringMonthInfo(idx){

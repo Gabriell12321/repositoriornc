@@ -643,12 +643,28 @@ def list_rncs():
         filter_conjunto = request.args.get('conjunto', '').strip()
         filter_modelo = request.args.get('modelo', '').strip()
         
+        # ======= FILTROS ADICIONAIS =======
+        # Aceitar parâmetro de ano (year) e status (status) para filtragem simplificada
+        filter_year = request.args.get('year', '').strip()
+        filter_status = request.args.get('status', '').strip()
+
         # ======= FILTROS DE DATA =======
-        filter_date_from = request.args.get('date_from', '').strip()  # Data inicial (De:)
-        filter_date_to = request.args.get('date_to', '').strip()      # Data final (Até:)
-        
+        # Aceitar vários formatos/nomeclaturas de parâmetro vindos do frontend
+        filter_date_from = (request.args.get('date_from') or request.args.get('dateStart') or request.args.get('date_start') or '').strip()  # Data inicial (De:)
+        filter_date_to = (request.args.get('date_to') or request.args.get('dateEnd') or request.args.get('date_end') or '').strip()      # Data final (Até:)
+
+        # Se foi fornecido apenas o ano, derive o intervalo completo do ano
+        if filter_year and not (filter_date_from or filter_date_to):
+            try:
+                y = int(str(filter_year).strip()[:4])
+                filter_date_from = f"{y}-01-01"
+                filter_date_to = f"{y}-12-31"
+            except Exception:
+                # ignorar se o year não for válido
+                pass
+
         # Criar chave de cache incluindo filtros
-        filters_hash = f"{filter_cv}_{filter_rnc_number}_{filter_client}_{filter_equipment}_{filter_responsavel}_{filter_setor}_{filter_area_responsavel}_{filter_mp}_{filter_conjunto}_{filter_modelo}_{filter_date_from}_{filter_date_to}"
+        filters_hash = f"{filter_cv}_{filter_rnc_number}_{filter_client}_{filter_equipment}_{filter_responsavel}_{filter_setor}_{filter_area_responsavel}_{filter_mp}_{filter_conjunto}_{filter_modelo}_{filter_date_from}_{filter_date_to}_{filter_year}_{filter_status}"
 
         # Cursor-based pagination params (shared util)
         cursor_id, limit = parse_cursor_limit(request, default_limit=50000, max_limit=50000)
@@ -684,7 +700,12 @@ def list_rncs():
         params = []
 
         if tab == 'finalized':
-            where.append("r.status = 'Finalizado'")
+            # Permitir que o frontend sobreponha o status padrão
+            if filter_status:
+                where.append("r.status = ?")
+                params.append(filter_status)
+            else:
+                where.append("r.status = 'Finalizado'")
             if not view_all_finalized:
                 joins.append("LEFT JOIN rnc_shares rs ON rs.rnc_id = r.id")
                 joins.append("LEFT JOIN users user_group ON user_group.id = ?")
@@ -2076,6 +2097,103 @@ def debug_rnc_count():
     except Exception as e:
         logger.error(f"Erro no debug: {e}")
         return jsonify({'success': False, 'message': f'Erro: {str(e)}'}), 500
+
+
+@rnc.route('/api/debug/rnc-count-by-year')
+def debug_rnc_count_by_year():
+    """
+    Retorna contagens de RNCs agrupadas por ano (global) e contagens visíveis ao usuário
+    (para ajudar a diagnosticar discrepâncias, ex: RNCs de 2024 não aparecendo na UI).
+    """
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
+    try:
+        from services.db import get_db_connection, return_db_connection
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # 1) Contagens globais por ano e status (finalized vs others)
+        cur.execute("""
+            SELECT COALESCE(strftime('%Y', finalized_at), strftime('%Y', created_at)) as year,
+                   status,
+                   COUNT(*) as cnt
+            FROM rncs
+            GROUP BY year, status
+            ORDER BY year DESC
+        """)
+        rows = cur.fetchall()
+        global_by_year = {}
+        for year, status, cnt in rows:
+            y = year or 'unknown'
+            global_by_year.setdefault(y, {})
+            global_by_year[y][status or 'unknown'] = cnt
+
+        # 2) Contagens de finalizados visíveis para o usuário por ano
+        user_id = session['user_id']
+        cur.execute("""
+            SELECT COALESCE(strftime('%Y', COALESCE(finalized_at, created_at)), strftime('%Y', created_at)) as year,
+                   COUNT(*) as cnt
+            FROM rncs r
+            WHERE (r.is_deleted = 0 OR r.is_deleted IS NULL)
+              AND r.status = 'Finalizado'
+              AND (
+                    r.user_id = ?
+                    OR r.assigned_user_id = ?
+                    OR EXISTS (SELECT 1 FROM rnc_shares rs WHERE rs.rnc_id = r.id AND rs.shared_with_user_id = ?)
+                    OR (r.assigned_group_id IS NOT NULL AND r.assigned_group_id = (SELECT group_id FROM users WHERE id = ?))
+                  )
+            GROUP BY year
+            ORDER BY year DESC
+        """, (user_id, user_id, user_id, user_id))
+        vis_rows = cur.fetchall()
+        visible_finalized_by_year = { (r[0] or 'unknown'): r[1] for r in vis_rows }
+
+        return_db_connection(conn)
+        return jsonify({'success': True, 'global_by_year': global_by_year, 'visible_finalized_by_year': visible_finalized_by_year})
+    except Exception as e:
+        logger.error(f"Erro no debug rnc-count-by-year: {e}")
+        return jsonify({'success': False, 'message': f'Erro: {str(e)}'}), 500
+
+
+@rnc.route('/api/public/finalized-monthly')
+def public_finalized_monthly():
+    """Public endpoint: returns monthly counts (YYYY-MM) for RNCs with status 'Finalizado'.
+    Optional query params:
+      - year=YYYY (filter by year)
+      - setor=NAME (filter by setor or area_responsavel contains NAME)
+    This endpoint is intentionally public (no session check) because it's used for dashboard-only aggregates.
+    """
+    try:
+        from services.db import get_db_connection, return_db_connection
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        year = (request.args.get('year') or '').strip()
+        setor = (request.args.get('setor') or '').strip()
+
+        where = ["status = 'Finalizado'"]
+        params = []
+
+        if year:
+            # match by finalized_at or created_at year
+            where.append("COALESCE(strftime('%Y', finalized_at), strftime('%Y', created_at)) = ?")
+            params.append(year)
+
+        if setor:
+            where.append("(LOWER(TRIM(setor)) LIKE LOWER(TRIM(?)) OR LOWER(TRIM(area_responsavel)) LIKE LOWER(TRIM(?)))")
+            params.extend([f'%{setor}%', f'%{setor}%'])
+
+        sql = f"SELECT COALESCE(strftime('%Y-%m', finalized_at), strftime('%Y-%m', created_at)) as month, COUNT(*) as cnt FROM rncs WHERE {' AND '.join(where)} GROUP BY month ORDER BY month ASC"
+        cur.execute(sql, tuple(params))
+        rows = cur.fetchall()
+
+        monthly = [{'month': r[0] or '', 'count': r[1]} for r in rows]
+
+        return_db_connection(conn)
+        return jsonify({'success': True, 'monthly_trend': monthly})
+    except Exception as e:
+        logger.error(f"Erro em public_finalized_monthly: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 
 @rnc.route('/api/debug/user-rncs')
