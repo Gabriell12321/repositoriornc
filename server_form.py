@@ -60,7 +60,7 @@ try:
     HAS_FORMATTING = True
 except ImportError:
     HAS_FORMATTING = False
-    print("⚠️ Módulo de formatação não encontrado - valores não serão formatados")
+    print(" Módulo de formatação não encontrado - valores não serão formatados")
     # Funções de fallback para formatação
     def format_currency(value):
         try:
@@ -120,7 +120,7 @@ except ImportError:  # Fallback dummy para executar sem dependência
         def emit(self, *args, **kwargs):
             pass
         def run(self, app, host='0.0.0.0', port=5000, **kwargs):
-            print("⚠️ flask_socketio não instalado - usando Flask padrão (sem WebSocket)")
+            print(" flask_socketio não instalado - usando Flask padrão (sem WebSocket)")
             app.run(host=host, port=port, debug=kwargs.get('debug', False))
     def emit(*args, **kwargs):
         pass
@@ -167,7 +167,7 @@ try:
         try:
             _limiter.exempt('/api/notifications/unread')
         except Exception as e:
-            print(f"⚠️ Não foi possível isentar /api/notifications/unread do rate limit: {e}")
+            print(f" Não foi possível isentar /api/notifications/unread do rate limit: {e}")
 except Exception:
     HAS_LIMITER = False
 
@@ -181,7 +181,7 @@ def setup_compression():
             from flask_compress import Compress  # type: ignore
             HAS_COMPRESS = True
         except ImportError:
-            print("⚠️ Flask-Compress não instalado - compressão desabilitada")
+            print(" Flask-Compress não instalado - compressão desabilitada")
             return
     
 if HAS_COMPRESS and Compress is not None:
@@ -203,7 +203,7 @@ if HAS_COMPRESS and Compress is not None:
         
         Compress(app)
     except Exception as _compress_err:
-        print(f"⚠️ Falha ao inicializar compressão: {_compress_err}")
+        print(f" Falha ao inicializar compressão: {_compress_err}")
         HAS_COMPRESS = False
 
 # Compressão será configurada em background para não atrasar startup
@@ -473,9 +473,9 @@ try:
                        json=None,  # Usar JSON padrão
                        # Configurações específicas para SSL
                        allow_unsafe_werkzeug=True)
-    print(f"✅ SocketIO inicializado com eventlet (HTTPS: {use_https})")
+    print(f" SocketIO inicializado com eventlet (HTTPS: {use_https})")
 except Exception as e:
-    print(f"⚠️ SocketIO falhou: {e}")
+    print(f" SocketIO falhou: {e}")
     socketio = None
 
 # Rota de verificação de saúde do Socket.IO
@@ -525,18 +525,18 @@ app.register_blueprint(field_locks_bp)
 try:
     from services.notifications_api import notifications_bp
     app.register_blueprint(notifications_bp)
-    logger.info("✅ Blueprint de notificações registrado")
+    logger.info(" Blueprint de notificações registrado")
 except Exception as e:
-    logger.error(f"❌ Erro ao registrar blueprint de notificações: {e}")
+    logger.error(f" Erro ao registrar blueprint de notificações: {e}")
 
 # Inicializar Socket.IO para notificações
 if socketio is not None:
     try:
         from services.notification_socketio import init_notification_socketio
         init_notification_socketio(socketio)
-        logger.info("✅ Socket.IO de notificações inicializado")
+        logger.info(" Socket.IO de notificações inicializado")
     except Exception as e:
-        logger.error(f"❌ Erro ao inicializar Socket.IO de notificações: {e}")
+        logger.error(f" Erro ao inicializar Socket.IO de notificações: {e}")
 
 # JWT: parse Authorization Bearer and attach g.user_id if valid
 @app.before_request
@@ -1337,15 +1337,15 @@ def ensure_chat_viewed_at_column(existing_conn=None):
         cols = [row[1] for row in cursor.fetchall()]
         
         if 'viewed_at' not in cols:
-            logger.info("🔧 Adicionando coluna viewed_at à tabela chat_messages")
+            logger.info(" Adicionando coluna viewed_at à tabela chat_messages")
             cursor.execute("ALTER TABLE chat_messages ADD COLUMN viewed_at TIMESTAMP DEFAULT NULL")
             conn.commit()
-            logger.info("✅ Coluna viewed_at adicionada com sucesso")
+            logger.info(" Coluna viewed_at adicionada com sucesso")
         
         if should_close:
             conn.close()
     except Exception as e:
-        logger.error(f"❌ Erro ao garantir coluna viewed_at em chat_messages: {e}")
+        logger.error(f" Erro ao garantir coluna viewed_at em chat_messages: {e}")
 
 def ensure_notifications_table_migration():
     """Migração da tabela notifications para compatibilidade com enhanced_notifications"""
@@ -1359,7 +1359,7 @@ def ensure_notifications_table_migration():
         
         # Verificar se precisa migrar de user_id para to_user_id
         if 'user_id' in cols and 'to_user_id' not in cols:
-            logger.info("🔧 Migrando tabela notifications: user_id -> to_user_id")
+            logger.info(" Migrando tabela notifications: user_id -> to_user_id")
             
             # Criar nova tabela com estrutura correta
             cursor.execute('''
@@ -1403,7 +1403,7 @@ def ensure_notifications_table_migration():
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_notifications_type ON notifications(type)')
             
             conn.commit()
-            logger.info("✅ Tabela notifications migrada com sucesso!")
+            logger.info(" Tabela notifications migrada com sucesso!")
             
         # Adicionar colunas faltantes se a tabela já usa to_user_id
         elif 'to_user_id' in cols:
@@ -1439,12 +1439,12 @@ def ensure_notifications_table_migration():
             
             if added_cols:
                 conn.commit()
-                logger.info(f"✅ Colunas adicionadas à tabela notifications: {', '.join(added_cols)}")
+                logger.info(f" Colunas adicionadas à tabela notifications: {', '.join(added_cols)}")
         
         conn.close()
         
     except Exception as e:
-        logger.error(f"❌ Erro ao migrar tabela notifications: {e}")
+        logger.error(f" Erro ao migrar tabela notifications: {e}")
         import traceback
         logger.error(traceback.format_exc())
 
@@ -2854,11 +2854,11 @@ def api_indicadores():
         if HAS_FORMATTING:
             result = format_data_for_dashboard(result)
         
-        print(f"📊 API Indicadores retornando: {result}")
+        print(f" API Indicadores retornando: {result}")
         return jsonify(result)
         
     except Exception as e:
-        print(f"❌ Erro na API de indicadores: {e}")
+        print(f" Erro na API de indicadores: {e}")
         import traceback
         traceback.print_exc()
         
@@ -2939,7 +2939,7 @@ def dashboard_api_kpis():
         return jsonify(kpis_data)
         
     except Exception as e:
-        print(f"❌ Erro na API de KPIs: {e}")
+        print(f" Erro na API de KPIs: {e}")
         return jsonify({
             'success': True,
             'kpis': {
@@ -2989,19 +2989,19 @@ def get_employee_performance():
     try:
         year = request.args.get('year', '')
         month = request.args.get('month', '')
-        print(f"🧑‍💼 API chamada - Ano: {year or 'Todos'}, Mês: {month or 'Todos'}")
+        print(f" API chamada - Ano: {year or 'Todos'}, Mês: {month or 'Todos'}")
 
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
 
         # NÃO buscar usuários da tabela users - usar apenas as assinaturas das RNCs
-        print(f"🔍 Usando apenas assinaturas das RNCs (não usuários da tabela)")
+        print(f" Usando apenas assinaturas das RNCs (não usuários da tabela)")
 
         # Query corrigida para buscar RNCs de TODOS os usuários
         # Primeiro, vamos verificar a estrutura da tabela
         cursor.execute("PRAGMA table_info(rncs)")
         cols = {row[1] for row in cursor.fetchall()}
-        print(f"🔍 Colunas da tabela RNCs: {cols}")
+        print(f" Colunas da tabela RNCs: {cols}")
         
         # Query corrigida - usar assinatura de engenharia (segunda assinatura)
         base_query = """
@@ -3021,20 +3021,20 @@ def get_employee_performance():
         if year and year.lower() != 'todos':
             base_query += " AND strftime('%Y', r.created_at) = ?"
             params.append(year)
-            print(f"🗓️ Filtro ano aplicado: {year}")
+            print(f" Filtro ano aplicado: {year}")
         if month and month.lower() != 'todos':
             base_query += " AND strftime('%m', r.created_at) = ?"
             params.append(month.zfill(2))
-            print(f"📅 Filtro mês aplicado: {month}")
+            print(f" Filtro mês aplicado: {month}")
 
         base_query += " GROUP BY owner_id"
-        print(f"🔍 Executando query: {base_query}")
-        print(f"📋 Parâmetros: {params}")
+        print(f" Executando query: {base_query}")
+        print(f" Parâmetros: {params}")
 
         cursor.execute(base_query, params)
         rnc_rows = cursor.fetchall()
         rnc_data = {row[0]: row[1] for row in rnc_rows}
-        print(f"📊 RNCs por usuário: {rnc_data}")
+        print(f" RNCs por usuário: {rnc_data}")
         
         # Debug: verificar algumas RNCs para entender a distribuição
         cursor.execute("""
@@ -3048,7 +3048,7 @@ def get_employee_performance():
             LIMIT 10
         """)
         debug_rncs = cursor.fetchall()
-        print(f"🔍 Debug - Top 10 usuários por RNCs: {debug_rncs}")
+        print(f" Debug - Top 10 usuários por RNCs: {debug_rncs}")
         
         # Verificar se há RNCs com user_id NULL ou inválido
         cursor.execute("""
@@ -3060,7 +3060,7 @@ def get_employee_performance():
               AND is_deleted = 0
         """)
         debug_stats = cursor.fetchone()
-        print(f"📈 Debug - Estatísticas: Total={debug_stats[0]}, NULL user_id={debug_stats[1]}, Admin RNCs={debug_stats[2]}")
+        print(f" Debug - Estatísticas: Total={debug_stats[0]}, NULL user_id={debug_stats[1]}, Admin RNCs={debug_stats[2]}")
 
         meta_mensal = 5
         result = []
@@ -3077,8 +3077,8 @@ def get_employee_performance():
                 if user_result:
                     unique_signatures.add(user_result[0])
         
-        print(f"🔍 Assinaturas únicas encontradas: {len(unique_signatures)}")
-        print(f"🔍 Exemplos: {list(unique_signatures)[:5]}")
+        print(f" Assinaturas únicas encontradas: {len(unique_signatures)}")
+        print(f" Exemplos: {list(unique_signatures)[:5]}")
         
         # Processar cada assinatura
         for signature in sorted(unique_signatures):
@@ -3087,7 +3087,7 @@ def get_employee_performance():
             status = 'Acima da Meta' if rncs >= meta_mensal else 'Abaixo da Meta'
             
             # Adicionar logs para debug
-            print(f"   👤 Processando assinatura: '{signature}' - RNCs: {rncs}")
+            print(f"   Processando assinatura: '{signature}' - RNCs: {rncs}")
             
             result.append({
                 'id': signature,
@@ -3100,9 +3100,9 @@ def get_employee_performance():
             })
 
         result.sort(key=lambda x: x['percentage'], reverse=True)
-        print(f"✅ Resultado final: {len(result)} funcionários processados")
+        print(f" Resultado final: {len(result)} funcionários processados")
         for emp in result[:3]:
-            print(f"   👤 {emp['name']}: {emp['rncs']} RNCs ({emp['percentage']}%)")
+            print(f"   {emp['name']}: {emp['rncs']} RNCs ({emp['percentage']}%)")
 
         performance_data = {
             'success': True,
@@ -3119,7 +3119,7 @@ def get_employee_performance():
 
         return jsonify(performance_data)
     except Exception as e:
-        print(f"❌ Erro ao buscar desempenho de funcionários: {e}")
+        print(f" Erro ao buscar desempenho de funcionários: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({
@@ -3143,13 +3143,13 @@ def get_dashboard_performance():
     try:
         year = request.args.get('year', '')
         month = request.args.get('month', '')
-        print(f"📊 Dashboard API chamada - Ano: {year or 'Todos'}, Mês: {month or 'Todos'}")
+        print(f" Dashboard API chamada - Ano: {year or 'Todos'}, Mês: {month or 'Todos'}")
 
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
 
         # NÃO buscar usuários da tabela users - usar apenas as assinaturas das RNCs
-        print(f"🔍 Dashboard - Usando apenas assinaturas das RNCs (não usuários da tabela)")
+        print(f" Dashboard - Usando apenas assinaturas das RNCs (não usuários da tabela)")
 
         # Query para buscar RNCs finalizadas
         # Usar assinatura de engenharia (segunda assinatura)
@@ -3191,7 +3191,7 @@ def get_dashboard_performance():
             LIMIT 10
         """)
         debug_rncs = cursor.fetchall()
-        print(f"🔍 Dashboard Debug - Top 10 usuários por RNCs: {debug_rncs}")
+        print(f" Dashboard Debug - Top 10 usuários por RNCs: {debug_rncs}")
         
         # Verificar se há RNCs com user_id NULL ou inválido
         cursor.execute("""
@@ -3203,7 +3203,7 @@ def get_dashboard_performance():
               AND is_deleted = 0
         """)
         debug_stats = cursor.fetchone()
-        print(f"📈 Dashboard Debug - Estatísticas: Total={debug_stats[0]}, NULL user_id={debug_stats[1]}, Admin RNCs={debug_stats[2]}")
+        print(f" Dashboard Debug - Estatísticas: Total={debug_stats[0]}, NULL user_id={debug_stats[1]}, Admin RNCs={debug_stats[2]}")
 
         meta_mensal = 5
         result = []
@@ -3220,8 +3220,8 @@ def get_dashboard_performance():
                 if user_result:
                     unique_signatures.add(user_result[0])
         
-        print(f"🔍 Dashboard - Assinaturas únicas encontradas: {len(unique_signatures)}")
-        print(f"🔍 Dashboard - Exemplos: {list(unique_signatures)[:5]}")
+        print(f" Dashboard - Assinaturas únicas encontradas: {len(unique_signatures)}")
+        print(f" Dashboard - Exemplos: {list(unique_signatures)[:5]}")
         
         # Processar cada assinatura
         for signature in sorted(unique_signatures):
@@ -3230,7 +3230,7 @@ def get_dashboard_performance():
             status = 'Acima da Meta' if rncs >= meta_mensal else 'Abaixo da Meta'
             
             # Adicionar logs para debug
-            print(f"   📊 Dashboard - Processando assinatura: '{signature}' - RNCs: {rncs}")
+            print(f"   Dashboard - Processando assinatura: '{signature}' - RNCs: {rncs}")
             
             result.append({
                 'id': signature,
@@ -3243,7 +3243,7 @@ def get_dashboard_performance():
             })
 
         result.sort(key=lambda x: x['percentage'], reverse=True)
-        print(f"✅ Dashboard: {len(result)} funcionários processados")
+        print(f" Dashboard: {len(result)} funcionários processados")
 
         dashboard_data = {
             'success': True,
@@ -3260,7 +3260,7 @@ def get_dashboard_performance():
 
         return jsonify(dashboard_data)
     except Exception as e:
-        print(f"❌ Erro no dashboard: {e}")
+        print(f" Erro no dashboard: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({
@@ -3522,7 +3522,7 @@ def get_user_info():
             ''')
         
         rncs = cursor.fetchall()
-        logger.info(f"🔍 Query executada para {tab}: {len(rncs)} RNCs encontrados no banco")
+        logger.info(f" Query executada para {tab}: {len(rncs)} RNCs encontrados no banco")
         
         # Formatar dados
         formatted_rncs = []
@@ -3560,7 +3560,7 @@ def get_user_info():
             'tab': tab
         }
         
-        logger.info(f"📊 Resultado final para {tab}: {len(formatted_rncs)} RNCs serão retornados")
+        logger.info(f" Resultado final para {tab}: {len(formatted_rncs)} RNCs serão retornados")
         
         # Cache moderado - 2 minutos para balancear performance e atualização
         cache_query(cache_key, result, ttl=120)
@@ -4123,8 +4123,8 @@ def get_user_info():
         current_sign = cursor.fetchone() or (None, None, None)
         
         # Log para debug
-        logger.info(f"🔍 Assinaturas atuais: {current_sign}")
-        logger.info(f"🔍 Assinaturas recebidas: {data.get('signature_inspection_name')}, {data.get('signature_engineering_name')}, {data.get('signature_inspection2_name')}")
+        logger.info(f" Assinaturas atuais: {current_sign}")
+        logger.info(f" Assinaturas recebidas: {data.get('signature_inspection_name')}, {data.get('signature_engineering_name')}, {data.get('signature_inspection2_name')}")
         
         # Usar novas assinaturas se fornecidas, senão manter as atuais
         new_sign = (
@@ -4133,7 +4133,7 @@ def get_user_info():
             data.get('signature_inspection2_name', current_sign[2] or '')
         )
         
-        logger.info(f"🔍 Assinaturas finais para salvar: {new_sign}")
+        logger.info(f" Assinaturas finais para salvar: {new_sign}")
         if not any(s and s != 'NOME' for s in new_sign):
             return jsonify({'success': False, 'message': 'É obrigatório preencher pelo menos uma assinatura!'}), 400
         
@@ -4456,7 +4456,7 @@ def clear_cache_api():
         with cache_lock:
             cache_count = len(query_cache)
             query_cache.clear()
-            logger.info(f"🗑️ LIMPEZA FORÇADA: {cache_count} entradas de cache removidas")
+            logger.info(f" LIMPEZA FORÇADA: {cache_count} entradas de cache removidas")
         
         # Também limpar usando a função específica
         clear_rnc_cache()
@@ -6492,7 +6492,7 @@ def get_chat_messages(rnc_id):
                     'department': msg[7]
                 })
         
-        logger.info(f"📨 API retornando {len(formatted_messages)} mensagens para RNC {rnc_id}")
+        logger.info(f" API retornando {len(formatted_messages)} mensagens para RNC {rnc_id}")
         return jsonify({'success': True, 'messages': formatted_messages})
         
     except Exception as e:
@@ -6510,7 +6510,7 @@ def post_chat_message(rnc_id):
         return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
 
     try:
-        # 🔒 VERIFICAR SE A RNC ESTÁ FINALIZADA
+        # VERIFICAR SE A RNC ESTÁ FINALIZADA
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         cursor.execute('SELECT status FROM rncs WHERE id = ?', (rnc_id,))
@@ -6588,7 +6588,7 @@ def post_chat_message(rnc_id):
         if message_id_from_client:
             cache_key = f"unique_{message_id_from_client}"
             if cache_key in message_cache:
-                logger.info(f"⚠️ Mensagem HTTP já processada recentemente, retornando sucesso: {cache_key}")
+                logger.info(f" Mensagem HTTP já processada recentemente, retornando sucesso: {cache_key}")
                 # Retornar sucesso com dados da mensagem (para o cliente adicionar à interface)
                 return jsonify({
                     'success': True, 
@@ -6607,7 +6607,7 @@ def post_chat_message(rnc_id):
             message_cache[cache_key] = True
             import threading
             threading.Timer(10.0, lambda: message_cache.pop(cache_key, None)).start()
-            logger.info(f"✅ Processando nova mensagem HTTP: {cache_key}")
+            logger.info(f" Processando nova mensagem HTTP: {cache_key}")
 
         # Salvar no banco
         conn = sqlite3.connect(DB_PATH)
@@ -6705,19 +6705,19 @@ def post_chat_message(rnc_id):
                             rnc_id=rnc_id,
                             channels=[NotificationChannel.IN_APP, NotificationChannel.BROWSER]
                         )
-                        logger.info(f"✅ Notificação criada para usuário {participant_id}")
+                        logger.info(f" Notificação criada para usuário {participant_id}")
                     except Exception as e:
-                        logger.error(f"❌ Erro ao criar notificação para usuário {participant_id}: {e}")
+                        logger.error(f" Erro ao criar notificação para usuário {participant_id}: {e}")
                 
-                logger.info(f"✅ Notificações criadas para {len(participants)} participantes")
+                logger.info(f" Notificações criadas para {len(participants)} participantes")
             
             conn_notif.close()
         except Exception as e:
-            logger.error(f"❌ Erro ao criar notificações: {e}")
+            logger.error(f" Erro ao criar notificações: {e}")
             if 'conn_notif' in locals():
                 conn_notif.close()
 
-        # ✅ CORREÇÃO: Retornar dados da mensagem com chave correta
+        # CORREÇÃO: Retornar dados da mensagem com chave correta
         return jsonify({
             'success': True, 
             'message': message_data,  # Dados completos da mensagem
@@ -6903,7 +6903,7 @@ def mark_messages_viewed():
         
         marked_count = 0
         
-        # 👁️ Marcar mensagens individuais como visualizadas (estilo WhatsApp)
+        # Marcar mensagens individuais como visualizadas (estilo WhatsApp)
         # Apenas se a coluna viewed_at existir
         if 'viewed_at' in chat_messages_cols and 'user_id' in chat_messages_cols:
             cursor.execute('''
@@ -6915,7 +6915,7 @@ def mark_messages_viewed():
             ''', (rnc_id, user_id))
             marked_count = cursor.rowcount
         else:
-            logger.warning(f"⚠️ Coluna viewed_at não existe em chat_messages. Colunas disponíveis: {chat_messages_cols}")
+            logger.warning(f" Coluna viewed_at não existe em chat_messages. Colunas disponíveis: {chat_messages_cols}")
             # Garantir que a coluna seja adicionada usando a conexão existente
             ensure_chat_viewed_at_column(conn)
             marked_count = 0
@@ -6930,9 +6930,9 @@ def mark_messages_viewed():
                     AND viewed_at IS NULL
                 ''', (rnc_id, user_id))
                 marked_count = cursor.rowcount
-                logger.info("✅ Conseguiu marcar mensagens após adicionar coluna viewed_at")
+                logger.info(" Conseguiu marcar mensagens após adicionar coluna viewed_at")
             except Exception as retry_error:
-                logger.error(f"❌ Ainda não conseguiu marcar mensagens após adicionar coluna: {retry_error}")
+                logger.error(f" Ainda não conseguiu marcar mensagens após adicionar coluna: {retry_error}")
                 marked_count = 0
         
         # Marcar notificações relacionadas como lidas
@@ -6945,7 +6945,7 @@ def mark_messages_viewed():
         conn.commit()
         conn.close()
         
-        logger.info(f"✅ {marked_count} mensagens do RNC {rnc_id} marcadas como visualizadas (viewed_at) pelo usuário {user_id}")
+        logger.info(f" {marked_count} mensagens do RNC {rnc_id} marcadas como visualizadas (viewed_at) pelo usuário {user_id}")
         
         return jsonify({
             'success': True, 
@@ -7003,18 +7003,18 @@ def handle_join_room(data):
     user_name = session.get('user_name', 'unknown')
     
     if not room:
-        logger.error("❌ Nome da sala não fornecido")
+        logger.error(" Nome da sala não fornecido")
         emit('error', {'message': 'Nome da sala não fornecido'})
         return {'success': False, 'error': 'Nome da sala não fornecido'}
     
     join_room(room)
-    logger.info(f"✅ Usuário {user_name} (ID: {user_id}) entrou na sala: {room}")
-    logger.info(f"🔌 Socket ID: {request.sid}")
+    logger.info(f" Usuário {user_name} (ID: {user_id}) entrou na sala: {room}")
+    logger.info(f" Socket ID: {request.sid}")
     
     # Verificar quantos usuários estão na sala após entrar
     from flask_socketio import rooms
     room_users = rooms(room)
-    logger.info(f"👥 Usuários na sala {room} após entrada: {room_users}")
+    logger.info(f" Usuários na sala {room} após entrada: {room_users}")
     
     # Log adicional: notificar outros na sala
     try:
@@ -7024,9 +7024,9 @@ def handle_join_room(data):
             'user_name': user_name,
             'room': room
         }, room=room, include_self=False)
-        logger.info(f"📢 Notificado outros usuários na sala {room}")
+        logger.info(f" Notificado outros usuários na sala {room}")
     except Exception as e:
-        logger.error(f"❌ Erro ao notificar entrada na sala: {e}")
+        logger.error(f" Erro ao notificar entrada na sala: {e}")
     
     # Enviar confirmação de volta ao cliente
     emit('room_joined', {'room': room, 'success': True, 'user_id': user_id, 'user_name': user_name})
@@ -7035,9 +7035,9 @@ def handle_join_room(data):
     try:
         from flask_socketio import rooms
         room_users = rooms(room)
-        logger.info(f"👥 Usuários na room {room} após entrada: {room_users}")
+        logger.info(f" Usuários na room {room} após entrada: {room_users}")
     except Exception as e:
-        logger.error(f"❌ Erro ao verificar usuários na room: {e}")
+        logger.error(f" Erro ao verificar usuários na room: {e}")
     
     return {'success': True, 'room': room, 'user_id': user_id}
 
@@ -7050,48 +7050,48 @@ def handle_leave_room(data):
 @socketio.on('send_message')
 def handle_send_message(data):
     # DEBUGGING: Log da sessão
-    logger.info(f"🔐 SESSION DEBUG: {dict(session)}")
-    logger.info(f"🔐 USER_ID in session: {'user_id' in session}")
+    logger.info(f" SESSION DEBUG: {dict(session)}")
+    logger.info(f" USER_ID in session: {'user_id' in session}")
     if 'user_id' in session:
-        logger.info(f"🔐 USER_ID value: {session['user_id']}")
+        logger.info(f" USER_ID value: {session['user_id']}")
     
     # Verificar se o usuário está logado
     if 'user_id' not in session:
-        logger.error("❌ Usuário não autenticado ao tentar enviar mensagem")
-        logger.error(f"❌ Sessão atual: {dict(session)}")
+        logger.error(" Usuário não autenticado ao tentar enviar mensagem")
+        logger.error(f" Sessão atual: {dict(session)}")
         emit('error', {'message': 'Usuário não autenticado'})
         return
     
-    logger.info(f"📨 Tentativa de envio de mensagem do usuário {session['user_id']}")
-    logger.info(f"📊 Dados recebidos: {data}")
+    logger.info(f" Tentativa de envio de mensagem do usuário {session['user_id']}")
+    logger.info(f" Dados recebidos: {data}")
     
     try:
         # Verificar tipo de chat
         chat_type = data.get('chat_type', 'rnc')  # Default para 'rnc' se não especificado
-        logger.info(f"🔍 Tipo de chat identificado: {chat_type}")
+        logger.info(f" Tipo de chat identificado: {chat_type}")
         
         if chat_type == 'private':
-            logger.info("📬 Processando mensagem privada")
+            logger.info(" Processando mensagem privada")
             handle_private_message(data)
         elif chat_type == 'general':
-            logger.info("📢 Processando mensagem de chat geral")
+            logger.info(" Processando mensagem de chat geral")
             handle_general_chat_message(data)
         elif chat_type == 'rnc':
-            logger.info("💬 Processando mensagem de chat RNC")
+            logger.info(" Processando mensagem de chat RNC")
             handle_rnc_chat_message(data)
         else:
-            logger.warning(f"⚠️ Tipo de chat desconhecido: {chat_type}, usando RNC como padrão")
+            logger.warning(f" Tipo de chat desconhecido: {chat_type}, usando RNC como padrão")
             handle_rnc_chat_message(data)
             
-        logger.info("✅ Mensagem processada com sucesso")
+        logger.info(" Mensagem processada com sucesso")
         # Retornar sucesso
         return {'success': True}
     except Exception as e:
-        logger.error(f"❌ Erro ao enviar mensagem: {e}")
+        logger.error(f" Erro ao enviar mensagem: {e}")
         import traceback
         logger.error(traceback.format_exc())
         # Não emitir erro - deixar o cliente usar fallback HTTP
-        logger.info("⚠️ Socket.IO falhou, cliente usará fallback HTTP")
+        logger.info(" Socket.IO falhou, cliente usará fallback HTTP")
         return {'success': False, 'error': str(e)}
 def handle_private_message(data):
     """Processar mensagem privada"""
@@ -7103,7 +7103,7 @@ def handle_private_message(data):
         # Verificar cache para evitar duplicação
         message_key = f"private_{sender_id}_{recipient_id}_{hash(message)}"
         if message_key in message_cache:
-            logger.info(f"⚠️ Mensagem privada já processada recentemente, ignorando")
+            logger.info(f" Mensagem privada já processada recentemente, ignorando")
             return
         message_cache[message_key] = True
         import threading
@@ -7149,7 +7149,7 @@ def handle_private_message(data):
         # Criar notificação para o destinatário
         notification_data = {
             'type': 'new_private_message',
-            'title': f'💬 Nova mensagem de {user_info[0] if user_info else "Usuário"}',
+            'title': f' Nova mensagem de {user_info[0] if user_info else "Usuário"}',
             'message': f'{message[:50]}{"..." if len(message) > 50 else ""}',
             'sender_id': sender_id,
             'sender_name': user_info[0] if user_info else 'Usuário',
@@ -7187,7 +7187,7 @@ def handle_general_chat_message(data):
         # Verificar cache para evitar duplicação
         message_key = f"general_{user_id}_{hash(message)}"
         if message_key in message_cache:
-            logger.info(f"⚠️ Mensagem geral já processada recentemente, ignorando")
+            logger.info(f" Mensagem geral já processada recentemente, ignorando")
             return
         message_cache[message_key] = True
         import threading
@@ -7225,9 +7225,9 @@ message_cache = {}
 
 def handle_rnc_chat_message(data):
     """Processar mensagem do chat de RNC"""
-    logger.info(f"🏁 ===== INICIANDO handle_rnc_chat_message =====")
-    logger.info(f"📊 Dados recebidos: {data}")
-    logger.info(f"🔐 Sessão atual: {dict(session)}")
+    logger.info(f" ===== INICIANDO handle_rnc_chat_message =====")
+    logger.info(f" Dados recebidos: {data}")
+    logger.info(f" Sessão atual: {dict(session)}")
     
     try:
         rnc_id = data.get('rnc_id')
@@ -7243,8 +7243,8 @@ def handle_rnc_chat_message(data):
         
         # Verificar se já processamos esta mensagem recentemente
         if message_key in message_cache:
-            logger.info(f"⚠️ Mensagem já processada recentemente, ignorando: {message_key}")
-            logger.info(f"📊 Cache atual tem {len(message_cache)} entradas")
+            logger.info(f" Mensagem já processada recentemente, ignorando: {message_key}")
+            logger.info(f" Cache atual tem {len(message_cache)} entradas")
             # Emitir erro para que o cliente use HTTP
             emit('error', {'message': 'Mensagem já processada, use HTTP'})
             return
@@ -7254,27 +7254,27 @@ def handle_rnc_chat_message(data):
         import threading
         threading.Timer(10.0, lambda: message_cache.pop(message_key, None)).start()
         
-        logger.info(f"✅ Processando nova mensagem: {message_key}")
-        logger.info(f"📊 Cache atual tem {len(message_cache)} entradas")
+        logger.info(f" Processando nova mensagem: {message_key}")
+        logger.info(f" Cache atual tem {len(message_cache)} entradas")
         
-        logger.info(f"🔍 Validando dados - rnc_id: {rnc_id}, message_length: {len(message)}, user_id: {user_id}")
+        logger.info(f" Validando dados - rnc_id: {rnc_id}, message_length: {len(message)}, user_id: {user_id}")
         
         if not rnc_id:
-            logger.error(f"❌ RNC ID não fornecido")
+            logger.error(f" RNC ID não fornecido")
             emit('error', {'message': 'ID do RNC não fornecido'})
             return
             
         if not message:
-            logger.error(f"❌ Mensagem vazia")
+            logger.error(f" Mensagem vazia")
             emit('error', {'message': 'Mensagem não pode estar vazia'})
             return
             
         if not user_id:
-            logger.error(f"❌ Usuário não autenticado")
+            logger.error(f" Usuário não autenticado")
             emit('error', {'message': 'Usuário não autenticado'})
             return
         
-        logger.info(f"✅ Dados validados - Processando mensagem do RNC {rnc_id} do usuário {user_id}")
+        logger.info(f" Dados validados - Processando mensagem do RNC {rnc_id} do usuário {user_id}")
         
         # Salvar mensagem no banco
         conn = sqlite3.connect(DB_PATH)
@@ -7314,7 +7314,7 @@ def handle_rnc_chat_message(data):
         # Preparar dados da notificação
         notification_data = {
             'type': 'new_message',
-            'title': f'💬 Nova mensagem no RNC {rnc_info[0] if rnc_info else rnc_id}',
+            'title': f' Nova mensagem no RNC {rnc_info[0] if rnc_info else rnc_id}',
             'message': f'{user_info[0] if user_info else "Usuário"}: {message[:50]}{"..." if len(message) > 50 else ""}',
             'rnc_id': rnc_id,
             'rnc_number': rnc_info[0] if rnc_info else f'RNC-{rnc_id}',
@@ -7326,26 +7326,26 @@ def handle_rnc_chat_message(data):
         
         # Enviar mensagem para todos na sala (EXCETO o remetente)
         room_name = f'rnc_{rnc_id}'
-        logger.info(f"📤 ========================================")
-        logger.info(f"📤 ENVIANDO MENSAGEM PARA SALA: {room_name}")
-        logger.info(f"📊 Dados da mensagem: {message_data}")
-        logger.info(f"👥 Remetente user_id: {user_id}, Socket ID: {request.sid}")
-        logger.info(f"🔊 Emitindo evento 'new_message' com broadcast=True, include_self=False")
+        logger.info(f" ========================================")
+        logger.info(f" ENVIANDO MENSAGEM PARA SALA: {room_name}")
+        logger.info(f" Dados da mensagem: {message_data}")
+        logger.info(f" Remetente user_id: {user_id}, Socket ID: {request.sid}")
+        logger.info(f" Emitindo evento 'new_message' com broadcast=True, include_self=False")
         
         # Verificar quantos usuários estão na sala
         from flask_socketio import rooms
         room_users = rooms(room_name)
-        logger.info(f"👥 Usuários na sala {room_name}: {room_users}")
+        logger.info(f" Usuários na sala {room_name}: {room_users}")
         
         # Enviar para TODOS na sala, EXCETO o remetente (include_self=False)
         # O remetente já viu a mensagem ser adicionada localmente após confirmação
         emit('new_message', message_data, room=room_name, include_self=False)
         
-        logger.info(f"✅ ========================================")
-        logger.info(f"✅ MENSAGEM EMITIDA COM BROADCAST PARA SALA {room_name}")
-        logger.info(f"✅ Evento: 'new_message', Room: '{room_name}', Broadcast: True")
-        logger.info(f"✅ Usuários na sala: {room_users}")
-        logger.info(f"✅ ========================================")
+        logger.info(f" ========================================")
+        logger.info(f" MENSAGEM EMITIDA COM BROADCAST PARA SALA {room_name}")
+        logger.info(f" Evento: 'new_message', Room: '{room_name}', Broadcast: True")
+        logger.info(f" Usuários na sala: {room_users}")
+        logger.info(f" ========================================")
         
         # Enviar confirmação de sucesso para o remetente
         emit('message_sent', {'success': True, 'message_id': message_id})
@@ -7402,7 +7402,7 @@ def handle_rnc_chat_message(data):
                             notif_data = {
                                 'id': notification_id,
                                 'type': 'rnc_commented',
-                                'title': f'💬 Nova mensagem no {rnc_number}',
+                                'title': f' Nova mensagem no {rnc_number}',
                                 'message': f'{user_info[0] if user_info else "Usuário"}: {message[:50]}{"..." if len(message) > 50 else ""}',
                                 'data': {
                                     'rnc_number': rnc_number,
@@ -7413,17 +7413,17 @@ def handle_rnc_chat_message(data):
                             try:
                                 send_realtime_notification(participant_id, notif_data, socketio)
                             except Exception as e:
-                                logger.error(f"❌ Erro ao enviar notificação em tempo real: {e}")
+                                logger.error(f" Erro ao enviar notificação em tempo real: {e}")
                         
-                        logger.info(f"✅ Notificação criada para usuário {participant_id}")
+                        logger.info(f" Notificação criada para usuário {participant_id}")
                     except Exception as e:
-                        logger.error(f"❌ Erro ao criar notificação para usuário {participant_id}: {e}")
+                        logger.error(f" Erro ao criar notificação para usuário {participant_id}: {e}")
                 
-                logger.info(f"✅ Notificações criadas para {len(participants)} participantes")
+                logger.info(f" Notificações criadas para {len(participants)} participantes")
             
             conn_notif.close()
         except Exception as e:
-            logger.error(f"❌ Erro ao criar notificações: {e}")
+            logger.error(f" Erro ao criar notificações: {e}")
             if 'conn_notif' in locals():
                 conn_notif.close()
         
@@ -7703,10 +7703,10 @@ def test_performance_api():
         cursor.execute("SELECT COUNT(*) FROM users WHERE name IS NOT NULL AND name != ''")
         named_users_db = cursor.fetchone()[0]
         
-        print(f"🔍 DIAGNÓSTICO COMPLETO:")
-        print(f"   📊 Total de usuários no banco: {total_users_db}")
-        print(f"   ✅ Usuários ativos: {active_users_db}")
-        print(f"   📝 Usuários com nome: {named_users_db}")
+        print(f" DIAGNÓSTICO COMPLETO:")
+        print(f"   Total de usuários no banco: {total_users_db}")
+        print(f"   Usuários ativos: {active_users_db}")
+        print(f"   Usuários com nome: {named_users_db}")
         
         # 2. BUSCAR TODOS OS USUÁRIOS ATIVOS COM NOME
         cursor.execute("""
@@ -7718,7 +7718,7 @@ def test_performance_api():
         """)
         all_users = cursor.fetchall()
         
-        print(f"👥 Usuários encontrados na consulta: {len(all_users)}")
+        print(f" Usuários encontrados na consulta: {len(all_users)}")
         for user_id, name, dept, active in all_users[:10]:
             print(f"   ID {user_id}: {name} - {dept or 'Sem dept'} - Ativo: {active}")
         
@@ -7740,7 +7740,7 @@ def test_performance_api():
         rnc_rows = cursor.fetchall()
         rnc_data = {row[0]: row[1] for row in rnc_rows}
         
-        print(f"📊 RNCs encontradas por assinatura: {rnc_data}")
+        print(f" RNCs encontradas por assinatura: {rnc_data}")
         
         # 4. PROCESSAR RESULTADO BASEADO NAS ASSINATURAS
         meta_mensal = 5
@@ -7758,7 +7758,7 @@ def test_performance_api():
                 if user_result:
                     unique_signatures.add(user_result[0])
         
-        print(f"🔍 Assinaturas únicas encontradas: {unique_signatures}")
+        print(f" Assinaturas únicas encontradas: {unique_signatures}")
         
         # Processar cada assinatura
         for signature in sorted(unique_signatures):
@@ -7766,7 +7766,7 @@ def test_performance_api():
             percentage = (rncs / meta_mensal * 100) if meta_mensal > 0 else 0
             status = 'Acima da Meta' if rncs >= meta_mensal else 'Abaixo da Meta'
             
-            print(f"🧪 PROCESSANDO - Assinatura: {signature} - RNCs: {rncs} - Status: {status}")
+            print(f" PROCESSANDO - Assinatura: {signature} - RNCs: {rncs} - Status: {status}")
             
             result.append({
                 'id': signature,
@@ -7784,7 +7784,7 @@ def test_performance_api():
         all_user_ids = {user[0] for user in all_users}
         users_without_rncs = all_user_ids - users_with_rncs
         
-        print(f"⚠️ Usuários sem RNCs: {users_without_rncs}")
+        print(f" Usuários sem RNCs: {users_without_rncs}")
         
         conn.close()
         
@@ -7809,7 +7809,7 @@ def test_performance_api():
         })
         
     except Exception as e:
-        print(f"❌ Erro no teste de performance: {e}")
+        print(f" Erro no teste de performance: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -7832,7 +7832,7 @@ def get_available_years():
         # Ordenar anos (mais recentes primeiro)
         all_years.sort(reverse=True)
         
-        print(f"📅 Anos gerados: {all_years}")
+        print(f" Anos gerados: {all_years}")
         
         return jsonify({
             'success': True,
@@ -8195,10 +8195,10 @@ if __name__ == '__main__':
     local_ip = get_local_ip()
     port = 5001
     
-    print("🚀 Iniciando Servidor do Formulário RNC")
+    print(" Iniciando Servidor do Formulário RNC")
     print("=" * 50)
     
-    # 🔐 Configuração SSL/HTTPS
+    # Configuração SSL/HTTPS
     import os as _os
     ssl_cert_path = _os.path.join(_os.path.dirname(__file__), 'ssl_certs', 'cert.pem')
     ssl_key_path = _os.path.join(_os.path.dirname(__file__), 'ssl_certs', 'key.pem')
@@ -8206,26 +8206,26 @@ if __name__ == '__main__':
     use_https = _os.path.exists(ssl_cert_path) and _os.path.exists(ssl_key_path)
     
     if use_https:
-        print("🔐 HTTPS ATIVADO - Conexão Segura!")
-        print(f"📋 Login/Formulário: https://{local_ip}:{port}")
-        print(f"🔧 Painel Admin: https://{local_ip}:5000")
-        print("\n⚠️  AVISO: Certificado auto-assinado")
+        print(" HTTPS ATIVADO - Conexão Segura!")
+        print(f" Login/Formulário: https://{local_ip}:{port}")
+        print(f" Painel Admin: https://{local_ip}:5000")
+        print("\n  AVISO: Certificado auto-assinado")
         print("   Aceite o aviso de segurança no navegador")
     else:
-        print("⚠️  HTTP (não seguro) - Gere certificados SSL")
-        print(f"📋 Login/Formulário: http://{local_ip}:{port}")
-        print(f"🔧 Painel Admin: http://{local_ip}:5000")
-        print("\n💡 Para ativar HTTPS:")
+        print("  HTTP (não seguro) - Gere certificados SSL")
+        print(f" Login/Formulário: http://{local_ip}:{port}")
+        print(f" Painel Admin: http://{local_ip}:5000")
+        print("\n Para ativar HTTPS:")
         print("   Execute: python gerar_certificado_ssl.py")
     print("=" * 50)
-    print("✅ Usuário Admin criado automaticamente:")
+    print(" Usuário Admin criado automaticamente:")
     print("   Email: admin@ippel.com.br")
     print("   Senha: admin123")
     print("=" * 50)
-    print("🗑️ Lixeira desativada:")
+    print(" Lixeira desativada:")
     print("   - Exclusão agora é definitiva (sem retenção)")
     print("=" * 50)
-    print("⚡ Otimizações de Performance:")
+    print(" Otimizações de Performance:")
     print("   - Pool de conexões: 20 conexões")
     print("   - Cache de consultas: Ativo")
     print("   - Monitor de performance: Ativo")
@@ -8245,7 +8245,7 @@ if __name__ == '__main__':
             app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
         
         # Executar servidor com SocketIO habilitado
-        print("✅ Executando com SocketIO - funcionalidades de chat completas")
+        print(" Executando com SocketIO - funcionalidades de chat completas")
         if use_https:
             socketio.run(app, host='0.0.0.0', port=port, debug=False, 
                         allow_unsafe_werkzeug=True,
@@ -8254,6 +8254,6 @@ if __name__ == '__main__':
             socketio.run(app, host='0.0.0.0', port=port, debug=False, 
                         allow_unsafe_werkzeug=True)
     except KeyboardInterrupt:
-        print("\n👋 Servidor do formulário encerrado")
+        print("\n Servidor do formulário encerrado")
     except Exception as e:
-        print(f"❌ Erro ao iniciar servidor: {e}")
+        print(f" Erro ao iniciar servidor: {e}")

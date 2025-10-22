@@ -1823,6 +1823,22 @@
                                 <option value="50">50 por página</option>
                                 <option value="100">100 por página</option>
                             </select>
+                            <label style="font-size:12px; color:#495057; margin-left:8px;">Mês:</label>
+                            <select id="filterMonth" onchange="applyFilters()" style="padding:6px 8px; border:1px solid #ddd; border-radius:6px;">
+                                <option value="">Todos</option>
+                                <option value="01">Janeiro</option>
+                                <option value="02">Fevereiro</option>
+                                <option value="03">Março</option>
+                                <option value="04">Abril</option>
+                                <option value="05">Maio</option>
+                                <option value="06">Junho</option>
+                                <option value="07">Julho</option>
+                                <option value="08">Agosto</option>
+                                <option value="09">Setembro</option>
+                                <option value="10">Outubro</option>
+                                <option value="11">Novembro</option>
+                                <option value="12">Dezembro</option>
+                            </select>
                             <button onclick="exportCSV()" class="clear-filters-btn" style="background:#198754">Exportar CSV</button>
                             <button onclick="clearFilters()" class="clear-filters-btn">Limpar Filtros</button>
                         </div>
@@ -14063,8 +14079,24 @@ Status: ${data.debug_info.inspection2_empty ? ' VAZIO' : ' PREENCHIDO'}`);
             const rncs = (window._setorDataCache && window._setorDataCache.rncs) || [];
             const year = document.getElementById('filterYear')?.value || '';
             const status = document.getElementById('filterStatus')?.value || '';
-            const dateStartStr = document.getElementById('filterDateStart')?.value || '';
-            const dateEndStr = document.getElementById('filterDateEnd')?.value || '';
+            const selectedMonth = document.getElementById('filterMonth')?.value || '';
+            let dateStartStr = document.getElementById('filterDateStart')?.value || '';
+            let dateEndStr = document.getElementById('filterDateEnd')?.value || '';
+
+            // If a specific month is selected together with a year, derive the date range for that month
+            if (year && selectedMonth && (!dateStartStr && !dateEndStr)) {
+                try {
+                    const y = Number(year);
+                    const m = Number(selectedMonth);
+                    const start = new Date(y, m - 1, 1);
+                    const end = new Date(y, m, 0); // last day of month
+                    const pad = (v) => String(v).padStart(2, '0');
+                    dateStartStr = `${y}-${pad(m)}-01`;
+                    dateEndStr = `${y}-${pad(m)}-${pad(end.getDate())}`;
+                } catch (e) {
+                    console.warn('Erro ao derivar intervalo do mês', e);
+                }
+            }
 
             console.log('applySetorFilters called', { totalRncs: rncs.length, year, status, dateStartStr, dateEndStr });
 
@@ -14100,7 +14132,7 @@ Status: ${data.debug_info.inspection2_empty ? ' VAZIO' : ' PREENCHIDO'}`);
             // Preferir sempre os RNCs finalizados do servidor como fonte para o gráfico
             // (garante que os números venham do conjunto 'finalizados' e não de caches locais limitadas).
             try {
-                const serverRncs = await fetchFinalizedRncs({ year, status, date_start: dateStartStr, date_end: dateEndStr, limit: 5000 });
+                const serverRncs = await fetchFinalizedRncs({ year, month: selectedMonth, status, date_start: dateStartStr, date_end: dateEndStr, limit: 5000 });
                 if (Array.isArray(serverRncs) && serverRncs.length > 0) {
                     window._lastSetorFilteredRNCs = serverRncs.slice();
                     console.log('applySetorFilters: usando lista de finalizados do servidor (count=', serverRncs.length, ')');
