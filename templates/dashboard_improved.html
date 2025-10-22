@@ -234,10 +234,13 @@
                     data.rncs.forEach((rnc, index) => {
                         if (index === 0) {
                             console.log('📊 Amostra da primeira RNC (responsáveis):', rnc);
+                            console.log('📊 Campos disponíveis na RNC:', Object.keys(rnc));
                         }
                         
-                        const responsibleName = rnc.user_name || rnc.responsible || rnc.responsavel;
-                        const sectorName = rnc.setor || rnc.department || rnc.sector;
+                        const responsibleName = rnc.user_name || rnc.responsible || rnc.responsavel || rnc.assigned_user_name || rnc.responsible_user;
+                        const sectorName = rnc.setor || rnc.department || rnc.sector || rnc.user_department;
+                        
+                        console.log(`📊 RNC ${index + 1}: responsibleName="${responsibleName}", sectorName="${sectorName}"`);
                         
                         if (responsibleName && responsibleName.trim() !== '') {
                             const key = responsibleName.trim();
@@ -246,7 +249,10 @@
                                     name: key,
                                     setor: sectorName ? sectorName.trim() : null
                                 });
+                                console.log(`✅ Adicionado responsável: ${key} (setor: ${sectorName || 'N/A'})`);
                             }
+                        } else {
+                            console.log(`⚠️ RNC ${index + 1} sem responsável válido`);
                         }
                     });
                     
@@ -256,6 +262,25 @@
                     
                     console.log('✅ Responsáveis únicos encontrados:', window._allResponsiblesForFilters.length);
                     console.log('✅ Lista de responsáveis:', window._allResponsiblesForFilters);
+                    
+                    // Se não encontrou responsáveis nas RNCs, tentar API de usuários
+                    if (window._allResponsiblesForFilters.length === 0) {
+                        console.log('📊 Tentando buscar usuários da API...');
+                        try {
+                            const usersResponse = await fetch('/api/users');
+                            const usersData = await usersResponse.json();
+                            
+                            if (usersData && Array.isArray(usersData.users)) {
+                                window._allResponsiblesForFilters = usersData.users.map(user => ({
+                                    name: user.name || user.username || user.email,
+                                    setor: user.department || user.setor || null
+                                }));
+                                console.log('✅ Usuários carregados da API:', window._allResponsiblesForFilters.length);
+                            }
+                        } catch(usersErr) {
+                            console.warn('⚠️ Erro ao carregar usuários da API:', usersErr);
+                        }
+                    }
                     
                     return window._allResponsiblesForFilters;
                 }
@@ -312,6 +337,24 @@
             
             ensureResponsiblesLoadedSelect();
         }
+
+        // Função de teste para debug
+        async function testResponsiblesLoad() {
+            console.log('🧪 TESTE: Iniciando carregamento de responsáveis...');
+            const responsibles = await ensureResponsiblesLoaded();
+            console.log('🧪 TESTE: Responsáveis carregados:', responsibles);
+            
+            const select = document.getElementById('filterResponsible');
+            if (select) {
+                console.log('🧪 TESTE: Select encontrado, populando...');
+                ensureResponsiblesLoadedSelect();
+            } else {
+                console.log('🧪 TESTE: Select não encontrado!');
+            }
+        }
+
+        // Expor função globalmente para teste
+        window.testResponsiblesLoad = testResponsiblesLoad;
     </script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -329,8 +372,9 @@
             flex: 1 1 auto;
             padding: 20px;
             background: white;
-            overflow-y: auto;
+            overflow-y: visible;
             overflow-x: hidden;
+            min-height: 100vh;
         }
         
         .right-section {
@@ -999,6 +1043,10 @@
             grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
+            min-height: auto;
+            height: auto;
+            max-height: none;
+            overflow: visible;
         }
         
         /* Quando estiver na aba finalizados, usar layout de tabela */
@@ -1299,6 +1347,8 @@
             width: 100%;
             max-width: 100%;
             min-width: 100%;
+            max-height: none;
+            height: auto;
         }
         
         .rnc-table {
@@ -1306,7 +1356,9 @@
             min-width: 1400px; /* Largura mínima para garantir que todas as colunas apareçam */
             border-collapse: collapse;
             font-size: 14px;
-            table-layout: fixed;
+            table-layout: auto;
+            height: auto;
+            max-height: none;
         }
         
         .rnc-table thead {
