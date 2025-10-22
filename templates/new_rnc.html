@@ -419,6 +419,7 @@
             i {
                 border-width: 1px !important;
                 font-weight: normal !important;
+                font-weight: 400 !important;
                 color: #000 !important;
                 background: white !important;
                 font-style: normal !important;
@@ -612,7 +613,7 @@
                 padding: 0 !important;
                 margin-right: 5px !important;
                 color: #000 !important;
-                font-weight: bold !important;
+                font-weight: normal !important;
                 font-size: 8px !important;
             }
             
@@ -634,7 +635,8 @@
                 padding: 5px 10px !important;
                 font-size: 10px !important;
                 line-height: 1.2 !important;
-                font-weight: 700 !important;
+                font-weight: normal !important;
+                font-weight: 400 !important;
                 letter-spacing: 0.5px !important;
             }
             
@@ -732,7 +734,8 @@
                 background: #f8f9fa !important;
                 font-size: 8px !important;
                 padding: 2px 4px !important;
-                font-weight: 600 !important;
+                font-weight: normal !important;
+                font-weight: 400 !important;
                 height: 16px !important;
             }
             
@@ -756,7 +759,7 @@
                 color: #000 !important;
                 border: 1px solid #000 !important;
                 line-height: 1.1 !important;
-                font-weight: 600 !important;
+                font-weight: normal !important;
                 height: 16px !important;
             }
             
@@ -1064,6 +1067,7 @@
             .field-label {
                 color: #000 !important;
                 font-weight: normal !important;
+                font-weight: 400 !important;
             }
             
             /* Títulos de seção - PRETO sobre fundo BRANCO SEM NEGRITO */
@@ -1078,6 +1082,7 @@
                 background: #fff !important;
                 border: 1px solid #000 !important;
                 font-weight: normal !important;
+                font-weight: 400 !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
             }
@@ -1088,6 +1093,7 @@
                 background: #fff !important;
                 border: 1px solid #000 !important;
                 font-weight: normal !important;
+                font-weight: 400 !important;
             }
             
             /* Labels de campo em preto com fundo BRANCO E SEM NEGRITO */
@@ -1096,12 +1102,14 @@
                 color: #000 !important;
                 background: #fff !important;
                 font-weight: normal !important;
+                font-weight: 400 !important;
             }
             
             /* Labels de checkboxes em preto SEM NEGRITO */
             label[for] {
                 color: #000 !important;
                 font-weight: normal !important;
+                font-weight: 400 !important;
             }
             
             /* Item column em preto com fundo BRANCO E SEM NEGRITO */
@@ -1110,6 +1118,7 @@
                 color: #000 !important;
                 background: #fff !important;
                 font-weight: normal !important;
+                font-weight: 400 !important;
             }
             
             /* Section title em preto com fundo BRANCO E SEM NEGRITO */
@@ -1118,12 +1127,14 @@
                 color: #000 !important;
                 background: #fff !important;
                 font-weight: normal !important;
+                font-weight: 400 !important;
             }
             
             /* Opções de select em preto */
             select option {
                 color: #000 !important;
                 font-weight: normal !important;
+                font-weight: 400 !important;
             }
             
             /* Texto em inputs e selects em preto */
@@ -1133,6 +1144,7 @@
             select {
                 color: #000 !important;
                 font-weight: normal !important;
+                font-weight: 400 !important;
             }
             
             /* Garantir que todo texto dentro de tabelas seja preto E SEM NEGRITO */
@@ -1142,6 +1154,7 @@
             table tr {
                 color: #000 !important;
                 font-weight: normal !important;
+                font-weight: 400 !important;
             }
             
             /* Remover espaços extras */
@@ -1272,6 +1285,37 @@
                 border-color: #000 !important;
                 border-style: solid !important;
             }
+            
+            /* REGRA FINAL EXTREMA - FORÇAR TODO TEXTO A SER NORMAL NA IMPRESSÃO */
+            * {
+                font-weight: normal !important;
+                font-weight: 400 !important;
+            }
+            
+            /* Especificidade máxima para todos os elementos */
+            html body * {
+                font-weight: normal !important;
+                font-weight: 400 !important;
+            }
+            
+            /* Forçar elementos específicos que podem estar escapando */
+            b, strong, .font-weight-bold, [style*="font-weight: bold"], [style*="font-weight:600"], [style*="font-weight:700"], [style*="font-weight:800"] {
+                font-weight: normal !important;
+                font-weight: 400 !important;
+            }
+            
+            /* Regra final para garantir que tudo fique normal */
+            @media print {
+                * { font-weight: normal !important; font-weight: 400 !important; }
+                html * { font-weight: normal !important; font-weight: 400 !important; }
+                body * { font-weight: normal !important; font-weight: 400 !important; }
+                div * { font-weight: normal !important; font-weight: 400 !important; }
+                table * { font-weight: normal !important; font-weight: 400 !important; }
+                td * { font-weight: normal !important; font-weight: 400 !important; }
+                th * { font-weight: normal !important; font-weight: 400 !important; }
+                label * { font-weight: normal !important; font-weight: 400 !important; }
+                span * { font-weight: normal !important; font-weight: 400 !important; }
+            }
         }
         
         .print-btn {
@@ -1400,7 +1444,7 @@
         <!-- ============================================ -->
         <div style="margin: 20px 0; border: 1px solid #2c3e50; border-radius: 8px; overflow: hidden; box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);">
             <!-- Cabeçalho da Seção -->
-            <div style="background: linear-gradient(135deg, #34495e, #2c3e50); color: white; padding: 10px 15px; font-weight: bold; font-size: 14px; text-align: center; letter-spacing: 1px;">
+            <div style="background: linear-gradient(135deg, #f8f9fa, #f8f9fa); color: rgb(0, 0, 0); padding: 10px 15px; font-weight: bold; font-size: 14px; text-align: center; letter-spacing: 1px;">
                  COMPLEMENTARES
             </div>
 
@@ -1481,6 +1525,8 @@
                             <select id="area_responsavel_select" name="area_responsavel" class="input-field" data-field="area_responsavel" onchange="onAreaResponsavelChange()" style="padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; width: 100%; background: white; cursor: pointer; transition: all 0.2s;">
                                 <option value="">Selecione a Área Responsável</option>
                             </select>
+                            <!-- Hidden canonical assigned_group_id (sent to server) -->
+                            <input type="hidden" id="assigned_group_id" name="assigned_group_id" value="">
                         </td>
                         <td><input type="text" id="ass_responsavel" name="ass_responsavel" class="input-field" placeholder="Assinatura Responsável" data-field="signature_inspection_name"></td>
                         <td><input type="text" id="data_emissao" name="data_emissao" class="input-field" data-field="created_at"></td>
@@ -2193,6 +2239,16 @@
                 console.log('⚠️ Usuário causador definido: ID', causadorSelector.value);
             }
 
+            // Garantir que o assigned_group_id (campo oculto) esteja no payload
+            try {
+                const assignedHidden = document.getElementById('assigned_group_id');
+                if (assignedHidden) {
+                    formData.assigned_group_id = assignedHidden.value ? assignedHidden.value : null;
+                }
+            } catch (e) {
+                console.warn('⚠️ Não foi possível ler assigned_group_id hidden:', e);
+            }
+
             console.log('📤 Enviando dados:', formData);
 
             fetch('/api/rnc/create', {
@@ -2348,14 +2404,23 @@
             
             const selectedAreaGroupId = selectElement.value;
             
+            // DEFINIR O GRUPO SELECIONADO PARA ATRIBUIÇÃO DA RNC
+            selectedGroupId = selectedAreaGroupId;
+            // Atualizar hidden canonical assigned_group_id (enviado ao servidor)
+            const assignedGroupInput = document.getElementById('assigned_group_id');
+            if (assignedGroupInput) assignedGroupInput.value = selectedGroupId || '';
+            console.log('🎯 Grupo selecionado para atribuição (id):', selectedGroupId);
+            
             // Limpar campos quando nenhuma área é selecionada
             if (!selectedAreaGroupId) {
+                selectedGroupId = null; // Limpar grupo selecionado
                 if (assinaturaLiderInput) assinaturaLiderInput.value = '';
                 if (assResponsavelInput) assResponsavelInput.value = '';
                 if (nomeResponsavelSelect) {
                     nomeResponsavelSelect.innerHTML = '<option value="">Selecione o Usuário Causador</option>';
                     nomeResponsavelSelect.disabled = true;
                 }
+                console.log('🧹 Grupo selecionado limpo (nenhuma área selecionada)');
                 return;
             }
             

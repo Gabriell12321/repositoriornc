@@ -11,13 +11,18 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('.'));
 
-// Configuração do Nodemailer
-const transporter = nodemailer.createTransporter({
-    service: 'gmail', // Você pode mudar para outro provedor
+// Configuração do Nodemailer (ler credenciais de variáveis de ambiente)
+const SMTP_USER = process.env.SMTP_USER || 'seu-email@gmail.com';
+const SMTP_PASS = process.env.SMTP_PASS || 'sua-senha-de-app';
+const SMTP_SERVICE = process.env.SMTP_SERVICE || 'gmail';
+
+// createTransport é o método correto
+const transporter = nodemailer.createTransport({
+    service: SMTP_SERVICE,
     auth: {
-        user: 'seu-email@gmail.com', // Substitua pelo seu e-mail
-        pass: 'sua-senha-de-app' // Substitua pela sua senha de app
-    }
+        user: SMTP_USER,
+        pass: SMTP_PASS,
+    },
 });
 
 // Rota principal - serve o arquivo HTML

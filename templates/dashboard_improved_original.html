@@ -1177,11 +1177,11 @@
                         </div>
                         <div class="filter-group">
                             <label for="filterPriority">Prioridade:</label>
-                            <input type="text" id="filterPriority" placeholder="Baixa/MÃ©dia/Alta/CrÃ­tica" onkeyup="applyFilters()">
+                            <input type="text" id="filterPriority" placeholder="Baixa/Média/Alta/Crítica" onkeyup="applyFilters()">
                         </div>
                         <div class="filter-group">
-                            <label for="filterResponsible">ResponsÃ¡vel:</label>
-                            <input type="text" id="filterResponsible" placeholder="Nome do responsÃ¡vel" onkeyup="applyFilters()">
+                            <label for="filterResponsible">Responsável:</label>
+                            <input type="text" id="filterResponsible" placeholder="Nome do responsável" onkeyup="applyFilters()">
                         </div>
                     </div>
                 </div>
@@ -2862,7 +2862,7 @@
         let currentModalChart = null;
         
         function openChartModal(title, chartId) {
-            // Definir o tÃ­tulo do modal
+            // Definir o título do modal
             document.getElementById('chartModalTitle').textContent = title;
             
             // Exibir o modal
@@ -3058,7 +3058,7 @@
                         };
                     }
                     
-                    // Adicionar tÃ­tulo
+                    // Adicionar título
                     config.options.plugins.title = {
                         display: true,
                         text: title,
@@ -3472,7 +3472,7 @@
                 'Transporte': '#6c757d'
             };
             
-            // Atualizar tÃ­tulo
+            // Atualizar título
             if (titleEl) {
                 const yearText = selectedYear ? ` - ${selectedYear}` : ' (2014-2015)';
                 titleEl.textContent = `ðŸ“Š Uso de RNCs por Departamento (%)${yearText}`;
@@ -3622,7 +3622,7 @@
                 window.LEV1415_ROWS = data2014;
                 window.LEV1515_ROWS = data2015;
                 
-                // Atualizar tÃ­tulo da tabela para exibiÃ§Ã£o padrÃ£o
+                // Atualizar título da tabela para exibiÃ§Ã£o padrÃ£o
                 const tableTitle = document.getElementById('levTableTitle');
                 if (tableTitle) {
                     tableTitle.textContent = 'ðŸ“‹ Tabela 2014-2015 (HistÃ³rico)';

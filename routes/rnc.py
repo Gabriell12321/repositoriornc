@@ -11,7 +11,7 @@ DATABASE_PATH = 'ippel_system.db'  # Alias para compatibilidade
 
 rnc = Blueprint('rnc', __name__)
 
-# Limite padrÃ£o para endpoints do RNC (se limiter ativo)
+# Limite padrão para endpoints do RNC (se limiter ativo)
 try:
     import importlib
     _rl = importlib.import_module('services.rate_limit')
@@ -20,7 +20,7 @@ try:
         _limiter.limit("180 per minute")(rnc)
 except Exception:
     pass
-# ProteÃ§Ãµes avanÃ§adas (CSRF/PermissÃµes) com fallback seguro
+# Proteções avançadas (CSRF/Permissões) com fallback seguro
 try:
     import importlib as _importlib_ep
     _ep = _importlib_ep.import_module('services.endpoint_protection')
@@ -42,7 +42,7 @@ logger = logging.getLogger('ippel.rnc')
 @csrf_protect()
 def create_rnc():
     if 'user_id' not in session:
-        return jsonify({'success': False, 'message': 'UsuÃ¡rio nÃ£o autenticado'}), 401
+        return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
 
     try:
         from services.permissions import has_permission
@@ -68,7 +68,7 @@ def create_rnc():
             if attempted_fields:
                 return jsonify({
                     'success': False,
-                    'message': f'Os seguintes campos estÃ£o bloqueados para seu grupo: {", ".join(attempted_fields)}'
+                    'message': f'Os seguintes campos estão bloqueados para seu grupo: {", ".join(attempted_fields)}'
                 }), 403
 
         conn = sqlite3.connect(DB_PATH)
@@ -106,7 +106,7 @@ def create_rnc():
             logger.info(f"Nenhum número anterior encontrado, começando em: {BASE_NUMBER}")
         
         rnc_number = f"{next_number}"
-        logger.info(f"✅ Gerando RNC com número: {rnc_number}")
+        logger.info(f" Gerando RNC com número: {rnc_number}")
 
         signature_columns = {
             'signature_inspection_name',
@@ -120,7 +120,7 @@ def create_rnc():
                 data.get('signature_inspection2_name', data.get('assinatura3', '')),
             ]
             if not any(a and a != 'NOME' for a in assinaturas):
-                return jsonify({'success': False, 'message': 'Ã‰ obrigatÃ³rio preencher pelo menos uma assinatura!'}), 400
+                return jsonify({'success': False, 'message': 'É obrigatório preencher pelo menos uma assinatura!'}), 400
 
         cursor.execute('SELECT department FROM users WHERE id = ?', (session['user_id'],))
         user_dept_row = cursor.fetchone()
@@ -128,11 +128,11 @@ def create_rnc():
 
         values_by_col = {
             'rnc_number': rnc_number,
-            'title': data.get('title', 'RNC sem tÃ­tulo'),
+            'title': data.get('title', 'RNC sem título'),
             'description': data.get('description', ''),
             'equipment': data.get('equipment', ''),
             'client': data.get('client', ''),
-            'priority': data.get('priority', 'MÃ©dia'),
+            'priority': data.get('priority', 'Média'),
             'status': 'Pendente',
             'user_id': session['user_id'],
             'assigned_user_id': data.get('assigned_user_id'),
@@ -180,7 +180,7 @@ def create_rnc():
 
         if not insert_cols:
             conn.close()
-            return jsonify({'success': False, 'message': 'Schema da tabela rncs invÃ¡lido'}), 500
+            return jsonify({'success': False, 'message': 'Schema da tabela rncs inválido'}), 500
 
         placeholders = ", ".join(["?"] * len(insert_cols))
         sql = f"INSERT INTO rncs ({', '.join(insert_cols)}) VALUES ({placeholders})"
@@ -222,9 +222,9 @@ def create_rnc():
                         float(item.get('horas', 0)),
                         float(item.get('subtotal', 0))
                     ))
-                logger.info(f"✅ Salvos {len(valores_itens)} itens de valores para RNC {rnc_id}")
+                logger.info(f" Salvos {len(valores_itens)} itens de valores para RNC {rnc_id}")
             except Exception as e:
-                logger.error(f"❌ Erro ao salvar itens de valores: {e}")
+                logger.error(f" Erro ao salvar itens de valores: {e}")
         
         # ============================================
         # ATRIBUIÇÃO DE RNC (Grupo Completo ou Usuários Específicos)
@@ -233,10 +233,80 @@ def create_rnc():
         assigned_group_id = data.get('assigned_group_id')
         assigned_user_ids = data.get('assigned_user_ids', [])
         
+        # Se não há assigned_group_id mas há shared_group_ids, usar o primeiro grupo compartilhado
+        if not assigned_group_id and shared_group_ids and len(shared_group_ids) > 0:
+            assigned_group_id = shared_group_ids[0]
+            assign_to_all_group = True
+            logger.info(f" Convertendo shared_group_ids para assigned_group_id: {assigned_group_id}")
+        
+        # Se não há assigned_group_id mas há area_responsavel (ID do grupo), usar o area_responsavel
+        if not assigned_group_id and data.get('area_responsavel'):
+                raw_area = data.get('area_responsavel')
+                # Primeiro, tentar interpretar como ID numérico
+                try:
+                    area_responsavel_id = int(raw_area)
+                    assigned_group_id = area_responsavel_id
+                    assign_to_all_group = True
+                    logger.info(f" Convertendo area_responsavel (id) para assigned_group_id: {assigned_group_id}")
+                except (ValueError, TypeError):
+                    # Se não for numérico, procurar por um grupo com esse nome (case-insensitive)
+                    try:
+                        name = str(raw_area).strip()
+                        if name:
+                            # Busca exata por nome (case-insensitive)
+                            cursor.execute('SELECT id FROM groups WHERE lower(name) = lower(?) LIMIT 1', (name,))
+                            row = cursor.fetchone()
+                            if not row:
+                                # Busca por contém (como fallback)
+                                cursor.execute('SELECT id FROM groups WHERE lower(name) LIKE lower(?) LIMIT 1', (f'%{name}%',))
+                                row = cursor.fetchone()
+                            if row:
+                                assigned_group_id = int(row[0])
+                                assign_to_all_group = True
+                                logger.info(f" Resolveu area_responsavel '{name}' para assigned_group_id: {assigned_group_id}")
+                            else:
+                                logger.warning(f" Nenhum grupo encontrado com o nome area_responsavel='{name}'")
+                    except Exception as e:
+                        logger.warning(f" Erro ao resolver area_responsavel para grupo: {e}")
+        
+        # Log dos dados recebidos para debug
+        logger.info(f" Dados recebidos - area_responsavel: {data.get('area_responsavel')}, shared_group_ids: {shared_group_ids}, assigned_group_id: {assigned_group_id}")
+
+        # Se resolvemos um assigned_group_id, validar que o grupo realmente existe
+        if assigned_group_id:
+            try:
+                cursor.execute('SELECT 1 FROM groups WHERE id = ? LIMIT 1', (int(assigned_group_id),))
+                if not cursor.fetchone():
+                    logger.warning(f" assigned_group_id resolvido ({assigned_group_id}) não existe em groups; ignorando")
+                    assigned_group_id = None
+                else:
+                    # garantir que assign_to_all_group será verdadeiro quando veio da área responsavel
+                    if data.get('area_responsavel'):
+                        assign_to_all_group = True
+            except Exception as e:
+                logger.warning(f" Erro ao validar assigned_group_id: {e}")
+        
         # Verificar se usuário tem permissão para atribuir RNC ao grupo
         can_assign_to_group = has_permission(session['user_id'], 'assign_rnc_to_group')
         
-        if assign_to_all_group and assigned_group_id and can_assign_to_group:
+        # Permitir atribuição se o usuário está atribuindo para seu próprio grupo
+        user_own_group = False
+        if assigned_group_id:
+            cursor.execute('SELECT group_id FROM users WHERE id = ?', (session['user_id'],))
+            user_group_row = cursor.fetchone()
+            if user_group_row and user_group_row[0] == int(assigned_group_id):
+                user_own_group = True
+                logger.info(f" Usuário está atribuindo RNC para seu próprio grupo: {assigned_group_id}")
+        
+        # Permitir atribuição se há area_responsavel definida (setor selecionado)
+        has_area_responsavel = bool(data.get('area_responsavel'))
+        # Forçar assign_to_all_group quando uma área/setor foi selecionado explicitamente
+        if has_area_responsavel:
+            assign_to_all_group = True
+        
+        logger.info(f" Verificação de permissão - assign_to_all_group: {assign_to_all_group}, assigned_group_id: {assigned_group_id}, can_assign_to_group: {can_assign_to_group}, user_own_group: {user_own_group}, has_area_responsavel: {has_area_responsavel}")
+        
+        if assign_to_all_group and assigned_group_id and (can_assign_to_group or user_own_group or has_area_responsavel):
             # MODO: Atribuir para TODO O GRUPO
             try:
                 # Salvar o grupo atribuído na própria RNC (para controle de visibilidade)
@@ -257,9 +327,9 @@ def create_rnc():
                             VALUES (?, ?, ?, 'assigned')
                         ''', (rnc_id, session['user_id'], user_id))
                 
-                logger.info(f"✅ RNC {rnc_id} atribuída para TODO O GRUPO {assigned_group_id} ({len(users_in_group)} usuários)")
+                logger.info(f" RNC {rnc_id} atribuída para TODO O GRUPO {assigned_group_id} ({len(users_in_group)} usuários)")
             except Exception as e:
-                logger.error(f"❌ Erro ao atribuir RNC ao grupo: {e}")
+                logger.error(f" Erro ao atribuir RNC ao grupo: {e}")
         
         elif assigned_user_ids and len(assigned_user_ids) > 0:
             # MODO: Atribuir para USUÁRIOS ESPECÍFICOS
@@ -271,9 +341,9 @@ def create_rnc():
                             (rnc_id, shared_by_user_id, shared_with_user_id, permission_level)
                             VALUES (?, ?, ?, 'assigned')
                         ''', (rnc_id, session['user_id'], int(user_id)))
-                logger.info(f"✅ RNC {rnc_id} atribuída a {len(assigned_user_ids)} usuário(s) específico(s)")
+                logger.info(f" RNC {rnc_id} atribuída a {len(assigned_user_ids)} usuário(s) específico(s)")
             except Exception as e:
-                logger.error(f"❌ Erro ao salvar atribuições de usuários: {e}")
+                logger.error(f" Erro ao salvar atribuições de usuários: {e}")
         
         # Salvar usuário causador (se fornecido)
         causador_user_id = data.get('causador_user_id')
@@ -282,9 +352,9 @@ def create_rnc():
                 cursor.execute('''
                     UPDATE rncs SET causador_user_id = ? WHERE id = ?
                 ''', (int(causador_user_id), rnc_id))
-                logger.info(f"✅ Usuário causador {causador_user_id} registrado para RNC {rnc_id}")
+                logger.info(f" Usuário causador {causador_user_id} registrado para RNC {rnc_id}")
             except Exception as e:
-                logger.error(f"❌ Erro ao salvar usuário causador: {e}")
+                logger.error(f" Erro ao salvar usuário causador: {e}")
 
         # ============================================
         # COMPARTILHAMENTO AUTOMÁTICO COM RONALDO (VALORISTA)
@@ -307,9 +377,9 @@ def create_rnc():
                         (rnc_id, shared_by_user_id, shared_with_user_id, permission_level)
                         VALUES (?, ?, ?, 'valorista')
                     ''', (rnc_id, session['user_id'], RONALDO_ID))
-                    logger.info(f"✅ RNC {rnc_id} compartilhada automaticamente com Ronaldo (Valorista)")
+                    logger.info(f" RNC {rnc_id} compartilhada automaticamente com Ronaldo (Valorista)")
         except Exception as e:
-            logger.error(f"❌ Erro ao compartilhar RNC com Ronaldo: {e}")
+            logger.error(f" Erro ao compartilhar RNC com Ronaldo: {e}")
 
         # ============================================
         # BUSCAR USUÁRIOS COMPARTILHADOS ANTES DE FECHAR CONEXÃO
@@ -322,9 +392,9 @@ def create_rnc():
                 WHERE rnc_id = ? AND shared_with_user_id != ?
             ''', (rnc_id, session['user_id']))
             shared_users_list = [row[0] for row in cursor.fetchall()]
-            logger.info(f"📋 Encontrados {len(shared_users_list)} usuários compartilhados para notificar")
+            logger.info(f" Encontrados {len(shared_users_list)} usuários compartilhados para notificar")
         except Exception as e:
-            logger.error(f"❌ Erro ao buscar usuários compartilhados: {e}")
+            logger.error(f" Erro ao buscar usuários compartilhados: {e}")
 
         try:
             conn.commit()
@@ -344,13 +414,13 @@ def create_rnc():
             notification_result = notify_new_rnc(rnc_id)
             
             if notification_result['success']:
-                logger.info(f"✅ Notificações enviadas para RNC {rnc_id}: {notification_result['sent']} enviadas, {notification_result['failed']} falharam")
+                logger.info(f" Notificações enviadas para RNC {rnc_id}: {notification_result['sent']} enviadas, {notification_result['failed']} falharam")
             else:
-                logger.warning(f"⚠️ Falha ao enviar notificações para RNC {rnc_id}: {notification_result['message']}")
+                logger.warning(f" Falha ao enviar notificações para RNC {rnc_id}: {notification_result['message']}")
                 
         except Exception as e:
             # Não falhar a criação da RNC se houver erro nas notificações
-            logger.error(f"❌ Erro ao enviar notificações para RNC {rnc_id}: {e}")
+            logger.error(f" Erro ao enviar notificações para RNC {rnc_id}: {e}")
 
         # ============================================
         # ENVIO DE NOTIFICAÇÕES EM TEMPO REAL (SocketIO)
@@ -374,7 +444,7 @@ def create_rnc():
                     # Notificação de compartilhamento (modal grande)
                     notification_data_share = {
                         'type': 'rnc_shared',
-                        'title': '📋 Nova RNC Compartilhada',
+                        'title': ' Nova RNC Compartilhada',
                         'message': f'{creator_name} compartilhou a RNC {rnc_number} com você',
                         'rnc_id': rnc_id,
                         'rnc_number': rnc_number,
@@ -387,7 +457,7 @@ def create_rnc():
                     # Notificação de criação (pop-up lateral)
                     notification_data_created = {
                         'type': 'rnc_created',
-                        'title': '➕ Nova RNC Criada',
+                        'title': ' Nova RNC Criada',
                         'message': f'{creator_name} criou a RNC {rnc_number}: {data.get("title", "")[:50]}',
                         'rnc_id': rnc_id,
                         'rnc_number': rnc_number,
@@ -397,22 +467,22 @@ def create_rnc():
                     }
                     
                     # Emitir ambos os eventos SocketIO
-                    logger.info(f"🔔 ========================================")
-                    logger.info(f"🔔 ENVIANDO NOTIFICAÇÕES PARA USUÁRIO {user_id}")
-                    logger.info(f"📊 Room: user_{user_id}")
-                    logger.info(f"📊 Dados rnc_notification: {notification_data_share}")
-                    logger.info(f"📊 Dados rnc_created: {notification_data_created}")
+                    logger.info(f" ========================================")
+                    logger.info(f" ENVIANDO NOTIFICAÇÕES PARA USUÁRIO {user_id}")
+                    logger.info(f" Room: user_{user_id}")
+                    logger.info(f" Dados rnc_notification: {notification_data_share}")
+                    logger.info(f" Dados rnc_created: {notification_data_created}")
                     
                     socketio.emit('rnc_notification', notification_data_share, room=f'user_{user_id}')
                     socketio.emit('rnc_created', notification_data_created, room=f'user_{user_id}')
                     
-                    logger.info(f"✅ Notificações emitidas com sucesso!")
-                    logger.info(f"🔔 ========================================")
+                    logger.info(f" Notificações emitidas com sucesso!")
+                    logger.info(f" ========================================")
             else:
-                logger.info(f"ℹ️ Nenhum usuário para notificar ou SocketIO não disponível")
+                logger.info(f" Nenhum usuário para notificar ou SocketIO não disponível")
                     
         except Exception as e:
-            logger.error(f"❌ Erro ao enviar notificação em tempo real: {e}")
+            logger.error(f" Erro ao enviar notificação em tempo real: {e}")
 
         return jsonify({
             'success': True,
@@ -508,7 +578,7 @@ def rnc_chat(rnc_id):
         rnc_columns = [d[0] for d in cursor.description] if cursor.description else []
         if not rnc_row:
             conn.close()
-            return render_template('error.html', message='RNC nÃ£o encontrado'), 404
+            return render_template('error.html', message='RNC não encontrado'), 404
         cursor.execute('SELECT * FROM users WHERE id = ?', (session['user_id'],))
         current_user = cursor.fetchone()
         cursor.execute('''
@@ -542,7 +612,7 @@ def rnc_chat(rnc_id):
 @rnc.route('/api/rnc/list')
 def list_rncs():
     if 'user_id' not in session:
-        return jsonify({'success': False, 'message': 'UsuÃ¡rio nÃ£o autenticado'}), 401
+        return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
 
     conn = None
     try:
@@ -595,7 +665,7 @@ def list_rncs():
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Obter departamento do usuÃ¡rio para filtro adicional
+        # Obter departamento do usuário para filtro adicional
         cursor.execute('SELECT department FROM users WHERE id = ?', (user_id,))
         user_dept_row = cursor.fetchone()
         user_department = user_dept_row[0] if user_dept_row else None
@@ -630,46 +700,54 @@ def list_rncs():
                     "(r.assigned_group_id IS NOT NULL AND r.assigned_group_id = user_group.group_id)"
                 ]
                 
-                # Se o usuÃ¡rio tem departamento, incluir RNCs da mesma Ã¡rea (LIKE para pegar variaÃ§Ãµes)
+                # Se o usuário tem departamento, incluir RNCs da mesma área (LIKE para pegar variações)
                 if user_department:
                     permission_conditions.append("LOWER(TRIM(r.area_responsavel)) LIKE LOWER(TRIM(?))")
                     permission_conditions.append("LOWER(TRIM(r.setor)) LIKE LOWER(TRIM(?))")
                     params.extend([user_id, user_id, user_id, user_id, f'%{user_department.strip()}%', f'%{user_department.strip()}%'])
                 else:
                     params.extend([user_id, user_id, user_id, user_id])
+                
+                # Adicionar lógica para RNCs atribuídas ao grupo do usuário
+                cursor.execute('SELECT group_id FROM users WHERE id = ?', (user_id,))
+                user_group_row = cursor.fetchone()
+                if user_group_row and user_group_row[0]:
+                    permission_conditions.append("r.assigned_group_id = ?")
+                    params.append(user_group_row[0])
                 where.append(f"({' OR '.join(permission_conditions)})")
                 select_prefix = "SELECT DISTINCT"
         elif tab.lower() in ('engineering', 'engenharia'):
             # Aba especÃ­fica de ENGENHARIA: mostrar somente RNCs FINALIZADOS da Ã¡rea/setor Engenharia
-            # Isso antes era tratado como 'active' por nÃ£o haver ramificaÃ§Ã£o dedicada.
-            where.append("r.status = 'Finalizado'")
-            # Filtra explicitamente por Engenharia (area_responsavel ou setor contÃ©m 'engenharia')
-            where.append("(LOWER(TRIM(r.area_responsavel)) LIKE '%engenharia%' OR LOWER(TRIM(r.setor)) LIKE '%engenharia%')")
-            if not view_all_finalized:
-                joins.append("LEFT JOIN rnc_shares rs ON rs.rnc_id = r.id")
-                joins.append("LEFT JOIN users user_group_eng ON user_group_eng.id = ?")
+            # Isso antes era tratado como 'active' por não haver ramificação dedicada.
+                # Filtra explicitamente por Engenharia (area_responsavel ou setor contém 'engenharia')
+                # Ou por RNC atribuída a um grupo cujo nome contenha 'engenharia'.
+                # Nota: não exigimos status='Finalizado' aqui para que RNCs encaminhadas
+                # para Engenharia apareçam mesmo antes da finalização.
+                where.append("(LOWER(TRIM(r.area_responsavel)) LIKE '%engenharia%' OR LOWER(TRIM(r.setor)) LIKE '%engenharia%' OR (r.assigned_group_id IS NOT NULL AND EXISTS (SELECT 1 FROM groups g WHERE g.id = r.assigned_group_id AND LOWER(g.name) LIKE '%engenharia%')))")
+                if not view_all_finalized:
+                    joins.append("LEFT JOIN rnc_shares rs ON rs.rnc_id = r.id")
+                    joins.append("LEFT JOIN users user_group_eng ON user_group_eng.id = ?")
                 
-                # ============================================
-                # LÓGICA DE VISIBILIDADE POR GRUPO ATRIBUÍDO (ENGENHARIA)
-                # ============================================
-                permission_conditions = [
-                    "r.user_id = ?",
-                    "r.assigned_user_id = ?",
-                    "rs.shared_with_user_id = ?",
-                    # Permitir visualização se RNC foi atribuída ao grupo do usuário
-                    "(r.assigned_group_id IS NOT NULL AND r.assigned_group_id = user_group_eng.group_id)"
-                ]
-                # Se o usuÃ¡rio for de Engenharia (ou outro dept), ainda garantimos visibilidade dos seus prÃ³prios + compartilhados
-                params.extend([user_id, user_id, user_id, user_id])
-                where.append(f"({' OR '.join(permission_conditions)})")
-                select_prefix = "SELECT DISTINCT"
+                    # ============================================
+                    # LÓGICA DE VISIBILIDADE POR GRUPO ATRIBUÍDO (ENGENHARIA)
+                    # ============================================
+                    permission_conditions = [
+                        "r.user_id = ?",
+                        "r.assigned_user_id = ?",
+                        "rs.shared_with_user_id = ?",
+                        # Permitir visualização se RNC foi atribuída ao grupo do usuário
+                        "(r.assigned_group_id IS NOT NULL AND r.assigned_group_id = user_group_eng.group_id)"
+                    ]
+                    params.extend([user_id, user_id, user_id, user_id])
+                    where.append(f"({' OR '.join(permission_conditions)})")
+                    select_prefix = "SELECT DISTINCT"
         else:
-            # default to active - mostrar apenas RNCs NÃƒO finalizadas
-            # CORRIGIDO: Filtrar por status mesmo para admin, aba "active" nÃ£o deve mostrar finalizadas
+            # default to active - mostrar apenas RNCs NÃO finalizadas
+            # CORRIGIDO: Filtrar por status mesmo para admin, aba "active" não deve mostrar finalizadas
             where.append("r.status NOT IN ('Finalizado')")
             
             if not view_all_active:
-                # UsuÃ¡rio normal vÃª apenas suas RNCs ativas
+                # Usuário normal vê apenas suas RNCs ativas
                 joins.append("LEFT JOIN rnc_shares rs ON rs.rnc_id = r.id")
                 joins.append("LEFT JOIN users user_group_active ON user_group_active.id = ?")
                 
@@ -683,8 +761,22 @@ def list_rncs():
                     # Permitir visualização se RNC foi atribuída ao grupo do usuário
                     "(r.assigned_group_id IS NOT NULL AND r.assigned_group_id = user_group_active.group_id)"
                 ]
+                
+                # Se o usuário tem departamento, incluir RNCs da mesma área (LIKE para pegar variações)
+                if user_department:
+                    permission_conditions_active.append("LOWER(TRIM(r.area_responsavel)) LIKE LOWER(TRIM(?))")
+                    permission_conditions_active.append("LOWER(TRIM(r.setor)) LIKE LOWER(TRIM(?))")
+                    params.extend([user_id, user_id, user_id, user_id, f'%{user_department.strip()}%', f'%{user_department.strip()}%'])
+                else:
+                    params.extend([user_id, user_id, user_id, user_id])
+                
+                # Adicionar lógica para RNCs atribuídas ao grupo do usuário
+                cursor.execute('SELECT group_id FROM users WHERE id = ?', (user_id,))
+                user_group_row = cursor.fetchone()
+                if user_group_row and user_group_row[0]:
+                    permission_conditions_active.append("r.assigned_group_id = ?")
+                    params.append(user_group_row[0])
                 where.append(f"({' OR '.join(permission_conditions_active)})")
-                params.extend([user_id, user_id, user_id, user_id])
                 select_prefix = "SELECT DISTINCT"
 
         if cursor_id is not None:
@@ -810,7 +902,7 @@ def list_rncs():
                 'created_at': rnc[9],
                 'updated_at': rnc[10],
                 'finalized_at': rnc[11],
-                'responsavel': rnc[12] or 'N/A',  # ResponsÃ¡vel do TXT
+                'responsavel': rnc[12] or 'N/A',  # Responsável do TXT
                 'setor': rnc[13] or 'N/A',  # Setor do TXT
                 'area_responsavel': rnc[14] or 'N/A',  # Ãrea responsÃ¡vel do TXT
                 'assigned_user_name': rnc[15],
@@ -860,7 +952,7 @@ def list_rncs():
 @rnc.route('/api/rnc/get/<int:rnc_id>', methods=['GET'])
 def api_get_rnc(rnc_id):
     if 'user_id' not in session:
-        return jsonify({'success': False, 'message': 'UsuÃ¡rio nÃ£o autenticado'}), 401
+        return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
     try:
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
@@ -870,7 +962,7 @@ def api_get_rnc(rnc_id):
         row = cursor.fetchone()
         conn.close()
         if not row:
-            return jsonify({'success': False, 'message': 'RNC nÃ£o encontrada'}), 404
+            return jsonify({'success': False, 'message': 'RNC não encontrada'}), 404
         rnc_dict = dict(zip(columns, row))
         for key in rnc_dict:
             if key.startswith('disposition_') or key.startswith('inspection_'):
@@ -902,7 +994,7 @@ def view_rnc(rnc_id):
         conn.close()
         
         if not rnc_data:
-            return render_template('error.html', message='RNC nÃ£o encontrado')
+            return render_template('error.html', message='RNC não encontrado')
         
         if not isinstance(rnc_data, (tuple, list)):
             return render_template('error.html', message='Erro interno do sistema')
@@ -932,7 +1024,7 @@ def view_rnc(rnc_id):
 
         rnc_dict = dict(zip(columns, rnc_data))
 
-        # FunÃ§Ã£o para extrair campos de texto da descriÃ§Ã£o
+        # Função para extrair campos de texto da descrição
         def parse_label_map(text: str):
             if not text:
                 return {}
@@ -949,7 +1041,7 @@ def view_rnc(rnc_id):
                             result[key] = value
             return result
 
-        # Extrair campos de texto da descriÃ§Ã£o para visualizaÃ§Ã£o
+        # Extrair campos de texto da descrição para visualização
         txt_fields = parse_label_map(rnc_dict.get('description') or '')
         
         # Determinar criador de forma robusta usando o dict
@@ -983,7 +1075,7 @@ def reply_rnc(rnc_id):
         conn.close()
 
         if not rnc_data:
-            return render_template('error.html', message='RNC nÃ£o encontrado')
+            return render_template('error.html', message='RNC não encontrado')
 
         owner_id = rnc_data[8]
         assigned_user_id = rnc_data[9] if len(rnc_data) > 9 else None
@@ -1003,7 +1095,7 @@ def reply_rnc(rnc_id):
             shared_can_reply = False
 
         if not (is_creator or is_assigned or is_admin or can_reply or shared_can_reply):
-            return render_template('error.html', message='Acesso negado: vocÃª nÃ£o tem permissÃ£o para responder este RNC')
+            return render_template('error.html', message='Acesso negado: você não tem permissão para responder este RNC')
 
         try:
             conn_cols = sqlite3.connect(DB_PATH)
@@ -1026,7 +1118,7 @@ def reply_rnc(rnc_id):
 
         rnc_dict = dict(zip(columns, rnc_data))
         
-        # Adicionar funÃ§Ã£o para extrair campos de texto da descriÃ§Ã£o
+        # Adicionar função para extrair campos de texto da descrição
         def parse_label_map(text: str):
             if not text:
                 return {}
@@ -1043,7 +1135,7 @@ def reply_rnc(rnc_id):
                             result[key] = value
             return result
         
-        # Extrair campos de texto da descriÃ§Ã£o
+        # Extrair campos de texto da descrição
         txt_fields = parse_label_map(rnc_dict.get('description') or '')
         
         return render_template('edit_rnc_form.html', rnc=rnc_dict, txt_fields=txt_fields, is_editing=True, is_reply=True)
@@ -1057,7 +1149,7 @@ def print_rnc(rnc_id):
     if 'user_id' not in session:
         return redirect('/')
     try:
-        # Carregar dados bÃ¡sicos do RNC diretamente
+        # Carregar dados básicos do RNC diretamente
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         cursor.execute('SELECT * FROM rncs WHERE id = ?', (rnc_id,))
@@ -1065,7 +1157,7 @@ def print_rnc(rnc_id):
         conn.close()
         if rnc_data is None:
             logger.error(f"Erro ao buscar RNC {rnc_id}")
-            return render_template('error.html', message='RNC nÃ£o encontrado')
+            return render_template('error.html', message='RNC não encontrado')
 
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
@@ -1180,7 +1272,7 @@ def print_rnc_modelo(rnc_id):
         columns = [d[0] for d in cursor.description] if cursor.description else []
         conn.close()
         if not row:
-            return render_template('error.html', message='RNC nÃ£o encontrado')
+            return render_template('error.html', message='RNC não encontrado')
 
         rnc_dict = dict(zip(columns, row))
         # Normalizar booleans
@@ -1282,7 +1374,7 @@ def pdf_generator(rnc_id):
         conn.close()
         if rnc_data is None:
             logger.error(f"Erro ao buscar RNC {rnc_id}")
-            return render_template('error.html', message='RNC nÃ£o encontrado')
+            return render_template('error.html', message='RNC não encontrado')
 
         user_id_index = 8
         try:
@@ -1342,7 +1434,7 @@ def download_rnc_pdf(rnc_id):
         conn.close()
         
         if not rnc:
-            return render_template('error.html', message='RNC nÃ£o encontrada')
+            return render_template('error.html', message='RNC não encontrada')
         
         rnc_creator_id = rnc[0]
         rnc_assigned_id = rnc[1]
@@ -1365,7 +1457,7 @@ def download_rnc_pdf(rnc_id):
             shared_can_view = False
         
         if not (is_creator or is_assigned or is_admin or can_view or shared_can_view):
-            return render_template('error.html', message='Acesso negado: vocÃª nÃ£o tem permissÃ£o para visualizar esta RNC')
+            return render_template('error.html', message='Acesso negado: você não tem permissão para visualizar esta RNC')
         
         # Gerar PDF
         pdf_path = pdf_generator.generate_pdf(rnc_id)
@@ -1390,7 +1482,7 @@ def download_rnc_pdf(rnc_id):
 
 
 # ROTA DE EDITAR REMOVIDA - SubstituÃ­da por /rnc/<id>/reply (Responder)
-# Motivo: SimplificaÃ§Ã£o do sistema - apenas responder Ã© necessÃ¡rio
+# Motivo: Simplificação do sistema - apenas responder é necessário
 # Data: 2025-10-07
 
 # @rnc.route('/rnc/<int:rnc_id>/edit', methods=['GET', 'POST'])
@@ -1401,9 +1493,9 @@ def download_rnc_pdf(rnc_id):
 @rnc.route('/api/rnc/<int:rnc_id>/update', methods=['PUT'])
 @csrf_protect()
 def update_rnc_api(rnc_id):
-    logger.info(f"Iniciando atualizaÃ§Ã£o da RNC {rnc_id}")
+    logger.info(f"Iniciando atualização da RNC {rnc_id}")
     if 'user_id' not in session:
-        return jsonify({'success': False, 'message': 'UsuÃ¡rio nÃ£o autenticado'}), 401
+        return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
     try:
         from services.permissions import has_permission
         from services.cache import clear_rnc_cache, query_cache, cache_lock
@@ -1422,32 +1514,32 @@ def update_rnc_api(rnc_id):
                     
                     # Debug log
                     if field == 'signature_inspection_date':
-                        logger.info(f"🔍 DEBUG signature_inspection_date: raw='{data[field]}', field_value='{field_value}', is_empty_date={is_empty_date}")
+                        logger.info(f" DEBUG signature_inspection_date: raw='{data[field]}', field_value='{field_value}', is_empty_date={is_empty_date}")
                     
                     if field_value != '' and not is_empty_date:
                         attempted_fields.append(field)
             
             if attempted_fields:
-                logger.warning(f"UsuÃ¡rio {session['user_id']} tentou editar campos bloqueados na resposta: {attempted_fields}")
+                logger.warning(f"Usuário {session['user_id']} tentou editar campos bloqueados na resposta: {attempted_fields}")
                 return jsonify({
                     'success': False,
-                    'message': f'Os seguintes campos estÃ£o bloqueados para seu grupo: {", ".join(attempted_fields)}'
+                    'message': f'Os seguintes campos estão bloqueados para seu grupo: {", ".join(attempted_fields)}'
                 }), 403
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         cursor.execute('SELECT * FROM rncs WHERE id = ?', (rnc_id,))
         rnc_data = cursor.fetchone()
         if not rnc_data:
-            return jsonify({'success': False, 'message': 'RNC nÃ£o encontrado'}), 404
+            return jsonify({'success': False, 'message': 'RNC não encontrado'}), 404
         if not isinstance(rnc_data, (tuple, list)):
-            logger.error(f"Erro: rnc_data nÃ£o Ã© uma tupla/lista: {type(rnc_data)} - {rnc_data}")
+            logger.error(f"Erro: rnc_data não é uma tupla/lista: {type(rnc_data)} - {rnc_data}")
             return jsonify({'success': False, 'message': 'Erro interno do sistema'}), 500
 
         user_is_creator = str(rnc_data[8]) == str(session['user_id'])
         has_admin = has_permission(session['user_id'], 'admin_access')
         can_reply = has_permission(session['user_id'], 'reply_rncs')
         
-        # Verificar se foi compartilhado com o usuÃ¡rio
+        # Verificar se foi compartilhado com o usuário
         is_shared_with_user = False
         try:
             cur_shared = conn.cursor()
@@ -1458,22 +1550,22 @@ def update_rnc_api(rnc_id):
             is_shared_with_user = False
         
         # LOGS DETALHADOS PARA DEBUG
-        logger.info(f"=== VERIFICAÃ‡ÃƒO DE PERMISSÃ•ES PARA RESPONDER RNC {rnc_id} ===")
+        logger.info(f"=== VERIFICAÇÃO DE PERMISSÕES PARA RESPONDER RNC {rnc_id} ===")
         logger.info(f"User ID: {session.get('user_id')}")
         logger.info(f"RNC Owner ID: {rnc_data[8]}")
-        logger.info(f"Ã‰ criador? {user_is_creator}")
-        logger.info(f"Ã‰ admin? {has_admin}")
+        logger.info(f"É criador? {user_is_creator}")
+        logger.info(f"É admin? {has_admin}")
         logger.info(f"Pode responder (reply_rncs)? {can_reply}")
         logger.info(f"Foi compartilhado? {is_shared_with_user}")
-        logger.info(f"PermissÃµes do usuÃ¡rio: {session.get('user_role', 'unknown')}")
+        logger.info(f"Permissões do usuário: {session.get('user_role', 'unknown')}")
         
-        # PERMISSÃ•ES SIMPLIFICADAS: Admin, criador, quem pode responder ou compartilhado
+        # PERMISSÕES SIMPLIFICADAS: Admin, criador, quem pode responder ou compartilhado
         if not (has_admin or user_is_creator or can_reply or is_shared_with_user):
             logger.warning(f"âŒ ACESSO NEGADO - Nenhuma permissÃ£o vÃ¡lida encontrada")
             logger.warning(f"   User: {session.get('user_name')} (ID: {session.get('user_id')})")
             logger.warning(f"   Role: {session.get('user_role')}")
             logger.warning(f"   Department: {session.get('user_department')}")
-            return jsonify({'success': False, 'message': 'Acesso negado: vocÃª nÃ£o tem permissÃ£o para responder este RNC'}), 403
+            return jsonify({'success': False, 'message': 'Acesso negado: você não tem permissão para responder este RNC'}), 403
         
         logger.info(f"âœ… ACESSO PERMITIDO para responder RNC {rnc_id}")
 
@@ -1547,7 +1639,7 @@ def update_rnc_api(rnc_id):
             data.get('description', current.get('description','')),
             data.get('equipment', current.get('equipment','')),
             data.get('client', current.get('client','')),
-            data.get('priority', current.get('priority','MÃ©dia')),
+            data.get('priority', current.get('priority','Média')),
             data.get('status', current.get('status','Pendente')),
             data.get('assigned_user_id', current.get('assigned_user_id')),
             float(data.get('price') or current.get('price') or 0),
@@ -1640,7 +1732,7 @@ def update_rnc_api(rnc_id):
                     if user_id != session['user_id']:
                         notification_data = {
                             'type': 'rnc_updated',
-                            'title': '✏️ RNC Atualizada',
+                            'title': ' RNC Atualizada',
                             'message': f'{editor_name} editou a RNC {rnc_number}',
                             'rnc_id': rnc_id,
                             'rnc_number': rnc_number,
@@ -1650,18 +1742,18 @@ def update_rnc_api(rnc_id):
                         }
                         
                         # Emitir evento SocketIO
-                        logger.info(f"📝 ========================================")
-                        logger.info(f"📝 ENVIANDO NOTIFICAÇÃO DE ATUALIZAÇÃO PARA USUÁRIO {user_id}")
-                        logger.info(f"📊 Room: user_{user_id}")
-                        logger.info(f"📊 Dados: {notification_data}")
+                        logger.info(f" ========================================")
+                        logger.info(f" ENVIANDO NOTIFICAÇÃO DE ATUALIZAÇÃO PARA USUÁRIO {user_id}")
+                        logger.info(f" Room: user_{user_id}")
+                        logger.info(f" Dados: {notification_data}")
                         
                         socketio.emit('rnc_updated', notification_data, room=f'user_{user_id}')
                         
-                        logger.info(f"✅ Notificação de atualização emitida com sucesso!")
-                        logger.info(f"📝 ========================================")
+                        logger.info(f" Notificação de atualização emitida com sucesso!")
+                        logger.info(f" ========================================")
                         
         except Exception as e:
-            logger.error(f"❌ Erro ao enviar notificação de atualização: {e}")
+            logger.error(f" Erro ao enviar notificação de atualização: {e}")
         
         return jsonify({'success': True, 'message': 'RNC atualizado com sucesso!', 'affected_rows': affected_rows})
     except Exception as e:
@@ -1673,7 +1765,7 @@ def update_rnc_api(rnc_id):
 @csrf_protect()
 def finalize_rnc(rnc_id):
     if 'user_id' not in session:
-        return jsonify({'success': False, 'message': 'UsuÃ¡rio nÃ£o autenticado'}), 401
+        return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
     try:
         from services.permissions import has_permission
         from services.cache import clear_rnc_cache
@@ -1684,13 +1776,13 @@ def finalize_rnc(rnc_id):
         rnc_row = cursor.fetchone()
         if not rnc_row:
             conn.close()
-            return jsonify({'success': False, 'message': 'RNC nÃ£o encontrado'}), 404
+            return jsonify({'success': False, 'message': 'RNC não encontrado'}), 404
         if not isinstance(rnc_row, (sqlite3.Row, tuple, list)):
-            logger.error(f"Erro: rnc nÃ£o Ã© uma tupla/lista: {type(rnc_row)} - {rnc_row}")
+            logger.error(f"Erro: rnc não é uma tupla/lista: {type(rnc_row)} - {rnc_row}")
             conn.close()
             return jsonify({'success': False, 'message': 'Erro interno do sistema'}), 500
 
-        # VALIDAÃƒÆ'Ã‚â€¡ÃƒÆ'Ã¢â‚¬Å¡ÃƒÂ‚Ã‚â€"O DE CAMPOS OBRIGATÃƒÆ'Ã¢â‚¬Å¾ÃƒÂ‚Ã‚â€œRIOS
+        # VALIDAÇÃO DE CAMPOS OBRIGATÓRIOS
         missing_fields = []
         
         # Converter Row para dict
@@ -1736,23 +1828,23 @@ def finalize_rnc(rnc_id):
             conn.close()
             return jsonify({
                 'success': False, 
-                'message': 'RNC nÃ£o pode ser finalizada. Existem campos obrigatÃ³rios nÃ£o preenchidos.',
+                'message': 'RNC não pode ser finalizada. Existem campos obrigatórios não preenchidos.',
                 'missing_fields': missing_fields
             }), 400
 
-        # VerificaÃƒÆ'Ã‚Â§ÃƒÆ'Ã‚Â£o de permissÃƒÆ'Ã‚Â£o
+        # Verificação de permissão
         user_id = session['user_id']
         cursor.execute('SELECT role FROM users WHERE id = ?', (user_id,))
         user = cursor.fetchone()
         if not user:
             conn.close()
-            return jsonify({'success': False, 'message': 'UsuÃ¡rio nÃ£o encontrado'}), 404
+            return jsonify({'success': False, 'message': 'Usuário não encontrado'}), 404
         user_role = user['role'] if isinstance(user, sqlite3.Row) else user[0]
         rnc_creator_id = rnc_dict.get('user_id')
         is_creator = (user_id == rnc_creator_id)
         if not is_creator and user_role != 'admin':
             conn.close()
-            return jsonify({'success': False, 'message': 'Apenas o criador do RNC pode finalizÃ¡-lo'}), 403
+            return jsonify({'success': False, 'message': 'Apenas o criador do RNC pode finalizá-lo'}), 403
 
         # Finalizar RNC
         cursor.execute('''
@@ -1776,7 +1868,7 @@ def finalize_rnc(rnc_id):
 @csrf_protect()
 def reply_rnc_api(rnc_id):
     if 'user_id' not in session:
-        return jsonify({'success': False, 'message': 'UsuÃ¡rio nÃ£o autenticado'}), 401
+        return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
     try:
         from services.permissions import has_permission
         from services.cache import clear_rnc_cache
@@ -1786,7 +1878,7 @@ def reply_rnc_api(rnc_id):
         rnc = cursor.fetchone()
         if not rnc:
             conn.close()
-            return jsonify({'success': False, 'message': 'RNC nÃ£o encontrada'}), 404
+            return jsonify({'success': False, 'message': 'RNC não encontrada'}), 404
         rnc_creator_id = rnc[1]
         rnc_assigned_id = rnc[2]
         user_id = session['user_id']
@@ -1794,7 +1886,7 @@ def reply_rnc_api(rnc_id):
         is_admin = has_permission(user_id, 'admin_access')
         is_assigned = (rnc_assigned_id is not None and str(user_id) == str(rnc_assigned_id))
         can_reply = has_permission(user_id, 'reply_rncs')
-        # Novo: permitir responder se compartilhado com o usuÃ¡rio
+        # Novo: permitir responder se compartilhado com o usuário
         shared_can_reply = False
         try:
             cur_share = conn.cursor()
@@ -1804,7 +1896,7 @@ def reply_rnc_api(rnc_id):
             shared_can_reply = False
         if not (is_creator or is_assigned or is_admin or can_reply or shared_can_reply):
             conn.close()
-            return jsonify({'success': False, 'message': 'Sem permissÃ£o para responder esta RNC'}), 403
+            return jsonify({'success': False, 'message': 'Sem permissão para responder esta RNC'}), 403
         cursor.execute('''
             UPDATE rncs
                SET status = 'Pendente',
@@ -1815,7 +1907,7 @@ def reply_rnc_api(rnc_id):
         ''', (user_id, rnc_id))
         if cursor.rowcount == 0:
             conn.close()
-            return jsonify({'success': False, 'message': 'Nenhuma alteraÃ§Ã£o realizada'}), 400
+            return jsonify({'success': False, 'message': 'Nenhuma alteração realizada'}), 400
         conn.commit()
         conn.close()
         clear_rnc_cache()
@@ -1832,7 +1924,7 @@ def reply_rnc_api(rnc_id):
 @csrf_protect()
 def delete_rnc(rnc_id):
     if 'user_id' not in session:
-        return jsonify({'success': False, 'message': 'UsuÃ¡rio nÃ£o autenticado'}), 401
+        return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
     try:
         from services.cache import cache_lock, query_cache
         from services.permissions import has_permission
@@ -1842,15 +1934,15 @@ def delete_rnc(rnc_id):
         rnc = cursor.fetchone()
         if not rnc:
             conn.close()
-            return jsonify({'success': False, 'message': 'RNC nÃ£o encontrado'}), 404
-        # PermissÃ£o: apenas criador ou admin pode deletar
+            return jsonify({'success': False, 'message': 'RNC não encontrado'}), 404
+        # Permissão: apenas criador ou admin pode deletar
         creator_id = rnc[1]
         user_id = session['user_id']
         is_creator = str(user_id) == str(creator_id)
         is_admin = has_permission(user_id, 'admin_access')
         if not (is_creator or is_admin):
             conn.close()
-            return jsonify({'success': False, 'message': 'Sem permissÃ£o para excluir este RNC'}), 403
+            return jsonify({'success': False, 'message': 'Sem permissão para excluir este RNC'}), 403
         cursor.execute('DELETE FROM rncs WHERE id = ?', (rnc_id,))
         cursor.execute('DELETE FROM rnc_shares WHERE rnc_id = ?', (rnc_id,))
         cursor.execute('DELETE FROM chat_messages WHERE rnc_id = ?', (rnc_id,))
@@ -1860,8 +1952,8 @@ def delete_rnc(rnc_id):
             keys_to_remove = [key for key in list(query_cache.keys()) if 'rncs_list_' in key or 'rnc_' in key or 'charts_' in key]
             for key in keys_to_remove:
                 del query_cache[key]
-        logger.info(f"RNC {rnc_id} excluÃ­do definitivamente por usuÃ¡rio {session['user_id']}")
-        return jsonify({'success': True, 'message': 'RNC excluÃ­do definitivamente.', 'cache_cleared': True})
+        logger.info(f"RNC {rnc_id} excluído definitivamente por usuário {session['user_id']}")
+        return jsonify({'success': True, 'message': 'RNC excluído definitivamente.', 'cache_cleared': True})
     except Exception as e:
         logger.error(f"Erro ao deletar RNC: {e}")
         return jsonify({'success': False, 'message': f'Erro interno: {str(e)}'}), 500
@@ -1871,7 +1963,7 @@ def delete_rnc(rnc_id):
 @csrf_protect()
 def share_rnc(rnc_id):
     if 'user_id' not in session:
-        return jsonify({'success': False, 'message': 'UsuÃ¡rio nÃ£o autenticado'}), 401
+        return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
     try:
         from services.permissions import has_permission
         from services.rnc import share_rnc_with_user
@@ -1883,20 +1975,20 @@ def share_rnc(rnc_id):
         rnc_data = cursor.fetchone()
         cursor.connection.close()
         if rnc_data is None:
-            return jsonify({'success': False, 'message': 'RNC nÃ£o encontrado'}), 404
+            return jsonify({'success': False, 'message': 'RNC não encontrado'}), 404
         user_id_index = 8
         if len(rnc_data) <= user_id_index:
             return jsonify({'success': False, 'message': 'Dados do RNC incompletos'}), 400
         is_creator = (rnc_data[user_id_index] == session['user_id'])
         has_admin_permission = has_permission(session['user_id'], 'view_all_rncs')
         if not is_creator and not has_admin_permission:
-            return jsonify({'success': False, 'message': 'Sem permissÃ£o para compartilhar esta RNC'}), 403
+            return jsonify({'success': False, 'message': 'Sem permissão para compartilhar esta RNC'}), 403
         success_count = 0
         for user_id in shared_with_user_ids:
             if share_rnc_with_user(rnc_id, session['user_id'], user_id, permission_level):
                 success_count += 1
         if success_count > 0:
-            return jsonify({'success': True, 'message': f'RNC compartilhada com {success_count} usuÃ¡rio(s) com sucesso!'})
+            return jsonify({'success': True, 'message': f'RNC compartilhada com {success_count} usuário(s) com sucesso!'})
         else:
             return jsonify({'success': False, 'message': 'Erro ao compartilhar RNC'}), 500
     except Exception as e:
@@ -1907,7 +1999,7 @@ def share_rnc(rnc_id):
 @rnc.route('/api/rnc/<int:rnc_id>/shared-users', methods=['GET'])
 def get_shared_users(rnc_id):
     if 'user_id' not in session:
-        return jsonify({'success': False, 'message': 'UsuÃ¡rio nÃ£o autenticado'}), 401
+        return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
     try:
         from services.rnc import can_user_access_rnc
         from services.db import get_db_connection, return_db_connection
@@ -1919,7 +2011,7 @@ def get_shared_users(rnc_id):
             parse_cursor_limit = getattr(pagination, 'parse_cursor_limit')
             compute_window = getattr(pagination, 'compute_window')
         if not can_user_access_rnc(session['user_id'], rnc_id):
-            return jsonify({'success': False, 'message': 'Sem permissÃ£o para acessar esta RNC'}), 403
+            return jsonify({'success': False, 'message': 'Sem permissão para acessar esta RNC'}), 403
         cursor_id, limit = parse_cursor_limit(request, default_limit=20, max_limit=200)
 
         conn = get_db_connection()
@@ -1958,7 +2050,7 @@ def get_shared_users(rnc_id):
         ]
         return jsonify({'success': True, 'shared_users': shared_users_list, 'limit': limit, 'next_cursor': next_cursor, 'has_more': has_more})
     except Exception as e:
-        logger.error(f"Erro ao buscar usuÃ¡rios compartilhados da RNC {rnc_id}: {e}")
+        logger.error(f"Erro ao buscar usuários compartilhados da RNC {rnc_id}: {e}")
         return jsonify({'success': False, 'message': 'Erro interno do sistema'}), 500
 
 
@@ -1966,7 +2058,7 @@ def get_shared_users(rnc_id):
 @rnc.route('/api/debug/rnc-count')
 def debug_rnc_count():
     if 'user_id' not in session:
-        return jsonify({'success': False, 'message': 'UsuÃ¡rio nÃ£o autenticado'}), 401
+        return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
     try:
         from services.db import get_db_connection, return_db_connection
         conn = get_db_connection()
@@ -1989,7 +2081,7 @@ def debug_rnc_count():
 @rnc.route('/api/debug/user-rncs')
 def debug_user_rncs():
     if 'user_id' not in session:
-        return jsonify({'success': False, 'message': 'UsuÃ¡rio nÃ£o autenticado'}), 401
+        return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
     try:
         from services.db import get_db_connection, return_db_connection
         conn = get_db_connection()
@@ -2038,14 +2130,14 @@ def debug_user_rncs():
             ]
         })
     except Exception as e:
-        logger.error(f"Erro no debug de usuÃ¡rio: {e}")
+        logger.error(f"Erro no debug de usuário: {e}")
         return jsonify({'success': False, 'message': f'Erro: {str(e)}'}), 500
 
 
 @rnc.route('/api/debug/user-shares')
 def debug_user_shares():
     if 'user_id' not in session:
-        return jsonify({'success': False, 'message': 'UsuÃ¡rio nÃ£o autenticado'}), 401
+        return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
     try:
         from services.db import get_db_connection, return_db_connection
         conn = get_db_connection()
@@ -2117,7 +2209,7 @@ def debug_user_shares():
 @rnc.route('/api/debug/rnc-signatures/<int:rnc_id>')
 def debug_rnc_signatures(rnc_id):
     if 'user_id' not in session:
-        return jsonify({'success': False, 'message': 'UsuÃ¡rio nÃ£o autenticado'}), 401
+        return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
     try:
         from services.db import get_db_connection, return_db_connection
         conn = get_db_connection()
@@ -2132,7 +2224,7 @@ def debug_rnc_signatures(rnc_id):
         rnc_data = cursor.fetchone()
         return_db_connection(conn)
         if not rnc_data:
-            return jsonify({'success': False, 'message': 'RNC nÃ£o encontrada'}), 404
+            return jsonify({'success': False, 'message': 'RNC não encontrada'}), 404
         return jsonify({
             'success': True,
             'rnc_id': rnc_id,
@@ -2264,7 +2356,7 @@ def save_valor_hora():
         conn.commit()
         conn.close()
         
-        logger.info(f"✅ Novo valor/hora criado: {data['codigo']} - {data['descricao']}")
+        logger.info(f" Novo valor/hora criado: {data['codigo']} - {data['descricao']}")
         
         return jsonify({
             'success': True,
@@ -2330,7 +2422,7 @@ def update_valor_hora(valor_id):
         conn.commit()
         conn.close()
         
-        logger.info(f"✅ Valor/hora atualizado: ID {valor_id}")
+        logger.info(f" Valor/hora atualizado: ID {valor_id}")
         
         return jsonify({
             'success': True,
@@ -2365,7 +2457,7 @@ def delete_valor_hora(valor_id):
         conn.commit()
         conn.close()
         
-        logger.info(f"✅ Valor/hora removido: {valor[0]} - {valor[1]}")
+        logger.info(f" Valor/hora removido: {valor[0]} - {valor[1]}")
         
         return jsonify({
             'success': True,

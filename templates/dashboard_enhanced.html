@@ -1440,15 +1440,37 @@
         
         function changeChartType(chartId, newType) {
             const chart = charts[chartId];
-            if (chart) {
-                chart.config.type = newType;
-                chart.update();
-                
-                // Atualizar botões ativos
-                const card = document.getElementById(chartId).closest('.chart-card');
-                card.querySelectorAll('.chart-option-btn').forEach(btn => btn.classList.remove('active'));
-                event.target.classList.add('active');
+            if (!chart) return;
+
+            // Compatibilidade Chart.js v3+ : 'horizontalBar' foi removido.
+            // Mapear 'horizontalBar' para type:'bar' + indexAxis: 'y'
+            const cfg = chart.config;
+            if (newType === 'horizontalBar') {
+                cfg.type = 'bar';
+                cfg.options = cfg.options || {};
+                cfg.options.indexAxis = 'y';
+            } else {
+                cfg.type = newType;
+                // Se anteriormente estava em horizontal (indexAxis:'y') e agora voltamos para vertical, remover indexAxis
+                if (cfg.options && cfg.options.indexAxis && cfg.options.indexAxis === 'y') {
+                    delete cfg.options.indexAxis;
+                }
             }
+
+            try {
+                chart.update();
+            } catch (e) {
+                console.warn('Erro ao atualizar tipo do chart', e);
+            }
+
+            // Atualizar botões ativos (uso seguro de event)
+            try {
+                const card = document.getElementById(chartId).closest('.chart-card');
+                if (card) {
+                    card.querySelectorAll('.chart-option-btn').forEach(btn => btn.classList.remove('active'));
+                }
+                if (typeof event !== 'undefined' && event && event.target) event.target.classList.add('active');
+            } catch (e) {}
         }
         
         function drillDown(chartType) {

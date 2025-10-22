@@ -2347,8 +2347,10 @@ def api_indicadores_engenharia():
         conn = sqlite3.connect('ippel_system.db')
         cursor = conn.cursor()
         
-        # Buscar TODAS as RNCs relacionadas à engenharia
-        # Removido filtro de status para pegar todas as RNCs (finalizadas ou não)
+        # Calcular data limite (últimos 12 meses)
+        twelve_months_ago = (datetime.now() - timedelta(days=365)).strftime('%Y-%m-%d')
+        
+        # Buscar RNCs da engenharia dos últimos 12 meses
         cursor.execute("""
             SELECT 
                 id, rnc_number, title, equipment, client, priority, status,
@@ -2361,8 +2363,12 @@ def api_indicadores_engenharia():
                 OR LOWER(TRIM(signature_engineering_name)) LIKE '%engenharia%'
             )
             AND (is_deleted = 0 OR is_deleted IS NULL)
+            AND (
+                (finalized_at IS NOT NULL AND DATE(finalized_at) >= ?)
+                OR (finalized_at IS NULL AND DATE(created_at) >= ?)
+            )
             ORDER BY COALESCE(finalized_at, created_at) DESC
-        """)
+        """, (twelve_months_ago, twelve_months_ago))
         
         rncs_raw = cursor.fetchall()
         
@@ -2386,11 +2392,15 @@ def api_indicadores_engenharia():
                     price = float(price_str) if price_str else 0.0
             except (ValueError, TypeError):
                 price = 0.0
+            
+            # Filtrar apenas RNCs finalizadas
+            if not finalized_at:
+                continue
                 
             total_value += price
             
-            # CORREÇÃO: Usar created_at como fallback principal (muitas RNCs não têm finalized_at)
-            date_to_use = finalized_at if finalized_at else created_at
+            # Usar apenas finalized_at para RNCs finalizadas
+            date_to_use = finalized_at
             if date_to_use and date_to_use != '':
                 try:
                     # Tentar parse com hora
@@ -2546,7 +2556,10 @@ def api_indicadores_setor():
         conn = sqlite3.connect('ippel_system.db')
         cursor = conn.cursor()
         
-        # Buscar RNCs do setor - busca mais precisa
+        # Calcular data limite (últimos 12 meses)
+        twelve_months_ago = (datetime.now() - timedelta(days=365)).strftime('%Y-%m-%d')
+        
+        # Buscar RNCs do setor - busca mais precisa, limitada aos últimos 12 meses
         if setor in ['usinagem_plana', 'usin_cilindrica_cnc', 'usin_cilindrica_convencional', 
                      'caldeiraria_carbono', 'caldeiraria_inox', 'corte', 'montagem', 'pintura', 'balanceamento']:
             # Para setores específicos de produção, buscar apenas no campo 'setor'
@@ -2557,8 +2570,12 @@ def api_indicadores_setor():
                 FROM rncs 
                 WHERE LOWER(TRIM(setor)) LIKE ?
                 AND (is_deleted = 0 OR is_deleted IS NULL)
+                AND (
+                    (finalized_at IS NOT NULL AND DATE(finalized_at) >= ?)
+                    OR (finalized_at IS NULL AND DATE(created_at) >= ?)
+                )
                 ORDER BY COALESCE(finalized_at, created_at) DESC
-            """, (f'%{setor_nome.lower()}%',))
+            """, (f'%{setor_nome.lower()}%', twelve_months_ago, twelve_months_ago))
         else:
             # Para setores gerais, buscar em ambos os campos
             cursor.execute("""
@@ -2571,8 +2588,12 @@ def api_indicadores_setor():
                     OR LOWER(TRIM(setor)) LIKE ?
                 )
                 AND (is_deleted = 0 OR is_deleted IS NULL)
+                AND (
+                    (finalized_at IS NOT NULL AND DATE(finalized_at) >= ?)
+                    OR (finalized_at IS NULL AND DATE(created_at) >= ?)
+                )
                 ORDER BY COALESCE(finalized_at, created_at) DESC
-            """, (f'%{setor_nome.lower()}%', f'%{setor_nome.lower()}%'))
+            """, (f'%{setor_nome.lower()}%', f'%{setor_nome.lower()}%', twelve_months_ago, twelve_months_ago))
         
         rncs_raw = cursor.fetchall()
         
@@ -2596,10 +2617,14 @@ def api_indicadores_setor():
             except:
                 price = 0
             
+            # Filtrar apenas RNCs finalizadas
+            if not finalized_at:
+                continue
+            
             total_value += price
             
-            # CORREÇÃO: Usar created_at como fallback (muitas RNCs não têm finalized_at)
-            date_to_use = finalized_at if finalized_at else created_at
+            # Usar apenas finalized_at para RNCs finalizadas
+            date_to_use = finalized_at
             if date_to_use and date_to_use != '':
                 try:
                     if isinstance(date_to_use, str):

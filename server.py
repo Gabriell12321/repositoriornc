@@ -5,6 +5,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import os
 import json
+import uuid
 from datetime import datetime
 
 # Importar blueprint de field_locks
@@ -21,12 +22,12 @@ app.register_blueprint(field_locks_bp)
 def test_blueprint():
     return jsonify({'message': 'Blueprint field_locks funcionando!', 'routes': [rule.rule for rule in app.url_map.iter_rules()]})
 
-# Configurações de E-mail
+# Configurações de E-mail (ler de variáveis de ambiente quando disponível)
 EMAIL_CONFIG = {
-    'smtp_server': 'smtp.gmail.com',  # Para Outlook: 'smtp-mail.outlook.com'
-    'smtp_port': 587,
-    'email': 'seu-email@gmail.com',  # ⚠️ MUDE PARA SEU E-MAIL REAL
-    'password': 'sua-senha-de-app'   # ⚠️ MUDE PARA SUA SENHA DE APP
+    'smtp_server': os.getenv('SMTP_SERVER', 'smtp.gmail.com'),  # Para Outlook: use 'smtp-mail.outlook.com'
+    'smtp_port': int(os.getenv('SMTP_PORT', 587)),
+    'email': os.getenv('SMTP_USER', 'seu-email@gmail.com'),
+    'password': os.getenv('SMTP_PASS', 'sua-senha-de-app')
 }
 
 # Para Outlook/Hotmail, descomente as linhas abaixo:
@@ -52,7 +53,8 @@ def send_email(recipient_email, subject, content, email_type):
         msg['To'] = recipient_email
         msg['Subject'] = subject
         msg['Reply-To'] = EMAIL_CONFIG['email']
-        msg['Message-ID'] = f"<{id.uuid4()}@{EMAIL_CONFIG['email']}>"
+        # Usar UUID para Message-ID
+        msg['Message-ID'] = f"<{uuid.uuid4()}@{EMAIL_CONFIG['email']}>"
 
         # Versão texto simples
         text_content = content

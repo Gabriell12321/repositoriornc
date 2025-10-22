@@ -248,6 +248,75 @@
         }
     });
 
+    // Diagnóstico leve para Chart.js — tenta criar um gráfico de teste na página /dashboard
+    document.addEventListener('DOMContentLoaded', function() {
+        try {
+            if (typeof location !== 'undefined' && location.pathname && location.pathname.indexOf('/dashboard') !== -1) {
+                console.log('[DIAG] Iniciando diagnóstico de Chart.js...');
+                console.log('[DIAG] Chart typeof ->', typeof Chart, 'version ->', (typeof Chart !== 'undefined' && Chart.version) ? Chart.version : 'n/a');
+                try {
+                    const canvas = document.createElement('canvas');
+                    canvas.id = '__ippel_diag_chart__';
+                    canvas.style.display = 'none';
+                    document.body.appendChild(canvas);
+                    const ctx = canvas.getContext('2d');
+                    let created = false;
+                    try {
+                        const tmp = new Chart(ctx, { type: 'bar', data: { labels: ['d'], datasets: [{ data: [1] }] }, options: { responsive: false } });
+                        created = true;
+                        try { tmp.destroy(); } catch(_){}
+                    } catch (err) {
+                        console.error('[DIAG] Falha ao criar chart de teste:', err);
+                    } finally {
+                        try { document.body.removeChild(canvas); } catch(_){}
+                    }
+                    console.log('[DIAG] canvases count:', document.querySelectorAll('canvas').length, 'created_ok:', created);
+                } catch (e) {
+                    console.warn('[DIAG] Erro no diagnóstico Chart.js:', e);
+                }
+            }
+        } catch (e) {}
+    });
+
+    // Hook avançado: intercepta todas as criações de Chart para log detalhado (diagnóstico)
+    document.addEventListener('DOMContentLoaded', function() {
+        try {
+            if (typeof Chart !== 'undefined') {
+                try {
+                    const ChartProxy = new Proxy(Chart, {
+                        construct(target, args, newTarget) {
+                            try {
+                                const ctx = args[0];
+                                const config = args[1] || {};
+                                let canvas = null;
+                                try {
+                                    if (ctx && ctx.canvas) canvas = ctx.canvas;
+                                    else if (typeof ctx === 'string') canvas = document.getElementById(ctx);
+                                } catch(_){}
+                                const canvasId = canvas && canvas.id ? canvas.id : '(no-id)';
+                                console.log('[CHARTHOOK] creating Chart: canvas=', canvasId, 'type=', config.type || '(unspecified)');
+                                const result = Reflect.construct(target, args, newTarget);
+                                return result;
+                            } catch (err) {
+                                console.error('[CHARTHOOK] error during Chart construction:', err, args && args[1]);
+                                throw err;
+                            }
+                        }
+                    });
+                    // copy static properties if needed (Proxy forwards most statics)
+                    window.Chart = ChartProxy;
+                    console.log('[CHARTHOOK] Chart proxy installed');
+                } catch (e) {
+                    console.warn('[CHARTHOOK] falha ao instalar proxy:', e);
+                }
+            } else {
+                console.warn('[CHARTHOOK] Chart não está definido no momento do hook');
+            }
+        } catch (e) {
+            console.warn('[CHARTHOOK] erro inesperado ao instalar hook:', e);
+        }
+    });
+
     // Expor funções para uso global
     window.IPPELApp = {
         loadFormData,

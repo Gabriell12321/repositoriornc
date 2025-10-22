@@ -2041,27 +2041,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 return (isFinite(num) && !isNaN(num)) ? Math.max(0, num) : 0;
             });
             
-            departmentChart = new Chart(ctx, {
-                type: 'polarArea',
+            criticalChart = new Chart(ctx, {
+                type: 'bar',
                 data: {
-                    labels: Object.keys(data),
+                    labels: data.labels,
                     datasets: [{
-                        data: sanitizedValues,
+                        label: 'Dias Pendentes',
+                        data: data.values,
                         backgroundColor: [
+                            'rgba(220, 53, 69, 0.9)',
                             'rgba(220, 53, 69, 0.8)',
-                            'rgba(0, 123, 255, 0.8)',
-                            'rgba(40, 167, 69, 0.8)',
-                            'rgba(255, 193, 7, 0.8)',
-                            'rgba(108, 117, 125, 0.8)',
-                            'rgba(23, 162, 184, 0.8)',
-                            'rgba(111, 66, 193, 0.8)',
-                            'rgba(253, 126, 20, 0.8)'
+                            'rgba(220, 53, 69, 0.7)',
+                            'rgba(220, 53, 69, 0.6)',
+                            'rgba(220, 53, 69, 0.5)'
                         ],
-                        borderWidth: 2,
-                        borderColor: '#fff'
+                        borderColor: '#dc3545',
+                        borderWidth: 1,
+                        borderRadius: 4
                     }]
                 },
                 options: {
+                    indexAxis: 'y',
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
@@ -2130,7 +2130,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             criticalChart = new Chart(ctx, {
-                type: 'horizontalBar',
+                type: 'bar',
                 data: {
                     labels: data.labels,
                     datasets: [{
@@ -2149,9 +2149,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     }]
                 },
                 options: {
+                    indexAxis: 'y',
                     responsive: true,
                     maintainAspectRatio: false,
-                    indexAxis: 'y',
                     plugins: {
                         legend: {
                             display: false

@@ -13,26 +13,26 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js" defer crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="{{ asset_url('js/app.js') }}" defer></script>
     <script>
-      // ===== FUNÃ‡ÃƒO GLOBAL PARA ALTERNAR ABAS =====
-      // Declarada PRIMEIRO para estar sempre disponÃ­vel
+      // ===== FUNÇÃO GLOBAL PARA ALTERNAR ABAS =====
+      // Declarada PRIMEIRO para estar sempre disponível
       window.switchTab = function(tab) {
           console.log(`ðŸ”„ Alternando para aba: ${tab}`);
           
-          // Remover classe active de todos os botÃµes
+          // Remover classe active de todos os botões
           document.querySelectorAll('.tab-button').forEach(btn => {
               btn.classList.remove('active');
           });
           
-          // Adicionar classe active ao botÃ£o clicado
+          // Adicionar classe active ao botão clicado
           const activeButton = document.querySelector(`[data-tab="${tab}"]`);
           if (activeButton) {
               activeButton.classList.add('active');
-              console.log(`âœ… BotÃ£o ${tab} ativado`);
+              console.log(`✅ Botão ${tab} ativado`);
           } else {
               console.error(`âŒ BotÃ£o ${tab} nÃ£o encontrado`);
           }
           
-          // Verificar se variÃ¡veis globais existem
+          // Verificar se variáveis globais existem
           if (typeof window.currentTab !== 'undefined') {
               window.currentTab = tab;
           }
@@ -50,7 +50,7 @@
               }
           }
           
-          // Mostrar/ocultar contÃªineres baseado na aba
+          // Mostrar/ocultar contêineres baseado na aba
           const containers = {
               'active': 'rncsContainer',
               'finalized': 'rncsContainer', 
@@ -58,7 +58,7 @@
               'lev1415': 'lev1415Container'
           };
           
-          // Ocultar todos os contÃªineres
+          // Ocultar todos os contêineres
           Object.values(containers).forEach(containerId => {
               const container = document.getElementById(containerId);
               if (container) {
@@ -66,7 +66,7 @@
               }
           });
           
-          // Mostrar contÃªiner da aba ativa
+          // Mostrar contêiner da aba ativa
           const activeContainerId = containers[tab];
           const activeContainer = document.getElementById(activeContainerId);
           if (activeContainer) {
@@ -74,10 +74,10 @@
               console.log(`ðŸ‘ï¸ Container ${activeContainerId} exibido`);
           }
           
-          // AÃ§Ãµes especÃ­ficas por aba (quando DOM estiver pronto)
+          // Ações específicas por aba (quando DOM estiver pronto)
           setTimeout(() => {
               if (tab === 'charts') {
-                  console.log('ðŸ“Š Carregando grÃ¡ficos...');
+                  console.log('📊 Carregando gráficos...');
                   if (typeof window.loadChartData === 'function') {
                       window.loadChartData();
                   }
@@ -96,13 +96,13 @@
           }, 100);
       };
       
-      // Garantir que a funÃ§Ã£o estÃ¡ disponÃ­vel globalmente
+      // Garantir que a função está disponível globalmente
       window.switchTab = window.switchTab;
       console.log('âœ… switchTab function defined globally:', typeof window.switchTab);
       
       // ===== DADOS GLOBAIS DE LEVANTAMENTO =====
       // Declarar apenas UMA vez no escopo global
-      var REAL_LEVANTAMENTO_DATA = null; // SerÃ¡ preenchido mais adiante
+      var REAL_LEVANTAMENTO_DATA = null; // Será preenchido mais adiante
       
       // ===== DADOS GLOBAIS DE LEVANTAMENTO =====
       // Declarados apenas UMA vez no escopo global
@@ -118,7 +118,7 @@
           const raw = localStorage.getItem(DASH_CACHE_KEY);
           if (!raw) return null;
           const data = JSON.parse(raw);
-          return data; // sem expirar agressivamente; servidor jÃ¡ tem cache prÃ³prio
+          return data; // sem expirar agressivamente; servidor já tem cache próprio
         } catch(e) { return null; }
       }
     </script>
@@ -1177,11 +1177,11 @@
                         </div>
                         <div class="filter-group">
                             <label for="filterPriority">Prioridade:</label>
-                            <input type="text" id="filterPriority" placeholder="Baixa/MÃ©dia/Alta/CrÃ­tica" onkeyup="applyFilters()">
+                            <input type="text" id="filterPriority" placeholder="Baixa/Média/Alta/Crítica" onkeyup="applyFilters()">
                         </div>
                         <div class="filter-group">
-                            <label for="filterResponsible">ResponsÃ¡vel:</label>
-                            <input type="text" id="filterResponsible" placeholder="Nome do responsÃ¡vel" onkeyup="applyFilters()">
+                            <label for="filterResponsible">Responsável:</label>
+                            <input type="text" id="filterResponsible" placeholder="Nome do responsável" onkeyup="applyFilters()">
                         </div>
                     </div>
                 </div>
@@ -1714,7 +1714,7 @@
                     }
                 } else {
                     console.error('âŒ Erro na resposta da API:', data && data.message);
-                    // evita loop de redirect se sessÃ£o nÃ£o existir
+                    // evita loop de redirect se sessão não existir
                     const el = document.getElementById('userName');
                     if (el) el.textContent = 'NÃ£o autenticado';
                 }
@@ -2005,7 +2005,7 @@
         }
         
         async function deleteRNC(rncId) {
-            if (!confirm('Tem certeza que deseja excluir definitivamente este RNC? Esta aÃ§Ã£o nÃ£o poderÃ¡ ser desfeita.')) return;
+            if (!confirm('Tem certeza que deseja excluir definitivamente este RNC? Esta ação não poderá ser desfeita.')) return;
             
             try {
                 const response = await fetch(`/api/rnc/${rncId}/delete`, { method: 'DELETE' });
@@ -2080,7 +2080,7 @@
         let notifications = [];
         let notificationCount = 0;
         
-        // Carregar notificaÃ§Ãµes nÃ£o lidas
+        // Carregar notificações não lidas
         async function loadNotifications() {
             try {
                 const base = window.location.origin;
@@ -2198,7 +2198,7 @@
             try {
                 notificationSound = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT');
             } catch (e) {
-                console.log('Som de notificaÃ§Ã£o nÃ£o pÃ´de ser carregado');
+                console.log('Som de notificação não pôde ser carregado');
             }
         }
         
@@ -2862,7 +2862,7 @@
         let currentModalChart = null;
         
         function openChartModal(title, chartId) {
-            // Definir o tÃ­tulo do modal
+            // Definir o título do modal
             document.getElementById('chartModalTitle').textContent = title;
             
             // Exibir o modal
@@ -3058,7 +3058,7 @@
                         };
                     }
                     
-                    // Adicionar tÃ­tulo
+                    // Adicionar título
                     config.options.plugins.title = {
                         display: true,
                         text: title,
@@ -3206,7 +3206,7 @@
             if (chartsContainer) {
                 if (tab === 'charts') {
                     chartsContainer.style.display = 'block';
-                    console.log('ðŸ“Š Carregando grÃ¡ficos...');
+                    console.log('📊 Carregando gráficos...');
                     loadChartData();
                 } else {
                     chartsContainer.style.display = 'none';
@@ -3472,7 +3472,7 @@
                 'Transporte': '#6c757d'
             };
             
-            // Atualizar tÃ­tulo
+            // Atualizar título
             if (titleEl) {
                 const yearText = selectedYear ? ` - ${selectedYear}` : ' (2014-2015)';
                 titleEl.textContent = `ðŸ“Š Uso de RNCs por Departamento (%)${yearText}`;
@@ -3622,7 +3622,7 @@
                 window.LEV1415_ROWS = data2014;
                 window.LEV1515_ROWS = data2015;
                 
-                // Atualizar tÃ­tulo da tabela para exibiÃ§Ã£o padrÃ£o
+                // Atualizar título da tabela para exibiÃ§Ã£o padrÃ£o
                 const tableTitle = document.getElementById('levTableTitle');
                 if (tableTitle) {
                     tableTitle.textContent = 'ðŸ“‹ Tabela 2014-2015 (HistÃ³rico)';
@@ -13633,7 +13633,7 @@
                     });
                 }
                 
-                // Atualizar grÃ¡fico por departamento do Ãºltimo mÃªs com dados nÃ£o zero
+                // Atualizar gráfico por departamento do último mês com dados não zero
                 const last = mockData.slice().reverse().find(r => (r && r['Total'] > 0)) || mockData[mockData.length - 1] || {};
                 const depts = ['ProduÃ§Ã£o','Engenharia','Terceiros','Compras','Comercial','PCP','ExpediÃ§Ã£o','Qualidade','Transporte'];
                 const ctx2 = document.getElementById('levPorDept');

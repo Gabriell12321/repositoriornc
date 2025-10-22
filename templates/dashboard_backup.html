@@ -1759,7 +1759,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             criticalChart = new Chart(ctx, {
-                type: 'horizontalBar',
+                type: 'bar',
                 data: {
                     labels: data.labels,
                     datasets: [{
@@ -1778,9 +1778,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     }]
                 },
                 options: {
+                    indexAxis: 'y',
                     responsive: true,
                     maintainAspectRatio: false,
-                    indexAxis: 'y',
                     plugins: {
                         legend: {
                             display: false
