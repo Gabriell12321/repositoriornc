@@ -154,6 +154,66 @@
                 select.appendChild(opt);
             });
         }
+
+        async function ensureSectorsLoaded() {
+            if (window._allSectorsForFilters && window._allSectorsForFilters.length > 0) {
+                console.log('✅ Setores já carregados:', window._allSectorsForFilters.length);
+                return window._allSectorsForFilters;
+            }
+            
+            try {
+                console.log('📊 Buscando setores das RNCs...');
+                const response = await fetch('/api/rnc/list?tab=finalized&limit=5000');
+                const data = await response.json();
+                
+                console.log('📊 Resposta recebida para setores:', data);
+                console.log('📊 Total de RNCs:', data?.rncs?.length || 0);
+                
+                if (data && Array.isArray(data.rncs)) {
+                    const sectorsSet = new Set();
+                    
+                    data.rncs.forEach((rnc, index) => {
+                        if (index === 0) {
+                            console.log('📊 Amostra da primeira RNC (setores):', rnc);
+                        }
+                        
+                        const sectorName = rnc.setor || rnc.department || rnc.sector;
+                        if (sectorName && sectorName.trim() !== '') {
+                            sectorsSet.add(sectorName.trim());
+                        }
+                    });
+                    
+                    window._allSectorsForFilters = Array.from(sectorsSet).sort().map(name => ({
+                        name: name
+                    }));
+                    
+                    console.log('✅ Setores únicos encontrados:', window._allSectorsForFilters.length);
+                    console.log('✅ Lista de setores:', window._allSectorsForFilters);
+                    
+                    return window._allSectorsForFilters;
+                }
+            } catch(err) {
+                console.error('❌ Erro ao carregar setores:', err);
+            }
+            
+            return [];
+        }
+
+        async function ensureSectorsLoadedSelect() {
+            const select = document.getElementById('filterDepartment');
+            if (!select) return;
+            
+            if (select.options.length > 1) return;
+            
+            const sectors = await ensureSectorsLoaded();
+            
+            sectors.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.name || '';
+                opt.textContent = s.name || '';
+                select.appendChild(opt);
+            });
+        }
     </script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -1634,7 +1694,9 @@
                         </div>
                         <div class="filter-group">
                             <label for="filterDepartment">Setor:</label>
-                            <input type="text" id="filterDepartment" placeholder="Digite o setor" onkeyup="applyFilters()">
+                            <select id="filterDepartment" style="padding:6px 8px; border:1px solid #ddd; border-radius:6px; min-width:220px;" onchange="applyFilters()" onfocus="ensureSectorsLoadedSelect()">
+                                <option value="">Selecione o setor</option>
+                            </select>
                         </div>
                         <div class="filter-group">
                             <label for="filterPriority">Prioridade:</label>
@@ -5045,6 +5107,16 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
                 console.error('❌ AdvancedCharts não disponível!');
             }
             
+            // Pré-carregar clientes e setores para os filtros
+            setTimeout(() => {
+                ensureClientsLoaded().then(() => {
+                    console.log('✅ Clientes pré-carregados para filtros');
+                });
+                ensureSectorsLoaded().then(() => {
+                    console.log('✅ Setores pré-carregados para filtros');
+                });
+            }, 1000);
+            
             try {
                 // 1) Pintar imediatamente a partir do cache (se houver)
                 const dc = loadDashboardCache();
@@ -5879,9 +5951,10 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
             if (currentTab === 'finalized' && rncsData.finalized) {
                 filteredRNCs = rncsData.finalized.filter(rnc => {
                     const matchesRncNumber = !rncNumber || rnc.rnc_number.toLowerCase().includes(rncNumber);
-                    const matchesClient = !client || (rnc.client && rnc.client.toLowerCase().includes(client));
+                    const clientField = rnc.cliente || rnc.client || '';
+                    const matchesClient = !client || (clientField && clientField.toLowerCase().includes(client));
                     const matchesEquipment = !equipment || (rnc.equipment && rnc.equipment.toLowerCase().includes(equipment));
-                    const matchesDepartment = !department || (rnc.user_department && rnc.user_department.toLowerCase().includes(department));
+                    const matchesDepartment = !department || (rnc.setor && rnc.setor.toLowerCase().includes(department));
                     const matchesCV = !cv || (rnc.cv && rnc.cv.toLowerCase().includes(cv));
                     const matchesDrawing = !drawing || (rnc.drawing && rnc.drawing.toLowerCase().includes(drawing));
                     
@@ -5918,9 +5991,10 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
             const f = currentFilters || {};
             return (list || []).filter(rnc => {
                 const matchesNumber = !f.rncNumber || rnc.rnc_number?.toLowerCase().includes(f.rncNumber);
-                const matchesClient = !f.client || (rnc.client && rnc.client.toLowerCase().includes(f.client));
+                const clientField = rnc.cliente || rnc.client || '';
+                const matchesClient = !f.client || (clientField && clientField.toLowerCase().includes(f.client));
                 const matchesEquip = !f.equipment || (rnc.equipment && rnc.equipment.toLowerCase().includes(f.equipment));
-                const matchesDept = !f.department || (rnc.user_department && rnc.user_department.toLowerCase().includes(f.department));
+                const matchesDept = !f.department || (rnc.setor && rnc.setor.toLowerCase().includes(f.department));
                 const matchesPriority = !f.priority || (rnc.priority && rnc.priority.toLowerCase().includes(f.priority));
                 const matchesResp = !f.responsible || (rnc.user_name && rnc.user_name.toLowerCase().includes(f.responsible));
                 return matchesNumber && matchesClient && matchesEquip && matchesDept && matchesPriority && matchesResp;
