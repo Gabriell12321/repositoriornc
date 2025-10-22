@@ -28,7 +28,6 @@
             
             console.warn = function(...args) {
                 const msg = args && args[0] ? String(args[0]) : '';
-                // Silenciar warnings de extensões também
                 if (msg.includes('attribute d') || 
                     msg.includes('Expected number') ||
                     msg.includes('translateContent') ||
@@ -42,290 +41,146 @@
             };
         })();
     </script>
-    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
-    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
-    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="{{ asset_url('js/charts-advanced.js') }}" defer></script>
-    <!-- Socket.IO - CDN oficial sem integrity -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js" defer crossorigin="anonymous"></script>
-    <script src="{{ asset_url('js/app.js') }}" defer></script>
-    <link rel="stylesheet" href="{{ asset_url('css/avatar.css') }}">
-    <script src="{{ asset_url('js/avatar.js') }}" defer></script>
-    <!-- Permissões do usuário são usadas diretamente via Jinja nas seções abaixo -->
     <script>
-      // Utilidades de cache para carregamento imediato
-      const DASH_CACHE_KEY = 'dashboardCacheV1';
-      function saveDashboardCache(payload){
-        try { localStorage.setItem(DASH_CACHE_KEY, JSON.stringify({ ...payload, ts: Date.now() })); } catch(e) {}
-      }
-      function loadDashboardCache(){
-        try {
-          const raw = localStorage.getItem(DASH_CACHE_KEY);
-          if (!raw) return null;
-          const data = JSON.parse(raw);
-          return data; // sem expirar agressivamente; servidor já tem cache próprio
-        } catch(e) { return null; }
-      }
-    </script>
-    <script>
-      // Função switchTab completa e corrigida para RNCs Mensais por Setor
-      window.switchTab = function(tab) {
-          try {
-              console.log('🔄 Mudando para aba:', tab);
-              
-              // Atualiza estado visual dos botões
-              document.querySelectorAll('.tab-button').forEach(function(btn) { 
-                  btn.classList.remove('active'); 
-              });
-              var btn = document.querySelector('[data-tab="' + tab + '"]') || document.querySelector('.tab-button[onclick*="' + tab + '"]');
-              if (btn) btn.classList.add('active');
+        async function openClientSuggestions() {
+            const clients = await ensureClientsLoaded();
+            const box = document.getElementById('filterClientSuggestions');
+            if (!box) return;
+            populateClientSuggestions(clients);
+            box.style.display = 'block';
+            setTimeout(()=>{
+                document.addEventListener('click', _closeClientSuggestionsOnClick);
+            }, 10);
+        }
 
-              // Mapear containers corretamente
-              var containers = { 
-                  'active': 'rncsContainer', 
-                  'engenharia': 'rncsContainer', 
-                  'finalized': 'rncsContainer', 
-                  'lev1415': 'lev1415Container', 
-                  'charts': 'chartsContainer',
-                  'evidencias': 'evidenciasContainer',
-                  'setores': 'setoresCharts' // CORRIGIDO: Mapear para o container correto dos gráficos de setores
-              };
-              
-              // Ocultar todos os containers
-              Object.keys(containers).forEach(function(key) {
-                  var el = document.getElementById(containers[key]);
-                  if (el) {
-                      el.style.display = 'none';
-                      console.log('📦 Ocultando container:', containers[key]);
-                  }
-              });
-              
-              // Mostrar container da aba selecionada
-              var targetId = containers[tab];
-              if (targetId) {
-                  var target = document.getElementById(targetId);
-                  if (target) {
-                      target.style.display = 'block';
-                      console.log('✅ Mostrando container:', targetId);
-                      
-                      // Carregar dados específicos da aba
-                      if (tab === 'setores') {
-                          console.log('📊 Iniciando carregamento dos gráficos de setores...');
-                          // Resetar seleção de setor
-                          var setorSelect = document.getElementById('setorSelect');
-                          if (setorSelect) {
-                              setorSelect.value = '';
-                          }
-                          // Ocultar informações do indicador até selecionar um setor
-                          var setorIndicadorInfo = document.getElementById('setorIndicadorInfo');
-                          if (setorIndicadorInfo) {
-                              setorIndicadorInfo.style.display = 'none';
-                          }
-                          var setorChartsContainer = document.getElementById('setorChartsContainer');
-                          if (setorChartsContainer) {
-                              setorChartsContainer.style.display = 'none';
-                          }
-                      } else if (tab === 'evidencias') {
-                          if (typeof window.loadEvidencias === 'function') {
-                              window.loadEvidencias();
-                          }
-                      } else if (tab === 'lev1415') {
-                          if (typeof window.loadLev1415 === 'function') {
-                              window.loadLev1415();
-                          }
-                      } else if (tab === 'finalized') {
-                          // Mostrar filtros para aba finalizados
-                          var filtersContainer = document.getElementById('filtersContainer');
-                          if (filtersContainer) {
-                              filtersContainer.style.display = 'block';
-                          }
-                          if (typeof window.loadRNCs === 'function') {
-                              window.loadRNCs(tab);
-                          }
-                      } else {
-                          // Ocultar filtros para outras abas
-                          var filtersContainer = document.getElementById('filtersContainer');
-                          if (filtersContainer) {
-                              filtersContainer.style.display = 'none';
-                          }
-                          
-                          // Mostrar/ocultar subtópicos para aba active
-                          var activeSubtopicsContainer = document.getElementById('activeSubtopicsContainer');
-                          if (activeSubtopicsContainer) {
-                              activeSubtopicsContainer.style.display = (tab === 'active') ? 'block' : 'none';
-                          }
-                          
-                          if (typeof window.loadRNCs === 'function') {
-                              window.loadRNCs(tab);
-                          }
-                      }
-                  }
-              }
-      
-              // Atualiza variável global
-              window.currentTab = tab;
-              
-              console.log('✅ Aba alterada para:', tab);
-          } catch(e) {
-              console.error('❌ Erro em switchTab:', e);
-          }
-      };
-      
-      // ==========================================
-      // SISTEMA DE SUBTÓPICOS PARA RNCs ATIVAS
-      // ==========================================
-      
-      // Variável global para armazenar o subtópico atual
-      window.currentActiveSubtopic = 'all';
-      
-      // Função para determinar o status de uma RNC
-      window.getRNCStatus = function(rnc) {
-          if (!rnc) return 'awaiting-response';
-          
-          // Verificar se tem assinatura do Gerente do Setor (signature_inspection_name)
-          const hasGerenteSignature = rnc.signature_inspection_name && 
-                                      rnc.signature_inspection_name !== 'NOME' &&
-                                      rnc.signature_inspection_name.trim() !== '';
-          
-          // Verificar se tem assinatura do Causador (signature_inspection2_name)
-          const hasCausadorSignature = rnc.signature_inspection2_name && 
-                                       rnc.signature_inspection2_name !== 'NOME' &&
-                                       rnc.signature_inspection2_name.trim() !== '';
-          
-          // Verificar se tem valor total preenchido
-          const hasValue = rnc.price && parseFloat(rnc.price) > 0;
-          
-          // Lógica de status:
-          // 1. Se não tem assinaturas → Aguardando Resposta
-          // 2. Se tem assinaturas mas não tem valor → Aguardando Valor
-          // 3. Se tem assinaturas E valor → Aguardando Finalização
-          
-          if (!hasGerenteSignature && !hasCausadorSignature) {
-              return 'awaiting-response';
-          } else if ((hasGerenteSignature || hasCausadorSignature) && !hasValue) {
-              return 'awaiting-value';
-          } else if (hasValue) {
-              return 'awaiting-finalization';
-          }
-          
-          return 'awaiting-response';
-      };
-      
-      // Função para trocar de subtópico
-      window.switchActiveSubtopic = function(subtopic) {
-          try {
-              console.log('🔄 Mudando para subtópico:', subtopic);
-              
-              // Atualizar estado visual dos botões
-              document.querySelectorAll('.subtopic-button').forEach(function(btn) {
-                  btn.classList.remove('active');
-              });
-              var btn = document.querySelector('[data-subtopic="' + subtopic + '"]');
-              if (btn) btn.classList.add('active');
-              
-              // Atualizar variável global
-              window.currentActiveSubtopic = subtopic;
-              
-              // Re-renderizar RNCs filtradas
-              if (typeof window.renderRNCs === 'function' && window.rncsData && window.rncsData.active) {
-                  window.renderRNCs('active');
-              }
-              
-              console.log('✅ Subtópico alterado para:', subtopic);
-          } catch(e) {
-              console.error('❌ Erro em switchActiveSubtopic:', e);
-          }
-      };
-      
-      // Função para filtrar RNCs por subtópico
-      window.filterBySubtopic = function(rncs) {
-          if (!rncs || rncs.length === 0) return [];
-          if (window.currentActiveSubtopic === 'all') return rncs;
-          
-          return rncs.filter(function(rnc) {
-              var status = window.getRNCStatus(rnc);
-              return status === window.currentActiveSubtopic;
-          });
-      };
-      
-      // Função para atualizar contadores de subtópicos
-      window.updateSubtopicCounts = function(rncs) {
-          if (!rncs || rncs.length === 0) {
-              document.getElementById('count-subtopic-all').textContent = '0';
-              document.getElementById('count-subtopic-awaiting-response').textContent = '0';
-              document.getElementById('count-subtopic-awaiting-value').textContent = '0';
-              document.getElementById('count-subtopic-awaiting-finalization').textContent = '0';
-              return;
-          }
-          
-          var counts = {
-              'awaiting-response': 0,
-              'awaiting-value': 0,
-              'awaiting-finalization': 0
-          };
-          
-          rncs.forEach(function(rnc) {
-              var status = window.getRNCStatus(rnc);
-              if (counts[status] !== undefined) {
-                  counts[status]++;
-              }
-          });
-          
-          document.getElementById('count-subtopic-all').textContent = rncs.length;
-          document.getElementById('count-subtopic-awaiting-response').textContent = counts['awaiting-response'];
-          document.getElementById('count-subtopic-awaiting-value').textContent = counts['awaiting-value'];
-          document.getElementById('count-subtopic-awaiting-finalization').textContent = counts['awaiting-finalization'];
-      };
-      
-      // Função para obter badge HTML do status
-      window.getStatusBadgeHTML = function(status) {
-          var badges = {
-              'awaiting-response': '<div class="rnc-status-badge awaiting-response">⏳ Aguardando Resposta</div>',
-              'awaiting-value': '<div class="rnc-status-badge awaiting-value">💰 Aguardando Valor</div>',
-              'awaiting-finalization': '<div class="rnc-status-badge awaiting-finalization">✅ Aguardando Finalização</div>'
-          };
-          return badges[status] || '';
-      };
+        function _closeClientSuggestionsOnClick(e){
+            const box = document.getElementById('filterClientSuggestions');
+            const input = document.getElementById('filterClient');
+            if (!box || !input) return;
+            if (box.contains(e.target) || input === e.target) return;
+            box.style.display = 'none';
+            document.removeEventListener('click', _closeClientSuggestionsOnClick);
+        }
+
+        function populateClientSuggestions(list){
+            const box = document.getElementById('filterClientSuggestions');
+            if (!box) return;
+            box.innerHTML = '';
+            if (!Array.isArray(list) || list.length === 0) {
+                box.innerHTML = '<div style="padding:10px;color:#666">Nenhum cliente</div>';
+                return;
+            }
+            list.slice(0,200).forEach(c=>{
+                const row = document.createElement('div');
+                row.style.padding = '8px 10px';
+                row.style.cursor = 'pointer';
+                row.style.borderBottom = '1px solid #f3f3f3';
+                row.textContent = c.name || '';
+                row.onclick = function(){
+                    const input = document.getElementById('filterClient');
+                    if (input) input.value = c.name || '';
+                    const sug = document.getElementById('filterClientSuggestions');
+                    if (sug) sug.style.display = 'none';
+                    applyFilters();
+                };
+                box.appendChild(row);
+            });
+        }
+
+        function filterClientSuggestions(q){
+            const list = window._allClientsForFilters || [];
+            if (!q) return populateClientSuggestions(list);
+            const lower = q.toLowerCase();
+            const filtered = list.filter(c => (c.name||'').toLowerCase().includes(lower));
+            populateClientSuggestions(filtered);
+        }
+
+        async function ensureClientsLoaded() {
+            if (window._allClientsForFilters && window._allClientsForFilters.length > 0) {
+                console.log('✅ Clientes já carregados:', window._allClientsForFilters.length);
+                return window._allClientsForFilters;
+            }
+            
+            try {
+                console.log('📊 Buscando clientes das RNCs...');
+                const response = await fetch('/api/rnc/list?tab=finalized&limit=5000');
+                const data = await response.json();
+                
+                console.log('📊 Resposta recebida:', data);
+                console.log('📊 Total de RNCs:', data?.rncs?.length || 0);
+                
+                if (data && Array.isArray(data.rncs)) {
+                    const clientsSet = new Set();
+                    
+                    data.rncs.forEach((rnc, index) => {
+                        if (index === 0) {
+                            console.log('📊 Amostra da primeira RNC:', rnc);
+                        }
+                        
+                        const clientName = rnc.cliente || rnc.client || rnc.client_name;
+                        if (clientName && clientName.trim() !== '') {
+                            clientsSet.add(clientName.trim());
+                        }
+                    });
+                    
+                    window._allClientsForFilters = Array.from(clientsSet).sort().map(name => ({
+                        name: name
+                    }));
+                    
+                    console.log('✅ Clientes únicos encontrados:', window._allClientsForFilters.length);
+                    console.log('✅ Lista de clientes:', window._allClientsForFilters);
+                    
+                    return window._allClientsForFilters;
+                }
+            } catch(err) {
+                console.error('❌ Erro ao carregar clientes:', err);
+            }
+            
+            return [];
+        }
+
+        async function ensureClientsLoadedSelect() {
+            const select = document.getElementById('filterClientSelect');
+            if (!select) return;
+            
+            if (select.options.length > 1) return;
+            
+            const clients = await ensureClientsLoaded();
+            
+            clients.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.name || '';
+                opt.textContent = c.name || '';
+                select.appendChild(opt);
+            });
+        }
     </script>
-    <!-- Preload removido - logo carrega rápido sem necessidade de preload -->
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #f5f5f5;
             min-height: 100vh;
             color: #333;
+            margin: 0;
+            padding: 0;
         }
-        
-        .main-container {
-            display: flex;
-            height: 100vh;
-            min-height: 100vh;
-        }
-        
+
         .left-section {
-            flex: 1;
+            flex: 1 1 auto;
             padding: 20px;
             background: white;
             overflow-y: auto;
             overflow-x: hidden;
-            min-width: 0;
-            border-radius: 0 20px 20px 0;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            width: 100%;
         }
         
         .right-section {
-            width: 350px;
-            min-width: 350px;
+            flex: 0 0 380px;
             background: #f8f9fa;
             border-left: 1px solid #dee2e6;
             padding: 20px;
             overflow-y: auto;
-            border-radius: 20px 0 0 20px;
         }
         
         .header {
@@ -429,10 +284,12 @@
                 transform: scale(1) translateY(0);
             }
         }
-        
-        @keyframes fadeOut {
-            from { opacity: 1; }
-            to { opacity: 0; }
+
+        .main-container {
+            display: flex;
+            height: 100vh;
+            min-height: 100vh;
+            width: 100%;
         }
         
         @keyframes progressBar {
@@ -1528,35 +1385,36 @@
     </style>
 </head>
 <body>
+    <!-- Chart.js para gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <!-- jsPDF para exportação de relatórios -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-        <script>
-            // Logo safety: ensure preferred IPPEL logo is used everywhere
-            (function(){
-                function applyLogo(img){
-                    if(!img) return;
-                    if(!img.dataset.logoPrimary){
-                        img.dataset.logoPrimary = '/LOGOIPPEL.JPEG';
-                        img.dataset.logoFallback1 = '/IPPELLOGO.jpg';
-                        img.dataset.logoFallback2 = (typeof flaskUrlForStatic !== 'undefined') ? flaskUrlForStatic('LOGOSQI.jpg') : '/static/LOGOSQI.jpg';
-                    }
-                    if(!/LOGOIPPEL\.JPEG$/i.test(img.src)){
-                        img.src = img.dataset.logoPrimary;
-                    }
-                    img.onerror = function(){
-                        if(this.dataset.try1!=='1'){ this.dataset.try1='1'; this.src=this.dataset.logoFallback1; }
-                        else if(this.dataset.try2!=='1'){ this.dataset.try2='1'; this.src=this.dataset.logoFallback2; }
-                        else { this.style.display='none'; }
-                    };
+    <script>
+        // Logo safety: ensure preferred IPPEL logo is used everywhere
+        (function(){
+            function applyLogo(img){
+                if(!img) return;
+                if(!img.dataset.logoPrimary){
+                    img.dataset.logoPrimary = '/LOGOIPPEL.JPEG';
+                    img.dataset.logoFallback1 = '/IPPELLOGO.jpg';
+                    img.dataset.logoFallback2 = (typeof flaskUrlForStatic !== 'undefined') ? flaskUrlForStatic('LOGOSQI.jpg') : '/static/LOGOSQI.jpg';
                 }
-                window.addEventListener('DOMContentLoaded', function(){
-                    // Apply the auto-swap logic ONLY to explicitly marked images,
-                    // so we can show multiple logos (e.g., IPPEL + SQI) side by side without overriding.
-                    document.querySelectorAll('img.apply-logo, img[data-apply-logo="1"]').forEach(applyLogo);
-                });
-            })();
-        </script>
-
+                if(!/LOGOIPPEL\.JPEG$/i.test(img.src)){
+                    img.src = img.dataset.logoPrimary;
+                }
+                img.onerror = function(){
+                    if(this.dataset.try1!=='1'){ this.dataset.try1='1'; this.src=this.dataset.logoFallback1; }
+                    else if(this.dataset.try2!=='1'){ this.dataset.try2='1'; this.src=this.dataset.logoFallback2; }
+                    else { this.style.display='none'; }
+                };
+            }
+            window.addEventListener('DOMContentLoaded', function(){
+                // Apply the auto-swap logic ONLY to explicitly marked images,
+                // so we can show multiple logos (e.g., IPPEL + SQI) side by side without overriding.
+                document.querySelectorAll('img.apply-logo, img[data-apply-logo="1"]').forEach(applyLogo);
+            });
+        })();
+    </script>
     <div class="main-container">
         <div class="left-section">
             <!-- Header -->
@@ -1615,7 +1473,7 @@
                     </button>
                     {% if user_permissions.canViewEngineeringRncs %}
                     <button class="tab-button" data-tab="setores" onclick="switchTab('setores')">
-                        📊 RNCs Mensais por Setor
+                        RNCs Mensais por Setor
                     </button>
                     {% endif %}
                     {% if user_permissions.canViewFinalizedRncs %}
@@ -1649,7 +1507,7 @@
                             <span class="count" id="count-subtopic-awaiting-response">0</span>
                         </button>
                         <button class="subtopic-button" data-subtopic="awaiting-value" onclick="switchActiveSubtopic('awaiting-value')">
-                            💰 Aguardando Valor
+                            Aguardando Valor
                             <span class="count" id="count-subtopic-awaiting-value">0</span>
                         </button>
                         <button class="subtopic-button" data-subtopic="awaiting-finalization" onclick="switchActiveSubtopic('awaiting-finalization')">
@@ -1743,7 +1601,7 @@
                 <!-- Filtros para aba Finalizados -->
                 <div id="filtersContainer" class="filters-container" style="display: none;">
                     <div class="filters-header">
-                        <h3>🔍 Filtros de Pesquisa</h3>
+                        <h3>Filtros de Pesquisa</h3>
                         <div style="display:flex; gap:8px; align-items:center;">
                             <label style="font-size:12px; color:#495057;">De:</label>
                             <input type="date" id="filterDateStart" onchange="applyFilters()" style="padding:6px 8px; border:1px solid #ddd; border-radius:6px;">
@@ -1764,9 +1622,11 @@
                             <label for="filterRncNumber">N° RNC:</label>
                             <input type="text" id="filterRncNumber" placeholder="Digite o número do RNC" onkeyup="applyFilters()">
                         </div>
-                        <div class="filter-group">
-                            <label for="filterClient">Cliente:</label>
-                            <input type="text" id="filterClient" placeholder="Digite o nome do cliente" onkeyup="applyFilters()">
+                        <div class="filter-group" style="position:relative;">
+                            <label for="filterClientSelect">Cliente:</label>
+                            <select id="filterClientSelect" style="padding:6px 8px; border:1px solid #ddd; border-radius:6px; min-width:220px;" onchange="applyFilters()" onfocus="ensureClientsLoadedSelect()">
+                                <option value="">Selecione o cliente</option>
+                            </select>
                         </div>
                         <div class="filter-group">
                             <label for="filterEquipment">Equipamento:</label>
@@ -2077,103 +1937,16 @@
                 </div>
             </div>
             
-            <!-- Charts específicos da aba RNCs por Setor (acima da tabela) -->
-            <div id="setoresCharts" style="display:none; margin:10px 0 18px 0;">
-                <!-- Seletor de Setor -->
-                <div style="background:#fff; border-radius:12px; padding:14px 16px; box-shadow:0 2px 10px rgba(0,0,0,0.06); margin-bottom:14px;">
-                    <div style="display:flex; gap:10px; align-items:center;">
-                        <label for="setorSelect" style="font-weight:600; font-size:14px; color:#333;">📊 Selecione o Setor:</label>
-                        <select id="setorSelect" style="padding:8px 12px; border:1px solid #ccc; border-radius:8px; font-size:14px; flex:1; max-width:300px;" onchange="loadSetorData()">
-                            <option value="">Selecione...</option>
-                            <option value="engenharia">🔧 Engenharia</option>
-                            <option value="producao">🏭 Produção</option>
-                            <option value="pcp">📋 PCP</option>
-                            <option value="qualidade">✅ Qualidade</option>
-                            <option value="compras">🛒 Compras</option>
-                            <option value="comercial">💼 Comercial</option>
-                            <option value="terceiros">🤝 Terceiros</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <!-- Bloco de Informações do Indicador (exibido acima dos gráficos) -->
-                <div id="setorIndicadorInfo" style="display:none; margin-bottom:16px;">
-                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:12px; margin-bottom:12px;">
-                        <!-- Card Meta -->
-                        <div style="background:linear-gradient(135deg, #667eea, #764ba2); border-radius:12px; padding:16px; box-shadow:0 4px 15px rgba(102,126,234,0.3); color:#fff;">
-                            <div style="font-size:11px; opacity:0.9; margin-bottom:4px; font-weight:600;">🎯 META MENSAL</div>
-                            <div style="font-size:28px; font-weight:700; margin-bottom:2px;"><span id="setorMeta">30</span></div>
-                            <div style="font-size:10px; opacity:0.8;">RNCs esperadas</div>
-                        </div>
-                        
-                        <!-- Card Realizado -->
-                        <div id="setorInfoRealizado" style="background:linear-gradient(135deg, #36a2eb, #2980b9); border-radius:12px; padding:16px; box-shadow:0 4px 15px rgba(54,162,235,0.3); color:#fff;">
-                            <div style="font-size:11px; opacity:0.9; margin-bottom:4px; font-weight:600;">📊 REALIZADO</div>
-                            <div style="font-size:28px; font-weight:700; margin-bottom:2px;"><span id="setorInfoRealizadoVal">--</span></div>
-                            <div style="font-size:10px; opacity:0.8;">RNCs finalizadas</div>
-                        </div>
-                        
-                        <!-- Card Variação -->
-                        <div id="setorInfoVariacao" style="background:linear-gradient(135deg, #4bc0c0, #16a085); border-radius:12px; padding:16px; box-shadow:0 4px 15px rgba(75,192,192,0.3); color:#fff;">
-                            <div style="font-size:11px; opacity:0.9; margin-bottom:4px; font-weight:600;">📈 VARIAÇÃO</div>
-                            <div style="font-size:28px; font-weight:700; margin-bottom:2px;"><span id="setorInfoVariacaoVal">--</span></div>
-                            <div style="font-size:10px; opacity:0.8;">vs meta</div>
-                        </div>
-                        
-                        <!-- Card Departamento -->
-                        <div style="background:#fff; border-radius:12px; padding:16px; box-shadow:0 4px 15px rgba(0,0,0,0.08); border:2px solid #f0f0f0;">
-                            <div style="font-size:11px; color:#888; margin-bottom:4px; font-weight:600;">🏢 DEPARTAMENTO</div>
-                            <div style="font-size:20px; font-weight:700; color:#333; margin-bottom:2px;"><span id="setorNome">-</span></div>
-                            <div style="font-size:10px; color:#888;">Área: Corporativo</div>
-                        </div>
-                    </div>
-                    
-                    <!-- Info Bar -->
-                    <div style="background:#fff; border-radius:10px; padding:12px 16px; box-shadow:0 2px 10px rgba(0,0,0,0.05); border-left:4px solid #667eea;">
-                        <div style="display:flex; flex-wrap:wrap; gap:16px; font-size:12px; color:#555;">
-                            <div><strong style="color:#667eea;">📋 Indicador:</strong> RNC - Relatório de Não Conformidade</div>
-                            <div><strong style="color:#667eea;">💡 Objetivo:</strong> Apontar quantidade de não conformidades e revisões</div>
-                            <div><strong style="color:#667eea;">🎯 Parâmetro:</strong> Quando menor, melhor</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Gráfico Mensal -->
-                <div id="setorChartsContainer" style="display:none;">
-                <div style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius:16px; padding:16px 18px; box-shadow:0 4px 20px rgba(102,126,234,0.3); margin-bottom:16px;">
-                    <div style="display:flex; flex-wrap:wrap; gap:12px; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                            <h3 style="margin:0; display:flex; align-items:center; gap:10px; font-size:18px; color:#fff; font-weight:700;">
-                                <span id="setorTitle">📊 RNCs Mensais por Setor</span>
-                            </h3>
-                        <div style="display:flex; gap:8px; align-items:center; font-size:13px;">
-                                <label for="setorMonthSelect" style="color:#fff; font-weight:600;">Filtrar:</label>
-                                <select id="setorMonthSelect" style="padding:6px 10px; border:2px solid rgba(255,255,255,0.3); border-radius:8px; font-size:13px; background:rgba(255,255,255,0.95); font-weight:500;" onchange="updateSetorMonth()">
-                                <option value="">📅 Todos os Meses</option>
-                            </select>
-                                <button onclick="resetSetorSelection()" style="padding:6px 12px; border:2px solid rgba(255,255,255,0.4); background:rgba(220,53,69,0.85); color:#fff; border-radius:8px; font-size:13px; cursor:pointer; font-weight:600; transition:all 0.3s;" onmouseover="this.style.background='rgba(220,53,69,1)'" onmouseout="this.style.background='rgba(220,53,69,0.85)'">🔄 Reset</button>
-                        </div>
-                    </div>
-                        <div style="background:#fff; border-radius:12px; padding:16px; box-shadow:0 2px 15px rgba(0,0,0,0.1);">
-                        <canvas id="setorMonthlyChart" height="170"></canvas>
-                        </div>
-                </div>
-                <div style="background:#fff; border-radius:16px; padding:16px 18px; box-shadow:0 4px 20px rgba(0,0,0,0.08); display:grid; gap:14px; border:1px solid rgba(0,0,0,0.05);">
-                    <div style="display:flex; align-items:center; gap:8px; padding-bottom:10px; border-bottom:2px solid #f0f0f0;">
-                        <h3 style="margin:0; font-size:18px; color:#333; font-weight:700;">� Acumulado vs Meta</h3>
-                        <span style="font-size:11px; color:#888; font-weight:400;">(Evolução ao longo do período)</span>
-                    </div>
-                        <canvas id="setorAccumChart" height="170"></canvas>
-                    <div style="border-top:2px solid #f0f0f0; margin-top:10px; padding-top:12px;">
-                        <h4 style="margin:0 0 8px 0; font-size:15px; color:#444; font-weight:600; display:flex; align-items:center; gap:6px;">
-                            🔍 Detalhe do Mês Selecionado
-                            <span style="font-size:11px; font-weight:400; color:#888;">(Evolução diária)</span>
-                        </h4>
-                            <canvas id="setorMonthDetailChart" height="110"></canvas>
-                    </div>
-                        <div id="setorMonthInfo" style="font-size:13px; color:#555; line-height:1.6; background:#f8f9fa; padding:12px; border-radius:8px; border-left:4px solid #667eea;"></div>
+            <!-- Conteúdo da aba Setores -->
+            <div id="setoresContent" style="display: none;">
+                <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                    <h3 id="setorTitle" style="margin-bottom: 20px; color: #333;">📊 RNCs Mensais por Setor</h3>
+                    <div style="background: #f8f9fa; border-radius: 8px; padding: 20px;">
+                        <canvas id="setorSingleChart" style="max-height: 400px;"></canvas>
                     </div>
                 </div>
             </div>
+
             <!-- Grid de RNCs -->
             <div id="rncGrid" class="rnc-grid">
                 <div class="loading">
@@ -2451,6 +2224,26 @@
     </div>
 
     <script>
+            function saveDashboardCache(data) {
+                try {
+                    localStorage.setItem('dashboardCache', JSON.stringify(data));
+                } catch(e) {
+                    console.warn('Erro ao salvar cache:', e);
+                }
+            }
+
+            function loadDashboardCache() {
+                try {
+                    const cached = localStorage.getItem('dashboardCache');
+                    if (cached) {
+                        return JSON.parse(cached);
+                    }
+                } catch(e) {
+                    console.warn('Erro ao carregar cache:', e);
+                }
+                return null;
+            }
+
             async function loadLevFromTxt() {
                 try {
                     const base = window.location.origin; // Usar mesmo protocolo (HTTP ou HTTPS)
@@ -2569,16 +2362,17 @@
             throw new Error('Dashboard já inicializado - prevenindo duplicação');
         }
         window.DASHBOARD_INITIALIZED = true;
-        console.log('✅ Dashboard inicializando pela primeira vez...');
+        console.log('Dashboard inicializando pela primeira vez...');
         
         let currentTab = 'active';
         let rncsData = { 
             active: [], 
-            {% if user_permissions.canViewEngineeringRncs %}
-            engenharia: [], 
-            {% endif %}
             finalized: [] 
         };
+        
+        {% if user_permissions.canViewEngineeringRncs %}
+        rncsData.engenharia = [];
+        {% endif %}
         
         // Variáveis para filtros
         let currentFilters = {
@@ -2595,7 +2389,7 @@
             try {
                 console.log('📡 Fazendo requisição para /api/user/info...');
                 const response = await fetch('/api/user/info', { credentials: 'include' });
-                console.log(`📊 Resposta recebida - Status: ${response.status}`);
+                console.log(`Resposta recebida - Status: ${response.status}`);
                 
                 const data = await response.json();
                 console.log('📋 Dados do usuário recebidos:', data);
@@ -2794,7 +2588,7 @@
                         'Expires': '0'
                     } : {}
                 });
-                console.log(`📊 Resposta recebida - Status: ${response.status}`);
+                console.log(`Resposta recebida - Status: ${response.status}`);
                 
                 const data = await response.json();
                 console.log(`📋 Dados recebidos para aba ${tab}:`, data);
@@ -2944,11 +2738,12 @@
                 // 3. Limpar dados em memória
                 rncsData = { 
                     active: [], 
-                    {% if user_permissions.canViewEngineeringRncs %}
-                    engenharia: [], 
-                    {% endif %}
                     finalized: [] 
                 };
+                
+                {% if user_permissions.canViewEngineeringRncs %}
+                rncsData.engenharia = [];
+                {% endif %}
                 
                 // 4. Recarregar todas as abas com forceRefresh
                 console.log('📋 Recarregando aba ativa...');
@@ -3140,8 +2935,8 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
                 }).catch(() => {})
             );
             
-            {% if user_permissions.canViewEngineeringRncs %}
             // Carregar dados de engenharia apenas se o usuário tiver permissão
+            {% if user_permissions.canViewEngineeringRncs %}
             promises.push(loadRNCs('engenharia', false).catch(() => {}));
             {% endif %}
             
@@ -3410,15 +3205,18 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
         }
 
         function exportCSV() {
-            const rows = currentTab === 'finalized'
-                ? ((filteredRNCs.length > 0 ? filteredRNCs : rncsData.finalized) || [])
-                : currentTab === 'engenharia'
+            let rows;
+            if (currentTab === 'finalized') {
+                rows = (filteredRNCs.length > 0 ? filteredRNCs : rncsData.finalized) || [];
+            } else if (currentTab === 'engenharia') {
                 {% if user_permissions.canViewEngineeringRncs %}
-                ? (rncsData.engenharia || [])
+                rows = rncsData.engenharia || [];
                 {% else %}
-                ? []
+                rows = [];
                 {% endif %}
-                : (filterActive(rncsData.active) || []);
+            } else {
+                rows = (filteredRNCs.length > 0 ? filteredRNCs : rncsData.active) || [];
+            }
             if (!rows.length) { alert('Nenhum RNC para exportar.'); return; }
             const header = ['ID','N° RNC','Título','Cliente','Equipamento','CV','Desenho','Setor','Responsável','Data Finalização'];
             const csvRows = [header.join(';')];
@@ -4726,6 +4524,11 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
                 console.log('⏹️ Intervalo de atualização automática de RNCs parado');
             }
             
+            // Parar atualização automática de setores
+            if (typeof stopSetorAutoRefresh === 'function') {
+                stopSetorAutoRefresh();
+            }
+            
             // Parar som de notificação se houver
             if (typeof notificationSoundInterval !== 'undefined' && notificationSoundInterval) {
                 clearInterval(notificationSoundInterval);
@@ -4806,16 +4609,40 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
                 console.log(`👁️ Container ${activeContainerId} exibido`);
             }
             
-            // Mostrar/ocultar gráficos de setores
-            const setoresCharts = document.getElementById('setoresCharts');
-            if (setoresCharts) {
-                if (tab === 'setores') {
-                    setoresCharts.style.display = 'block';
+            // Mostrar/ocultar conteúdo de setores e RNC grid
+            const setoresContent = document.getElementById('setoresContent');
+            const rncGrid = document.getElementById('rncGrid');
+            
+            if (tab === 'setores') {
+                if (setoresContent) {
+                    setoresContent.style.display = 'block';
                     console.log('📊 Área de setores exibida');
-                } else {
-                    setoresCharts.style.display = 'none';
+                }
+                if (rncGrid) rncGrid.style.display = 'none';
+                
+                // Ativar atualização automática
+                if (typeof startSetorAutoRefresh === 'function') {
+                    startSetorAutoRefresh();
+                }
+            } else {
+                if (setoresContent) {
+                    setoresContent.style.display = 'none';
                     console.log('📊 Área de setores ocultada');
                 }
+                if (rncGrid && (tab === 'active' || tab === 'finalized')) {
+                    rncGrid.style.display = 'grid';
+                }
+                
+                // Desativar atualização automática
+                if (typeof stopSetorAutoRefresh === 'function') {
+                    stopSetorAutoRefresh();
+                }
+            }
+            
+            // Manter compatibilidade com setoresCharts antigo (se existir)
+            const setoresCharts = document.getElementById('setoresCharts');
+            if (setoresCharts) {
+                setoresCharts.style.display = tab === 'setores' ? 'block' : 'none';
             }
             
             // Ações específicas por aba
@@ -5172,6 +4999,25 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
             console.log('🧪 ========================================');
         };
         
+        // Classe AdvancedCharts (placeholder)
+        class AdvancedCharts {
+            constructor() {
+                this.charts = {};
+            }
+            createHeatmapChart(canvasId, data, options) {
+                console.log('Heatmap chart não implementado');
+                return null;
+            }
+            createGaugeChart(canvasId, value, options) {
+                console.log('Gauge chart não implementado');
+                return null;
+            }
+            createAdvancedRadarChart(canvasId, data, options) {
+                console.log('Radar chart não implementado');
+                return null;
+            }
+        }
+
         // Renderização imediata a partir do cache local e prefetch paralelo
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 Iniciando dashboard...');
@@ -6005,7 +5851,8 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
         // Função para aplicar filtros
         function applyFilters() {
             const rncNumber = document.getElementById('filterRncNumber').value.toLowerCase();
-            const client = document.getElementById('filterClient').value.toLowerCase();
+            const clientElem = document.getElementById('filterClientSelect');
+            const client = clientElem ? (clientElem.value || '').toLowerCase() : (document.getElementById('filterClient') ? document.getElementById('filterClient').value.toLowerCase() : '');
             const equipment = document.getElementById('filterEquipment').value.toLowerCase();
             const department = document.getElementById('filterDepartment').value.toLowerCase();
             const priority = document.getElementById('filterPriority') ? document.getElementById('filterPriority').value.toLowerCase() : '';
@@ -6182,7 +6029,9 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
         // Função para limpar filtros
         function clearFilters() {
             document.getElementById('filterRncNumber').value = '';
-            document.getElementById('filterClient').value = '';
+            const clientSel = document.getElementById('filterClientSelect');
+            if (clientSel) clientSel.value = '';
+            else if (document.getElementById('filterClient')) document.getElementById('filterClient').value = '';
             document.getElementById('filterEquipment').value = '';
             document.getElementById('filterDepartment').value = '';
             if (document.getElementById('filterPriority')) document.getElementById('filterPriority').value = '';
@@ -8798,7 +8647,7 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
                 filteredData = evidenciasData.months.filter(item => item.year == yearFilter);
             }
             
-            let csv = 'Mes,Ano,RNCs,Meta,Percentual,Status,Responsaveis\n';
+            let csv = 'Mês,Ano,RNCs,Meta,Percentual,Status,Responsáveis\n';
             
             filteredData.forEach(item => {
                 let responsiblesStr = '';
@@ -8808,7 +8657,7 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
                         .map(([name, count]) => `${name}:${count}`)
                         .join(';');
                 } else {
-                    responsiblesStr = 'Nao informado';
+                    responsiblesStr = 'Não informado';
                 }
                 
                 csv += `${item.monthName},${item.year},${item.count},${item.meta},${item.percentage}%,${item.status},"${responsiblesStr}"\n`;
@@ -12812,8 +12661,15 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
                         return;
                     }
                     
-                    container.style.display = 'block';
-                    console.log('✅ Container de gráficos encontrado e exibido');
+                    // Exibir container apenas se estivermos na aba de setores ou se houver um setor selecionado
+                    const setorSelectEl = document.getElementById('setorSelect');
+                    const setorSelected = setorSelectEl && setorSelectEl.value;
+                    if (window.currentTab === 'setores' || setorSelected) {
+                        container.style.display = 'block';
+                        console.log('✅ Container de gráficos encontrado e exibido');
+                    } else {
+                        console.log('ℹ️ Dados de engenharia recebidos mas container de setores permanecerá oculto (não estamos na aba setores)');
+                    }
                     
                     console.log('🔧 Construindo gráficos da engenharia com dados da API:', apiData);
                     
@@ -13174,10 +13030,9 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
                 const c3=document.getElementById('engineeringMonthDetailChart');
                 if(c3){
                     // Filter month RNCs
+                    let monthRncs = [];
                     {% if user_permissions.canViewEngineeringRncs %}
-                    const monthRncs=(rncsData.engenharia||[]).filter(r=>{ const raw=r.finalized_at||r.created_at||r.updated_at; if(!raw) return false; const d=new Date(raw); if(isNaN(d)) return false; const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); return key===monthKey; });
-                    {% else %}
-                    const monthRncs=[];
+                    monthRncs = (rncsData.engenharia||[]).filter(r=>{ const raw=r.finalized_at||r.created_at||r.updated_at; if(!raw) return false; const d=new Date(raw); if(isNaN(d)) return false; const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); return key===monthKey; });
                     {% endif %}
                     const byDay={}; monthRncs.forEach(r=>{ const d=new Date(r.finalized_at||r.created_at||r.updated_at); const day=String(d.getDate()).padStart(2,'0'); byDay[day]=(byDay[day]||0)+1; });
                     const days=Object.keys(byDay).sort((a,b)=>parseInt(a)-parseInt(b));
@@ -13227,6 +13082,124 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
         // REMOVIDO: variáveis locais, agora usando window.setorMonthlyChart e window.setorAccumChart
         let setorMonthDetailChart = null;
         
+        // Função para carregar dados padrão (engenharia) quando nenhum setor está selecionado
+        async function loadDefaultSectorChart() {
+            try {
+                console.log('📊 Carregando gráfico padrão (engenharia)...');
+                
+                // Verificar se Chart.js está carregado
+                if (typeof Chart === 'undefined') {
+                    console.error('Chart.js não carregado! Aguardando...');
+                    setTimeout(loadDefaultSectorChart, 500);
+                    return;
+                }
+                
+                // Destruir gráficos anteriores ANTES de carregar novos
+                destroyAllSetorCharts();
+                
+                // Mostrar container de gráficos somente se estamos na aba 'setores' ou se um setor foi selecionado
+                const chartsContainer = document.getElementById('setorChartsContainer');
+                const setorSelect = document.getElementById('setorSelect');
+                const setorSelected = setorSelect && setorSelect.value;
+                if (chartsContainer) {
+                    if (window.currentTab === 'setores' || setorSelected) {
+                        chartsContainer.style.display = 'block';
+                        console.log('✅ Container de gráficos exibido');
+                    } else {
+                        // Manter oculto por padrão ao inicializar o dashboard
+                        console.log('ℹ️ Container de gráficos permanece oculto (inicialização)');
+                    }
+                }
+                
+                const response = await fetch('/api/indicadores/engenharia');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('📊 Dados recebidos da API:', data);
+                
+                if (data.success && data.rncs && data.rncs.length > 0) {
+                    console.log('✅ Dados carregados:', data.rncs.length, 'RNCs');
+                    
+                    // Se monthly_trend estiver vazio mas temos RNCs, processar manualmente
+                    if (!data.monthly_trend || data.monthly_trend.length === 0) {
+                        console.log('📊 Processando monthly_trend a partir das RNCs...');
+                        console.log('📊 Amostra da primeira RNC:', data.rncs[0]);
+                        
+                        const monthlyData = {};
+                        data.rncs.forEach(rnc => {
+                            // Tentar diferentes campos de data
+                            const dateField = rnc.data_abertura || rnc.date || rnc.created_at || rnc.data_criacao;
+                            if (dateField) {
+                                const month = dateField.substring(0, 7);
+                                monthlyData[month] = (monthlyData[month] || 0) + 1;
+                            }
+                        });
+                        
+                        data.monthly_trend = Object.keys(monthlyData).sort().map(month => ({
+                            month: month,
+                            count: monthlyData[month]
+                        }));
+                        
+                        console.log('✅ monthly_trend gerado com', data.monthly_trend.length, 'meses');
+                        console.log('✅ monthly_trend:', data.monthly_trend);
+                    }
+                    
+                    console.log('📊 Total de meses:', data.monthly_trend?.length || 0);
+                    console.log('📊 Total de RNCs:', data.stats?.total_rncs || data.rncs.length);
+                    console.log('📊 monthly_trend final:', data.monthly_trend);
+                    
+                    // Atualizar título
+                    const titleEl = document.getElementById('setorTitle');
+                    if (titleEl) {
+                        titleEl.textContent = '🔧 Engenharia – RNCs Mensais (Padrão)';
+                    }
+                    
+                    // Aguardar o DOM renderizar
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    
+                    console.log('Verificando elementos do DOM...');
+                    const checkCanvas = ['setorMonthlyChart', 'setorAccumChart', 'setorStatusChart'];
+                    checkCanvas.forEach(function(id) {
+                        const el = document.getElementById(id);
+                        console.log(`  - ${id}: ${el ? 'encontrado' : 'NÃO ENCONTRADO'}`);
+                    });
+                    
+                    // Construir gráficos
+                    buildSetorCharts(data, 'engenharia');
+                    
+                    console.log('✅ Gráficos construídos!');
+                    
+                } else {
+                    console.warn('⚠️ Sem dados disponíveis');
+                    console.warn('Data received:', data);
+                    // Tentativa fallback: buscar todas as RNCs finalizadas diretamente do endpoint de listagem
+                    try {
+                        console.log('🔁 Tentando fallback: buscando RNCs finalizadas via /api/rnc/list?tab=finalized');
+                        const fallback = await fetch(`/api/rnc/list?tab=finalized&limit=5000`);
+                        if (fallback && fallback.ok) {
+                            const fb = await fallback.json();
+                            if (fb && Array.isArray(fb.rncs) && fb.rncs.length) {
+                                const fallbackData = { success: true, rncs: fb.rncs, monthly_trend: [], stats: { total_rncs: fb.rncs.length } };
+                                window._setorDataCache = Object.assign({}, fallbackData, { setor: 'engenharia' });
+                                console.log('✅ Fallback RNCs finalizadas carregadas:', fb.rncs.length);
+                                try { setupSetorFiltersAndRender(fallbackData); }
+                                catch(err) { console.error('Erro ao configurar filtros com fallback:', err); buildSetorSingleChart(); }
+                                return;
+                            }
+                        }
+                        console.warn('⚠️ Fallback não encontrou RNCs finalizadas ou falhou.');
+                    } catch(fbErr) {
+                        console.error('❌ Erro no fallback de finalizados:', fbErr);
+                    }
+                }
+            } catch (error) {
+                console.error('❌ Erro ao carregar gráfico padrão:', error);
+                console.error('Stack:', error.stack);
+            }
+        }
+        
         // Mapeamento de nome do setor para exibição
         const setorNames = {
             'engenharia': 'Engenharia',
@@ -13273,8 +13246,21 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
             
             if (!setor) {
                 console.log('📊 Nenhum setor selecionado');
+                
+                // Destruir gráficos antes de ocultar
+                destroyAllSetorCharts();
+                
                 document.getElementById('setorIndicadorInfo').style.display = 'none';
                 document.getElementById('setorChartsContainer').style.display = 'none';
+                // Carregar dados de engenharia como padrão
+                await loadDefaultSectorChart();
+                return;
+            }
+            
+            // Verificar se Chart.js está carregado
+            if (typeof Chart === 'undefined') {
+                console.error('Chart.js não carregado! Aguardando...');
+                setTimeout(loadSetorData, 500);
                 return;
             }
             
@@ -13307,25 +13293,10 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
                 `;
             }
             
-            // CRÍTICO: Limpar COMPLETAMENTE cache e gráficos anteriores para evitar acúmulo
+            // CRÍTICO: Destruir TODOS os gráficos anteriores
             console.log('🧹 Limpando cache e gráficos anteriores...');
+            destroyAllSetorCharts();
             window._setorDataCache = null;
-            if (window.setorMonthlyChart) {
-                try {
-                    window.setorMonthlyChart.destroy();
-                } catch (e) {
-                    console.warn('Erro ao destruir gráfico mensal:', e);
-                }
-                window.setorMonthlyChart = null;
-            }
-            if (window.setorAccumChart) {
-                try {
-                    window.setorAccumChart.destroy();
-                } catch (e) {
-                    console.warn('Erro ao destruir gráfico acumulado:', e);
-                }
-                window.setorAccumChart = null;
-            }
             
             try {
                 // Buscar dados do setor (usar a mesma API de engenharia como base)
@@ -13367,11 +13338,47 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
                             setorChartsContainerEl.innerHTML = setorChartsContainerEl.dataset.original;
                         }
                         setorChartsContainerEl.style.display = 'block';
+                        console.log('Container de gráficos exibido. Display:', setorChartsContainerEl.style.display);
                     }
                     
-                    // Aguardar o DOM renderizar antes de construir os gráficos
+                    // Armazenar cache para filtros cliente
+                    window._setorDataCache = Object.assign({}, data, { setor: setor });
+                    console.log('Cache de dados do setor armazenado (rncs count=', (data.rncs||[]).length, ')');
+
+                    // Se não vierem RNCs nesta resposta, tentar fallback para listar RNCs finalizadas
+                    if (!Array.isArray(data.rncs) || data.rncs.length === 0) {
+                        try {
+                            console.log('ℹ️ Nenhuma RNC presente na resposta do indicador, tentando buscar /api/rnc/list?tab=finalized');
+                            const fallbackResp = await fetch(`/api/rnc/list?tab=finalized&limit=5000`);
+                            if (fallbackResp && fallbackResp.ok) {
+                                const fbData = await fallbackResp.json();
+                                if (fbData && Array.isArray(fbData.rncs) && fbData.rncs.length) {
+                                    // Atualizar cache e usar fallback
+                                    window._setorDataCache.rncs = fbData.rncs;
+                                    console.log('✅ Fallback para RNCs finalizadas obteve', fbData.rncs.length);
+                                    setTimeout(() => {
+                                        try { setupSetorFiltersAndRender(window._setorDataCache); }
+                                        catch(err) { console.error('Erro ao configurar filtros com fallback:', err); buildSetorSingleChart(); }
+                                    }, 120);
+                                    return;
+                                }
+                            }
+                            console.warn('⚠️ Fallback não retornou RNCs finalizadas');
+                        } catch(fbErr) {
+                            console.error('❌ Erro ao executar fallback de finalizados:', fbErr);
+                        }
+                    }
+
+                    // configurar filtros e renderizar gráfico inicial com dados reais
                     setTimeout(() => {
-                        buildSetorCharts(data, setor);
+                        try {
+                            setupSetorFiltersAndRender(data);
+                            console.log('Filtros configurados e gráfico inicial renderizado.');
+                        } catch (err) {
+                            console.error('Erro ao configurar filtros ou renderizar:', err);
+                            // fallback visual
+                            buildSetorSingleChart();
+                        }
                     }, 100);
                 } else {
                     console.error('❌ Erro ao carregar dados do setor:', data.message);
@@ -13391,433 +13398,435 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
             }
         }
         
-        function buildSetorCharts(apiData, setor) {
+        // Função stub: destruir gráficos de setor (no-op)
+        function destroyAllSetorCharts() {
+            // Intencionalmente vazio — gráficos de setor foram removidos do DOM.
+            console.log('🗑️ destroyAllSetorCharts chamado (no-op): gráficos de setor desativados.');
             try {
-                console.log('📊 Construindo gráficos para setor:', setor, apiData);
-                
-                const goal = setorMetas[setor] || 30;
-                const monthlyData = (apiData.monthly_trend || []).slice();
-                // Ordenar por chave YYYY-MM para garantir ordem crescente caso backend venha desordenado
-                monthlyData.sort((a,b)=> (a.month < b.month ? -1 : a.month > b.month ? 1 : 0));
-
-                // Processar dados mensais - USAR APENAS count (valores mensais), NUNCA accumulated_count
-                const months = monthlyData.map(m => m.month);
-                const values = monthlyData.map(m => {
-                    // IMPORTANTE: Usar apenas 'count' que são valores mensais, NÃO usar 'accumulated_count'
-                    const monthlyValue = m.count || 0;
-                    // Validar e sanitizar valor mensal (máximo razoável: 500 RNCs por mês)
-                    return Math.max(0, Math.min(monthlyValue, 500));
-                });
-                
-                // Recalcular acumulado SEMPRE do zero localmente (nunca confiar em accumulated_count da API)
-                let sumTmp = 0;
-                const cumulative = values.map(v => { 
-                    sumTmp += v; 
-                    // Validar acumulado (máximo razoável: 5000 RNCs total)
-                    return Math.min(sumTmp, 5000);
-                });
-                
-                const labels = months.map(m => {
-                    const [year, month] = m.split('-');
-                    const monthNames = ['', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-                    return `${monthNames[parseInt(month)]}/${year.slice(2)}`;
-                });
-                
-                // Sanitizar: garantir que não há NaN/Infinity/negativos
-                for(let i=0; i<values.length; i++) { 
-                    if(!Number.isFinite(values[i]) || values[i]<0) values[i]=0;
-                    if(!Number.isFinite(cumulative[i]) || cumulative[i]<0) cumulative[i]= (i>0?cumulative[i-1]:0)+values[i];
-                }
-                
-                // Log de validação
-                console.log('✅ Valores mensais sanitizados:', values);
-                console.log('✅ Acumulado recalculado:', cumulative);
-                
-                // Metas
-                const goalArr = new Array(months.length).fill(goal);
-                const goalAccum = goalArr.map((_, i) => goal * (i + 1));
-                
-                // Cache para uso posterior
-                window._setorDataCache = {
-                    setor,
-                    months,
-                    labels,
-                    values,
-                    cumulative,
-                    goal,
-                    goalArr,
-                    goalAccum,
-                    apiData
-                };
-                
-                // Atualizar informações
-                updateSetorInfo();
-                
-                // Construir gráfico mensal
-                buildSetorMonthlyChart(labels, values, goalArr, cumulative);
-                
-                // Construir gráfico acumulado
-                buildSetorAccumChart(labels, cumulative, goalAccum);
-                
-                // Popular dropdown de meses
-                const monthSelect = document.getElementById('setorMonthSelect');
-                if (monthSelect) {
-                    monthSelect.innerHTML = '<option value="">Todos</option>';
-                    labels.forEach((label, idx) => {
-                        monthSelect.innerHTML += `<option value="${idx}">${label}</option>`;
-                    });
-                }
-                
-            } catch (error) {
-                console.error('❌ Erro ao construir gráficos do setor:', error);
-            }
+                // limpar referências conhecidas caso ainda existam
+                ['setorMonthlyChart','setorAccumChart','setorComparisonChart','setorPieChart','setorEfficiencyChart','setorPriorityChart','setorValueChart','setorClientChart','setorEquipmentChart','setorHeatmapChart','setorMonthDetailChart'].forEach(function(k){ if(window[k]){ try{ window[k].destroy && window[k].destroy(); }catch(e){}; window[k]=null; }});
+            } catch(e) {}
         }
         
-        function buildSetorMonthlyChart(labels, values, goalArr, cumulative) {
-            const ctx = document.getElementById('setorMonthlyChart');
-            if (!ctx) {
-                console.warn('⚠️ Canvas setorMonthlyChart não encontrado');
+        // Função stub: construir gráficos de setor (no-op)
+        function buildSetorCharts(apiData, setor) {
+            console.log('📊 buildSetorCharts chamado para setor:', setor);
+            console.log('📊 apiData recebido:', apiData);
+            console.log('📊 apiData.monthly_trend:', apiData?.monthly_trend);
+            
+            if (!apiData || !apiData.monthly_trend || apiData.monthly_trend.length === 0) {
+                console.warn('⚠️ Sem monthly_trend para construir gráficos');
+                console.warn('   apiData existe?', !!apiData);
+                console.warn('   monthly_trend existe?', !!apiData?.monthly_trend);
+                console.warn('   monthly_trend.length:', apiData?.monthly_trend?.length);
                 return;
             }
             
-            // Destruir gráfico anterior COMPLETAMENTE
-            if (window.setorMonthlyChart) {
-                try {
-                    window.setorMonthlyChart.destroy();
-                    window.setorMonthlyChart = null;
-                } catch (e) {
-                    console.warn('⚠️ Erro ao destruir gráfico:', e);
+            const labels = apiData.monthly_trend.map(m => m.month);
+            const values = apiData.monthly_trend.map(m => m.count);
+            
+            console.log('📊 Labels:', labels);
+            console.log('📊 Values:', values);
+            
+            // Armazenar cache
+            window._setorDataCache = {
+                setor: setor,
+                months: apiData.monthly_trend,
+                labels: labels,
+                values: values,
+                apiData: apiData
+            };
+            
+            // Construir gráfico principal
+            buildSetorSingleChart(labels, values);
+        }
+
+        // Função concreta para construir um único gráfico de linha de setor (usada para iteração visual)
+        function buildSetorSingleChart(labels, values) {
+            try {
+                console.log('buildSetorSingleChart called', labels, values);
+                const canvas = document.getElementById('setorSingleChart');
+                if (!canvas) { console.warn('setorSingleChart canvas not found'); return; }
+
+                // Ensure visible size
+                if (!canvas.style.height || canvas.style.height === '') {
+                    canvas.style.height = '280px';
                 }
-            }
-            
-            // VALIDAÇÃO CRÍTICA: Sanitizar valores para prevenir crescimento exponencial 
-            const sanitizedValues = values.map((v, idx) => {
-                const num = Number(v);
-                if (!isFinite(num) || num < 0 || num > 500) {
-                    console.warn(`⚠️ Valor mensal inválido no índice ${idx}:`, v, '-> corrigido para 0');
-                    return 0;
-                }
-                return num;
-            });
-            
-            const sanitizedGoals = goalArr.map(v => {
-                const num = Number(v);
-                return (isFinite(num) && num >= 0) ? num : 30;
-            });
-            
-            // Debug (desativável)
-            if(!window.DISABLE_SETOR_CHART_DEBUG){
-                console.debug('[SETOR MONTHLY] labels:', labels);
-                console.debug('[SETOR MONTHLY] values ORIGINAIS:', values);
-                console.debug('[SETOR MONTHLY] values SANITIZADOS:', sanitizedValues);
-                console.debug('[SETOR MONTHLY] cumulative:', cumulative);
-                console.debug('[SETOR MONTHLY] goalArr:', sanitizedGoals);
-            }
-            
-            // Criar gradientes para cores mais bonitas
-            const gradient1 = ctx.getContext('2d').createLinearGradient(0, 0, 0, 400);
-            gradient1.addColorStop(0, 'rgba(54, 162, 235, 0.9)');
-            gradient1.addColorStop(1, 'rgba(54, 162, 235, 0.3)');
-            
-            const gradient2 = ctx.getContext('2d').createLinearGradient(0, 0, 0, 400);
-            gradient2.addColorStop(0, 'rgba(255, 99, 132, 0.9)');
-            gradient2.addColorStop(1, 'rgba(255, 99, 132, 0.3)');
-            
-            // Usar valores sanitizados
-            window.setorMonthlyChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: '📊 RNCs do Mês',
-                            data: sanitizedValues,
-                            backgroundColor: gradient1,
-                            borderColor: 'rgba(54, 162, 235, 1)',
-                            borderWidth: 2,
-                            borderRadius: 8,
-                            borderSkipped: false
-                        },
-                        {
-                            label: '🎯 Meta Mensal',
-                            data: sanitizedGoals,
-                            type: 'line',
-                            borderColor: 'rgba(75, 192, 192, 1)',
-                            backgroundColor: 'rgba(75, 192, 192, 0.1)',
-                            borderWidth: 3,
-                            pointRadius: 6,
-                            pointHoverRadius: 8,
-                            pointBackgroundColor: 'rgba(75, 192, 192, 1)',
-                            pointBorderColor: '#fff',
-                            pointBorderWidth: 2,
-                            fill: false,
-                            tension: 0.4
-                        },
-                        {
-                            label: '📈 Acumulado',
-                            data: cumulative,
-                            type: 'line',
-                            borderColor: 'rgba(153, 102, 255, 1)',
-                            backgroundColor: 'rgba(153, 102, 255, 0.1)',
-                            borderWidth: 3,
-                            pointRadius: 6,
-                            pointHoverRadius: 8,
-                            pointBackgroundColor: 'rgba(153, 102, 255, 1)',
-                            pointBorderColor: '#fff',
-                            pointBorderWidth: 2,
-                            fill: true,
-                            tension: 0.4
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: {
-                        mode: 'index',
-                        intersect: false
-                    },
-                    plugins: {
-                        legend: { 
-                            display: true, 
-                            position: 'top',
-                            labels: {
-                                font: { size: 13, weight: 'bold' },
-                                padding: 15,
-                                usePointStyle: true
-                            }
-                        },
-                        tooltip: { 
-                            enabled: true,
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                            padding: 12,
-                            titleFont: { size: 14, weight: 'bold' },
-                            bodyFont: { size: 13 },
-                            callbacks: {
-                                label: function(context) {
-                                    let label = context.dataset.label || '';
-                                    if (label) {
-                                        label += ': ';
-                                    }
-                                    label += context.parsed.y + ' RNCs';
-                                    
-                                    // Adicionar percentual em relação à meta
-                                    if (context.datasetIndex === 0 && sanitizedGoals[context.dataIndex]) {
-                                        const percent = ((context.parsed.y / sanitizedGoals[context.dataIndex]) * 100).toFixed(1);
-                                        label += ` (${percent}% da meta)`;
-                                    }
-                                    
-                                    return label;
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: { 
-                            beginAtZero: true, 
-                            title: { 
-                                display: true, 
-                                text: 'Quantidade de RNCs',
-                                font: { size: 13, weight: 'bold' }
-                            },
-                            ticks: {
-                                font: { size: 12 }
-                            },
-                            grid: {
-                                color: 'rgba(0, 0, 0, 0.05)'
-                            },
-                            max: Math.min(Math.max(...cumulative, ...sanitizedValues, ...sanitizedGoals) * 1.2, 5000)
-                        },
-                        x: {
-                            ticks: {
-                                font: { size: 12, weight: 'bold' }
-                            },
-                            grid: {
-                                display: false
-                            }
-                        }
-                    },
-                    animation: {
-                        duration: 1000,
-                        easing: 'easeInOutQuart'
-                    },
-                    onClick: (event, elements) => {
-                        if (elements.length > 0) {
-                            const idx = elements[0].index;
-                            updateSetorMonth(idx);
-                        }
+
+                // try to get 2d context
+                const ctx = canvas.getContext && canvas.getContext('2d');
+                if (!ctx) { console.warn('Canvas 2D context not available'); return; }
+
+                // fallback to sensible data if empty
+                let finalLabels = Array.isArray(labels) ? labels.slice() : [];
+                let finalValues = Array.isArray(values) ? values.slice() : [];
+                if (!finalLabels.length || !finalValues.length) {
+                    // produce last 6 months labels and zero values
+                    const now = new Date();
+                    finalLabels = [];
+                    for (let i = 5; i >= 0; i--) {
+                        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                        finalLabels.push(d.toLocaleString('default', { month: 'short' }));
                     }
+                    finalValues = [0,0,0,0,0,0];
+                    console.log('buildSetorSingleChart: usando fallback de labels/values (vazio recebido)');
                 }
+
+                // destroy previous chart
+                if (window.setorSingleChart && window.setorSingleChart.destroy) {
+                    try { window.setorSingleChart.destroy(); } catch(e) { console.warn('destroy previous chart failed', e); }
+                }
+
+                if (typeof Chart === 'undefined') { console.error('Chart.js não disponível no momento'); return; }
+
+                window.setorSingleChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: finalLabels,
+                        datasets: [{
+                            label: 'RNCs Mensais — Gráfico de Linha',
+                            data: finalValues,
+                            borderColor: '#dc3545',
+                            backgroundColor: 'rgba(220,53,69,0.06)',
+                            fill: true,
+                            tension: 0.25,
+                            pointRadius: 3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { x: { display: true }, y: { display: true, beginAtZero: true } }
+                    }
+                });
+                // force resize/update
+                try { window.setorSingleChart.resize(); window.setorSingleChart.update(); } catch(e){}
+                console.log('setorSingleChart built (finalLabels length=', finalLabels.length, ')');
+                return window.setorSingleChart;
+            } catch (err) {
+                console.error('buildSetorSingleChart error', err);
+            }
+        }
+
+        // UTIL: tenta converter várias formas de datas usadas nas RNCs para Date
+        function parseRncDate(dtStr) {
+            if (!dtStr) return null;
+            // se já for Date
+            if (dtStr instanceof Date) return dtStr;
+            // tentar ISO direto
+            let d = new Date(dtStr);
+            if (!isNaN(d)) return d;
+            // tentar format YYYY-MM-DD or YYYY/MM/DD
+            const iso = dtStr.replace(/\//g,'-').split('T')[0];
+            const parts = iso.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+            if (parts) {
+                const y = parseInt(parts[1],10); const m = parseInt(parts[2],10)-1; const day = parseInt(parts[3],10);
+                const dd = new Date(y,m,day);
+                if (!isNaN(dd)) return dd;
+            }
+            // tentar timestamps numéricos
+            if (/^\d+$/.test(dtStr)) {
+                const asNum = parseInt(dtStr,10);
+                // se provavelmente em ms
+                if (asNum > 1e12) return new Date(asNum);
+                // se em segundos
+                if (asNum > 1e9) return new Date(asNum * 1000);
+            }
+            // fallback: null
+            return null;
+        }
+
+        // Setup filter controls and initial render based on API rncs data
+        function setupSetorFiltersAndRender(apiData) {
+            const rncs = apiData.rncs || [];
+            // store cache if not stored
+            window._setorDataCache = window._setorDataCache || {};
+            window._setorDataCache.rncs = window._setorDataCache.rncs || rncs;
+            const years = new Set();
+            const months = new Set();
+            const days = new Set();
+            const statuses = new Set();
+
+            rncs.forEach(r => {
+                const finalized_at = r.finalized_at || r.created_at;
+                let d = parseRncDate(finalized_at);
+                // if no date but status indicates finalized, still add status
+                if (!d && r.status) {
+                    statuses.add(r.status || 'Desconhecido');
+                    return;
+                }
+                if (!d) return;
+                years.add(d.getFullYear());
+                months.add(d.getMonth()+1);
+                days.add(d.getDate());
+                statuses.add(r.status || 'Desconhecido');
             });
+
+            const yearSelect = document.getElementById('filterYear');
+            const statusSelect = document.getElementById('filterStatus');
+
+            if (yearSelect) {
+                if (years.size === 0) {
+                    const cy = new Date().getFullYear();
+                    yearSelect.innerHTML = `<option value="">Todos</option><option value="${cy}">${cy}</option>`;
+                } else {
+                    yearSelect.innerHTML = '<option value="">Todos</option>' + Array.from(years).sort((a,b)=>b-a).map(y=>`<option value="${y}">${y}</option>`).join('');
+                }
+            }
+            // month/day filters removed — keep status and year only
+            if (statusSelect) {
+                if (statuses.size === 0) {
+                    statusSelect.innerHTML = '<option value="">Todos</option><option value="Finalizado">Finalizado</option>';
+                } else {
+                    statusSelect.innerHTML = '<option value="">Todos</option>' + Array.from(statuses).sort().map(s=>`<option value="${s}">${s}</option>`).join('');
+                }
+            }
+
+            // attach apply handler
+            const applyBtn = document.getElementById('applySetorFilters');
+            if (applyBtn) {
+                applyBtn.onclick = () => applySetorFilters();
+            }
+
+            // initial render: aggregate monthly counts of finalized RNCs
+            aggregateAndRender(rncs);
+        }
+
+        // Apply filters (reads selects) and re-render chart
+        function applySetorFilters() {
+            const rncs = (window._setorDataCache && window._setorDataCache.rncs) || [];
+            const year = document.getElementById('filterYear')?.value || '';
+            const status = document.getElementById('filterStatus')?.value || '';
+
+            console.log('applySetorFilters called', { totalRncs: rncs.length, year, status });
+
+            const filtered = rncs.filter(r => {
+                // normalize status comparison (allow case-insensitive partial matches)
+                if (status) {
+                    if (!r.status || String(r.status).toLowerCase().indexOf(String(status).toLowerCase()) === -1) return false;
+                }
+
+                // date parsing tolerant; only filter by year if selected
+                const dtStr = r.finalized_at || r.created_at;
+                const d = parseRncDate(dtStr);
+                if (!d) return false;
+                if (year && Number(d.getFullYear()) !== Number(year)) return false;
+                return true;
+            });
+
+            console.log('applySetorFilters -> filtered count:', filtered.length);
+
+            aggregateAndRender(filtered);
+            // Atualizar lista de detalhes abaixo do gráfico
+            try { renderSetorDetails(filtered); } catch(e) { console.warn('renderSetorDetails falhou', e); }
+        }
+
+        // Aggregate RNCs into monthly counts (YYYY-MM) and render chart
+        function aggregateAndRender(rncsList) {
+            // Only finalized RNCs should count
+            const counts = {};
+            rncsList.forEach(r => {
+                // consider finalized either by finalized_at present OR status containing 'finaliz' (case-insensitive)
+                const isFinalized = Boolean(r.finalized_at) || (r.status && /finaliz/i.test(String(r.status)));
+                if (!isFinalized) return;
+
+                const dtStr = r.finalized_at || r.created_at;
+                const d = parseRncDate(dtStr);
+                if (!d || isNaN(d)) return;
+                const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+                counts[key] = (counts[key] || 0) + 1;
+            });
+
+            console.log('aggregateAndRender -> monthly keys:', Object.keys(counts).sort(), 'counts:', counts);
+
+            // sort months
+            const keys = Object.keys(counts).sort();
+            if (!keys.length) {
+                // fallback to last 6 months zeros
+                const now = new Date();
+                const labels = [];
+                const values = [];
+                for (let i=5;i>=0;i--) { const d=new Date(now.getFullYear(), now.getMonth()-i,1); labels.push(d.toLocaleString('default',{month:'short', year:'numeric'})); values.push(0); }
+                buildSetorSingleChart(labels, values);
+                // também exibir os detalhes das RNCs usadas para esta agregação, se houver cache
+                try { renderSetorDetails(rncsList); } catch(e) { /* non-blocking */ }
+                return;
+            }
+
+            const labels = keys.map(k => {
+                const parts = k.split('-');
+                const d = new Date(parseInt(parts[0]), parseInt(parts[1])-1, 1);
+                return d.toLocaleString('default', { month: 'short', year: 'numeric' });
+            });
+            const values = keys.map(k => counts[k]);
+
+            buildSetorSingleChart(labels, values);
+        }
+
+        // Renderiza a tabela de detalhes das RNCs abaixo do gráfico
+        function renderSetorDetails(rncs) {
+            const wrapper = document.getElementById('setorDetailsTableWrapper');
+            const empty = document.getElementById('setorDetailsEmpty');
+            const tbody = document.getElementById('setorDetailsTbody');
+            if (!tbody || !wrapper || !empty) return;
+
+            // limpar
+            tbody.innerHTML = '';
+
+            if (!Array.isArray(rncs) || rncs.length === 0) {
+                wrapper.style.display = 'none';
+                empty.style.display = 'block';
+                return;
+            }
+
+            empty.style.display = 'none';
+            wrapper.style.display = 'block';
+
+            // ordenar por data finalização desc (se disponível) ou criação
+            const sorted = rncs.slice().sort((a,b)=>{
+                const da = parseRncDate(a.finalized_at || a.created_at) || new Date(0);
+                const db = parseRncDate(b.finalized_at || b.created_at) || new Date(0);
+                return db - da;
+            });
+
+            // preencher linhas
+            sorted.forEach(r => {
+                const tr = document.createElement('tr');
+                tr.style.borderBottom = '1px solid #f1f1f1';
+                tr.style.verticalAlign = 'top';
+
+                const numTd = document.createElement('td'); numTd.style.padding='8px 10px'; numTd.textContent = r.rnc_number || r.number || r.id || '';
+                const titleTd = document.createElement('td'); titleTd.style.padding='8px 10px'; titleTd.textContent = r.title || r.summary || r.subject || '';
+                const setorTd = document.createElement('td'); setorTd.style.padding='8px 10px'; setorTd.textContent = r.setor || r.department || r.area || '';
+                const statusTd = document.createElement('td'); statusTd.style.padding='8px 10px'; statusTd.textContent = r.status || '';
+                const createdTd = document.createElement('td'); createdTd.style.padding='8px 10px';
+                const finTd = document.createElement('td'); finTd.style.padding='8px 10px';
+                const respTd = document.createElement('td'); respTd.style.padding='8px 10px'; respTd.textContent = r.responsible || r.owner || r.assigned_to || '';
+                const actionsTd = document.createElement('td'); actionsTd.style.padding='8px 10px';
+
+                const createdDate = parseRncDate(r.created_at) || null;
+                const finalizedDate = parseRncDate(r.finalized_at) || null;
+                createdTd.textContent = createdDate ? createdDate.toLocaleString() : '';
+                finTd.textContent = finalizedDate ? finalizedDate.toLocaleString() : '';
+
+                // ações: visualizar (abre viewRNC se disponível) e link para edição
+                const viewBtn = document.createElement('button');
+                viewBtn.textContent = 'Visualizar';
+                viewBtn.style.padding='6px 8px'; viewBtn.style.border='1px solid #ddd'; viewBtn.style.borderRadius='6px'; viewBtn.style.background='#fff'; viewBtn.style.cursor='pointer'; viewBtn.style.fontSize='12px';
+                viewBtn.onclick = function(e){ e.preventDefault(); if (typeof viewRNC === 'function') { viewRNC(r.id || r.rnc_id || r._id || r.number); } else if (r.id) { window.location.href = '/rnc/' + r.id; } };
+
+                actionsTd.appendChild(viewBtn);
+
+                tr.appendChild(numTd);
+                tr.appendChild(titleTd);
+                tr.appendChild(setorTd);
+                tr.appendChild(statusTd);
+                tr.appendChild(createdTd);
+                tr.appendChild(finTd);
+                tr.appendChild(respTd);
+                tr.appendChild(actionsTd);
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Comparação entre setores (stub)
+        function buildSetorComparisonChart(cache) {
+            console.log('buildSetorComparisonChart chamado (no-op): gráficos de setor desativados.');
+            return null;
+        }
+
+        // Pie chart para participação (stub)
+        function buildSetorPieChart(cache) {
+            console.log('buildSetorPieChart chamado (no-op): gráficos de setor desativados.');
+            return null;
+        }
+        
+        function buildSetorMonthlyChart(labels, values, goalArr, cumulative) {
+            console.log('buildSetorMonthlyChart chamado (no-op): gráficos de setor desativados.');
+            return null;
         }
         
         function buildSetorAccumChart(labels, cumulative, goalAccum) {
-            const ctx = document.getElementById('setorAccumChart');
-            if (!ctx) return;
-            
-            if (window.setorAccumChart) {
-                window.setorAccumChart.destroy();
-            }
-            
-            // Sanitizar valores para prevenir Infinity/NaN
-            const sanitizeCumulative = (cumulative || []).map(v => {
-                const num = Number(v);
-                return (isFinite(num) && !isNaN(num)) ? Math.max(0, Math.min(num, 5000)) : 0;
-            });
-            
-            const sanitizeGoalAccum = (goalAccum || []).map(v => {
-                const num = Number(v);
-                return (isFinite(num) && !isNaN(num)) ? Math.max(0, num) : 0;
-            });
-            
-            // Calcular escala máxima inteligente
-            const allValues = [...sanitizeCumulative, ...sanitizeGoalAccum].filter(v => v > 0);
-            const maxValue = allValues.length > 0 ? Math.max(...allValues) : 10;
-            const suggestedMax = maxValue > 0 ? Math.ceil(maxValue * 1.15) : 10;
-            
-            // Criar gradientes
-            const gradient1 = ctx.getContext('2d').createLinearGradient(0, 0, 0, 300);
-            gradient1.addColorStop(0, 'rgba(54, 162, 235, 0.5)');
-            gradient1.addColorStop(1, 'rgba(54, 162, 235, 0.05)');
-            
-            const gradient2 = ctx.getContext('2d').createLinearGradient(0, 0, 0, 300);
-            gradient2.addColorStop(0, 'rgba(75, 192, 192, 0.3)');
-            gradient2.addColorStop(1, 'rgba(75, 192, 192, 0.05)');
-            
-            window.setorAccumChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels || [],
-                    datasets: [
-                        {
-                            label: '📈 Acumulado Real',
-                            data: sanitizeCumulative,
-                            borderColor: 'rgba(54, 162, 235, 1)',
-                            backgroundColor: gradient1,
-                            borderWidth: 4,
-                            pointRadius: 7,
-                            pointHoverRadius: 10,
-                            pointBackgroundColor: 'rgba(54, 162, 235, 1)',
-                            pointBorderColor: '#fff',
-                            pointBorderWidth: 3,
-                            fill: true,
-                            tension: 0.4
-                        },
-                        {
-                            label: '🎯 Meta Acumulada',
-                            data: sanitizeGoalAccum,
-                            borderColor: 'rgba(75, 192, 192, 1)',
-                            backgroundColor: gradient2,
-                            borderWidth: 3,
-                            borderDash: [10, 5],
-                            pointRadius: 6,
-                            pointHoverRadius: 9,
-                            pointBackgroundColor: 'rgba(75, 192, 192, 1)',
-                            pointBorderColor: '#fff',
-                            pointBorderWidth: 2,
-                            fill: true,
-                            tension: 0.4
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: {
-                        mode: 'index',
-                        intersect: false
-                    },
-                    plugins: {
-                        legend: { 
-                            display: true, 
-                            position: 'top',
-                            labels: {
-                                font: { size: 13, weight: 'bold' },
-                                padding: 15,
-                                usePointStyle: true
-                            }
-                        },
-                        tooltip: {
-                            enabled: true,
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                            padding: 12,
-                            titleFont: { size: 14, weight: 'bold' },
-                            bodyFont: { size: 13 },
-                            callbacks: {
-                                label: function(context) {
-                                    const value = context.parsed.y;
-                                    let label = `${context.dataset.label}: ${isFinite(value) ? value : 0} RNCs`;
-                                    
-                                    // Adicionar diferença com meta
-                                    if (context.datasetIndex === 0 && sanitizeGoalAccum[context.dataIndex]) {
-                                        const diff = value - sanitizeGoalAccum[context.dataIndex];
-                                        if (diff > 0) {
-                                            label += ` (+${diff} acima da meta)`;
-                                        } else if (diff < 0) {
-                                            label += ` (${diff} abaixo da meta)`;
-                                        } else {
-                                            label += ` (na meta!)`;
-                                        }
-                                    }
-                                    
-                                    return label;
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: { 
-                            beginAtZero: true,
-                            max: Math.min(suggestedMax, 5000),
-                            suggestedMax: suggestedMax,
-                            title: { 
-                                display: true, 
-                                text: 'Quantidade Acumulada',
-                                font: { size: 13, weight: 'bold' }
-                            },
-                            ticks: {
-                                font: { size: 12 },
-                                stepSize: Math.max(1, Math.ceil(suggestedMax / 10)),
-                                callback: function(value) {
-                                    return isFinite(value) ? value : 0;
-                                }
-                            },
-                            grid: {
-                                color: 'rgba(0, 0, 0, 0.05)'
-                            }
-                        },
-                        x: {
-                            ticks: {
-                                font: { size: 12, weight: 'bold' }
-                            },
-                            grid: {
-                                display: false
-                            }
-                        }
-                    },
-                    animation: {
-                        duration: 1000,
-                        easing: 'easeInOutQuart'
-                    }
-                }
-            });
+            console.log('buildSetorAccumChart chamado (no-op): gráficos de setor desativados.');
+            return null;
         }
         
-        function updateSetorMonth(monthIdx) {
+        function updateSetorMonth(monthValue) {
             if (!window._setorDataCache) return;
             
-            const { months, labels, values, apiData } = window._setorDataCache;
+            const { months, labels, values, cumulative, goal, goalAccum, apiData } = window._setorDataCache;
+            
+            // Converter valor para índice numérico ou undefined
+            const monthIdx = monthValue === '' || monthValue === undefined ? undefined : parseInt(monthValue);
+            
             const monthSelect = document.getElementById('setorMonthSelect');
             if (monthSelect) {
-                monthSelect.value = monthIdx !== undefined ? monthIdx : '';
+                monthSelect.value = monthValue !== undefined ? monthValue : '';
             }
             
-            if (monthIdx !== undefined) {
-                // Atualizar detalhe do mês
+            console.log('📅 Filtro de mês atualizado:', monthIdx !== undefined ? labels[monthIdx] : 'Todos');
+            
+            // Atualizar título
+            const setorTitle = document.getElementById('setorTitle');
+            const currentSetor = apiData.setor || 'Setor';
+            
+            if (monthIdx !== undefined && !isNaN(monthIdx)) {
+                // Filtrar dados para o mês específico
+                const filteredLabels = [labels[monthIdx]];
+                const filteredValues = [values[monthIdx]];
+                const filteredGoal = [goal];
+                const filteredCumulative = [cumulative[monthIdx]];
+                const filteredGoalAccum = [goalAccum[monthIdx]];
+                
+                // Atualizar título com mês selecionado
+                if (setorTitle) {
+                    setorTitle.textContent = `${currentSetor} - ${labels[monthIdx]}`;
+                }
+                
+                // Atualizar gráfico mensal
+                if (window.setorMonthlyChart) {
+                    window.setorMonthlyChart.data.labels = filteredLabels;
+                    window.setorMonthlyChart.data.datasets[0].data = filteredValues;
+                    window.setorMonthlyChart.data.datasets[1].data = filteredGoal;
+                    window.setorMonthlyChart.update();
+                }
+                
+                // Atualizar gráfico acumulado
+                if (window.setorAccumChart) {
+                    window.setorAccumChart.data.labels = filteredLabels;
+                    window.setorAccumChart.data.datasets[0].data = filteredCumulative;
+                    window.setorAccumChart.data.datasets[1].data = filteredGoalAccum;
+                    window.setorAccumChart.update();
+                }
+                
+                // Atualizar detalhe do mês específico
                 updateSetorMonthDetail(monthIdx);
                 updateSetorInfo(monthIdx);
             } else {
-                // Visão geral
+                // Visão geral (todos os meses) - restaurar dados completos
+                
+                // Restaurar título
+                if (setorTitle) {
+                    setorTitle.textContent = `RNCs Mensais - ${currentSetor}`;
+                }
+                
+                if (window.setorMonthlyChart) {
+                    window.setorMonthlyChart.data.labels = labels;
+                    window.setorMonthlyChart.data.datasets[0].data = values;
+                    window.setorMonthlyChart.data.datasets[1].data = Array(labels.length).fill(goal);
+                    window.setorMonthlyChart.update();
+                }
+                
+                if (window.setorAccumChart) {
+                    window.setorAccumChart.data.labels = labels;
+                    window.setorAccumChart.data.datasets[0].data = cumulative;
+                    window.setorAccumChart.data.datasets[1].data = goalAccum;
+                    window.setorAccumChart.update();
+                }
+                
+                // Limpar detalhe mensal
                 if (setorMonthDetailChart) {
                     setorMonthDetailChart.destroy();
                     setorMonthDetailChart = null;
@@ -13848,6 +13857,9 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
             // Construir gráfico de detalhes diários
             const ctx = document.getElementById('setorMonthDetailChart');
             if (!ctx) return;
+            
+            ctx.style.maxHeight = '150px';
+            ctx.style.height = '150px';
             
             if (setorMonthDetailChart) {
                 setorMonthDetailChart.destroy();
@@ -13905,12 +13917,243 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
         }
         
         function resetSetorSelection() {
-            const monthSelect = document.getElementById('setorMonthSelect');
-            if (monthSelect) monthSelect.value = '';
+            console.log('🔄 Resetando seleção de setor...');
             
-            if (window._setorDataCache) {
-                updateSetorMonth();
+            // Destruir gráficos
+            destroyAllSetorCharts();
+            
+            const monthSelect = document.getElementById('setorMonthSelect');
+            if (monthSelect) {
+                monthSelect.value = '';
+                monthSelect.innerHTML = '<option value="">Todos os Meses</option>';
             }
+            
+            // Resetar seletor de setor
+            const setorSelect = document.getElementById('setorSelect');
+            if (setorSelect) {
+                setorSelect.value = '';
+            }
+            
+            // Ocultar informações
+            const setorIndicadorInfo = document.getElementById('setorIndicadorInfo');
+            if (setorIndicadorInfo) {
+                setorIndicadorInfo.style.display = 'none';
+            }
+            
+            const setorChartsContainer = document.getElementById('setorChartsContainer');
+            if (setorChartsContainer) {
+                setorChartsContainer.style.display = 'none';
+            }
+            
+            // Limpar cache
+            window._setorDataCache = null;
+            
+            // Restaurar título
+            const setorTitle = document.getElementById('setorTitle');
+            if (setorTitle) {
+                setorTitle.textContent = 'RNCs Mensais por Setor';
+            }
+            
+            // Carregar gráfico padrão
+            loadDefaultSectorChart();
+        }
+        
+        // Atualização automática dos gráficos
+        let setorAutoRefreshInterval = null;
+        let setorCountdownInterval = null;
+        let setorNextRefreshTime = null;
+        
+        function startSetorAutoRefresh() {
+            // Limpar intervalos anteriores se existirem
+            if (setorAutoRefreshInterval) {
+                clearInterval(setorAutoRefreshInterval);
+            }
+            if (setorCountdownInterval) {
+                clearInterval(setorCountdownInterval);
+            }
+            
+            // Definir tempo da próxima atualização
+            setorNextRefreshTime = Date.now() + 30000;
+            
+            // Atualizar badge com contagem regressiva
+            setorCountdownInterval = setInterval(function() {
+                const timeLeft = Math.max(0, Math.ceil((setorNextRefreshTime - Date.now()) / 1000));
+                const badge = document.getElementById('setorAutoRefreshBadge');
+                if (badge) {
+                    badge.textContent = `Auto-refresh ${timeLeft}s`;
+                }
+            }, 1000);
+            
+            // Atualizar a cada 30 segundos
+            setorAutoRefreshInterval = setInterval(function() {
+                const setorSelect = document.getElementById('setorSelect');
+                const setor = setorSelect ? setorSelect.value : '';
+                
+                if (setor) {
+                    console.log('🔄 Atualizando automaticamente dados do setor:', setor);
+                    loadSetorData();
+                } else {
+                    console.log('🔄 Atualizando automaticamente setor padrão');
+                    loadDefaultSectorChart();
+                }
+                
+                // Resetar contador
+                setorNextRefreshTime = Date.now() + 30000;
+            }, 30000);
+            
+            console.log('✅ Auto-refresh ativado (30s)');
+        }
+        
+        function stopSetorAutoRefresh() {
+            if (setorAutoRefreshInterval) {
+                clearInterval(setorAutoRefreshInterval);
+                setorAutoRefreshInterval = null;
+            }
+            if (setorCountdownInterval) {
+                clearInterval(setorCountdownInterval);
+                setorCountdownInterval = null;
+            }
+            console.log('⏸️ Auto-refresh desativado');
+        }
+        
+        // ================== NOVOS GRÁFICOS ADICIONAIS ==================
+        
+        // Gráfico de Eficiência vs Meta (%) (stub)
+        function buildSetorEfficiencyChart(cache) {
+            console.log('buildSetorEfficiencyChart chamado (no-op): gráficos de setor desativados.');
+            return null;
+        }
+        
+        // Gráfico de Prioridades por Setor (stub)
+        function buildSetorPriorityChart(cache) {
+            console.log('buildSetorPriorityChart chamado (no-op): gráficos de setor desativados.');
+            return null;
+        }
+        
+        // Gráfico de Status das RNCs
+        function buildSetorStatusChart(cache) {
+            const ctx = document.getElementById('setorStatusChart');
+            if (!ctx) return;
+            
+            ctx.style.maxHeight = '250px';
+            ctx.style.height = '250px';
+            
+            if (window.setorStatusChart) {
+                try { window.setorStatusChart.destroy(); window.setorStatusChart = null; } catch(e){/*ignore*/}
+            }
+            
+            // Usar dados reais da API (backend já filtra por período)
+            const apiData = cache?.apiData || {};
+            const rncs = apiData.rncs || [];
+            
+            // Contar RNCs por status
+            const statusData = {
+                'Pendente': 0,
+                'Em Andamento': 0,
+                'Finalizado': 0,
+                'Cancelado': 0
+            };
+            
+            rncs.forEach(rnc => {
+                const status = rnc.status || 'Pendente';
+                if (status === 'Finalizado' || status === 'Finalizada') {
+                    statusData['Finalizado']++;
+                } else if (statusData.hasOwnProperty(status)) {
+                    statusData[status]++;
+                } else {
+                    statusData['Pendente']++;
+                }
+            });
+            
+            // Se não houver dados, mostrar gráfico vazio com mensagem
+            const hasData = Object.values(statusData).some(v => v > 0);
+            if (!hasData) {
+                statusData['Pendente'] = 1;
+                statusData['Em Andamento'] = 1;
+                statusData['Finalizado'] = 1;
+                statusData['Cancelado'] = 1;
+            }
+            
+            console.log('📊 [Status] Contagem:', statusData);
+            
+            const labels = Object.keys(statusData);
+            const data = Object.values(statusData);
+            const colors = [
+                'rgba(255, 99, 132, 0.8)',
+                'rgba(255, 206, 86, 0.8)',
+                'rgba(75, 192, 192, 0.8)',
+                'rgba(153, 102, 255, 0.8)'
+            ];
+            
+            window.setorStatusChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'RNCs por Status',
+                        data: data,
+                        backgroundColor: colors,
+                        borderColor: colors.map(c => c.replace('0.8', '1')),
+                        borderWidth: 2,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.label}: ${context.parsed.y} RNCs`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: true, 
+                            max: Math.min(Math.max(...data) * 1.2, 600), // Limitar escala máxima
+                            ticks: { 
+                                stepSize: 1,
+                                callback: function(value) {
+                                    return Number.isInteger(value) ? value : '';
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Quantidade de RNCs',
+                                font: { size: 12, weight: 'bold' }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Gráfico de Valores Monetários (stub)
+        function buildSetorValueChart(cache) {
+            console.log('buildSetorValueChart chamado (no-op): gráficos de setor desativados.');
+            return null;
+        }
+        
+        // Gráfico de Top Clientes (stub)
+        function buildSetorClientChart(cache) {
+            console.log('buildSetorClientChart chamado (no-op): gráficos de setor desativados.');
+            return null;
+        }
+        
+        // Gráfico de Equipamentos (stub)
+        function buildSetorEquipmentChart(cache) {
+            console.log('buildSetorEquipmentChart chamado (no-op): gráficos de setor desativados.');
+            return null;
+        }
+        
+        // Heatmap de Dias da Semana (stub)
+        function buildSetorHeatmapChart(cache) {
+            console.log('buildSetorHeatmapChart chamado (no-op): heatmap desativado.');
+            return null;
         }
         
         // ================== FUNÇÕES PARA GRÁFICOS DE FUNCIONÁRIOS ==================
@@ -15546,23 +15789,166 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
         }, 120000); // 2 minutos
         
         // Função para garantir que os gráficos de setores funcionem
-        function initializeSetoresCharts() {
+        function initializeSetoresCharts(retries = 5, skipTabCheck = false) {
+            // Só inicializar se estivermos na aba 'setores', a menos que o chamador force a inicialização
+            if (!skipTabCheck && window.currentTab !== 'setores') {
+                console.log('initializeSetoresCharts: aba atual não é "setores" (', window.currentTab, '), abortando.');
+                return;
+            }
+
             console.log('📊 Inicializando gráficos de setores...');
-            
-            // Verificar se estamos na aba de setores
-            if (window.currentTab === 'setores') {
-                var setoresCharts = document.getElementById('setoresCharts');
-                if (setoresCharts) {
-                    setoresCharts.style.display = 'block';
-                    console.log('✅ Container de gráficos de setores exibido');
+
+            var setoresCharts = document.getElementById('setoresCharts');
+            if (!setoresCharts) {
+                console.log('⚠️ Container setoresCharts não encontrado — nada a inicializar');
+                return;
+            }
+
+            // Mostrar container apenas quando estiver na aba correta
+            setoresCharts.style.display = 'block';
+            console.log('✅ Container de gráficos de setores exibido');
+
+            // Dados exemplo: últimos 6 meses
+            const labels = ['Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out'];
+            const values = [2, 5, 3, 6, 4, 7];
+
+            // Garantir que Chart.js esteja disponível; caso não, tentar algumas vezes
+            if (typeof Chart === 'undefined') {
+                if (retries > 0) {
+                    console.log('⏳ Chart.js ainda não carregado, tentando novamente em 300ms (tentativas restantes:', retries, ')');
+                    setTimeout(function() { initializeSetoresCharts(retries - 1); }, 300);
+                } else {
+                    console.error('❌ Chart.js não carregou após várias tentativas.');
                 }
+                return;
+            }
+
+            try {
+                buildSetorSingleChart(labels, values);
+                console.log('✅ setorSingleChart criado com sucesso');
+                return window.setorSingleChart;
+            } catch(e) {
+                console.error('Erro ao inicializar Chart:', e);
+                return null;
             }
         }
+
+        // Robust initializer: wait for Chart.js, ensure container visible, and build chart.
+        function initializeSetorSingleChartWhenVisible(retries = 8, retryDelay = 300) {
+            const container = document.getElementById('setoresCharts');
+            const canvas = document.getElementById('setorSingleChart');
+            console.log('initializeSetorSingleChartWhenVisible called, container:', !!container, 'canvas:', !!canvas);
+
+            function tryBuild() {
+                try {
+                    if (typeof Chart === 'undefined') {
+                        console.log('Chart.js not ready, retries left:', retries);
+                        if (retries-- > 0) setTimeout(tryBuild, retryDelay);
+                        return;
+                    }
+
+                    // only build if setores tab active and container visible
+                    if (window.currentTab && window.currentTab !== 'setores') {
+                        console.log('currentTab is not setores, skipping build');
+                        return;
+                    }
+
+                    // If container exists but is hidden, wait for visibility via IntersectionObserver
+                    if (container) {
+                        const style = window.getComputedStyle(container);
+                        if (style && style.display === 'none') {
+                            console.log('setoresCharts is hidden; attaching observer to wait for visibility');
+                            observeVisibility(container);
+                            return;
+                        }
+                    }
+
+                    // Fallback labels/values for initial render
+                    const labels = ['Jan','Feb','Mar','Apr','May','Jun'];
+                    const values = [0,0,0,0,0,0];
+                    buildSetorSingleChart(labels, values);
+                } catch (e) {
+                    console.error('initializeSetorSingleChartWhenVisible error', e);
+                }
+            }
+
+            function observeVisibility(el) {
+                if (!('IntersectionObserver' in window)) {
+                    console.log('IntersectionObserver not supported, will retry build in ' + retryDelay + 'ms');
+                    if (retries-- > 0) setTimeout(tryBuild, retryDelay);
+                    return;
+                }
+                const io = new IntersectionObserver((entries, observer) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            console.log('setoresCharts became visible via IntersectionObserver');
+                            observer.disconnect();
+                            // small delay to allow styles/layout to settle
+                            setTimeout(() => tryBuild(), 80);
+                        }
+                    });
+                }, { threshold: 0.1 });
+                io.observe(el);
+                // safety timeout to stop observing after a while and attempt build anyway
+                setTimeout(() => { tryBuild(); try { io.disconnect(); } catch(e){} }, 5000);
+            }
+
+            tryBuild();
+        }
+
+        // Ensure we attempt initialization when switchTab activates 'setores'
+        (function attachSetoresTabHook(){
+            // attach a click listener to the tab button as a reliable fallback
+            try {
+                // original switchTab may be overwritten later; add both hook and click listener
+                const original = window.switchTab;
+                window.switchTab = function(tab) {
+                    try { if (typeof original === 'function') original(tab); } catch(e) { console.warn('original switchTab failed', e); }
+                    if (tab === 'setores') {
+                        // small delay to let the tab DOM update
+                        setTimeout(() => initializeSetorSingleChartWhenVisible(), 120);
+                    }
+                };
+
+                // find tab button by text content as fallback and attach click listener
+                setTimeout(() => {
+                    try {
+                        const tabButtons = Array.from(document.querySelectorAll('.tab-button, button'));
+                        for (const b of tabButtons) {
+                            if (b.textContent && b.textContent.trim().includes('RNCs Mensais por Setor')) {
+                                b.addEventListener('click', () => setTimeout(() => initializeSetorSingleChartWhenVisible(), 120));
+                                console.log('Attached click listener to RNCs Mensais por Setor tab button');
+                                break;
+                            }
+                        }
+                    } catch(e) { /* ignore */ }
+                }, 400);
+            } catch(e) { console.warn('setores tab hook attach failed', e); }
+            console.log('setores tab hook attached');
+        })();
         
         // Inicializar quando a página carregar
         document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(initializeSetoresCharts, 500);
-        });
+                setTimeout(function() {
+                    if (window.currentTab === 'setores') initializeSetoresCharts();
+                }, 500);
+                // Carregar gráfico padrão de engenharia
+                setTimeout(() => {
+                    loadDefaultSectorChart();
+                }, 1000);
+
+                // debug button handler removed
+
+                // Garantir que o botão Aplicar e selects acionem applySetorFilters mesmo que setupSetorFiltersAndRender não rode ainda
+                setTimeout(() => {
+                    const applyBtn = document.getElementById('applySetorFilters');
+                    if (applyBtn) applyBtn.addEventListener('click', (e) => { e.preventDefault(); try { applySetorFilters(); } catch(err){ console.error(err); } });
+                    ['filterYear','filterStatus'].forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el) el.addEventListener('change', () => { try { applySetorFilters(); } catch(e){ console.error(e); } });
+                    });
+                }, 700);
+            });
     </script>
 
 </body>
