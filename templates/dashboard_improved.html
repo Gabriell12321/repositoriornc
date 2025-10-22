@@ -214,6 +214,104 @@
                 select.appendChild(opt);
             });
         }
+
+        async function ensureResponsiblesLoaded() {
+            if (window._allResponsiblesForFilters && window._allResponsiblesForFilters.length > 0) {
+                console.log('✅ Responsáveis já carregados:', window._allResponsiblesForFilters.length);
+                return window._allResponsiblesForFilters;
+            }
+            
+            try {
+                console.log('📊 Buscando responsáveis das RNCs...');
+                const response = await fetch('/api/rnc/list?tab=finalized&limit=5000');
+                const data = await response.json();
+                
+                console.log('📊 Resposta recebida para responsáveis:', data);
+                
+                if (data && Array.isArray(data.rncs)) {
+                    const responsiblesMap = new Map();
+                    
+                    data.rncs.forEach((rnc, index) => {
+                        if (index === 0) {
+                            console.log('📊 Amostra da primeira RNC (responsáveis):', rnc);
+                        }
+                        
+                        const responsibleName = rnc.user_name || rnc.responsible || rnc.responsavel;
+                        const sectorName = rnc.setor || rnc.department || rnc.sector;
+                        
+                        if (responsibleName && responsibleName.trim() !== '') {
+                            const key = responsibleName.trim();
+                            if (!responsiblesMap.has(key)) {
+                                responsiblesMap.set(key, {
+                                    name: key,
+                                    setor: sectorName ? sectorName.trim() : null
+                                });
+                            }
+                        }
+                    });
+                    
+                    window._allResponsiblesForFilters = Array.from(responsiblesMap.values()).sort((a, b) => 
+                        a.name.localeCompare(b.name)
+                    );
+                    
+                    console.log('✅ Responsáveis únicos encontrados:', window._allResponsiblesForFilters.length);
+                    console.log('✅ Lista de responsáveis:', window._allResponsiblesForFilters);
+                    
+                    return window._allResponsiblesForFilters;
+                }
+            } catch(err) {
+                console.error('❌ Erro ao carregar responsáveis:', err);
+            }
+            
+            return [];
+        }
+
+        async function ensureResponsiblesLoadedSelect() {
+            const select = document.getElementById('filterResponsible');
+            if (!select) return;
+            
+            const sectorSelect = document.getElementById('filterDepartment');
+            const selectedSector = sectorSelect ? sectorSelect.value : '';
+            
+            const responsibles = await ensureResponsiblesLoaded();
+            
+            // Limpar opções antigas (exceto a primeira)
+            while (select.options.length > 1) {
+                select.remove(1);
+            }
+            
+            // Filtrar responsáveis por setor se um setor estiver selecionado
+            let filteredResponsibles = responsibles;
+            if (selectedSector && selectedSector !== '') {
+                filteredResponsibles = responsibles.filter(r => r.setor === selectedSector);
+                console.log(`📊 Filtrando responsáveis do setor "${selectedSector}":`, filteredResponsibles.length);
+            }
+            
+            filteredResponsibles.forEach(r => {
+                const opt = document.createElement('option');
+                opt.value = r.name || '';
+                const displayText = r.setor ? `${r.name} (${r.setor})` : r.name;
+                opt.textContent = displayText;
+                select.appendChild(opt);
+            });
+            
+            if (filteredResponsibles.length === 0 && selectedSector) {
+                const opt = document.createElement('option');
+                opt.value = '';
+                opt.textContent = 'Nenhum responsável neste setor';
+                opt.disabled = true;
+                select.appendChild(opt);
+            }
+        }
+
+        function updateResponsiblesBySelectedSector() {
+            const sectorSelect = document.getElementById('filterDepartment');
+            const responsibleSelect = document.getElementById('filterResponsible');
+            
+            if (!sectorSelect || !responsibleSelect) return;
+            
+            ensureResponsiblesLoadedSelect();
+        }
     </script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -1694,7 +1792,7 @@
                         </div>
                         <div class="filter-group">
                             <label for="filterDepartment">Setor:</label>
-                            <select id="filterDepartment" style="padding:6px 8px; border:1px solid #ddd; border-radius:6px; min-width:220px;" onchange="applyFilters()" onfocus="ensureSectorsLoadedSelect()">
+                            <select id="filterDepartment" style="padding:6px 8px; border:1px solid #ddd; border-radius:6px; min-width:220px;" onchange="updateResponsiblesBySelectedSector(); applyFilters();" onfocus="ensureSectorsLoadedSelect()">
                                 <option value="">Selecione o setor</option>
                             </select>
                         </div>
@@ -1704,7 +1802,9 @@
                         </div>
                         <div class="filter-group">
                             <label for="filterResponsible">Responsável:</label>
-                            <input type="text" id="filterResponsible" placeholder="Nome do responsável" onkeyup="applyFilters()">
+                            <select id="filterResponsible" style="padding:6px 8px; border:1px solid #ddd; border-radius:6px; min-width:220px;" onchange="applyFilters()" onfocus="ensureResponsiblesLoadedSelect()">
+                                <option value="">Selecione o responsável</option>
+                            </select>
                         </div>
                         <div class="filter-group">
                             <label for="filterCV">CV:</label>
@@ -5107,13 +5207,16 @@ Status: ${data.debug_info.inspection2_empty ? '❌ VAZIO' : '✅ PREENCHIDO'}`);
                 console.error('❌ AdvancedCharts não disponível!');
             }
             
-            // Pré-carregar clientes e setores para os filtros
+            // Pré-carregar clientes, setores e responsáveis para os filtros
             setTimeout(() => {
                 ensureClientsLoaded().then(() => {
                     console.log('✅ Clientes pré-carregados para filtros');
                 });
                 ensureSectorsLoaded().then(() => {
                     console.log('✅ Setores pré-carregados para filtros');
+                });
+                ensureResponsiblesLoaded().then(() => {
+                    console.log('✅ Responsáveis pré-carregados para filtros');
                 });
             }, 1000);
             
