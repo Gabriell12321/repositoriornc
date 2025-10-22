@@ -242,7 +242,7 @@ def create_rnc():
         # Se não há assigned_group_id mas há area_responsavel (ID do grupo), usar o area_responsavel
         if not assigned_group_id and data.get('area_responsavel'):
                 raw_area = data.get('area_responsavel')
-                # Primeiro, tentar interpretar como ID numérico
+                # Primeiro, tentar nterpretar como ID numérico
                 try:
                     area_responsavel_id = int(raw_area)
                     assigned_group_id = area_responsavel_id

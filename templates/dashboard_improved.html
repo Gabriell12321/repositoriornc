@@ -13641,18 +13641,31 @@ Status: ${data.debug_info.inspection2_empty ? ' VAZIO' : ' PREENCHIDO'}`);
         function buildSetorCharts(apiData, setor) {
             console.log(' buildSetorCharts chamado para setor:', setor);
             console.log(' apiData recebido:', apiData);
-            console.log(' apiData.monthly_trend:', apiData?.monthly_trend);
-            
-            if (!apiData || !apiData.monthly_trend || apiData.monthly_trend.length === 0) {
-                console.warn(' Sem monthly_trend para construir gráficos');
-                console.warn('   apiData existe?', !!apiData);
-                console.warn('   monthly_trend existe?', !!apiData?.monthly_trend);
-                console.warn('   monthly_trend.length:', apiData?.monthly_trend?.length);
+
+            // Normalizar possíveis variações de chave retornadas pela API
+            let monthly = apiData?.monthly_trend || apiData?.monthly_trends || apiData?.tendencia || null;
+
+            // Se não veio monthly_* mas temos lista de rncs, gerar uma monthly_trend a partir delas
+            if ((!monthly || monthly.length === 0) && Array.isArray(apiData?.rncs) && apiData.rncs.length > 0) {
+                console.log(' Gerando monthly_trend a partir de apiData.rncs (fallback)');
+                const monthlyMap = {};
+                apiData.rncs.forEach(rnc => {
+                    const dateField = rnc.finalized_at || rnc.created_at || rnc.data_abertura || rnc.date || rnc.createdAt;
+                    if (!dateField) return;
+                    const key = ('' + dateField).substring(0,7); // YYYY-MM or similar
+                    monthlyMap[key] = (monthlyMap[key] || 0) + 1;
+                });
+                const months = Object.keys(monthlyMap).sort();
+                monthly = months.map(m => ({ month: m, count: monthlyMap[m] }));
+            }
+
+            if (!monthly || monthly.length === 0) {
+                console.warn(' Sem monthly_trend para construir gráficos (nenhum dado disponível)');
                 return;
             }
-            
-            const labels = apiData.monthly_trend.map(m => m.month);
-            const values = apiData.monthly_trend.map(m => m.count);
+
+            const labels = monthly.map(m => m.month);
+            const values = monthly.map(m => m.count);
             
             console.log(' Labels:', labels);
             console.log(' Values:', values);
