@@ -279,6 +279,10 @@
         .disposition-section, .inspection-section {
             padding: 4px;
             position: relative;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            word-break: break-word;
+            overflow-wrap: break-word;
         }
 
         .disposition-section {
@@ -334,9 +338,10 @@
 
         .disposition-option label {
             flex: 1;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            word-break: break-word;
+            overflow-wrap: break-word;
         }
 
         /* Campos de assinatura ULTRA compactos - todas as informações em uma linha alinhadas */
@@ -417,6 +422,10 @@
 
         .approval-option label {
             flex: 1;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            word-break: break-word;
+            overflow-wrap: break-word;
         }
 
         /* Campo de referência RNC compacto */
@@ -442,474 +451,335 @@
         }
 
         /* ========================================== */
-        /* CSS DE IMPRESSÃO - EXATO DO NEW_RNC.HTML */
-        /* ATUALIZADO: 2024-10-15 17:23 - COM LINHAS */
+        /* MODO DE IMPRESSÃO - FOLHA A4 COMPLETA */
         /* ========================================== */
         @media print {
-            /* PRIMEIRA REGRA - FORÇAR TODAS AS BORDAS PARA 1PX IMEDIATAMENTE */
-            * {
-                border-width: 1px !important;
-            }
-            
+            /* REMOVER BOTÕES E CONTROLES */
             .action-bar,
             .create-mode-banner,
             .no-print,
             .print-controls,
-            button[onclick="openValoresSelectionModal()"],
-            div[style*="width: 60px; height: 2px"],
-            div[style*="margin-bottom: 10px"] > div[style*="width: 60px"] {
+            button {
                 display: none !important;
             }
             
-            body {
-                background: white;
-                margin: 0;
-                margin-top: 0 !important;
-                padding: 0;
-                padding-top: 0 !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
+            /* Configuração da página */
+            @page {
+                size: A4 portrait;
+                margin: 20mm 5mm 3mm 5mm;
             }
             
-            /* Forçar impressão exata de cores */
-            * {
+            body {
+                background: white !important;
+                margin: 0;
+                padding: 0;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
+                color: #000 !important;
             }
             
             .container {
                 box-shadow: none !important;
                 border: none !important;
                 border-top: none !important;
-                padding: 3px;
-                padding-top: 0 !important;
-                margin: 0;
-                margin-top: 0 !important;
+                padding: 0 !important;
+                margin: 0 !important;
                 width: 100%;
                 height: auto;
                 overflow: visible;
                 border-radius: 0 !important;
+                background: white !important;
             }
             
-            /* Ajustar tamanho da página */
-            @page {
-                size: A4 portrait;
-                margin: 8mm;
-            }
-            
-            /* Otimizar escala para caber em 1 folha */
-            html {
-                zoom: 0.82;
-            }
-            
-            body {
-                margin: 0;
-                padding: 0;
-                transform-origin: top center;
-            }
-            
-            .container {
-                padding: 3px !important;
-                margin: 0 !important;
-                max-width: 100% !important;
-            }
-            
-            /* Logo no topo centralizado */
-            .logo-ippel {
-                width: auto !important;
-                height: auto !important;
-                margin: 3px auto !important;
-                display: block !important;
-            }
-            
-            .logo-ippel img,
-            .logo-img {
-                width: 45px !important;
-                height: 45px !important;
-                display: block !important;
-                margin: 0 auto !important;
+            /* ===== HEADER E LOGO - OCULTAR NA IMPRESSÃO ===== */
+            .header {
+                display: none !important;
             }
             
             .logos {
-                margin-bottom: 5px !important;
-                margin-top: 0 !important;
-                padding-top: 0 !important;
-                border: none !important;
-                text-align: center !important;
+                display: none !important;
             }
             
-            .header {
-                border: none !important;
-                box-shadow: none !important;
-                text-align: center !important;
-                margin-bottom: 5px !important;
+            .logo-ippel img {
+                display: none !important;
             }
             
-            /* Reduzir espaçamentos */
+            /* ===== TÍTULOS - SEM MARGEM ===== */
             .title-section {
                 margin: 0 !important;
                 padding: 0 !important;
             }
             
             .main-title {
-                font-size: 12px !important;
-                margin-bottom: 2px !important;
-                margin-top: 2px !important;
-                padding-top: 0 !important;
+                font-size: 13px !important;
+                margin-bottom: 1px !important;
+                margin-top: 0 !important;
+                padding: 0 !important;
                 color: #000 !important;
                 line-height: 1.1 !important;
-                text-align: center !important;
                 font-weight: bold !important;
-                border: 2px solid #000 !important;
-                padding: 5px !important;
-                background: #fff !important;
+                -webkit-text-fill-color: #000 !important;
+                background: none !important;
             }
             
             .subtitle {
-                display: none !important;
+                font-size: 9px !important;
+                margin: 1px 0 !important;
+                padding: 0 !important;
+                line-height: 1.1 !important;
+                color: #333 !important;
             }
             
             .form-code {
-                display: none !important;
+                font-size: 8px !important;
+                margin: 1px 0 !important;
+                padding: 0 !important;
+                line-height: 1.1 !important;
+                color: #333 !important;
             }
             
             .rnc-number {
-                margin-bottom: 3px !important;
-                margin-top: 2px !important;
-                padding: 4px !important;
-                border: 2px solid #dc3545 !important;
-                background: #fff !important;
-                text-align: center !important;
-                font-size: 10px !important;
-                font-weight: bold !important;
-                color: #dc3545 !important;
-                border-radius: 3px !important;
-            }
-            
-            /* Reduzir espaço entre subtitle, form-code e rnc-number */
-            .subtitle + .form-code,
-            .form-code + .rnc-number,
-            .title-section + .rnc-number,
-            div[style*="FABRICAÇÃO"] + div {
-                margin-top: 0 !important;
-                padding-top: 0 !important;
-            }
-            
-            /* Garantir espaçamento zero entre elementos do header */
-            .title-section > * {
-                margin: 0 !important;
-                padding-top: 0 !important;
-                padding-bottom: 0 !important;
-            }
-            
-            .rnc-number input {
-                padding: 1px !important;
-                font-size: 8px !important;
-                border: 1px solid #000 !important;
-                border-radius: 0 !important;
-                width: 90px !important;
-                max-width: 50px !important;
-            }
-            
-            .rnc-number label {
-                margin: 0 !important;
-                padding: 0 !important;
-                margin-right: 5px !important;
-                color: #000 !important;
-                font-weight: bold !important;
-                font-size: 8px !important;
-            }
-            
-            /* Reduzir espaçamento das seções */
-            div[style*="margin: 25px 0"] {
                 margin: 2px 0 !important;
-                border: 2px solid #000 !important;
+                padding: 3px 6px !important;
                 border-radius: 0 !important;
-            }
-            
-            /* Cabeçalhos das seções com fundo cinza */
-            div[style*="background: linear-gradient"] {
-                background: #4a5568 !important;
-                color: #fff !important;
-                padding: 4px !important;
+                text-align: center !important;
                 font-size: 10px !important;
                 font-weight: bold !important;
-                text-align: center !important;
-                border-bottom: 2px solid #000 !important;
-                letter-spacing: 0.5px !important;
-            }
-            
-            /* Reduzir padding das seções */
-            div[style*="padding: 20px"] {
-                padding: 3px !important;
-                background: #fff !important;
-            }
-            
-            /* Configuração completa das tabelas */
-            table {
-                margin-bottom: 3px !important;
-                font-size: 8px !important;
-                border: 2px solid #000 !important;
-                border-collapse: collapse !important;
-                width: 100% !important;
-            }
-            
-            /* Estratégia de bordas simplificada - apenas bordas internas */
-            table td, table th {
-                border: none !important;
-                border-right: 1px solid #000 !important;
-                border-bottom: 1px solid #000 !important;
-                padding: 2px !important;
-            }
-            
-            /* Remover borda direita da última célula */
-            table td:last-child,
-            table th:last-child {
-                border-right: none !important;
-            }
-            
-            /* Remover borda inferior da última linha */
-            table tr:last-child td,
-            table tr:last-child th {
-                border-bottom: none !important;
-            }
-            
-            /* Remover borda das células que contêm apenas inputs (evitar borda dupla) */
-            table td:has(input.input-field:only-child),
-            table td:has(textarea.input-field:only-child),
-            table td:has(select.input-field:only-child) {
-                border: none !important;
-                padding: 0 !important;
-            }
-            
-            /* Alternativa: remover borda de todas as células não-label */
-            table tr:not(:first-child) td {
-                border: none !important;
-                padding: 0 !important;
-            }
-            
-            /* Manter borda apenas nos labels */
-            table tr:first-child td,
-            table td.field-label,
-            table td.item-column,
-            table td.section-title {
-                border: 1px solid #000 !important;
-                padding: 2px !important;
-            }
-            
-            .field-label {
-                padding: 3px !important;
-                font-size: 7px !important;
-                background: #e2e8f0 !important;
-                color: #000 !important;
-                border: 1px solid #000 !important;
-                line-height: 1.2 !important;
-                font-weight: 600 !important;
-            }
-            
-            .field-value {
-                padding: 4px !important;
-                font-size: 8px !important;
-                min-height: auto !important;
-                border: 1px solid #000 !important;
-                color: #000 !important;
-                line-height: 1.3 !important;
-            }
-            
-            .input-field {
-                padding: 4px !important;
-                font-size: 8px !important;
-                min-height: auto !important;
-                border: 1px solid #000 !important;
-                color: #000 !important;
-                line-height: 1.3 !important;
-            }
-            
-            textarea.input-field {
-                min-height: 90px !important;
-                line-height: 1.4 !important;
-                height: 90px !important;
-            }
-            
-            /* Aumentar altura específica para textareas grandes */
-            textarea.large-text-area {
-                min-height: 100px !important;
-                height: 100px !important;
-            }
-            
-            textarea.medium-text-area {
-                min-height: 95px !important;
-                height: 95px !important;
-            }
-            
-            /* Altura para textarea de 2 linhas */
-            textarea.instruction-2lines {
-                min-height: 50px !important;
-                height: 50px !important;
-                line-height: 1.4 !important;
-            }
-            
-            .section-title {
-                padding: 3px !important;
-                font-size: 8px !important;
-                background: #fff !important;
-                color: #000 !important;
-                border: 1px solid #000 !important;
+                background: #f5f5f5 !important;
+                border: 1px solid #333 !important;
                 line-height: 1.1 !important;
-                text-align: center !important;
-                font-weight: bold !important;
-            }
-            
-            .section-content {
-                padding: 2px !important;
-                font-size: 9px !important;
-                border: 1px solid #000 !important;
-                border-top: none !important;
                 color: #000 !important;
-                line-height: 1.3 !important;
-                background: #fff !important;
-                min-height: 50px !important;
-            }
-
-            .section-content-large {
-                min-height: 50px !important; /* Correspondente ao textarea.large-text-area */
-            }
-
-            .section-content-medium {
-                min-height: 40px !important; /* Correspondente ao textarea.medium-text-area */
-            }
-
-            .section-content-instruction {
-                min-height: 35px !important; /* Correspondente ao textarea.instruction-2lines */
-                background-image: repeating-linear-gradient(
-                    transparent,
-                    transparent 8px,
-                    #ccc 8px,
-                    #ccc 9px
-                ) !important;
             }
             
-            /* Adicionar linhas em todos os campos de conteúdo na impressão */
-            .section-content,
-            .section-content-large,
-            .section-content-medium {
-                background-image: repeating-linear-gradient(
-                    transparent,
-                    transparent 12px,
-                    #000 12px,
-                    #000 13px
-                ) !important;
-                background-color: white !important;
+            .rnc-number::before {
+                content: '' !important;
+                margin: 0 !important;
             }
             
-            /* FORÇAR TODAS AS BORDAS PARA 1PX - REGRA MÁXIMA PRIORIDADE */
-            *,
-            *::before,
-            *::after,
-            div,
-            input,
-            select,
-            textarea,
-            table,
-            td,
-            th,
-            tr {
-                border-width: 1px !important;
-            }
-            
-            /* Forçar bordas 1px em elementos com style inline */
-            *[style*="border: 2px"],
-            *[style*="border:2px"],
-            *[style*="border: 3px"],
-            *[style*="border:3px"],
-            *[style*="border-right: 2px"],
-            *[style*="border-bottom: 2px"],
-            *[style*="border-top: 2px"],
-            *[style*="border-left: 2px"] {
-                border-width: 1px !important;
-                border-style: solid !important;
-                border-color: #000 !important;
-            }
-            
-            div[style*="border"],
-            section[style*="border"],
-            div,
-            section,
-            table,
-            tr,
-            td,
-            th {
-                border-width: 1px !important;
-                border-style: solid !important;
-                border-color: #000 !important;
-            }
-            
-            /* Bordas de seções específicas - SEMPRE 1px - MÁXIMA PRIORIDADE */
-            div[style*="border: 2px solid"],
-            div[style*="border:2px"],
-            div[style*="border: 3px"],
-            div[style*="border:3px"],
-            div[style*="border: 2px solid #6c757d"],
-            div[style*="margin: 25px 0; border"],
-            section[style*="border:"],
-            div[style*="margin: 25px 0"],
-            div[style*="border-radius"],
-            div[style*="box-shadow"] {
-                border: 1px solid #000 !important;
-                border-width: 1px !important;
-                border-style: solid !important;
-                border-color: #000 !important;
+            /* ===== SEÇÕES - ESPAÇAMENTO COMPACTO ===== */
+            div[style*="margin: 25px 0"] {
+                margin: 0 0 4px 0 !important;
+                border: 1px solid #333 !important;
+                border-radius: 0 !important;
+                page-break-inside: avoid !important;
                 box-shadow: none !important;
             }
             
-            /* Cabeçalho de disposição e inspeção */
+            /* Headers de seção */
+            div[style*="background: linear-gradient"],
             div[style*="background: #6c757d"] {
-                background: #d6d6d6 !important;
+                background: #d0d0d0 !important;
                 color: #000 !important;
-                padding: 3px !important;
-                font-size: 8px !important;
+                padding: 4px 6px !important;
+                font-size: 9px !important;
                 font-weight: bold !important;
-                border: 1px solid #000 !important;
+                border: none !important;
+                border-bottom: 1px solid #333 !important;
+                line-height: 1.2 !important;
+                margin: 0 !important;
+                min-height: auto !important;
+                text-transform: uppercase !important;
             }
             
-            /* Checkboxes */
-            input[type="checkbox"] {
-                width: 9px !important;
-                height: 9px !important;
-                border: 1px solid #000 !important;
-                margin: 1px !important;
-                margin-right: 3px !important;
+            /* Padding das seções */
+            div[style*="padding: 20px"],
+            div[style*="padding: 15px"] {
+                padding: 4px 6px !important;
+                background: #fff !important;
+                margin: 0 !important;
             }
             
-            /* FORÇAR TODAS AS LETRAS EM PRETO */
-            *,
-            body,
-            div,
-            span,
-            label,
-            input,
-            textarea,
-            select,
-            option,
-            td,
-            th,
-            p,
-            h1, h2, h3, h4, h5, h6 {
+            /* ===== TABELAS ===== */
+            table {
+                width: 100% !important;
+                border-collapse: collapse !important;
+                margin-bottom: 0 !important;
+                margin-top: 0 !important;
+                font-size: 8px !important;
+                page-break-inside: avoid !important;
+                border: none !important;
+                box-shadow: none !important;
+                table-layout: fixed !important;
+            }
+            
+            table td,
+            table th {
+                border: 1px solid #666 !important;
+                padding: 3px 5px !important;
+                color: #000 !important;
+                line-height: 1.3 !important;
+                height: auto !important;
+                min-height: auto !important;
+                vertical-align: middle !important;
+                white-space: pre-wrap !important;
+                word-wrap: break-word !important;
+                word-break: break-word !important;
+                overflow-wrap: break-word !important;
+                max-width: 0 !important;
+            }
+            
+            .field-label {
+                background: #e8e8e8 !important;
+                font-weight: bold !important;
+                font-size: 7px !important;
+                padding: 3px 5px !important;
+                height: auto !important;
                 color: #000 !important;
             }
             
-            /* Remover espaços extras */
-            body * {
-                line-height: 1.1 !important;
+            .field-value {
+                background: white !important;
+                font-size: 8px !important;
+                padding: 3px 5px !important;
+                color: #000 !important;
+                font-weight: normal !important;
+                white-space: pre-wrap !important;
+                word-wrap: break-word !important;
+                word-break: break-word !important;
+                overflow-wrap: break-word !important;
             }
             
-            /* Forçar quebra de página apenas no final */
-            * {
+            .section-title {
+                background: #d0d0d0 !important;
+                color: #000 !important;
+                font-weight: bold !important;
+                font-size: 9px !important;
+                padding: 4px 6px !important;
+                border: none !important;
+            }
+            
+            .section-content {
+                padding: 10px 12px !important;
+                font-size: 8px !important;
+                color: #000 !important;
+                background: white !important;
+                min-height: 60px !important;
+                line-height: 1.5 !important;
+                white-space: pre-wrap !important;
+                word-wrap: break-word !important;
+                word-break: break-word !important;
+                overflow-wrap: break-word !important;
+            }
+            
+            .section-content-large {
+                min-height: 120px !important;
+                padding: 12px 14px !important;
+                white-space: pre-wrap !important;
+                word-wrap: break-word !important;
+                word-break: break-word !important;
+            }
+            
+            .section-content-medium {
+                min-height: 100px !important;
+                padding: 12px 14px !important;
+                white-space: pre-wrap !important;
+                word-wrap: break-word !important;
+                word-break: break-word !important;
+            }
+            
+            .section-content-instruction {
+                min-height: 90px !important;
+                padding: 12px 14px !important;
+                white-space: pre-wrap !important;
+                word-wrap: break-word !important;
+                word-break: break-word !important;
+            }
+            
+            /* Regras específicas para as tabelas de descrição */
+            table .section-content-large,
+            table .section-content-medium,
+            table .section-content-instruction {
+                height: auto !important;
+            }
+            
+            /* ===== CHECKBOXES ===== */
+            input[type="checkbox"] {
+                width: 13px !important;
+                height: 13px !important;
+                margin: 0 6px 0 0 !important;
+                -webkit-appearance: checkbox !important;
+                appearance: checkbox !important;
+            }
+            
+            /* ===== SEÇÃO DE ASSINATURAS ===== */
+            .signature-fields {
+                margin-top: 6px !important;
+            }
+            
+            /* ===== REMOVER EMOJIS ===== */
+            .form-number::before {
+                content: '' !important;
+            }
+            
+            /* ===== ESPAÇAMENTO ENTRE SEÇÕES ===== */
+            .section-table {
+                margin-bottom: 0 !important;
+                margin-top: 0 !important;
+            }
+            
+            .bottom-section {
+                margin-top: 4px !important;
+                margin-bottom: 0 !important;
+                padding: 0 !important;
+                border: 1px solid #333 !important;
+            }
+            
+            .disposition-section,
+            .inspection-section {
+                padding: 6px 8px !important;
+                white-space: pre-wrap !important;
+                word-wrap: break-word !important;
+                word-break: break-word !important;
+            }
+            
+            .section-header {
+                padding: 4px 6px !important;
+                font-size: 9px !important;
+                line-height: 1.2 !important;
+                background: #d0d0d0 !important;
+                color: #000 !important;
+            }
+            
+            /* ===== LABELS E TEXTOS ===== */
+            label {
+                font-size: 8px !important;
+                color: #000 !important;
+                font-weight: normal !important;
+                white-space: pre-wrap !important;
+                word-wrap: break-word !important;
+                word-break: break-word !important;
+            }
+            
+            /* ===== EVITAR QUEBRAS DE PÁGINA ===== */
+            .container {
+                page-break-after: avoid !important;
+            }
+            
+            table,
+            div[style*="margin: 25px 0"] {
                 page-break-inside: avoid !important;
             }
             
-            .container {
-                page-break-after: avoid !important;
+            /* ===== BORDAS E ESTILOS FINAIS ===== */
+            * {
+                box-shadow: none !important;
+            }
+            
+            /* ===== ASSINATURAS FINAIS - COMPACTAS ===== */
+            div[style*="margin-top: 15px"] {
+                margin-top: 4px !important;
+            }
+            
+            div[style*="padding: 15px"] {
+                padding: 6px 8px !important;
+            }
+            
+            div[style*="padding: 8px"] {
+                padding: 4px 6px !important;
+            }
+            
+            div[style*="margin-bottom: 25px"] {
+                margin-bottom: 4px !important;
             }
         }
 
@@ -1028,6 +898,15 @@
             border-radius: 8px;
             overflow: hidden;
             box-shadow: 0 2px 8px rgba(108, 117, 125, 0.1);
+            table-layout: fixed;
+        }
+        
+        table td,
+        table th {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            word-break: break-word;
+            overflow-wrap: break-word;
         }
 
         .field-label {
@@ -1051,6 +930,10 @@
             background: white;
             vertical-align: middle;
             min-height: 20px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            word-break: break-word;
+            overflow-wrap: break-word;
         }
 
         .section-title {
@@ -1075,6 +958,8 @@
             vertical-align: top;
             white-space: pre-wrap;
             word-wrap: break-word;
+            word-break: break-word;
+            overflow-wrap: break-word;
         }
 
         /* Alturas específicas para cada tipo de campo - IGUAIS AO NEW_RNC.HTML */
@@ -1091,25 +976,34 @@
         }
 
         .header {
-            margin-bottom: 12px;
+            margin-bottom: 8px;
         }
 
         table {
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         .section-table {
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         .bottom-section {
-            margin-top: 12px;
+            margin-top: 8px;
         }
 
         /* Garantir que os campos não quebrem */
         .signature-row {
             min-height: 30px;
             align-items: center;
+        }
+
+        /* Reduzir espaçamento entre blocos na visualização */
+        .container > div[style*="margin: 25px 0"] {
+            margin: 12px 0 !important;
+        }
+        
+        .container > table {
+            margin-bottom: 8px !important;
         }
 
         /* Ajustar tamanho dos campos para evitar overflow */
@@ -1135,10 +1029,7 @@
                     ←
                     Voltar
                 </a>
-                <a href="/rnc/{{ rnc.id }}/edit" class="btn btn-secondary">
-                    ✏️
-                    Editar
-                </a>
+         
             </div>
             <div class="controls-right">
                 <button onclick="window.print()" class="btn btn-print">
@@ -1261,8 +1152,8 @@
                 <!-- Linha 3: VALOR TOTAL | OBSERVAÇÃO -->
                 <table style="margin-bottom: 0;">
                     <tr>
-                        <td class="field-label" style="width: 50%;">VALOR TOTAL (R$)</td>
-                        <td class="field-label" style="width: 50%;">OBSERVAÇÃO</td>
+                        <td class="field-label" style="width: 30%;">VALOR TOTAL (R$)</td>
+                        <td class="field-label" style="width: 70%;">OBSERVAÇÃO</td>
                     </tr>
                     <tr>
                         <td class="field-value" style="font-weight: bold; color: #6c757d;">
@@ -1297,8 +1188,8 @@
                         <td class="field-label" style="width: 33.33%;">DATA</td>
                     </tr>
                     <tr>
-                        <td class="field-value">{{ rnc.area_responsavel or '-' }}</td>
-                        <td class="field-value">{{ rnc.signature_inspection_name or '-' }}</td>
+                        <td class="field-value">{{ rnc.area_responsavel_name or rnc.area_responsavel or '-' }}</td>
+                        <td class="field-value">{{ rnc.signature_engineering_name or '-' }}</td>
                         <td class="field-value">{{ rnc.created_at[:10] if rnc.created_at else '-' }}</td>
                     </tr>
                 </table>
@@ -1311,8 +1202,8 @@
                         <td class="field-label" style="width: 33.33%;">ASSINATURA CAUSADOR</td>
                     </tr>
                     <tr>
-                        <td class="field-value">{{ rnc.inspetor or '-' }}</td>
-                        <td class="field-value">{{ rnc.responsavel or '-' }}</td>
+                        <td class="field-value">{{ rnc.inspetor_name or rnc.inspetor or '-' }}</td>
+                        <td class="field-value">{{ rnc.responsavel_name or rnc.responsavel or '-' }}</td>
                         <td class="field-value">{{ rnc.signature_inspection2_name or '-' }}</td>
                     </tr>
                 </table>
