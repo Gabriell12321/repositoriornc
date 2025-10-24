@@ -192,20 +192,26 @@
 
         .large-text-area {
             min-height: 100px;
-            resize: vertical;
+            height: auto;
+            resize: none;
             font-size: 12px !important;
+            overflow: hidden;
         }
 
         .medium-text-area {
             min-height: 60px;
-            resize: vertical;
+            height: auto;
+            resize: none;
             font-size: 12px !important;
+            overflow: hidden;
         }
 
         .instruction-2lines {
             min-height: 50px;
-            resize: vertical;
+            height: auto;
+            resize: none;
             font-size: 12px !important;
+            overflow: hidden;
         }
 
         /* Garantir fonte de 12px nos textareas com maior especificidade */
@@ -341,7 +347,7 @@
         }
 
         .field-blocked::after {
-            content: "🔒";
+            content: "";
             position: absolute;
             right: 8px;
             top: 50%;
@@ -391,7 +397,7 @@
 
         /* Estilos para impressão */
         @media print {
-            /* ⚡ REGRA SUPREMA - UNIFORMIZAR ABSOLUTAMENTE TUDO */
+            /* REGRA SUPREMA - UNIFORMIZAR ABSOLUTAMENTE TUDO */
             *,
             *::before,
             *::after,
@@ -479,7 +485,7 @@
                 color: #000 !important;
             }
             
-            /* ⚡ REGRA FINAL ABSOLUTA - FORÇAR PESO DE FONTE NORMAL EM ABSOLUTAMENTE TUDO */
+            /* REGRA FINAL ABSOLUTA - FORÇAR PESO DE FONTE NORMAL EM ABSOLUTAMENTE TUDO */
             html * {
                 font-weight: 400 !important;
             }
@@ -645,6 +651,7 @@
                 width: 100% !important;
                 border-collapse: collapse !important;
                 margin-bottom: 4px !important;
+                page-break-inside: auto !important;
             }
             
             /* SOLUÇÃO RADICAL: Remover TODAS as bordas horizontais entre linhas */
@@ -659,6 +666,14 @@
                 border-top: none !important;
                 border-bottom: none !important;
                 padding: 2px !important;
+                vertical-align: top !important;
+            }
+
+            /* Ajustes específicos para células com textarea */
+            table td:has(textarea) {
+                padding: 4px !important;
+                height: auto !important;
+                min-height: fit-content !important;
             }
             
             /* Primeira célula de cada linha - borda esquerda */
@@ -773,35 +788,48 @@
                 line-height: 1.2 !important;
             }
             
-            /* Regra geral para todos os textareas */
-            textarea.input-field {
-                font-size: 12px !important;
-                line-height: 1.3 !important;
+            /* Regra universal para todos os textareas em impressão */
+            textarea,
+            textarea.input-field,
+            textarea.large-text-area,
+            textarea.medium-text-area,
+            textarea.instruction-2lines,
+            textarea.input-field.large-text-area,
+            textarea.input-field.medium-text-area {
+                min-height: 0 !important;
+                max-height: none !important;
+                height: fit-content !important;
+                font-size: 11px !important;
+                line-height: 1.4 !important;
+                white-space: pre-wrap !important;
+                word-wrap: break-word !important;
+                overflow: visible !important;
+                resize: none !important;
+                border: none !important;
+                padding: 4px !important;
+                display: block !important;
+                break-inside: auto !important;
+                page-break-inside: auto !important;
             }
-            
-            /* Aumentar altura específica para textareas grandes */
+
+            /* Ajustes específicos por tipo */
             textarea.large-text-area,
             textarea.input-field.large-text-area {
                 min-height: 60px !important;
-                height: 60px !important;
-                font-size: 10px !important;
-                line-height: 1.3 !important;
             }
-            
+
             textarea.medium-text-area,
             textarea.input-field.medium-text-area {
                 min-height: 40px !important;
-                height: 40px !important;
-                font-size: 10px !important;
-                line-height: 1.3 !important;
             }
-            
-            /* Altura para textarea de 2 linhas */
+
             textarea.instruction-2lines {
                 min-height: 30px !important;
-                height: 30px !important;
-                line-height: 1.3 !important;
-                font-size: 10px !important;
+            }
+
+            /* Garantir que o texto se expanda corretamente */
+            textarea:not(:empty) {
+                height: auto !important;
             }
             
             /* Regra por ID para máxima especificidade */
@@ -1070,6 +1098,16 @@
                 font-weight: 400 !important;
             }
             
+            /* Regra específica para garantir que o texto dos textareas seja visível na impressão */
+            textarea,
+            textarea.input-field {
+                color: #000 !important;
+                -webkit-text-fill-color: #000 !important;
+                opacity: 1 !important;
+                background: transparent !important;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif !important;
+            }
+            
             /* Títulos de seção - PRETO sobre fundo BRANCO SEM NEGRITO */
             div[style*="background: linear-gradient"],
             div[style*="background:linear-gradient"],
@@ -1331,7 +1369,7 @@
     <div class="container">
         <!-- Banner de modo de criação -->
         <div class="create-mode-banner no-print">
-            ✨ CRIAÇÃO DE NOVA RNC - Sistema IPPEL
+            CRIAÇÃO DE NOVA RNC - Sistema IPPEL
         </div>
 
         <!-- Header with Logo -->
@@ -1347,13 +1385,13 @@
             <div style="display: flex; align-items: center; gap: 8px;">
                 <div class="action-bar" style="position: static; box-shadow: none; margin: 0;">
                     <button class="action-btn dashboard-btn" title="Voltar ao Dashboard" onclick="window.location.href='/dashboard'">
-                        🏠 <span class="label">Dashboard</span>
+                        <span class="label">Dashboard</span>
                     </button>
                     <button class="action-btn save-btn" title="Criar RNC" onclick="criarRNC()">
-                        ✨ <span class="label">Criar RNC</span>
+                        <span class="label">Criar RNC</span>
                     </button>
                     <button class="action-btn print-btn" title="Imprimir Formulário" onclick="imprimirFormulario()">
-                        🖨️ <span class="label">Imprimir</span>
+                        <span class="label">Imprimir</span>
                     </button>
                 </div>
                 <span class="no-print" style="font-size: 12px; color: #6c757d; font-weight: 500; margin-left: 12px;">v2.0 | Sistema Premium</span>
@@ -1434,7 +1472,7 @@
                     </tr>
                 </table>
 
-                <!-- 🔖 CAMPOS MOVIDOS PARA SEÇÃO COMPLEMENTARES -->
+                <!-- CAMPOS MOVIDOS PARA SEÇÃO COMPLEMENTARES -->
                 <!-- CV, MOD, QTDE LOTE, MATERIAL, POSIÇÃO, MP e VALOR TOTAL agora estão na seção COMPLEMENTARES abaixo -->
             </div>
         </div>
@@ -1553,7 +1591,7 @@
             </div>
         </div>
 
-        <!-- 🔖 CAMPOS ANTIGOS REMOVIDOS (Agora estão na seção ASSINATURAS CABEÇALHO) -->
+        <!-- CAMPOS ANTIGOS REMOVIDOS (Agora estão na seção ASSINATURAS CABEÇALHO) -->
         <!--
         <table>
             <tr>
@@ -1589,42 +1627,62 @@
         -->
 
         <!-- Description Section -->
-        <table>
+        <table style="width: 100%; margin-bottom: 10px; border-collapse: collapse;">
             <tr>
-                <td class="section-title">DESCRIÇÃO DA NÃO CONFORMIDADE</td>
+                <td class="section-title" style="background: #f8f9fa; border: 1px solid #000;">DESCRIÇÃO DA NÃO CONFORMIDADE</td>
             </tr>
             <tr>
-                <td><textarea id="description" name="description" class="input-field large-text-area" placeholder="Descreva a não conformidade identificada..." data-field="description" style="font-size: 12px !important;"></textarea></td>
+                <td style="border: 1px solid #000; padding: 0;">
+                    <textarea id="description" name="description" class="input-field large-text-area" 
+                        placeholder="Descreva a não conformidade identificada..." data-field="description" 
+                        style="width: 100%; min-height: 100px; padding: 8px; margin: 0; border: none; 
+                        font-size: 12px !important; line-height: 1.5; resize: none;"></textarea>
+                </td>
             </tr>
         </table>
 
         <!-- Instruction Section -->
-        <table>
+        <table style="width: 100%; margin-bottom: 10px; border-collapse: collapse;">
             <tr>
-                <td class="section-title">INSTRUÇÃO PARA RETRABALHO</td>
+                <td class="section-title" style="background: #f8f9fa; border: 1px solid #000;">INSTRUÇÃO PARA RETRABALHO</td>
             </tr>
             <tr>
-                <td><textarea id="instruction_retrabalho" name="instruction_retrabalho" class="input-field instruction-2lines" placeholder="Instruções detalhadas para correção..." data-field="instruction_retrabalho" style="font-size: 12px !important;"></textarea></td>
+                <td style="border: 1px solid #000; padding: 0;">
+                    <textarea id="instruction_retrabalho" name="instruction_retrabalho" class="input-field instruction-2lines" 
+                        placeholder="Instruções detalhadas para correção..." data-field="instruction_retrabalho" 
+                        style="width: 100%; min-height: 50px; padding: 8px; margin: 0; border: none; 
+                        font-size: 12px !important; line-height: 1.5; resize: none;"></textarea>
+                </td>
             </tr>
         </table>
 
         <!-- Cause Section -->
-        <table>
+        <table style="width: 100%; margin-bottom: 10px; border-collapse: collapse;">
             <tr>
-                <td class="section-title">CAUSA DA RNC</td>
+                <td class="section-title" style="background: #f8f9fa; border: 1px solid #000;">CAUSA DA RNC</td>
             </tr>
             <tr>
-                <td><textarea id="cause_rnc" name="cause_rnc" class="input-field medium-text-area" placeholder="Análise da causa raiz..." data-field="cause_rnc" style="font-size: 0px !important;"></textarea></td>
+                <td style="border: 1px solid #000; padding: 0;">
+                    <textarea id="cause_rnc" name="cause_rnc" class="input-field medium-text-area" 
+                        placeholder="Análise da causa raiz..." data-field="cause_rnc" 
+                        style="width: 100%; min-height: 60px; padding: 8px; margin: 0; border: none; 
+                        font-size: 12px !important; line-height: 1.5; resize: none;"></textarea>
+                </td>
             </tr>
         </table>
 
         <!-- Action Section -->
-        <table>
+        <table style="width: 100%; margin-bottom: 10px; border-collapse: collapse;">
             <tr>
-                <td class="section-title">AÇÃO A SER TOMADA</td>
+                <td class="section-title" style="background: #f8f9fa; border: 1px solid #000;">AÇÃO A SER TOMADA</td>
             </tr>
             <tr>
-                <td><textarea id="action_rnc" name="action_rnc" class="input-field medium-text-area" placeholder="Ações corretivas e preventivas..." data-field="action_rnc" style="font-size: 12px !important;"></textarea></td>
+                <td style="border: 1px solid #000; padding: 0;">
+                    <textarea id="action_rnc" name="action_rnc" class="input-field medium-text-area" 
+                        placeholder="Ações corretivas e preventivas..." data-field="action_rnc" 
+                        style="width: 100%; min-height: 60px; padding: 8px; margin: 0; border: none; 
+                        font-size: 12px !important; line-height: 1.5; resize: none;"></textarea>
+                </td>
             </tr>
         </table>
 
@@ -1737,7 +1795,7 @@
     <!-- Modal para notificação de campo bloqueado -->
     <div id="blockFieldModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 3000; justify-content: center; align-items: center; backdrop-filter: blur(5px);">
         <div id="blockModalContent" style="background: white; padding: 30px; border-radius: 15px; max-width: 400px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transform: scale(0.8); opacity: 0; transition: all 0.3s ease;">
-            <div style="font-size: 48px; margin-bottom: 15px; animation: bounceBlock 0.6s ease-in-out;">🔒</div>
+            <div style="font-size: 48px; margin-bottom: 15px; animation: bounceBlock 0.6s ease-in-out;"></div>
             <h3 style="color: #dc3545; margin-bottom: 15px; font-weight: 700;">Campo Bloqueado</h3>
             <p id="blockFieldMessage" style="color: #6c757d; margin-bottom: 20px; line-height: 1.5;"></p>
             <button onclick="fecharModalBloqueio()" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);" 
@@ -1748,31 +1806,31 @@
         </div>
     </div>
 
-    <!-- ⚡ DEFINIR FUNÇÕES GLOBAIS ANTES DO HTML QUE AS USA -->
+    <!-- DEFINIR FUNÇÕES GLOBAIS ANTES DO HTML QUE AS USA -->
     <script>
-        console.log('🔧 Definindo funções globais essenciais...');
+        console.log(' Definindo funções globais essenciais...');
         
         // Função para preencher assinatura automaticamente (DEVE estar disponível antes dos onclick)
         window.preencherAssinatura = function(elemento) {
-            console.log('✍️ preencherAssinatura chamado! Elemento:', elemento && elemento.id);
+            console.log(' preencherAssinatura chamado! Elemento:', elemento && elemento.id);
             
             if (!elemento) {
-                console.error('❌ Elemento não fornecido');
+                console.error(' Elemento não fornecido');
                 return;
             }
             
             const nomeElement = elemento.querySelector('div[id^="nome_coluna"]');
             
             if (!nomeElement) {
-                console.error('❌ Elemento de nome não encontrado dentro de', elemento.id);
+                console.error(' Elemento de nome não encontrado dentro de', elemento.id);
                 return;
             }
             
-            console.log('📝 Elemento de nome encontrado:', nomeElement.id, 'Texto atual:', nomeElement.textContent);
+            console.log(' Elemento de nome encontrado:', nomeElement.id, 'Texto atual:', nomeElement.textContent);
             
             // Se já existe assinatura, REMOVER (toggle)
             if (nomeElement.textContent && nomeElement.textContent.trim() !== '' && nomeElement.textContent !== 'NOME') {
-                console.log('🗑️ Removendo assinatura existente:', nomeElement.textContent);
+                console.log(' Removendo assinatura existente:', nomeElement.textContent);
                 
                 // Limpar o nome
                 nomeElement.textContent = 'NOME';
@@ -1796,35 +1854,35 @@
                         dInput.value = '';
                         mInput.value = '';
                         yInput.value = '';
-                        console.log(`🧹 Data limpa para ${datePrefix}`);
+                        console.log(` Data limpa para ${datePrefix}`);
                     }
                 }
                 
                 if (typeof mostrarNotificacao === 'function') {
-                    mostrarNotificacao('🗑️ Assinatura removida', 'info');
+                    mostrarNotificacao(' Assinatura removida', 'info');
                 }
                 return;
             }
             
-            console.log('🔄 Buscando informações do usuário...');
+            console.log(' Buscando informações do usuário...');
             
             // Buscar informações do usuário
             fetch('/api/user/info')
                 .then(response => {
-                    console.log('📡 Resposta recebida, status:', response.status);
+                    console.log(' Resposta recebida, status:', response.status);
                     if (!response.ok) {
                         throw new Error('Erro ao buscar dados do usuário');
                     }
                     return response.json();
                 })
                 .then(data => {
-                    console.log('✅ Dados recebidos:', data);
+                    console.log(' Dados recebidos:', data);
                     
                     if (data.success && data.user) {
                         const userName = data.user.name || 'USUÁRIO';
                         const userDept = data.user.department || '';
                         
-                        console.log('👤 Preenchendo assinatura com:', userName, '/', userDept);
+                        console.log(' Preenchendo assinatura com:', userName, '/', userDept);
                         
                         // Preencher nome
                         nomeElement.textContent = userName;
@@ -1855,28 +1913,28 @@
                                 dInput.value = dia;
                                 mInput.value = mes;
                                 yInput.value = ano;
-                                console.log(`📅 Data preenchida APENAS para ${datePrefix}: ${dia}/${mes}/${ano}`);
+                                console.log(` Data preenchida APENAS para ${datePrefix}: ${dia}/${mes}/${ano}`);
                             } else {
-                                console.warn(`⚠️ Campos de data não encontrados para ${datePrefix}`);
+                                console.warn(` Campos de data não encontrados para ${datePrefix}`);
                             }
                         } else {
-                            console.warn('⚠️ ID do elemento não reconhecido:', elemento.id);
+                            console.warn(' ID do elemento não reconhecido:', elemento.id);
                         }
                         
                         if (typeof mostrarNotificacao === 'function') {
-                            mostrarNotificacao(`✅ Assinatura registrada: ${userName}`, 'success');
+                            mostrarNotificacao(` Assinatura registrada: ${userName}`, 'success');
                         }
                     } else {
-                        console.error('❌ Dados do usuário inválidos:', data);
+                        console.error(' Dados do usuário inválidos:', data);
                         if (typeof mostrarNotificacao === 'function') {
-                            mostrarNotificacao('❌ Erro ao obter dados do usuário', 'error');
+                            mostrarNotificacao(' Erro ao obter dados do usuário', 'error');
                         }
                     }
                 })
                 .catch(error => {
-                    console.error('❌ Erro ao buscar usuário:', error);
+                    console.error(' Erro ao buscar usuário:', error);
                     if (typeof mostrarNotificacao === 'function') {
-                        mostrarNotificacao('❌ Erro ao buscar informações do usuário', 'error');
+                        mostrarNotificacao(' Erro ao buscar informações do usuário', 'error');
                     }
                 });
         };
@@ -1896,11 +1954,11 @@
             }
         };
         
-        console.log('✅ Funções globais definidas: preencherAssinatura, fecharModalBloqueio');
+        console.log(' Funções globais definidas: preencherAssinatura, fecharModalBloqueio');
         
         // Função para imprimir o formulário
         window.imprimirFormulario = function() {
-            console.log('🖨️ Preparando impressão do formulário...');
+            console.log(' Preparando impressão do formulário...');
             
             // Salvar título original
             const tituloOriginal = document.title;
@@ -1921,10 +1979,10 @@
                 });
                 // Remover placeholder temporariamente
                 element.removeAttribute('placeholder');
-                console.log(`🗑️ Placeholder removido: ${savedPlaceholders[savedPlaceholders.length - 1].placeholder}`);
+                console.log(` Placeholder removido: ${savedPlaceholders[savedPlaceholders.length - 1].placeholder}`);
             });
             
-            console.log(`✅ ${savedPlaceholders.length} placeholders removidos para impressão`);
+            console.log(` ${savedPlaceholders.length} placeholders removidos para impressão`);
             
             // Aguardar um momento para aplicar estilos de impressão
             setTimeout(() => {
@@ -1938,16 +1996,16 @@
                         element.setAttribute('placeholder', placeholder);
                     });
                     
-                    console.log(`✅ ${savedPlaceholders.length} placeholders restaurados`);
+                    console.log(` ${savedPlaceholders.length} placeholders restaurados`);
                 }, 100);
             }, 100);
         };
         
-        console.log('✅ Função de impressão definida: imprimirFormulario');
+        console.log(' Função de impressão definida: imprimirFormulario');
     </script>
 
     <script>
-        console.log('🔧 Script carregado - verificando funções...');
+        console.log(' Script carregado - verificando funções...');
         
         // Cache do usuário atual para uso em assinaturas
         let __CURRENT_USER_NAME = null;
@@ -1957,7 +2015,7 @@
         
         // Função para mostrar notificações
         window.mostrarNotificacao = function(mensagem, tipo = 'success') {
-            console.log('📢 Notificação:', mensagem, tipo);
+            console.log(' Notificação:', mensagem, tipo);
             const notificacao = document.createElement('div');
             
             let background, shadow;
@@ -2002,14 +2060,14 @@
 
         // Função para verificar se há pelo menos uma assinatura
         function verificarAssinaturas() {
-            console.log('🔍 Verificando assinaturas...');
+            console.log(' Verificando assinaturas...');
             const assinaturas = [
                 document.getElementById('nome_coluna1')?.textContent || '',
                 document.getElementById('nome_coluna2')?.textContent || '',
                 document.getElementById('nome_coluna3')?.textContent || ''
             ];
             
-            console.log('📝 Assinaturas encontradas:', assinaturas);
+            console.log(' Assinaturas encontradas:', assinaturas);
             return assinaturas.some(assinatura => assinatura && assinatura !== 'NOME' && assinatura.trim() !== '');
         }
 
@@ -2031,7 +2089,7 @@
         async function carregarCamposBloqueados() {
             try {
                 if (!__USER_GROUP_ID) {
-                    console.log('❌ Grupo do usuário não definido');
+                    console.log(' Grupo do usuário não definido');
                     return;
                 }
 
@@ -2040,13 +2098,13 @@
                 
                 if (data.success) {
                     __LOCKED_FIELDS = data.locked_fields || [];
-                    console.log('🔒 Campos bloqueados carregados:', __LOCKED_FIELDS);
+                    console.log(' Campos bloqueados carregados:', __LOCKED_FIELDS);
                     aplicarBloqueiosCampos();
                 } else {
-                    console.log('⚠️ Nenhum campo bloqueado ou erro:', data.message);
+                    console.log(' Nenhum campo bloqueado ou erro:', data.message);
                 }
             } catch (error) {
-                console.error('❌ Erro ao carregar campos bloqueados:', error);
+                console.error(' Erro ao carregar campos bloqueados:', error);
             }
         }
 
@@ -2081,7 +2139,7 @@
                         mostrarModalBloqueio(field);
                     });
                 
-                // 🔒 BLOQUEAR BOTÃO "Adicionar Valores" se campo price estiver bloqueado
+                // BLOQUEAR BOTÃO "Adicionar Valores" se campo price estiver bloqueado
                 if (field === 'price') {
                     const addValoresBtn = document.querySelector('#addValoresBtn, button[onclick="openValoresSelectionModal()"]');
                     if (addValoresBtn) {
@@ -2096,7 +2154,7 @@
                             e.preventDefault();
                             mostrarModalBloqueio('price');
                         };
-                        console.log('🔒 Botão "Adicionar Valores" bloqueado junto com campo price');
+                        console.log(' Botão "Adicionar Valores" bloqueado junto com campo price');
                     }
                 }
 
@@ -2143,21 +2201,21 @@
 
         // Função para criar RNC
         window.criarRNC = function() {
-            console.log('✨ Função criarRNC chamada!');
+            console.log(' Função criarRNC chamada!');
             
                 // Validação do campo CV: mínimo 11 dígitos
                 const cvInput = document.querySelector('[data-field="cv"]');
                 if (cvInput) {
                     const cvValue = cvInput.value.replace(/\D/g, ''); // Remove não dígitos
                     if (cvValue.length < 11) {
-                        mostrarNotificacao('❌ O campo CV deve conter pelo menos 11 dígitos!', 'error');
+                        mostrarNotificacao(' O campo CV deve conter pelo menos 11 dígitos!', 'error');
                         cvInput.focus();
                         return;
                     }
                 }
             // Verificar se há pelo menos uma assinatura
             if (!verificarAssinaturas()) {
-                mostrarNotificacao('❌ É obrigatório preencher pelo menos uma assinatura!', 'error');
+                mostrarNotificacao(' É obrigatório preencher pelo menos uma assinatura!', 'error');
                 return;
             }
 
@@ -2190,7 +2248,7 @@
 
             // Verificar violação de campos bloqueados
             if (camposBloqueadosViolados.length > 0) {
-                mostrarNotificacao(`❌ Os seguintes campos estão bloqueados: ${camposBloqueadosViolados.join(', ')}`, 'error');
+                mostrarNotificacao(` Os seguintes campos estão bloqueados: ${camposBloqueadosViolados.join(', ')}`, 'error');
                 return;
             }
 
@@ -2220,23 +2278,23 @@
             // Coletar grupo selecionado para compartilhamento
             if (selectedGroupId) {
                 formData.shared_group_ids = [selectedGroupId];
-                console.log('👥 Compartilhando RNC com grupo:', selectedGroupId);
+                console.log(' Compartilhando RNC com grupo:', selectedGroupId);
             } else {
                 formData.shared_group_ids = [];
-                console.log('⚠️ Nenhum grupo selecionado para compartilhamento');
+                console.log(' Nenhum grupo selecionado para compartilhamento');
             }
 
             // Adicionar itens de valores selecionados
             if (selectedValoresData && selectedValoresData.length > 0) {
                 formData.valores_itens = selectedValoresData;
-                console.log('💰 Incluindo', selectedValoresData.length, 'itens de valores/hora');
+                console.log(' Incluindo', selectedValoresData.length, 'itens de valores/hora');
             }
             
             // Adicionar usuário causador (se selecionado)
             const causadorSelector = document.getElementById('causadorSelector');
             if (causadorSelector && causadorSelector.value) {
                 formData.causador_user_id = causadorSelector.value;
-                console.log('⚠️ Usuário causador definido: ID', causadorSelector.value);
+                console.log(' Usuário causador definido: ID', causadorSelector.value);
             }
 
             // Garantir que o assigned_group_id (campo oculto) esteja no payload
@@ -2246,10 +2304,10 @@
                     formData.assigned_group_id = assignedHidden.value ? assignedHidden.value : null;
                 }
             } catch (e) {
-                console.warn('⚠️ Não foi possível ler assigned_group_id hidden:', e);
+                console.warn(' Não foi possível ler assigned_group_id hidden:', e);
             }
 
-            console.log('📤 Enviando dados:', formData);
+            console.log(' Enviando dados:', formData);
 
             fetch('/api/rnc/create', {
                 method: 'POST',
@@ -2262,17 +2320,17 @@
             .then(data => {
                 if (data.success) {
                     try { localStorage.removeItem('dashboardCacheV1'); } catch(e){}
-                    mostrarNotificacao('✅ RNC criada com sucesso!');
+                    mostrarNotificacao(' RNC criada com sucesso!');
                     setTimeout(() => {
                         window.location.href = '/dashboard';
                     }, 1500);
                 } else {
-                    mostrarNotificacao('❌ Erro ao criar RNC: ' + data.message, 'error');
+                    mostrarNotificacao(' Erro ao criar RNC: ' + data.message, 'error');
                 }
             })
             .catch(error => {
                 console.error('Erro ao criar RNC:', error);
-                mostrarNotificacao('❌ Erro ao criar RNC', 'error');
+                mostrarNotificacao(' Erro ao criar RNC', 'error');
             });
         }
 
@@ -2305,14 +2363,14 @@
                         groupSelector.appendChild(option);
                     });
                     
-                    console.log(`✅ ${allGroups.length} grupos carregados`);
+                    console.log(` ${allGroups.length} grupos carregados`);
                 } else {
-                    console.warn('⚠️ Nenhum grupo disponível');
+                    console.warn(' Nenhum grupo disponível');
                     document.getElementById('groupSelector').innerHTML = '<option value="">Nenhum grupo disponível</option>';
                 }
             } catch (error) {
-                console.error('❌ Erro ao carregar grupos:', error);
-                mostrarNotificacao('❌ Erro ao carregar grupos', 'error');
+                console.error(' Erro ao carregar grupos:', error);
+                mostrarNotificacao(' Erro ao carregar grupos', 'error');
             }
         }
 
@@ -2329,42 +2387,42 @@
                 
                 if (data.success && data.users && data.users.length > 0) {
                     allUsers = data.users;
-                    console.log(`✅ ${allUsers.length} usuários carregados`);
+                    console.log(` ${allUsers.length} usuários carregados`);
                     // Usuários já carregados, pronto para usar
-                    console.log('✅ Lista de usuários carregada com sucesso');
+                    console.log(' Lista de usuários carregada com sucesso');
                 } else {
-                    console.warn('⚠️ Nenhum usuário disponível');
+                    console.warn(' Nenhum usuário disponível');
                     allUsers = [];
                 }
             } catch (error) {
-                console.error('❌ Erro ao carregar usuários:', error);
-                mostrarNotificacao('❌ Erro ao carregar usuários', 'error');
+                console.error(' Erro ao carregar usuários:', error);
+                mostrarNotificacao(' Erro ao carregar usuários', 'error');
                 allUsers = [];
             }
         }
 
         // Função para popular o dropdown de Área Responsável
         async function loadAreaResponsavel() {
-            console.log('🏢 [loadAreaResponsavel] Iniciando carregamento de setores...');
+            console.log(' [loadAreaResponsavel] Iniciando carregamento de setores...');
             
             try {
-                console.log('📡 [loadAreaResponsavel] Fazendo fetch para /api/groups...');
+                console.log(' [loadAreaResponsavel] Fazendo fetch para /api/groups...');
                 const response = await fetch('/api/groups');
-                console.log('📡 [loadAreaResponsavel] Resposta recebida, status:', response.status);
+                console.log(' [loadAreaResponsavel] Resposta recebida, status:', response.status);
                 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
                 
                 const data = await response.json();
-                console.log('📦 [loadAreaResponsavel] Dados recebidos:', data);
+                console.log(' [loadAreaResponsavel] Dados recebidos:', data);
                 
                 if (data.success && data.groups && data.groups.length > 0) {
                     const selectElement = document.getElementById('area_responsavel_select');
-                    console.log('🔍 [loadAreaResponsavel] Elemento select encontrado:', !!selectElement);
+                    console.log(' [loadAreaResponsavel] Elemento select encontrado:', !!selectElement);
                     
                     if (!selectElement) {
-                        console.error('❌ [loadAreaResponsavel] Elemento area_responsavel_select NÃO encontrado no DOM!');
+                        console.error(' [loadAreaResponsavel] Elemento area_responsavel_select NÃO encontrado no DOM!');
                         return;
                     }
                     
@@ -2376,18 +2434,18 @@
                         option.textContent = group.name;
                         option.dataset.groupName = group.name;
                         selectElement.appendChild(option);
-                        console.log(`  ➕ Adicionado: ${group.name} (ID: ${group.id})`);
+                        console.log(`  Adicionado: ${group.name} (ID: ${group.id})`);
                     });
                     
-                    console.log(`✅ [loadAreaResponsavel] ${data.groups.length} áreas responsáveis carregadas no dropdown`);
+                    console.log(` [loadAreaResponsavel] ${data.groups.length} áreas responsáveis carregadas no dropdown`);
                 } else {
-                    console.warn('⚠️ [loadAreaResponsavel] Nenhuma área responsável disponível ou dados inválidos');
+                    console.warn(' [loadAreaResponsavel] Nenhuma área responsável disponível ou dados inválidos');
                     console.warn('   - data.success:', data.success);
                     console.warn('   - data.groups:', data.groups);
                     console.warn('   - data.groups?.length:', data.groups?.length);
                 }
             } catch (error) {
-                console.error('❌ [loadAreaResponsavel] Erro ao carregar áreas responsáveis:', error);
+                console.error(' [loadAreaResponsavel] Erro ao carregar áreas responsáveis:', error);
                 console.error('   Detalhes do erro:', error.message, error.stack);
             }
         }
@@ -2409,7 +2467,7 @@
             // Atualizar hidden canonical assigned_group_id (enviado ao servidor)
             const assignedGroupInput = document.getElementById('assigned_group_id');
             if (assignedGroupInput) assignedGroupInput.value = selectedGroupId || '';
-            console.log('🎯 Grupo selecionado para atribuição (id):', selectedGroupId);
+            console.log(' Grupo selecionado para atribuição (id):', selectedGroupId);
             
             // Limpar campos quando nenhuma área é selecionada
             if (!selectedAreaGroupId) {
@@ -2420,7 +2478,7 @@
                     nomeResponsavelSelect.innerHTML = '<option value="">Selecione o Usuário Causador</option>';
                     nomeResponsavelSelect.disabled = true;
                 }
-                console.log('🧹 Grupo selecionado limpo (nenhuma área selecionada)');
+                console.log(' Grupo selecionado limpo (nenhuma área selecionada)');
                 return;
             }
             
@@ -2429,11 +2487,11 @@
             const groupName = selectedOption.dataset.groupName || selectedOption.textContent;
             
             // Mostrar indicador de carregamento
-            mostrarNotificacao(`🔄 Carregando informações do setor "${groupName}"...`, 'info');
+            mostrarNotificacao(` Carregando informações do setor "${groupName}"...`, 'info');
             
             try {
                 // 1. Buscar o líder/gerente do grupo/setor da área responsável
-                console.log(`🔍 Buscando gerente do setor "${groupName}" (ID: ${selectedAreaGroupId})...`);
+                console.log(` Buscando gerente do setor "${groupName}" (ID: ${selectedAreaGroupId})...`);
                 const managerResponse = await fetch(`/api/groups/${selectedAreaGroupId}/manager`);
                 
                 if (managerResponse.ok) {
@@ -2443,32 +2501,32 @@
                         // Preencher o responsável em "Assinatura Responsável"
                         if (assResponsavelInput) {
                             assResponsavelInput.value = managerData.manager.name;
-                            console.log(`✅ Assinatura Responsável preenchida com: ${managerData.manager.name}`);
+                            console.log(` Assinatura Responsável preenchida com: ${managerData.manager.name}`);
                         }
                         
                         // Preencher a data atual em "DATA EMISSÃO"
                         if (dataEmissaoInput) {
                             const dataAtual = new Date().toLocaleDateString('pt-BR');
                             dataEmissaoInput.value = dataAtual;
-                            console.log(`✅ Data de emissão preenchida: ${dataAtual}`);
+                            console.log(` Data de emissão preenchida: ${dataAtual}`);
                         }
                         
                         // NÃO preencher "Assinatura Causador" - deve ficar em branco até o usuário selecionar no dropdown
                         if (assinaturaLiderInput) {
                             assinaturaLiderInput.value = '';
-                            console.log(`ℹ️ Assinatura Causador mantida em branco (será preenchida ao selecionar usuário)`);
+                            console.log(` Assinatura Causador mantida em branco (será preenchida ao selecionar usuário)`);
                         }
                     } else {
                         // Se não houver líder definido, deixar em branco
                         if (assinaturaLiderInput) assinaturaLiderInput.value = '';
                         if (assResponsavelInput) assResponsavelInput.value = '';
-                        console.log(`ℹ️ Nenhum líder definido para "${groupName}"`);
+                        console.log(` Nenhum líder definido para "${groupName}"`);
                     }
                 }
                 
                 // 2. Carregar usuários do grupo selecionado para o dropdown "NOME CAUSADOR"
                 if (nomeResponsavelSelect) {
-                    console.log(`🔍 Carregando usuários do setor "${groupName}" (ID: ${selectedAreaGroupId})...`);
+                    console.log(` Carregando usuários do setor "${groupName}" (ID: ${selectedAreaGroupId})...`);
                     
                     // Limpar o dropdown e adicionar opção padrão
                     nomeResponsavelSelect.innerHTML = '<option value="">Selecione o Usuário Causador</option>';
@@ -2477,28 +2535,28 @@
                     // IMPORTANTE: Limpar também o campo de Assinatura Causador quando mudamos o setor
                     if (assinaturaLiderInput) {
                         assinaturaLiderInput.value = '';
-                        console.log('🧹 Campo "Assinatura Causador" limpo ao mudar setor');
+                        console.log(' Campo "Assinatura Causador" limpo ao mudar setor');
                     }
                     
                     try {
                         // Se não temos a lista completa de usuários, vamos carregá-la
                         if (!window.allUsers || window.allUsers.length === 0) {
-                            console.log('📋 Carregando todos os usuários do sistema...');
+                            console.log(' Carregando todos os usuários do sistema...');
                             const usersResponse = await fetch('/api/users/list');
                             
                             if (usersResponse.ok) {
                                 const usersData = await usersResponse.json();
                                 if (usersData.success && usersData.users && usersData.users.length > 0) {
                                     window.allUsers = usersData.users;
-                                    console.log(`✅ ${window.allUsers.length} usuários carregados`);
+                                    console.log(` ${window.allUsers.length} usuários carregados`);
                                 }
                             }
                         }
                         
                         // Filtrar usuários pelo grupo selecionado
                         if (window.allUsers && window.allUsers.length > 0) {
-                            console.log('🔍 Filtrando usuários para o setor ID:', selectedAreaGroupId);
-                            console.log('📊 Estrutura de exemplo do primeiro usuário:', JSON.stringify(window.allUsers[0]));
+                            console.log(' Filtrando usuários para o setor ID:', selectedAreaGroupId);
+                            console.log(' Estrutura de exemplo do primeiro usuário:', JSON.stringify(window.allUsers[0]));
                             
                             // Limpar o dropdown antes de adicionar novos itens
                             nomeResponsavelSelect.innerHTML = '<option value="">Selecione o Usuário Causador</option>';
@@ -2538,7 +2596,7 @@
                                     return false;
                                 });
                                 
-                                console.log(`🔍 Encontrados ${groupUsers.length} usuários para o setor ID: ${selectedAreaGroupId}`);
+                                console.log(` Encontrados ${groupUsers.length} usuários para o setor ID: ${selectedAreaGroupId}`);
                                 
                                 if (groupUsers.length > 0) {
                                     // Desabilitar temporariamente o evento onchange para evitar disparo automático
@@ -2551,7 +2609,7 @@
                                         option.value = user.id;
                                         option.textContent = user.name;
                                         nomeResponsavelSelect.appendChild(option);
-                                        console.log(`  ➕ Adicionado usuário: ${user.name} (ID: ${user.id})`);
+                                        console.log(`  Adicionado usuário: ${user.name} (ID: ${user.id})`);
                                     });
                                     
                                     // Garantir que a opção padrão (vazia) esteja selecionada
@@ -2561,11 +2619,11 @@
                                     nomeResponsavelSelect.onchange = originalOnchange;
                                     
                                     nomeResponsavelSelect.disabled = false;
-                                    console.log(`✅ ${groupUsers.length} usuários do setor "${groupName}" adicionados ao dropdown`);
-                                    mostrarNotificacao(`✅ ${groupUsers.length} usuários encontrados no setor "${groupName}"`, 'success');
+                                    console.log(` ${groupUsers.length} usuários do setor "${groupName}" adicionados ao dropdown`);
+                                    mostrarNotificacao(` ${groupUsers.length} usuários encontrados no setor "${groupName}"`, 'success');
                                 } else {
-                                    console.log(`ℹ️ Nenhum usuário encontrado no setor "${groupName}"`);
-                                    mostrarNotificacao(`ℹ️ Nenhum usuário encontrado no setor "${groupName}"`, 'info');
+                                    console.log(` Nenhum usuário encontrado no setor "${groupName}"`);
+                                    mostrarNotificacao(` Nenhum usuário encontrado no setor "${groupName}"`, 'info');
                                     
                                     // Adicionar opção para indicar que não há usuários
                                     const option = document.createElement('option');
@@ -2575,19 +2633,19 @@
                                     nomeResponsavelSelect.appendChild(option);
                                 }
                             } catch (filterError) {
-                                console.error('❌ Erro ao filtrar usuários:', filterError);
-                                mostrarNotificacao('❌ Erro ao filtrar usuários por setor', 'error');
+                                console.error(' Erro ao filtrar usuários:', filterError);
+                                mostrarNotificacao(' Erro ao filtrar usuários por setor', 'error');
                             }
                         }
                     } catch (userError) {
-                        console.error('❌ Erro ao carregar usuários do setor:', userError);
-                        mostrarNotificacao('❌ Erro ao carregar usuários do setor', 'error');
+                        console.error(' Erro ao carregar usuários do setor:', userError);
+                        mostrarNotificacao(' Erro ao carregar usuários do setor', 'error');
                     }
                 }
                 
             } catch (error) {
-                console.error('❌ Erro ao processar alteração de área responsável:', error);
-                mostrarNotificacao('❌ Erro ao processar alteração de área responsável', 'error');
+                console.error(' Erro ao processar alteração de área responsável:', error);
+                mostrarNotificacao(' Erro ao processar alteração de área responsável', 'error');
                 
                 // Fallback: deixar em branco
                 if (assinaturaLiderInput) assinaturaLiderInput.value = '';
@@ -2597,16 +2655,16 @@
 
         // Função chamada quando o usuário seleciona um Nome Causador
         function onNomeResponsavelChange() {
-            // ⚠️ ATENÇÃO: Esta função NÃO deve preencher automaticamente o campo "Assinatura Causador"
+            // ATENÇÃO: Esta função NÃO deve preencher automaticamente o campo "Assinatura Causador"
             // O campo deve permanecer SEMPRE vazio para preenchimento manual
-            console.log('👤 [onNomeResponsavelChange] Usuário selecionado no dropdown');
-            console.log('ℹ️ Campo "Assinatura Causador" permanece vazio (não é preenchido automaticamente)');
+            console.log(' [onNomeResponsavelChange] Usuário selecionado no dropdown');
+            console.log(' Campo "Assinatura Causador" permanece vazio (não é preenchido automaticamente)');
             
             // Nenhuma ação é tomada - o campo permanece vazio
             // O usuário deve preencher manualmente se desejar
         }
 
-        // 👥 FUNÇÕES DE ATRIBUIÇÃO MÚLTIPLA DE USUÁRIOS
+        // FUNÇÕES DE ATRIBUIÇÃO MÚLTIPLA DE USUÁRIOS
         
         function openAssignUsersModal() {
             const modal = document.getElementById('assignUsersModal');
@@ -2726,7 +2784,7 @@
         function applyAssignUsers() {
             updateAssignedUsersDisplay();
             closeAssignUsersModal();
-            mostrarNotificacao(`✅ ${selectedAssignedUsers.length} usuário(s) selecionado(s)`);
+            mostrarNotificacao(` ${selectedAssignedUsers.length} usuário(s) selecionado(s)`);
         }
         
         function updateAssignedUsersDisplay() {
@@ -2829,7 +2887,7 @@
         // Função para carregar o próximo número da RNC
         async function loadNextRncNumber() {
             try {
-                console.log('🔢 Carregando próximo número RNC...');
+                console.log(' Carregando próximo número RNC...');
                 const response = await fetch('/api/rnc/next-number');
                 const data = await response.json();
                 
@@ -2837,17 +2895,17 @@
                     const rncNumberInput = document.getElementById('rnc_number');
                     if (rncNumberInput) {
                         rncNumberInput.value = data.next_number;
-                        console.log('✅ Próximo número RNC carregado:', data.next_number);
+                        console.log(' Próximo número RNC carregado:', data.next_number);
                     }
                 } else {
-                    console.error('❌ Erro ao carregar próximo número:', data.message);
+                    console.error(' Erro ao carregar próximo número:', data.message);
                     const rncNumberInput = document.getElementById('rnc_number');
                     if (rncNumberInput) {
                         rncNumberInput.value = '[ERRO AO GERAR NÚMERO]';
                     }
                 }
             } catch (error) {
-                console.error('❌ Erro na requisição:', error);
+                console.error(' Erro na requisição:', error);
                 const rncNumberInput = document.getElementById('rnc_number');
                 if (rncNumberInput) {
                     rncNumberInput.value = '[ERRO DE CONEXÃO]';
@@ -2855,37 +2913,53 @@
             }
         }
 
+        // Função para auto-ajustar altura dos textareas
+        function autoResizeTextarea(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = textarea.scrollHeight + 'px';
+        }
+
+        // Nenhuma manipulação necessária - o CSS @media print cuida de tudo
+
         // Carregar número RNC e setores quando a página carrega
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('📄 Página carregada, iniciando carregamentos...');
+            console.log(' Página carregada, iniciando carregamentos...');
             
-            // FORÇAR FONTE DE 12PX NOS TEXTAREAS DE DESCRIÇÃO
+            // FORÇAR FONTE DE 12PX NOS TEXTAREAS DE DESCRIÇÃO E AUTO-RESIZE
             const textareaIds = ['description', 'instruction_retrabalho', 'cause_rnc', 'action_rnc'];
             textareaIds.forEach(id => {
                 const textarea = document.getElementById(id);
                 if (textarea) {
                     textarea.style.fontSize = '12px';
                     textarea.style.setProperty('font-size', '12px', 'important');
-                    console.log(`✅ Fonte de 12px aplicada em #${id}`);
+                    console.log(` Fonte de 12px aplicada em #${id}`);
+                    
+                    // Auto-resize ao digitar
+                    textarea.addEventListener('input', function() {
+                        autoResizeTextarea(this);
+                    });
+                    
+                    // Auto-resize inicial
+                    autoResizeTextarea(textarea);
                 }
             });
             
             loadNextRncNumber();
             loadAreaResponsavel(); // Carregar setores automaticamente do banco de dados
-            console.log('🏢 Carregando setores responsáveis do cadastro...');
+            console.log(' Carregando setores responsáveis do cadastro...');
             loadUsers(); // Carregar todos os usuários do sistema para uso posterior
-            console.log('👥 Carregando usuários do sistema...');
+            console.log(' Carregando usuários do sistema...');
             
             // Garantir que o campo "Assinatura Causador" inicie vazio
             const assinaturaLiderInput = document.getElementById('assinatura_lider');
             if (assinaturaLiderInput) {
                 assinaturaLiderInput.value = '';
-                console.log('🔒 Campo "Assinatura Causador" inicializado vazio');
+                console.log(' Campo "Assinatura Causador" inicializado vazio');
             }
         });
     </script>
     <script>
-        // Conversores BRL ↔ número
+        // Conversores BRL número
         function brlToFloat(str) {
             if (!str) return 0;
             try {
@@ -2951,7 +3025,7 @@
             <!-- Cabeçalho -->
             <div style="background: linear-gradient(135deg, #8b1538 0%, #6d1029 100%); color: white; padding: 25px 30px; border-radius: 15px 15px 0 0; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(139, 21, 56, 0.3);">
                 <div style="display: flex; align-items: center; gap: 15px;">
-                    <span style="font-size: 32px;">💰</span>
+                    <span style="font-size: 32px;"></span>
                     <h2 style="margin: 0; font-size: 24px; font-weight: 700;">Adicionar Valores ao Orçamento</h2>
                 </div>
                 <button onclick="closeValoresSelectionModal()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 28px; cursor: pointer; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.3s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">×</button>
@@ -2961,7 +3035,7 @@
             <div style="padding: 20px 30px; background: #f8f9fa; border-bottom: 1px solid #dee2e6;">
                 <!-- Busca por texto -->
                 <div style="margin-bottom: 15px;">
-                <input type="text" id="valoresSelectionSearch" placeholder="🔍 Buscar por código ou descrição..." onkeyup="filterValoresSelection()" style="width: 100%; padding: 12px 20px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; transition: all 0.3s;" onfocus="this.style.borderColor='#007bff'" onblur="this.style.borderColor='#ddd'">
+                <input type="text" id="valoresSelectionSearch" placeholder=" Buscar por código ou descrição..." onkeyup="filterValoresSelection()" style="width: 100%; padding: 12px 20px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; transition: all 0.3s;" onfocus="this.style.borderColor='#007bff'" onblur="this.style.borderColor='#ddd'">
                 </div>
                 
                 <!-- Filtro por categoria/setor -->
@@ -3009,8 +3083,8 @@
                         </span>
                     </div>
                     <div style="display: flex; gap: 10px;">
-                        <button onclick="clearValoresSelection()" style="padding: 10px 20px; background: #dc3545; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600;" onmouseover="this.style.background='#c82333'" onmouseout="this.style.background='#dc3545'">🗑️ Limpar</button>
-                        <button onclick="applyValoresSelection()" style="padding: 10px 30px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600;" onmouseover="this.style.background='#218838'" onmouseout="this.style.background='#28a745'">✅ Aplicar Valores</button>
+                        <button onclick="clearValoresSelection()" style="padding: 10px 20px; background: #dc3545; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600;" onmouseover="this.style.background='#c82333'" onmouseout="this.style.background='#dc3545'"> Limpar</button>
+                        <button onclick="applyValoresSelection()" style="padding: 10px 30px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600;" onmouseover="this.style.background='#218838'" onmouseout="this.style.background='#28a745'"> Aplicar Valores</button>
                         <button onclick="closeValoresSelectionModal()" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600;" onmouseover="this.style.background='#5a6268'" onmouseout="this.style.background='#6c757d'">Cancelar</button>
                     </div>
                 </div>
@@ -3047,7 +3121,7 @@
                         <circle cx="11" cy="11" r="8"></circle>
                         <path d="m21 21-4.35-4.35"></path>
                 </div>
-                <input type="text" id="assignUsersSearch" placeholder="🔍 Buscar por nome ou departamento..." onkeyup="filterAssignUsers()" style="width: 100%; padding: 12px 20px 12px 40px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; transition: all 0.3s;" onfocus="this.style.borderColor='#007bff'" onblur="this.style.borderColor='#ddd'">
+                <input type="text" id="assignUsersSearch" placeholder=" Buscar por nome ou departamento..." onkeyup="filterAssignUsers()" style="width: 100%; padding: 12px 20px 12px 40px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; transition: all 0.3s;" onfocus="this.style.borderColor='#007bff'" onblur="this.style.borderColor='#ddd'">
             </div>
 
             <!-- Conteúdo com Lista de Usuários -->
@@ -3421,7 +3495,7 @@
                     horasInput.style.backgroundColor = 'white';
                     row.style.background = '#e7f5ff';
                     
-                    console.log('✅ Item adicionado:', codigo, horasFormatted);
+                    console.log(' Item adicionado:', codigo, horasFormatted);
                 }
             } else {
                 // Remover dos selecionados
@@ -3432,7 +3506,7 @@
                 horasInput.value = '01:00';
                 row.style.background = '';
                 
-                console.log('❌ Item removido:', codigo);
+                console.log(' Item removido:', codigo);
             }
             
             updateModalTotal();
@@ -3462,28 +3536,28 @@
         // Aplicar valores selecionados ao formulário
         function applyValoresSelection() {
             if (selectedValoresData.length === 0) {
-                alert('⚠️ Nenhum valor foi selecionado!');
+                alert(' Nenhum valor foi selecionado!');
                 return;
             }
             
-            console.log('✅ Aplicando', selectedValoresData.length, 'valores ao formulário');
+            console.log(' Aplicando', selectedValoresData.length, 'valores ao formulário');
             console.log('Dados:', selectedValoresData);
             
             // Fechar modal
             closeValoresSelectionModal();
             
             // Os valores já estão em selectedValoresData e serão incluídos no submit
-            alert(`✅ ${selectedValoresData.length} valores adicionados ao orçamento!\nTotal: R$ ${selectedValoresData.reduce((sum, item) => sum + item.subtotal, 0).toFixed(2).replace('.', ',')}`);
+            alert(` ${selectedValoresData.length} valores adicionados ao orçamento!\nTotal: R$ ${selectedValoresData.reduce((sum, item) => sum + item.subtotal, 0).toFixed(2).replace('.', ',')}`);
         }
 
         // Limpar seleção de valores
         function clearValoresSelection() {
             if (selectedValoresData.length === 0) {
-                alert('ℹ️ Nenhum valor selecionado para limpar.');
+                alert(' Nenhum valor selecionado para limpar.');
                 return;
             }
             
-            if (confirm(`🗑️ Deseja realmente limpar os ${selectedValoresData.length} valores selecionados?`)) {
+            if (confirm(` Deseja realmente limpar os ${selectedValoresData.length} valores selecionados?`)) {
                 // Desmarcar todos os checkboxes
                 document.querySelectorAll('.valor-checkbox:checked').forEach(checkbox => {
                     checkbox.checked = false;
@@ -3506,7 +3580,7 @@
                 updateModalTotal();
                 updateSelectedCount();
                 
-                console.log('🗑️ Todos os valores foram removidos');
+                console.log(' Todos os valores foram removidos');
             }
         }
 
@@ -3527,7 +3601,7 @@
                 }
             });
             
-            console.log(isChecked ? '✅ Todos selecionados' : '❌ Todos desmarcados');
+            console.log(isChecked ? ' Todos selecionados' : ' Todos desmarcados');
         }
 
         // Helper para parsing de números (já existe mas está duplicado, mantendo aqui)
@@ -3557,7 +3631,7 @@
             }
         }
 
-        // ❌ CÓDIGO DUPLICADO COMENTADO - máscara priceInput (já existe acima na linha 1681)
+        // CÓDIGO DUPLICADO COMENTADO - máscara priceInput (já existe acima na linha 1681)
         /*         // Mascara no input de valor total
         /*         const priceInput = document.getElementById('price');
         /*         if (priceInput) {
