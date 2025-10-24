@@ -176,13 +176,14 @@
             border: 1px solid var(--border-gray);
             padding: 2px 4px;
             text-align: left;
-            vertical-align: middle;
-            line-height: 1.2;
+            vertical-align: top;
+            line-height: 1.4;
         }
         
         table td {
-            height: auto;
-            min-height: 18px;
+            height: auto !important;
+            min-height: auto !important;
+            max-height: none !important;
         }
         
         table td strong {
@@ -954,25 +955,52 @@
             color: #495057;
             background: white;
             border: 1px solid #dee2e6;
-            min-height: 100px;
+            min-height: auto !important;
+            height: auto !important;
+            max-height: none !important;
             vertical-align: top;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            overflow: visible !important;
+        }
+
+        /* Alturas específicas para cada tipo de campo - IGUAIS AO NEW_RNC.HTML */
+        .section-content-large {
+            min-height: auto !important;
+            height: auto !important;
+            max-height: none !important;
+            padding: 20px;
+            overflow: visible !important;
             white-space: pre-wrap;
             word-wrap: break-word;
             word-break: break-word;
             overflow-wrap: break-word;
         }
 
-        /* Alturas específicas para cada tipo de campo - IGUAIS AO NEW_RNC.HTML */
-        .section-content-large {
-            min-height: 80px; /* Igual a .large-text-area */
-        }
-
         .section-content-medium {
-            min-height: 60px; /* Igual a .medium-text-area */
+            min-height: auto !important;
+            height: auto !important;
+            max-height: none !important;
+            padding: 20px;
+            overflow: visible !important;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            word-break: break-word;
+            overflow-wrap: break-word;
         }
 
         .section-content-instruction {
-            min-height: 50px; /* Igual a .instruction-2lines - 2 linhas */
+            min-height: auto !important;
+            height: auto !important;
+            max-height: none !important;
+            padding: 20px;
+            overflow: visible !important;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            word-break: break-word;
+            overflow-wrap: break-word;
         }
 
         .header {
@@ -1189,7 +1217,7 @@
                     </tr>
                     <tr>
                         <td class="field-value">{{ rnc.area_responsavel_name or rnc.area_responsavel or '-' }}</td>
-                        <td class="field-value">{{ rnc.signature_engineering_name or '-' }}</td>
+                        <td class="field-value">{{ rnc.ass_responsavel or '-' }}</td>
                         <td class="field-value">{{ rnc.created_at[:10] if rnc.created_at else '-' }}</td>
                     </tr>
                 </table>
@@ -1203,7 +1231,7 @@
                     </tr>
                     <tr>
                         <td class="field-value">{{ rnc.inspetor_name or rnc.inspetor or '-' }}</td>
-                        <td class="field-value">{{ rnc.responsavel_name or rnc.responsavel or '-' }}</td>
+                        <td class="field-value">{{ rnc.causador_name or rnc.responsavel_name or rnc.responsavel or '-' }}</td>
                         <td class="field-value">{{ rnc.signature_inspection2_name or '-' }}</td>
                     </tr>
                 </table>
@@ -1330,11 +1358,11 @@
                     <div style="border-top: 1px solid #6c757d; padding-top: 8px;">VISTO - Qualidade</div>
                 </div>
                 <div style="width: 33.33%; padding: 15px; text-align: center; font-size: 11px; font-weight: bold; border-right: 1px solid #cccccc;">
-                    <div style="margin-bottom: 25px;">{{ rnc.signature_engineering_name or 'NOME' }}</div>
+                    <div style="margin-bottom: 25px;">{{ rnc.ass_responsavel or 'NOME' }}</div>
                     <div style="border-top: 1px solid #6c757d; padding-top: 8px;">VISTO - Gerente do Setor</div>
                 </div>
                 <div style="width: 33.33%; padding: 15px; text-align: center; font-size: 11px; font-weight: bold;">
-                    <div style="margin-bottom: 25px;">{{ rnc.signature_inspection2_name or 'NOME' }}</div>
+                    <div style="margin-bottom: 25px;">{{ rnc.causador_name or rnc.signature_inspection2_name or 'NOME' }}</div>
                     <div style="border-top: 1px solid #6c757d; padding-top: 8px;">VISTO - Causador</div>
                 </div>
             </div>

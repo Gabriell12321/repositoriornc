@@ -1699,9 +1699,9 @@
                     </button>
                     {% endif %}
                     {% if user_permissions.canViewLevantamento1415 %}
-                    <button class="tab-button" data-tab="lev1415" onclick="switchTab('lev1415')">
+                   <!-- <button class="tab-button" data-tab="lev1415" onclick="switchTab('lev1415')">
                         Levantamento 14-15
-                    </button>
+                    </button> -->
                     {% endif %}
                 </div>
                 
@@ -2245,7 +2245,7 @@
                     justify-content: center;
                     gap: 10px;
                 ">
-                    Novo RNC
+                    Nova RNC
                 </button>
                 {% endif %}
                 {% if user_permissions and user_permissions.canViewCharts %}
@@ -2351,6 +2351,23 @@
                         display: none;
                     " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 10px 22px rgba(111,66,193,.3)';" onmouseout="this.style.transform=''; this.style.boxShadow='0 8px 20px rgba(111,66,193,.25)';">
                         Gerenciar Permissões
+                    </button>
+                    <button id="manageManagersBtn" onclick="window.location.href='/admin/managers'" style="
+                        padding: 10px;
+                        background: linear-gradient(135deg, #3498db, #2980b9);
+                        color: white;
+                        border: none;
+                        border-radius: 10px;
+                        cursor: pointer;
+                        font-size: 14px;
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        box-shadow: 0 8px 20px rgba(52, 152, 219, 0.25);
+                        transition: transform .15s ease, box-shadow .15s ease;
+                        display: none;
+                    " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 10px 22px rgba(52,152,219,.3)';" onmouseout="this.style.transform=''; this.style.boxShadow='0 8px 20px rgba(52,152,219,.25)';">
+                        Gerenciar Gerentes
                     </button>
                     <button id="manageFieldLocksBtn" onclick="window.location.href='/admin/field-locks/'" style="
                         padding: 10px;
@@ -2681,6 +2698,7 @@
                         const manageUsersBtn = document.getElementById('manageUsersBtn');
                         const manageGroupsBtn = document.getElementById('manageGroupsBtn');
                         const managePermissionsBtn = document.getElementById('managePermissionsBtn');
+                        const manageManagersBtn = document.getElementById('manageManagersBtn');
                         const manageFieldLocksBtn = document.getElementById('manageFieldLocksBtn');
                         const manageClientsBtn = document.getElementById('manageClientsBtn');
                         const manageAreasBtn = document.getElementById('manageAreasBtn');
@@ -2692,7 +2710,9 @@
                         
                         if (manageUsersBtn) manageUsersBtn.style.display = 'flex';
                         if (manageGroupsBtn) manageGroupsBtn.style.display = 'flex';
+                        // Gerenciar Permissões e Gerenciar Gerentes só para admins
                         if (managePermissionsBtn) managePermissionsBtn.style.display = 'flex';
+                        if (manageManagersBtn) manageManagersBtn.style.display = 'flex';
                         if (manageFieldLocksBtn) {
                             manageFieldLocksBtn.style.display = 'flex';
                             console.log(' Botão Permissões Criação RNC ativado');
@@ -3487,7 +3507,7 @@ Status: ${data.debug_info.inspection2_empty ? ' VAZIO' : ' PREENCHIDO'}`);
             } else {
                 rows = (filteredRNCs.length > 0 ? filteredRNCs : rncsData.active) || [];
             }
-            if (!rows.length) { alert('Nenhum RNC para exportar.'); return; }
+            if (!rows.length) { alert('Nenhuma RNC para exportar.'); return; }
             const header = ['ID','N° RNC','Título','Cliente','Equipamento','CV','Desenho','Setor','Responsável','Data Finalização'];
             const csvRows = [header.join(';')];
             rows.forEach(r => {
@@ -3828,21 +3848,21 @@ Status: ${data.debug_info.inspection2_empty ? ' VAZIO' : ' PREENCHIDO'}`);
         
         function getEmptyStateTitle(tab) {
             switch(tab) {
-                case 'active': return 'Nenhum RNC Ativo';
-                case 'engenharia': return 'Nenhum RNC de Engenharia';
-                case 'finalized': return 'Nenhum RNC Finalizado';
+                case 'active': return 'Nenhuma RNC Ativa';
+                case 'engenharia': return 'Nenhuma RNC de Engenharia';
+                case 'finalized': return 'Nenhuma RNC Finalizada';
                 
-                default: return 'Nenhum RNC';
+                default: return 'Nenhuma RNC';
             }
         }
         
         function getEmptyStateMessage(tab) {
             switch(tab) {
-                case 'active': return 'Crie seu primeiro RNC para começar a trabalhar.';
-                case 'engenharia': return 'RNCs específicos do setor de Engenharia aparecerão aqui.';
-                case 'finalized': return 'RNCs finalizados aparecerão aqui para consulta.';
+                case 'active': return 'Crie sua primeira RNC para começar a trabalhar.';
+                case 'engenharia': return 'RNCs específicas do setor de Engenharia aparecerão aqui.';
+                case 'finalized': return 'RNCs finalizadas aparecerão aqui para consulta.';
                 
-                default: return 'Nenhum RNC encontrado.';
+                default: return 'Nenhuma RNC encontrada.';
             }
         }
         
@@ -6265,11 +6285,11 @@ Status: ${data.debug_info.inspection2_empty ? ' VAZIO' : ' PREENCHIDO'}`);
             
             if (filteredCount !== totalCount) {
                 if (filteredCount === 0) {
-                    resultsCounter.textContent = `Nenhum RNC encontrado com os filtros aplicados`;
+                    resultsCounter.textContent = `Nenhuma RNC encontrada com os filtros aplicados`;
                     resultsCounter.style.background = '#f8d7da';
                     resultsCounter.style.color = '#721c24';
                 } else {
-                    resultsCounter.textContent = `Mostrando ${filteredCount} de ${totalCount} RNCs finalizados`;
+                    resultsCounter.textContent = `Mostrando ${filteredCount} de ${totalCount} RNCs finalizadas`;
                     resultsCounter.style.background = '#e9ecef';
                     resultsCounter.style.color = '#495057';
                 }

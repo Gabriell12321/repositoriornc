@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Novo RNC - Sistema IPPEL</title>
+    <title>Nova RNC - Sistema IPPEL</title>
     <style>
         * {
             margin: 0;
@@ -248,6 +248,29 @@
             font-size: 12px !important;
         }
 
+        /* Melhorar quebra de linha e comportamento de redimensionamento automático
+           para todos os textareas: garante wrapping, quebra de palavras e box-sizing
+           apropriado para que o auto-resize baseado em scrollHeight funcione. */
+        textarea,
+        textarea.input-field,
+        textarea.large-text-area,
+        textarea.medium-text-area,
+        textarea.instruction-2lines {
+            white-space: pre-wrap !important; /* preserva quebras de linha do usuário */
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
+            box-sizing: border-box !important;
+            -webkit-box-sizing: border-box !important;
+            -moz-box-sizing: border-box !important;
+            /* FORÇAR resize none para que o script controle 100% da altura */
+            resize: none !important;
+            /* esconder barra de rolagem vertical - altura será ajustada automaticamente */
+            overflow-y: hidden !important;
+            overflow-x: hidden !important;
+            /* garantir altura mínima, mas permitir expansão */
+            min-height: 40px !important;
+        }
+
         .item-column {
             background: #ced4da;
             color: #000;
@@ -382,7 +405,8 @@
         }
 
         @keyframes bounceBlock {
-            0%, 100% { transform: scale(1); }
+            0%, 100% { transform: scale(1
+                ); }
             50% { transform: scale(1.1); }
         }
 
@@ -445,12 +469,13 @@
             
             body {
                 background: white;
-                margin: 0;
-                margin-top: 0 !important;
-                padding: 0;
-                padding-top: 0 !important;
+                margin: 0 !important;
+                padding: 0 !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
+                /* FORÇAR altura ajustada à página */
+                height: auto !important;
+                overflow: visible !important;
             }
             
             /* Forçar impressão exata de cores E FUNDO BRANCO */
@@ -516,23 +541,31 @@
                 border-radius: 0 !important;
             }
             
-            /* Ajustar tamanho da página */
+            /* Ajustar tamanho da página - MARGENS MÍNIMAS */
             @page {
                 size: A4;
-                margin: 2mm 5mm;
+                margin: 1mm 3mm !important; /* Margens extremamente reduzidas */
             }
             
-            /* Reduzir tamanho dos logos */
+            /* TRANSFORMAÇÃO PARA CABER EM UMA PÁGINA - Compressão leve */
+            html {
+                transform-origin: top left;
+                /* Reduzir para 90% para ótima legibilidade */
+                transform: scale(0.90);
+                width: 111.11%; /* 100% / 0.90 para compensar */
+            }
+            
+            /* Logos com tamanho legível */
             .logos img {
-                width: 35px !important;
-                height: 35px !important;
+                width: 32px !important;
+                height: 32px !important;
             }
             
             .logos {
-                margin-bottom: 0 !important;
-                margin-top: 0 !important;
-                padding-top: 0 !important;
+                margin: 0 !important;
+                padding: 0 !important;
                 border: none !important;
+                gap: 10px !important;
             }
             
             .header {
@@ -547,35 +580,31 @@
             }
             
             .main-title {
-                font-size: 13px !important;
-                margin-bottom: 0 !important;
-                margin-top: 0 !important;
-                padding-top: 0 !important;
+                font-size: 12px !important;
+                margin: 0 !important;
+                padding: 0 !important;
                 color: #000 !important;
-                line-height: 1 !important;
+                line-height: 1.1 !important;
             }
             
             .subtitle {
-                font-size: 7px !important;
-                margin-bottom: 0 !important;
-                margin-top: 0 !important;
-                padding-top: 0 !important;
+                font-size: 8px !important;
+                margin: 0 !important;
+                padding: 0 !important;
                 color: #000 !important;
-                line-height: 1 !important;
+                line-height: 1.1 !important;
             }
             
             .form-code {
-                font-size: 6px !important;
-                margin-bottom: 0 !important;
-                margin-top: 0 !important;
-                padding-top: 0 !important;
-                padding-bottom: 0 !important;
+                font-size: 7px !important;
+                margin: 0 !important;
+                padding: 0 !important;
                 color: #000 !important;
-                line-height: 1 !important;
+                line-height: 1.1 !important;
             }
             
             .rnc-number {
-                margin-bottom: 2px !important;
+                margin-bottom: 1px !important;
                 margin-top: 0 !important;
                 padding-top: 0 !important;
                 padding-bottom: 0 !important;
@@ -606,7 +635,7 @@
             }
             
             .rnc-number input {
-                padding: 1px !important;
+                padding: 2px !important;
                 font-size: 8px !important;
                 border: 1px solid #000 !important;
                 border-radius: 0 !important;
@@ -626,31 +655,31 @@
             /* Reduzir espaçamento das seções */
             div[style*="margin: 25px 0"],
             div[style*="margin: 20px 0"] {
-                margin: 0 0 3px 0 !important;
+                margin: 0 0 2px 0 !important;
             }
             
             /* Reduzir padding das seções */
             div[style*="padding: 20px"],
             div[style*="padding: 12px"] {
-                padding: 4px 6px !important;
+                padding: 3px 5px !important;
             }
             
             /* Reduzir cabeçalhos das seções */
             div[style*="padding: 12px 20px"],
             div[style*="padding: 10px 15px"] {
-                padding: 5px 10px !important;
-                font-size: 10px !important;
+                padding: 4px 8px !important;
+                font-size: 9px !important;
                 line-height: 1.2 !important;
                 font-weight: normal !important;
                 font-weight: 400 !important;
                 letter-spacing: 0.5px !important;
             }
             
-            /* Configuração das tabelas - IGUAL AO MODO DE CRIAÇÃO */
+            /* Configuração das tabelas */
             table {
                 width: 100% !important;
                 border-collapse: collapse !important;
-                margin-bottom: 4px !important;
+                margin-bottom: 3px !important;
                 page-break-inside: auto !important;
             }
             
@@ -768,24 +797,24 @@
             }
             
             .field-label {
-                padding: 2px !important;
-                font-size: 8px !important;
+                padding: 3px !important;
+                font-size: 9px !important;
                 background: #f8f9fa !important;
                 color: #000 !important;
                 border: 1px solid #000 !important;
-                line-height: 1.1 !important;
+                line-height: 1.2 !important;
                 font-weight: normal !important;
-                height: 16px !important;
+                height: 18px !important;
             }
             
             .input-field {
-                padding: 2px !important;
+                padding: 3px !important;
                 font-size: 9px !important;
                 min-height: auto !important;
                 height: 22px !important;
                 border: none !important;
                 color: #000 !important;
-                line-height: 1.2 !important;
+                line-height: 1.3 !important;
             }
             
             /* Regra universal para todos os textareas em impressão */
@@ -796,48 +825,60 @@
             textarea.instruction-2lines,
             textarea.input-field.large-text-area,
             textarea.input-field.medium-text-area {
-                min-height: 0 !important;
-                max-height: none !important;
-                height: fit-content !important;
-                font-size: 11px !important;
-                line-height: 1.4 !important;
+                font-size: 8px !important;
+                line-height: 1.5 !important;
                 white-space: pre-wrap !important;
                 word-wrap: break-word !important;
+                word-break: break-word !important;
                 overflow: visible !important;
+                overflow-wrap: break-word !important;
                 resize: none !important;
                 border: none !important;
-                padding: 4px !important;
+                padding: 8px 10px !important;
                 display: block !important;
                 break-inside: auto !important;
                 page-break-inside: auto !important;
+                box-sizing: border-box !important;
+                height: auto !important;
+                max-height: none !important;
+                color: #000 !important;
+                background: white !important;
             }
 
-            /* Ajustes específicos por tipo */
+            /* Ajustes específicos por tipo - ALTURA BEM LEGÍVEL */
             textarea.large-text-area,
-            textarea.input-field.large-text-area {
-                min-height: 60px !important;
+            textarea.input-field.large-text-area,
+            #description {
+                min-height: 70px !important;
+                max-height: 80px !important;
+                height: 75px !important;
+                padding: 8px 10px !important;
+                overflow: hidden !important;
             }
 
             textarea.medium-text-area,
-            textarea.input-field.medium-text-area {
-                min-height: 40px !important;
+            textarea.input-field.medium-text-area,
+            #cause_rnc,
+            #action_rnc {
+                min-height: 60px !important;
+                max-height: 70px !important;
+                height: 65px !important;
+                padding: 8px 10px !important;
+                overflow: hidden !important;
             }
 
-            textarea.instruction-2lines {
-                min-height: 30px !important;
+            textarea.instruction-2lines,
+            #instruction_retrabalho {
+                min-height: 55px !important;
+                max-height: 65px !important;
+                height: 60px !important;
+                padding: 8px 10px !important;
+                overflow: hidden !important;
             }
 
             /* Garantir que o texto se expanda corretamente */
             textarea:not(:empty) {
                 height: auto !important;
-            }
-            
-            /* Regra por ID para máxima especificidade */
-            #description,
-            #instruction_retrabalho,
-            #cause_rnc,
-            #action_rnc {
-                font-size: 12px !important;
             }
             
             /* FORÇAR TODAS AS BORDAS PARA 1PX - REGRA MÁXIMA PRIORIDADE */
@@ -937,27 +978,27 @@
             div[style*="background:#6c757d"],
             div[style*="padding: 12px 20px"],
             div[style*="font-weight: bold; font-size: 15px"] {
-                padding: 2px 4px !important;
-                font-size: 8px !important;
+                padding: 1px 2px !important;
+                font-size: 7px !important;
                 background: #fff !important;
                 color: #000 !important;
-                line-height: 1.1 !important;
-                margin-bottom: 1px !important;
+                line-height: 1 !important;
+                margin-bottom: 0 !important;
                 border: 1px solid #000 !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
             }
             
-            /* Ajustar assinaturas */
+            /* Ajustar assinaturas - AUMENTAR */
             .sign-col,
             div[id^="assinatura_coluna"] {
                 padding: 6px !important;
-                font-size: 9px !important;
+                font-size: 10px !important;
                 border-right: 1px solid #000 !important;
                 border-left: none !important;
                 border-top: none !important;
                 border-bottom: none !important;
-                line-height: 1.2 !important;
+                line-height: 1.4 !important;
             }
             
             div[id^="assinatura_coluna"]:first-child {
@@ -966,33 +1007,33 @@
             
             /* Corrigir bordas das colunas de data */
             div[style*="padding: 6px"] {
-                padding: 4px !important;
-                font-size: 8px !important;
+                padding: 5px !important;
+                font-size: 10px !important;
                 background: #f8f9fa !important;
             }
             
             div[id^="nome_coluna"] {
-                margin-bottom: 8px !important;
-                font-size: 9px !important;
+                margin-bottom: 10px !important;
+                font-size: 10px !important;
                 color: #000 !important;
-                line-height: 1.2 !important;
-                min-height: 15px !important;
+                line-height: 1.4 !important;
+                min-height: 18px !important;
             }
             
-            /* Linha do VISTO mais fina */
+            /* Linha do VISTO maior */
             div[style*="border-top: 1px solid"] {
-                padding-top: 4px !important;
-                font-size: 7px !important;
+                padding-top: 5px !important;
+                font-size: 9px !important;
                 color: #666 !important;
             }
             
             /* Compactar área de vistos/assinaturas */
             div[style*="margin-bottom: 25px"] {
-                margin-bottom: 1px !important;
+                margin-bottom: 0 !important;
             }
             
             div[style*="padding: 8px; text-align: center"] {
-                padding: 2px !important;
+                padding: 1px !important;
             }
             
             /* Reduzir espaçamento dos checkboxes */
@@ -1001,7 +1042,7 @@
                 margin: 0 !important;
                 font-size: 9px !important;
                 color: #000 !important;
-                line-height: 1.2 !important;
+                line-height: 1.3 !important;
             }
             
             input[type="checkbox"] {
@@ -1009,20 +1050,20 @@
                 height: 12px !important;
                 border: 1px solid #000 !important;
                 margin: 2px !important;
-                margin-right: 4px !important;
+                margin-right: 5px !important;
             }
             
             /* Compactar seção de disposição e inspeção */
             div[style*="display: grid; grid-template-columns: 1fr 1fr"] {
-                gap: 2px !important;
+                gap: 1px !important;
             }
             
             div[style*="padding: 15px"] {
-                padding: 4px !important;
+                padding: 2px !important;
             }
             
             div[style*="margin-top: 15px"] {
-                margin-top: 4px !important;
+                margin-top: 1px !important;
             }
             
             /* Reduzir espaço dos labels dos checkboxes */
@@ -1035,7 +1076,7 @@
             /* Compactar header das seções */
             div[style*="padding: 12px 0"] {
                 padding: 3px 0 !important;
-                font-size: 8px !important;
+                font-size: 9px !important;
                 background: #fff !important;
                 color: #000 !important;
                 border: 1px solid #000 !important;
@@ -1061,8 +1102,8 @@
             input[id*="_d"],
             input[id*="_m"],
             input[id*="_y"] {
-                font-size: 9px !important;
-                padding: 2px !important;
+                font-size: 7px !important;
+                padding: 1px !important;
                 border: none !important;
             }
             
@@ -1074,6 +1115,30 @@
                 border-radius: 0 !important;
                 -webkit-border-radius: 0 !important;
                 -moz-border-radius: 0 !important;
+            }
+            
+            /* Forçar quebra de página apenas no final */
+            * {
+                page-break-inside: avoid !important;
+            }
+            
+            .container {
+                page-break-after: avoid !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                max-height: 100vh !important;
+                overflow: hidden !important;
+            }
+            
+            /* Garantir que header e logos ocupem mínimo espaço */
+            .header {
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            
+            .title-section {
+                margin: 0 !important;
+                padding: 0 !important;
             }
             
             /* FORÇAR TODAS AS LETRAS EM PRETO E REMOVER NEGRITOS */
@@ -1394,7 +1459,7 @@
                         <span class="label">Imprimir</span>
                     </button>
                 </div>
-                <span class="no-print" style="font-size: 12px; color: #6c757d; font-weight: 500; margin-left: 12px;">v2.0 | Sistema Premium</span>
+                <span class="no-print" style="font-size: 12px; color: #6c757d; font-weight: 500; margin-left: 12px;">Versão de Teste/Pode causar erro</span>
             </div>
         </div>
 
@@ -1566,7 +1631,7 @@
                             <!-- Hidden canonical assigned_group_id (sent to server) -->
                             <input type="hidden" id="assigned_group_id" name="assigned_group_id" value="">
                         </td>
-                        <td><input type="text" id="ass_responsavel" name="ass_responsavel" class="input-field" placeholder="Assinatura Responsável" data-field="signature_inspection_name"></td>
+                        <td><input type="text" id="ass_responsavel" name="ass_responsavel" class="input-field" placeholder="Assinatura Responsável" data-field="ass_responsavel"></td>
                         <td><input type="text" id="data_emissao" name="data_emissao" class="input-field" data-field="created_at"></td>
                     </tr>
                 </table>
@@ -1636,7 +1701,7 @@
                     <textarea id="description" name="description" class="input-field large-text-area" 
                         placeholder="Descreva a não conformidade identificada..." data-field="description" 
                         style="width: 100%; min-height: 100px; padding: 8px; margin: 0; border: none; 
-                        font-size: 12px !important; line-height: 1.5; resize: none;"></textarea>
+                        font-size: 12px !important; line-height: 1.5;"></textarea>
                 </td>
             </tr>
         </table>
@@ -1651,7 +1716,7 @@
                     <textarea id="instruction_retrabalho" name="instruction_retrabalho" class="input-field instruction-2lines" 
                         placeholder="Instruções detalhadas para correção..." data-field="instruction_retrabalho" 
                         style="width: 100%; min-height: 50px; padding: 8px; margin: 0; border: none; 
-                        font-size: 12px !important; line-height: 1.5; resize: none;"></textarea>
+                        font-size: 12px !important; line-height: 1.5;"></textarea>
                 </td>
             </tr>
         </table>
@@ -1666,7 +1731,7 @@
                     <textarea id="cause_rnc" name="cause_rnc" class="input-field medium-text-area" 
                         placeholder="Análise da causa raiz..." data-field="cause_rnc" 
                         style="width: 100%; min-height: 60px; padding: 8px; margin: 0; border: none; 
-                        font-size: 12px !important; line-height: 1.5; resize: none;"></textarea>
+                        font-size: 12px !important; line-height: 1.5;"></textarea>
                 </td>
             </tr>
         </table>
@@ -1681,7 +1746,7 @@
                     <textarea id="action_rnc" name="action_rnc" class="input-field medium-text-area" 
                         placeholder="Ações corretivas e preventivas..." data-field="action_rnc" 
                         style="width: 100%; min-height: 60px; padding: 8px; margin: 0; border: none; 
-                        font-size: 12px !important; line-height: 1.5; resize: none;"></textarea>
+                        font-size: 12px !important; line-height: 1.5;"></textarea>
                 </td>
             </tr>
         </table>
@@ -1984,11 +2049,44 @@
             
             console.log(` ${savedPlaceholders.length} placeholders removidos para impressão`);
             
+            // AJUSTAR ALTURA DOS TEXTAREAS PARA O CONTEÚDO
+            const allTextareas = document.querySelectorAll('textarea');
+            const savedTextareaStyles = [];
+            
+            allTextareas.forEach(textarea => {
+                // Salvar estilos originais
+                savedTextareaStyles.push({
+                    element: textarea,
+                    height: textarea.style.height,
+                    minHeight: textarea.style.minHeight,
+                    maxHeight: textarea.style.maxHeight,
+                    overflow: textarea.style.overflow
+                });
+                
+                // Resetar para calcular altura correta
+                textarea.style.height = 'auto';
+                textarea.style.overflow = 'hidden';
+                
+                // Calcular altura necessária
+                const scrollHeight = textarea.scrollHeight;
+                const minHeight = 40;
+                const finalHeight = Math.max(scrollHeight + 8, minHeight);
+                
+                // Aplicar altura calculada
+                textarea.style.height = finalHeight + 'px';
+                textarea.style.minHeight = finalHeight + 'px';
+                textarea.style.maxHeight = 'none';
+                
+                console.log(` Textarea ajustado: ${finalHeight}px (scrollHeight: ${scrollHeight}px)`);
+            });
+            
+            console.log(` ${allTextareas.length} textareas ajustados para impressão`);
+            
             // Aguardar um momento para aplicar estilos de impressão
             setTimeout(() => {
                 window.print();
                 
-                // RESTAURAR PLACEHOLDERS APÓS IMPRESSÃO
+                // RESTAURAR PLACEHOLDERS E TEXTAREAS APÓS IMPRESSÃO
                 setTimeout(() => {
                     document.title = tituloOriginal;
                     
@@ -1996,9 +2094,17 @@
                         element.setAttribute('placeholder', placeholder);
                     });
                     
+                    savedTextareaStyles.forEach(({element, height, minHeight, maxHeight, overflow}) => {
+                        element.style.height = height;
+                        element.style.minHeight = minHeight;
+                        element.style.maxHeight = maxHeight;
+                        element.style.overflow = overflow;
+                    });
+                    
                     console.log(` ${savedPlaceholders.length} placeholders restaurados`);
+                    console.log(` ${savedTextareaStyles.length} textareas restaurados`);
                 }, 100);
-            }, 100);
+            }, 200);
         };
         
         console.log(' Função de impressão definida: imprimirFormulario');
@@ -2227,7 +2333,7 @@
             const campos = [
                 'title', 'description', 'equipment', 'client', 'mp', 'revision', 'position', 'cv',
                 'drawing', 'conjunto', 'modelo', 'description_drawing', 'quantity', 'material', 'purchase_order',
-                'responsavel', 'inspetor', 'area_responsavel', 'setor', 'instruction_retrabalho', 'cause_rnc', 'action_rnc',
+                'responsavel', 'inspetor', 'area_responsavel', 'ass_responsavel', 'setor', 'instruction_retrabalho', 'cause_rnc', 'action_rnc',
                 'price', 'price_note', 'assigned_user_id'
             ];
 
@@ -2290,11 +2396,11 @@
                 console.log(' Incluindo', selectedValoresData.length, 'itens de valores/hora');
             }
             
-            // Adicionar usuário causador (se selecionado)
-            const causadorSelector = document.getElementById('causadorSelector');
-            if (causadorSelector && causadorSelector.value) {
-                formData.causador_user_id = causadorSelector.value;
-                console.log(' Usuário causador definido: ID', causadorSelector.value);
+            // Adicionar usuário causador selecionado no dropdown "Nome Causador"
+            const nomeResponsavelSelect = document.getElementById('nome_responsavel');
+            if (nomeResponsavelSelect && nomeResponsavelSelect.value) {
+                formData.causador_user_id = nomeResponsavelSelect.value;
+                console.log(' Usuário causador definido: ID', nomeResponsavelSelect.value);
             }
 
             // Garantir que o assigned_group_id (campo oculto) esteja no payload
@@ -2307,6 +2413,12 @@
                 console.warn(' Não foi possível ler assigned_group_id hidden:', e);
             }
 
+            // DEBUG: Verificar se ass_responsavel está sendo coletado
+            console.log(' DEBUG - Valores dos campos:');
+            console.log('   - ass_responsavel:', formData.ass_responsavel);
+            console.log('   - area_responsavel:', formData.area_responsavel);
+            console.log('   - assigned_group_id:', formData.assigned_group_id);
+            
             console.log(' Enviando dados:', formData);
 
             fetch('/api/rnc/create', {
@@ -2490,38 +2602,50 @@
             mostrarNotificacao(` Carregando informações do setor "${groupName}"...`, 'info');
             
             try {
-                // 1. Buscar o líder/gerente do grupo/setor da área responsável
+                // 1. Buscar o gerente principal do grupo/setor da área responsável (do banco de dados)
                 console.log(` Buscando gerente do setor "${groupName}" (ID: ${selectedAreaGroupId})...`);
-                const managerResponse = await fetch(`/api/groups/${selectedAreaGroupId}/manager`);
                 
-                if (managerResponse.ok) {
-                    const managerData = await managerResponse.json();
+                // Usar a nova API que busca gerentes do banco de dados
+                const groupsResponse = await fetch('/api/admin/groups/with-managers');
+                
+                if (groupsResponse.ok) {
+                    const groupsData = await groupsResponse.json();
                     
-                    if (managerData.success && managerData.manager) {
-                        // Preencher o responsável em "Assinatura Responsável"
-                        if (assResponsavelInput) {
-                            assResponsavelInput.value = managerData.manager.name;
-                            console.log(` Assinatura Responsável preenchida com: ${managerData.manager.name}`);
+                    if (groupsData.success && groupsData.groups) {
+                        // Encontrar o grupo selecionado
+                        const selectedGroup = groupsData.groups.find(g => g.id == selectedAreaGroupId);
+                        
+                        if (selectedGroup && selectedGroup.manager_name) {
+                            // Preencher o responsável em "Assinatura Responsável" com o gerente principal
+                            if (assResponsavelInput) {
+                                assResponsavelInput.value = selectedGroup.manager_name;
+                                console.log(` ✓ Assinatura Responsável preenchida com gerente: ${selectedGroup.manager_name}`);
+                            }
+                        } else {
+                            // Se não houver gerente definido no banco, deixar em branco
+                            if (assResponsavelInput) {
+                                assResponsavelInput.value = '';
+                                console.log(` ⚠️ Nenhum gerente definido para "${groupName}" - configure em /admin/managers`);
+                            }
                         }
                         
                         // Preencher a data atual em "DATA EMISSÃO"
                         if (dataEmissaoInput) {
                             const dataAtual = new Date().toLocaleDateString('pt-BR');
                             dataEmissaoInput.value = dataAtual;
-                            console.log(` Data de emissão preenchida: ${dataAtual}`);
+                            console.log(` ✓ Data de emissão preenchida: ${dataAtual}`);
                         }
                         
                         // NÃO preencher "Assinatura Causador" - deve ficar em branco até o usuário selecionar no dropdown
                         if (assinaturaLiderInput) {
                             assinaturaLiderInput.value = '';
-                            console.log(` Assinatura Causador mantida em branco (será preenchida ao selecionar usuário)`);
+                            console.log(` ℹ️ Assinatura Causador mantida em branco (será preenchida ao selecionar usuário)`);
                         }
-                    } else {
-                        // Se não houver líder definido, deixar em branco
-                        if (assinaturaLiderInput) assinaturaLiderInput.value = '';
-                        if (assResponsavelInput) assResponsavelInput.value = '';
-                        console.log(` Nenhum líder definido para "${groupName}"`);
                     }
+                } else {
+                    console.warn(' Erro ao buscar gerentes dos grupos');
+                    if (assResponsavelInput) assResponsavelInput.value = '';
+                    if (assinaturaLiderInput) assinaturaLiderInput.value = '';
                 }
                 
                 // 2. Carregar usuários do grupo selecionado para o dropdown "NOME CAUSADOR"
@@ -2943,6 +3067,54 @@
                     autoResizeTextarea(textarea);
                 }
             });
+
+            // Auto-resize genérico para TODOS os textareas como fallback
+            // Garante que qualquer textarea (existente ou novo) se ajuste ao conteúdo
+            document.querySelectorAll('textarea').forEach(function(t) {
+                try {
+                    // Forçar box-sizing para cálculo de scrollHeight consistente
+                    t.style.boxSizing = 'border-box';
+                    t.style.overflowY = 'hidden';
+                    t.style.overflowX = 'hidden';
+                    t.style.resize = 'none';
+
+                    function resize() {
+                        // Resetar altura para calcular scrollHeight corretamente
+                        t.style.height = 'auto';
+                        // Aplicar altura calculada baseada no conteúdo
+                        // Adicionar 4px de buffer para evitar corte em alguns navegadores
+                        const newHeight = Math.max(t.scrollHeight + 4, 40);
+                        t.style.height = newHeight + 'px';
+                        console.log(' Textarea resized:', t.id || 'unnamed', 'height:', newHeight);
+                    }
+
+                    // Ajustes em eventos comuns que alteram o conteúdo
+                    t.addEventListener('input', resize);
+                    t.addEventListener('change', resize);
+                    t.addEventListener('focus', resize);
+                    // Pequeno delay para cut/paste para garantir que o conteúdo foi alterado
+                    t.addEventListener('cut', function(){ setTimeout(resize, 10); });
+                    t.addEventListener('paste', function(){ setTimeout(resize, 10); });
+                    // Observar mudanças no DOM/conteúdo
+                    if (window.MutationObserver) {
+                        const observer = new MutationObserver(resize);
+                        observer.observe(t, { 
+                            characterData: true, 
+                            subtree: true, 
+                            childList: true 
+                        });
+                    }
+
+                    // Inicializar altura correta imediatamente e após um delay
+                    resize();
+                    setTimeout(resize, 100);
+                    setTimeout(resize, 300);
+                } catch (e) {
+                    console.warn(' Auto-resize textarea failed for', t, e);
+                }
+            });
+
+            console.log(' Auto-resize aplicado a', document.querySelectorAll('textarea').length, 'textareas');
             
             loadNextRncNumber();
             loadAreaResponsavel(); // Carregar setores automaticamente do banco de dados

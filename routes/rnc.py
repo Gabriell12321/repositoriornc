@@ -154,6 +154,7 @@ def create_rnc():
             'responsavel': data.get('responsavel') or data.get('nome_responsavel', ''),
             'inspetor': data.get('inspetor', ''),
             'area_responsavel': data.get('area_responsavel', ''),
+            'ass_responsavel': data.get('ass_responsavel', ''),
             'setor': data.get('setor', ''),
             'mp': data.get('mp', ''),
             'revision': data.get('revision', ''),
@@ -232,21 +233,37 @@ def create_rnc():
         assign_to_all_group = data.get('assign_to_all_group', False)
         assigned_group_id = data.get('assigned_group_id')
         assigned_user_ids = data.get('assigned_user_ids', [])
+        causador_user_id = data.get('causador_user_id')
+        
+        # Validar e limpar causador_user_id (pode vir como string vazia, None, ou "")
+        if causador_user_id:
+            causador_user_id = str(causador_user_id).strip()
+            if not causador_user_id or causador_user_id == '' or causador_user_id == 'null' or causador_user_id == 'undefined':
+                causador_user_id = None
+            else:
+                try:
+                    causador_user_id = int(causador_user_id)
+                except (ValueError, TypeError):
+                    causador_user_id = None
+        
+        logger.info(f" DADOS DE ATRIBUIÇÃO RECEBIDOS:")
+        logger.info(f"  - causador_user_id: {causador_user_id} (tipo: {type(causador_user_id)})")
+        logger.info(f"  - assigned_group_id: {assigned_group_id}")
+        logger.info(f"  - assign_to_all_group: {assign_to_all_group}")
+        logger.info(f"  - area_responsavel: {data.get('area_responsavel')}")
         
         # Se não há assigned_group_id mas há shared_group_ids, usar o primeiro grupo compartilhado
         if not assigned_group_id and shared_group_ids and len(shared_group_ids) > 0:
             assigned_group_id = shared_group_ids[0]
-            assign_to_all_group = True
             logger.info(f" Convertendo shared_group_ids para assigned_group_id: {assigned_group_id}")
         
         # Se não há assigned_group_id mas há area_responsavel (ID do grupo), usar o area_responsavel
         if not assigned_group_id and data.get('area_responsavel'):
                 raw_area = data.get('area_responsavel')
-                # Primeiro, tentar nterpretar como ID numérico
+                # Primeiro, tentar interpretar como ID numérico
                 try:
                     area_responsavel_id = int(raw_area)
                     assigned_group_id = area_responsavel_id
-                    assign_to_all_group = True
                     logger.info(f" Convertendo area_responsavel (id) para assigned_group_id: {assigned_group_id}")
                 except (ValueError, TypeError):
                     # Se não for numérico, procurar por um grupo com esse nome (case-insensitive)
@@ -262,7 +279,6 @@ def create_rnc():
                                 row = cursor.fetchone()
                             if row:
                                 assigned_group_id = int(row[0])
-                                assign_to_all_group = True
                                 logger.info(f" Resolveu area_responsavel '{name}' para assigned_group_id: {assigned_group_id}")
                             else:
                                 logger.warning(f" Nenhum grupo encontrado com o nome area_responsavel='{name}'")
@@ -270,7 +286,7 @@ def create_rnc():
                         logger.warning(f" Erro ao resolver area_responsavel para grupo: {e}")
         
         # Log dos dados recebidos para debug
-        logger.info(f" Dados recebidos - area_responsavel: {data.get('area_responsavel')}, shared_group_ids: {shared_group_ids}, assigned_group_id: {assigned_group_id}")
+        logger.info(f" Dados recebidos - area_responsavel: {data.get('area_responsavel')}, shared_group_ids: {shared_group_ids}, assigned_group_id: {assigned_group_id}, causador_user_id: {causador_user_id}")
 
         # Se resolvemos um assigned_group_id, validar que o grupo realmente existe
         if assigned_group_id:
@@ -279,12 +295,12 @@ def create_rnc():
                 if not cursor.fetchone():
                     logger.warning(f" assigned_group_id resolvido ({assigned_group_id}) não existe em groups; ignorando")
                     assigned_group_id = None
-                else:
-                    # garantir que assign_to_all_group será verdadeiro quando veio da área responsavel
-                    if data.get('area_responsavel'):
-                        assign_to_all_group = True
             except Exception as e:
                 logger.warning(f" Erro ao validar assigned_group_id: {e}")
+        
+        # LÓGICA DE ATRIBUIÇÃO:
+        # 1. Se Nome Causador está vazio E tem setor selecionado → Atribuir para TODO o setor
+        # 2. Se Nome Causador preenchido → Atribuir para o usuário causador + gerentes do setor
         
         # Verificar se usuário tem permissão para atribuir RNC ao grupo
         can_assign_to_group = has_permission(session['user_id'], 'assign_rnc_to_group')
@@ -300,14 +316,21 @@ def create_rnc():
         
         # Permitir atribuição se há area_responsavel definida (setor selecionado)
         has_area_responsavel = bool(data.get('area_responsavel'))
-        # Forçar assign_to_all_group quando uma área/setor foi selecionado explicitamente
-        if has_area_responsavel:
+        
+        # Determinar se deve atribuir para todo o grupo baseado na presença do causador
+        if causador_user_id:
+            # Nome Causador preenchido → Atribuir apenas para o causador + gerentes
+            assign_to_all_group = False
+            logger.info(f" Nome Causador preenchido (ID: {causador_user_id}) → Atribuir apenas para usuário específico + gerentes")
+        elif has_area_responsavel:
+            # Nome Causador vazio E setor selecionado → Atribuir para todo o grupo
             assign_to_all_group = True
+            logger.info(f" Nome Causador vazio E setor selecionado → Atribuir para TODO o grupo")
         
         logger.info(f" Verificação de permissão - assign_to_all_group: {assign_to_all_group}, assigned_group_id: {assigned_group_id}, can_assign_to_group: {can_assign_to_group}, user_own_group: {user_own_group}, has_area_responsavel: {has_area_responsavel}")
         
         if assign_to_all_group and assigned_group_id and (can_assign_to_group or user_own_group or has_area_responsavel):
-            # MODO: Atribuir para TODO O GRUPO
+            # MODO 1: Atribuir para TODO O GRUPO (Nome Causador vazio)
             try:
                 # Salvar o grupo atribuído na própria RNC (para controle de visibilidade)
                 cursor.execute('''
@@ -331,8 +354,78 @@ def create_rnc():
             except Exception as e:
                 logger.error(f" Erro ao atribuir RNC ao grupo: {e}")
         
+        elif causador_user_id and assigned_group_id:
+            # MODO 2: Atribuir para USUÁRIO CAUSADOR + GERENTES (Nome Causador preenchido)
+            try:
+                # Salvar o grupo atribuído na RNC
+                cursor.execute('''
+                    UPDATE rncs SET assigned_group_id = ?, causador_user_id = ? WHERE id = ?
+                ''', (assigned_group_id, int(causador_user_id), rnc_id))
+                
+                # Buscar gerentes do grupo definidos no banco de dados
+                cursor.execute('''
+                    SELECT manager_user_id, sub_manager_user_id
+                    FROM groups
+                    WHERE id = ?
+                ''', (assigned_group_id,))
+                group_managers = cursor.fetchone()
+                
+                # Lista de usuários para compartilhar: causador + gerentes
+                users_to_share = [int(causador_user_id)]
+                gerentes_encontrados = 0
+                
+                if group_managers:
+                    manager_id = group_managers[0]
+                    sub_manager_id = group_managers[1]
+                    
+                    if manager_id and manager_id not in users_to_share and manager_id != session['user_id']:
+                        users_to_share.append(manager_id)
+                        gerentes_encontrados += 1
+                        logger.info(f"  Gerente principal adicionado: ID {manager_id}")
+                    
+                    if sub_manager_id and sub_manager_id not in users_to_share and sub_manager_id != session['user_id']:
+                        users_to_share.append(sub_manager_id)
+                        gerentes_encontrados += 1
+                        logger.info(f"  Sub-gerente adicionado: ID {sub_manager_id}")
+                
+                if gerentes_encontrados == 0:
+                    logger.warning(f"  Nenhum gerente definido no banco para o grupo {assigned_group_id}. Configure gerentes em /admin/managers")
+                
+                # Compartilhar RNC com os usuários selecionados
+                for user_id in users_to_share:
+                    if user_id != session['user_id']:
+                        cursor.execute('''
+                            INSERT INTO rnc_shares 
+                            (rnc_id, shared_by_user_id, shared_with_user_id, permission_level)
+                            VALUES (?, ?, ?, 'assigned')
+                        ''', (rnc_id, session['user_id'], user_id))
+                
+                logger.info(f" RNC {rnc_id} atribuída para CAUSADOR (ID: {causador_user_id}) + {gerentes_encontrados} gerente(s) do grupo {assigned_group_id}")
+                
+                # ============================================
+                # COMPARTILHAMENTO AUTOMÁTICO COM RONALDO (VALORISTA)
+                # SOMENTE quando há causador específico
+                # ============================================
+                RONALDO_ID = 11
+                try:
+                    # Verificar se Ronaldo não é o criador da RNC e não está na lista
+                    if session['user_id'] != RONALDO_ID and RONALDO_ID not in users_to_share:
+                        cursor.execute('''
+                            INSERT INTO rnc_shares 
+                            (rnc_id, shared_by_user_id, shared_with_user_id, permission_level)
+                            VALUES (?, ?, ?, 'valorista')
+                        ''', (rnc_id, session['user_id'], RONALDO_ID))
+                        logger.info(f"  ✓ Ronaldo (Valorista) adicionado automaticamente")
+                except Exception as e:
+                    logger.error(f"  ✗ Erro ao compartilhar RNC com Ronaldo: {e}")
+                
+            except Exception as e:
+                logger.error(f" Erro ao atribuir RNC ao causador + gerentes: {e}")
+                import traceback
+                logger.error(traceback.format_exc())
+        
         elif assigned_user_ids and len(assigned_user_ids) > 0:
-            # MODO: Atribuir para USUÁRIOS ESPECÍFICOS
+            # MODO 3: Atribuir para USUÁRIOS ESPECÍFICOS (lista personalizada)
             try:
                 for user_id in assigned_user_ids:
                     if user_id and int(user_id) != session['user_id']:
@@ -344,42 +437,6 @@ def create_rnc():
                 logger.info(f" RNC {rnc_id} atribuída a {len(assigned_user_ids)} usuário(s) específico(s)")
             except Exception as e:
                 logger.error(f" Erro ao salvar atribuições de usuários: {e}")
-        
-        # Salvar usuário causador (se fornecido)
-        causador_user_id = data.get('causador_user_id')
-        if causador_user_id:
-            try:
-                cursor.execute('''
-                    UPDATE rncs SET causador_user_id = ? WHERE id = ?
-                ''', (int(causador_user_id), rnc_id))
-                logger.info(f" Usuário causador {causador_user_id} registrado para RNC {rnc_id}")
-            except Exception as e:
-                logger.error(f" Erro ao salvar usuário causador: {e}")
-
-        # ============================================
-        # COMPARTILHAMENTO AUTOMÁTICO COM RONALDO (VALORISTA)
-        # ============================================
-        # REGRA DE NEGÓCIO: Toda RNC deve ser compartilhada com Ronaldo (ID: 11)
-        # pois apenas ele pode adicionar valores às RNCs
-        RONALDO_ID = 11
-        try:
-            # Verificar se Ronaldo não é o criador da RNC (evitar duplicação)
-            if session['user_id'] != RONALDO_ID:
-                # Verificar se já não existe compartilhamento (para evitar erro de constraint)
-                cursor.execute('''
-                    SELECT id FROM rnc_shares 
-                    WHERE rnc_id = ? AND shared_with_user_id = ?
-                ''', (rnc_id, RONALDO_ID))
-                
-                if not cursor.fetchone():
-                    cursor.execute('''
-                        INSERT INTO rnc_shares 
-                        (rnc_id, shared_by_user_id, shared_with_user_id, permission_level)
-                        VALUES (?, ?, ?, 'valorista')
-                    ''', (rnc_id, session['user_id'], RONALDO_ID))
-                    logger.info(f" RNC {rnc_id} compartilhada automaticamente com Ronaldo (Valorista)")
-        except Exception as e:
-            logger.error(f" Erro ao compartilhar RNC com Ronaldo: {e}")
 
         # ============================================
         # BUSCAR USUÁRIOS COMPARTILHADOS ANTES DE FECHAR CONEXÃO
@@ -1007,14 +1064,22 @@ def view_rnc(rnc_id):
                    u.department as user_department,
                    au.department as assigned_user_department,
                    g.name as area_responsavel_name,
-                   resp_user.name as responsavel_name,
-                   insp_user.name as inspetor_name
+                   CASE 
+                       WHEN r.responsavel GLOB '[0-9]*' 
+                       THEN (SELECT name FROM users WHERE id = CAST(r.responsavel AS INTEGER))
+                       ELSE r.responsavel 
+                   END as responsavel_name,
+                   CASE 
+                       WHEN r.inspetor GLOB '[0-9]*' 
+                       THEN (SELECT name FROM users WHERE id = CAST(r.inspetor AS INTEGER))
+                       ELSE r.inspetor 
+                   END as inspetor_name,
+                   cu.name as causador_name
             FROM rncs r
             LEFT JOIN users u ON r.user_id = u.id
             LEFT JOIN users au ON r.assigned_user_id = au.id
             LEFT JOIN groups g ON g.id = CAST(r.area_responsavel AS INTEGER)
-            LEFT JOIN users resp_user ON resp_user.id = CAST(r.responsavel AS INTEGER)
-            LEFT JOIN users insp_user ON insp_user.id = CAST(r.inspetor AS INTEGER)
+            LEFT JOIN users cu ON r.causador_user_id = cu.id
             WHERE r.id = ?
         ''', (rnc_id,))
         rnc_data = cursor.fetchone()
@@ -1040,11 +1105,11 @@ def view_rnc(rnc_id):
                 'inspection_reprovado','inspection_ver_rnc','signature_inspection_date','signature_engineering_date',
                 'signature_inspection2_date','signature_inspection_name','signature_engineering_name','inspection_aprovado',
                 'signature_inspection2_name','price','department','instruction_retrabalho','cause_rnc','action_rnc',
-                'responsavel','inspetor','setor','material','quantity','drawing','area_responsavel','mp','revision',
-                'position','cv','conjunto','modelo','description_drawing','purchase_order'
+                'responsavel','inspetor','setor','material','quantity','drawing','area_responsavel','ass_responsavel','mp','revision',
+                'position','cv','conjunto','modelo','description_drawing','purchase_order','assigned_group_id','causador_user_id'
             ]
 
-        columns = base_columns + ['user_name', 'assigned_user_name', 'user_department', 'assigned_user_department', 'area_responsavel_name', 'responsavel_name', 'inspetor_name']
+        columns = base_columns + ['user_name', 'assigned_user_name', 'user_department', 'assigned_user_department', 'area_responsavel_name', 'responsavel_name', 'inspetor_name', 'causador_name']
 
         if len(rnc_data) < len(columns):
             rnc_data = list(rnc_data) + [None] * (len(columns) - len(rnc_data))

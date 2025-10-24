@@ -1070,9 +1070,21 @@ def init_database():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             description TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            manager_user_id INTEGER,
+            sub_manager_user_id INTEGER,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (manager_user_id) REFERENCES users (id),
+            FOREIGN KEY (sub_manager_user_id) REFERENCES users (id)
         )
     ''')
+    # Adicionar colunas de gerente/sub-gerente se não existirem
+    for col_sql in [
+        'ALTER TABLE groups ADD COLUMN manager_user_id INTEGER',
+        'ALTER TABLE groups ADD COLUMN sub_manager_user_id INTEGER']:
+        try:
+            cursor.execute(col_sql)
+        except sqlite3.OperationalError:
+            pass
     # Tabela de permissões por grupo
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS group_permissions (
@@ -1159,7 +1171,8 @@ def init_database():
         'ALTER TABLE rncs ADD COLUMN signature_engineering_name TEXT',
         'ALTER TABLE rncs ADD COLUMN signature_inspection2_name TEXT',
         'ALTER TABLE rncs ADD COLUMN assigned_group_id INTEGER',
-        'ALTER TABLE rncs ADD COLUMN causador_user_id INTEGER']:
+        'ALTER TABLE rncs ADD COLUMN causador_user_id INTEGER',
+        'ALTER TABLE rncs ADD COLUMN ass_responsavel TEXT']:
         try:
             cursor.execute(col_sql)
         except sqlite3.OperationalError:
@@ -5469,6 +5482,127 @@ def admin_permissions():
         return redirect('/dashboard')
     
     return render_template('admin_permissions.html')
+
+@app.route('/admin/managers')
+def admin_managers():
+    """Página de gerenciamento de gerentes por grupo"""
+    if 'user_id' not in session:
+        return redirect('/')
+    
+    # Apenas admins podem acessar
+    if not (has_permission(session['user_id'], 'admin_access') or has_permission(session['user_id'], 'manage_users')):
+        return redirect('/dashboard')
+    
+    return render_template('admin_managers.html')
+
+@app.route('/api/admin/groups/with-managers', methods=['GET'])
+def api_get_groups_with_managers():
+    """API para obter todos os grupos com informações de gerentes"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
+    
+    if not (has_permission(session['user_id'], 'admin_access') or has_permission(session['user_id'], 'manage_users')):
+        return jsonify({'success': False, 'message': 'Sem permissão'}), 403
+    
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT 
+                g.id,
+                g.name,
+                g.description,
+                g.manager_user_id,
+                g.sub_manager_user_id,
+                m.name as manager_name,
+                m.email as manager_email,
+                sm.name as sub_manager_name,
+                sm.email as sub_manager_email,
+                (SELECT COUNT(*) FROM users WHERE group_id = g.id AND is_active = 1) as user_count
+            FROM groups g
+            LEFT JOIN users m ON g.manager_user_id = m.id
+            LEFT JOIN users sm ON g.sub_manager_user_id = sm.id
+            ORDER BY g.name
+        ''')
+        
+        groups = []
+        for row in cursor.fetchall():
+            groups.append({
+                'id': row[0],
+                'name': row[1],
+                'description': row[2] or '',
+                'manager_user_id': row[3],
+                'sub_manager_user_id': row[4],
+                'manager_name': row[5],
+                'manager_email': row[6],
+                'sub_manager_name': row[7],
+                'sub_manager_email': row[8],
+                'user_count': row[9]
+            })
+        
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'groups': groups
+        })
+        
+    except Exception as e:
+        logger.error(f"Erro ao buscar grupos com gerentes: {e}")
+        return jsonify({
+            'success': False,
+            'message': 'Erro interno do sistema'
+        }), 500
+
+@app.route('/api/admin/groups/<int:group_id>/managers', methods=['PUT'])
+def api_update_group_managers(group_id):
+    """API para atualizar gerente e sub-gerente de um grupo"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
+    
+    if not (has_permission(session['user_id'], 'admin_access') or has_permission(session['user_id'], 'manage_users')):
+        return jsonify({'success': False, 'message': 'Sem permissão'}), 403
+    
+    try:
+        data = request.get_json()
+        manager_user_id = data.get('manager_user_id')
+        sub_manager_user_id = data.get('sub_manager_user_id')
+        
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        # Verificar se o grupo existe
+        cursor.execute('SELECT name FROM groups WHERE id = ?', (group_id,))
+        group = cursor.fetchone()
+        
+        if not group:
+            conn.close()
+            return jsonify({'success': False, 'message': 'Grupo não encontrado'}), 404
+        
+        # Atualizar gerentes
+        cursor.execute('''
+            UPDATE groups 
+            SET manager_user_id = ?, sub_manager_user_id = ?
+            WHERE id = ?
+        ''', (manager_user_id, sub_manager_user_id, group_id))
+        
+        conn.commit()
+        conn.close()
+        
+        logger.info(f"Gerentes do grupo {group[0]} (ID: {group_id}) atualizados por usuário {session['user_id']}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Gerentes atualizados com sucesso'
+        })
+        
+    except Exception as e:
+        logger.error(f"Erro ao atualizar gerentes do grupo: {e}")
+        return jsonify({
+            'success': False,
+            'message': 'Erro interno do sistema'
+        }), 500
 
 @app.route('/admin/clients')
 def admin_clients():
